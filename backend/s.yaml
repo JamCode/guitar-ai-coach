@@ -1,0 +1,30 @@
+edition: 3.0.0
+name: guitar-ai-coach-backend
+access: default
+
+resources:
+  api:
+    component: fc3
+    props:
+      region: cn-hangzhou
+      functionName: guitar-ai-coach-api
+      description: Guitar AI Coach HTTP API (sample)
+      runtime: python3.10
+      handler: index.handler
+      memorySize: 512
+      timeout: 60
+      code: ./code
+      internetAccess: true
+      environmentVariables:
+        STAGE: dev
+      triggers:
+        - triggerName: httpTrigger
+          triggerType: http
+          qualifier: LATEST
+          triggerConfig:
+            authType: anonymous
+            disableURLInternet: false
+            methods:
+              - GET
+              - POST
+              - OPTIONS
