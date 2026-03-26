@@ -8,7 +8,7 @@ set -euo pipefail
 #   SKIP_CI=1 ./deploy-to-nginx.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEB_ROOT="${WEB_ROOT:-/var/www/guitar-ai-coach}"
+WEB_ROOT="${WEB_ROOT:-/usr/share/nginx/html}"
 BUILD_DIR="${BUILD_DIR:-$SCRIPT_DIR/dist}"
 SKIP_CI="${SKIP_CI:-0}"
 

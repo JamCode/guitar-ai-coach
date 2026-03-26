@@ -11,7 +11,7 @@
           class="chip"
           :class="{ active: s === selectedStyle }"
           :aria-pressed="s === selectedStyle"
-          @click="selectedStyle = s"
+          @click="onSelectStyle(s)"
         >
           {{ s }}
         </button>
@@ -47,6 +47,8 @@ const selectedStyle = ref<string>('流行')
 
 const isGenerating = ref(false)
 const progressions = ref<string[]>([])
+let generationTimer: number | null = null
+let generationSeq = 0
 
 const progressionPool: Record<string, string[]> = {
   '流行': [
@@ -119,17 +121,38 @@ function pickRandomUnique(arr: string[], count: number) {
   return out
 }
 
-function onGenerate() {
+function triggerGenerate(style: string) {
+  generationSeq += 1
+  const currentSeq = generationSeq
+
+  if (generationTimer !== null) {
+    window.clearTimeout(generationTimer)
+    generationTimer = null
+  }
+
   isGenerating.value = true
   progressions.value = []
-
-  // 这里先用前端内置示例生成；接后端后把 selectedStyle 发给接口即可。
-  const pool = progressionPool[selectedStyle.value] ?? progressionPool['流行']
-
-  setTimeout(() => {
+  generationTimer = window.setTimeout(() => {
+    if (currentSeq !== generationSeq) return
+    const pool = progressionPool[style] ?? progressionPool['流行']
     progressions.value = pickRandomUnique(pool, 4)
     isGenerating.value = false
+    generationTimer = null
   }, 350)
+}
+
+function onGenerate() {
+  triggerGenerate(selectedStyle.value)
+}
+
+function onSelectStyle(style: string) {
+  if (style === selectedStyle.value) return
+  selectedStyle.value = style
+
+  // 已有结果或正在生成时，切换风格后立即刷新结果，避免标题与内容不一致。
+  if (progressions.value.length > 0 || isGenerating.value) {
+    triggerGenerate(style)
+  }
 }
 </script>
 
