@@ -17,6 +17,15 @@ resources:
       internetAccess: true
       environmentVariables:
         STAGE: dev
+        DASHSCOPE_API_KEY: ${env('DASHSCOPE_API_KEY')}
+        DASHSCOPE_MODEL: ${env('DASHSCOPE_MODEL')}
+        DASHSCOPE_ENDPOINT: ${env('DASHSCOPE_ENDPOINT')}
+        # 阿里云 RDS / PolarDB MySQL（样例 mysql_crud_sample）
+        MYSQL_HOST: ${env('MYSQL_HOST')}
+        MYSQL_PORT: ${env('MYSQL_PORT')}
+        MYSQL_USER: ${env('MYSQL_USER')}
+        MYSQL_PASSWORD: ${env('MYSQL_PASSWORD')}
+        MYSQL_DATABASE: ${env('MYSQL_DATABASE')}
       triggers:
         - triggerName: httpTrigger
           triggerType: http
@@ -27,4 +36,6 @@ resources:
             methods:
               - GET
               - POST
+              - PUT
+              - DELETE
               - OPTIONS
