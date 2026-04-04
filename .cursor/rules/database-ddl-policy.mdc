@@ -1,0 +1,12 @@
+---
+description: 后端数据库 DDL 规范
+globs: "backend/**"
+alwaysApply: true
+---
+
+# 数据库 DDL 规范
+
+- 绝不要在应用运行时代码中嵌入 DDL（`CREATE/ALTER/DROP TABLE`、索引 DDL）。
+- 所有 schema 变更必须放在 `backend/database/ddl/*.sql`。
+- DDL 由 DBA/运维脚本在部署或升级时一次性执行，不可由 API 请求自动触发。
+- 应用代码只能校验 schema 是否就绪，并提供可执行的错误提示。

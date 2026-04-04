@@ -1,5 +1,9 @@
+/**
+ * 全局样式：CSS 变量（浅色/深色）、body 与排版。
+ * 主界面视觉以 App.vue 的 scoped 样式为主；下文 .hero / #social / .counter 等为 Vite 模板遗留，当前应用未使用。
+ */
 :root {
-  --text: #6b6375;
+  --text: #3f3a48;
   --text-h: #08060d;
   --bg: #fff;
   --border: #e5e4e7;
@@ -32,7 +36,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
+    --text: #c7ced8;
     --text-h: #f3f4f6;
     --bg: #16171d;
     --border: #2e303a;
@@ -292,5 +296,31 @@ code {
   &::after {
     right: 0;
     border-right-color: var(--border);
+  }
+}
+
+/* 和弦试听：加载 Tone/采样时的行内转圈（多页面共用） */
+@keyframes chord-audio-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.chord-audio-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: chord-audio-spin 0.7s linear infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chord-audio-spinner {
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: currentColor;
   }
 }

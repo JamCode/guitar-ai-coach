@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>调音器 方案B · 多主题色</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
+    :root{
+      --bg:#f7f8fa;
+      --surface:#ffffff;
+      --soft:#ffffff;
+      --text:#18181b;
+      --muted:#71717a;
+      --line:#ebecef;
+      --brand:#ff2442;
+      --brand-soft:#ffe9ed;
+      --brand-glow:rgba(255,36,66,.25);
+      --green:#22a06b;
+      --green-soft:#e3fcef;
+      --phone-border:#d8dce2;
+      --phone-shadow:0 28px 72px rgba(24,24,27,.14);
+      --track:#f3f4f6;
+      --title:"Plus Jakarta Sans","Noto Sans SC",sans-serif;
+      --body:"Noto Sans SC","PingFang SC","Hiragino Sans GB",sans-serif;
+    }
+
+    /* 小红书红（机内内容区与其它浅色统一为白，列表区微灰用卡片阴影区分） */
+    body[data-theme="red"]{
+      --bg:#f7f8fa; --surface:#ffffff; --soft:#ffffff; --text:#18181b; --muted:#71717a; --line:#ebecef;
+      --brand:#ff2442; --brand-soft:#ffe9ed; --brand-glow:rgba(255,36,66,.25);
+      --phone-border:#d8dce2; --phone-shadow:0 28px 72px rgba(24,24,27,.14);
+      --track:#f3f4f6;
+    }
+    /* 小红书红 暗色 */
+    body[data-theme="red-dark"]{
+      --bg:#111216; --surface:#1a1b20; --soft:#14151a; --text:#f4f4f5; --muted:#a1a1aa; --line:#2a2c34;
+      --brand:#ff4d67; --brand-soft:#3a1e26; --brand-glow:rgba(255,77,103,.3);
+      --phone-border:#06070a; --phone-shadow:0 30px 90px rgba(2,6,23,.62);
+      --track:#2a2c34;
+    }
+    /* 雾霾蓝（浅色底与红浅统一为白/中性灰，色相只体现在品牌色与描边上） */
+    body[data-theme="blue"]{
+      --bg:#f7f8fa; --surface:#ffffff; --soft:#ffffff; --text:#1a2332; --muted:#6b7c93; --line:#dce3ec;
+      --brand:#4a7fb5; --brand-soft:#dfeaf5; --brand-glow:rgba(74,127,181,.25);
+      --phone-border:#b8c7d6; --phone-shadow:0 28px 72px rgba(30,50,80,.16);
+      --track:#f3f4f6;
+    }
+    /* 雾霾蓝 暗色 */
+    body[data-theme="blue-dark"]{
+      --bg:#0d1117; --surface:#161b22; --soft:#0d1117; --text:#e6edf3; --muted:#8b949e; --line:#2d333b;
+      --brand:#6daae0; --brand-soft:#1a324a; --brand-glow:rgba(109,170,224,.3);
+      --phone-border:#06070a; --phone-shadow:0 30px 90px rgba(2,6,23,.62);
+      --track:#2d333b;
+    }
+    /* 森绿 */
+    body[data-theme="green"]{
+      --bg:#f7f8fa; --surface:#ffffff; --soft:#ffffff; --text:#1a2721; --muted:#5e7a68; --line:#d5e4da;
+      --brand:#2d8a56; --brand-soft:#dff0e6; --brand-glow:rgba(45,138,86,.25);
+      --phone-border:#b5ccbe; --phone-shadow:0 28px 72px rgba(20,56,36,.16);
+      --track:#f3f4f6;
+    }
+    /* 森绿 暗色 */
+    body[data-theme="green-dark"]{
+      --bg:#0c1210; --surface:#141e1a; --soft:#0c1210; --text:#d8ede0; --muted:#7fa890; --line:#263830;
+      --brand:#4ecb7a; --brand-soft:#1a3828; --brand-glow:rgba(78,203,122,.3);
+      --phone-border:#06070a; --phone-shadow:0 30px 90px rgba(2,6,23,.62);
+      --track:#263830;
+    }
+    /* 琥珀橙 */
+    body[data-theme="amber"]{
+      --bg:#f7f8fa; --surface:#ffffff; --soft:#ffffff; --text:#2b2117; --muted:#8a7560; --line:#e8ddd0;
+      --brand:#c67a2e; --brand-soft:#f7e8d5; --brand-glow:rgba(198,122,46,.25);
+      --phone-border:#d4c5b0; --phone-shadow:0 28px 72px rgba(80,57,36,.16);
+      --track:#f3f4f6;
+    }
+    /* 琥珀橙 暗色 */
+    body[data-theme="amber-dark"]{
+      --bg:#12100c; --surface:#1c1812; --soft:#12100c; --text:#f0e5d6; --muted:#ab9578; --line:#3a3025;
+      --brand:#e89f50; --brand-soft:#3a2c18; --brand-glow:rgba(232,159,80,.3);
+      --phone-border:#06070a; --phone-shadow:0 30px 90px rgba(2,6,23,.62);
+      --track:#3a3025;
+    }
+    /* 葡萄紫 */
+    body[data-theme="purple"]{
+      --bg:#f7f8fa; --surface:#ffffff; --soft:#ffffff; --text:#1e1a2b; --muted:#7a6f90; --line:#ddd7ea;
+      --brand:#7c5cbf; --brand-soft:#ece5f6; --brand-glow:rgba(124,92,191,.25);
+      --phone-border:#c5bbd6; --phone-shadow:0 28px 72px rgba(60,40,100,.16);
+      --track:#f3f4f6;
+    }
+    /* 葡萄紫 暗色 */
+    body[data-theme="purple-dark"]{
+      --bg:#0f0d14; --surface:#17141e; --soft:#0f0d14; --text:#e8e0f4; --muted:#9b8fb3; --line:#2e2840;
+      --brand:#a78bdb; --brand-soft:#2a2240; --brand-glow:rgba(167,139,219,.3);
+      --phone-border:#06070a; --phone-shadow:0 30px 90px rgba(2,6,23,.62);
+      --track:#2e2840;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--body);
+      padding:20px 14px 40px;
+    }
+
+    .shell{max-width:500px; margin:0 auto;}
+
+    .page-title{
+      margin:0;
+      font-family:var(--title);
+      font-size:24px;
+      font-weight:800;
+      text-align:center;
+    }
+    .page-desc{
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+      margin:6px 0 14px;
+    }
+
+    .theme-grid{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:6px;
+      margin-bottom:16px;
+    }
+    .theme-btn{
+      border:2px solid var(--line);
+      border-radius:10px;
+      padding:8px 4px;
+      text-align:center;
+      font-size:11px;
+      font-weight:600;
+      cursor:pointer;
+      background:var(--surface);
+      color:var(--muted);
+    }
+    .theme-btn.active{
+      border-color:var(--brand);
+      color:var(--brand);
+      background:var(--brand-soft);
+    }
+    .theme-btn .dot{
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      margin:0 auto 4px;
+    }
+
+    .phone{
+      width:100%;
+      max-width:393px;
+      margin:0 auto;
+      border:10px solid var(--phone-border);
+      border-radius:40px;
+      overflow:hidden;
+      background:var(--surface);
+      box-shadow:var(--phone-shadow);
+    }
+
+    .status{
+      height:26px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 16px;
+      font-size:11px;
+      color:var(--muted);
+      border-bottom:1px solid var(--line);
+    }
+
+    .nav-header{
+      padding:12px 16px 10px;
+      border-bottom:1px solid var(--line);
+    }
+    .nav-header h2{
+      margin:0;
+      font-size:17px;
+      font-weight:700;
+    }
+    .nav-header p{
+      margin:3px 0 0;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .body{
+      padding:14px;
+      min-height:570px;
+      background:var(--soft);
+    }
+
+    .card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      margin-bottom:10px;
+    }
+    .card h3{
+      margin:0 0 8px;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .mode{
+      display:flex;
+      gap:6px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:4px;
+      background:var(--surface);
+    }
+    .mode button{
+      flex:1;
+      border:0;
+      border-radius:8px;
+      padding:7px 6px;
+      background:transparent;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .mode button.active{
+      background:var(--brand-soft);
+      color:var(--brand);
+    }
+
+    .meter-note-row{
+      display:flex;
+      align-items:baseline;
+      gap:12px;
+      margin-top:4px;
+    }
+    .meter-note{
+      font-family:var(--title);
+      font-size:56px;
+      font-weight:800;
+      line-height:1;
+      color:var(--text);
+    }
+    .meter-info{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .meter-hz{font-size:13px; color:var(--muted);}
+    .meter-target{font-size:12px; color:var(--muted);}
+    .meter-target b{color:var(--text);}
+    .meter-cents{font-size:14px; font-weight:700; color:var(--brand); margin-top:2px;}
+
+    .meter-bar-wrap{margin-top:14px;}
+    .meter-labels{
+      display:flex;
+      justify-content:space-between;
+      font-size:10px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .meter-bar{
+      height:12px;
+      border-radius:999px;
+      background:var(--track);
+      border:1px solid var(--line);
+      position:relative;
+    }
+    .meter-center{
+      position:absolute;
+      top:-4px;
+      left:50%;
+      transform:translateX(-50%);
+      width:2px;
+      height:20px;
+      background:var(--line);
+      border-radius:2px;
+    }
+    .meter-needle{
+      position:absolute;
+      top:-6px;
+      left:45%;
+      transform:translateX(-50%);
+      width:14px;
+      height:24px;
+      border-radius:7px;
+      background:var(--brand);
+      border:2px solid var(--surface);
+      box-shadow:0 2px 10px var(--brand-glow);
+    }
+
+    .meter-zone{
+      display:flex;
+      justify-content:center;
+      gap:6px;
+      margin-top:10px;
+    }
+    .meter-zone span{
+      font-size:11px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color:var(--muted);
+    }
+    .meter-zone span.on{
+      border-color:var(--green);
+      color:var(--green);
+      background:var(--green-soft);
+    }
+
+    .strings{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:8px;
+    }
+    .str{
+      text-align:center;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:8px 0;
+      font-size:12px;
+      font-weight:600;
+      color:var(--muted);
+      background:var(--surface);
+    }
+    .str.active{
+      border-color:var(--brand);
+      color:var(--brand);
+      background:var(--brand-soft);
+    }
+
+    .play-btn{
+      width:100%;
+      border:1px solid var(--brand);
+      background:var(--surface);
+      color:var(--brand);
+      border-radius:10px;
+      padding:10px;
+      font-size:13px;
+      font-weight:600;
+      text-align:center;
+      margin-top:10px;
+    }
+    .start-btn{
+      width:100%;
+      border:1px solid var(--brand);
+      background:var(--brand);
+      color:#fff;
+      border-radius:10px;
+      padding:10px;
+      font-size:13px;
+      font-weight:600;
+      text-align:center;
+      margin-top:8px;
+    }
+
+    .tabbar{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:4px;
+      border-top:1px solid var(--line);
+      background:var(--surface);
+      padding:8px;
+    }
+    .tab{
+      text-align:center;
+      border-radius:8px;
+      padding:6px 4px;
+      font-size:10px;
+      font-weight:600;
+      color:var(--muted);
+    }
+    .tab.active{
+      color:var(--brand);
+      background:var(--brand-soft);
+    }
+  </style>
+</head>
+<body data-theme="red">
+  <div class="shell">
+    <h1 class="page-title">调音器 · 方案 B</h1>
+    <p class="page-desc">点击下方色卡切换主题色（浅色 / 暗色各 5 套）。</p>
+
+    <div class="theme-grid" id="themeGrid">
+      <div class="theme-btn active" data-theme="red">
+        <div class="dot" style="background:#ff2442"></div>红 浅
+      </div>
+      <div class="theme-btn" data-theme="blue">
+        <div class="dot" style="background:#4a7fb5"></div>蓝 浅
+      </div>
+      <div class="theme-btn" data-theme="green">
+        <div class="dot" style="background:#2d8a56"></div>绿 浅
+      </div>
+      <div class="theme-btn" data-theme="amber">
+        <div class="dot" style="background:#c67a2e"></div>橙 浅
+      </div>
+      <div class="theme-btn" data-theme="purple">
+        <div class="dot" style="background:#7c5cbf"></div>紫 浅
+      </div>
+      <div class="theme-btn" data-theme="red-dark">
+        <div class="dot" style="background:#ff4d67"></div>红 暗
+      </div>
+      <div class="theme-btn" data-theme="blue-dark">
+        <div class="dot" style="background:#6daae0"></div>蓝 暗
+      </div>
+      <div class="theme-btn" data-theme="green-dark">
+        <div class="dot" style="background:#4ecb7a"></div>绿 暗
+      </div>
+      <div class="theme-btn" data-theme="amber-dark">
+        <div class="dot" style="background:#e89f50"></div>橙 暗
+      </div>
+      <div class="theme-btn" data-theme="purple-dark">
+        <div class="dot" style="background:#a78bdb"></div>紫 暗
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="status"><span>9:41</span><span>5G · 100%</span></div>
+      <div class="nav-header">
+        <h2>调音器</h2>
+        <p>自动识别 · 标准调音</p>
+      </div>
+      <div class="body">
+
+        <div class="card">
+          <div class="mode">
+            <button class="active" type="button">自动识别</button>
+            <button type="button">手动选弦</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="meter-note-row">
+            <div class="meter-note">E</div>
+            <div class="meter-info">
+              <div class="meter-hz">164.81 Hz</div>
+              <div class="meter-target">第 6 弦 · 目标 <b>E2 (82.41Hz)</b></div>
+              <div class="meter-cents">-8 cent · 偏低</div>
+            </div>
+          </div>
+
+          <div class="meter-bar-wrap">
+            <div class="meter-labels">
+              <span>-50</span><span>偏低</span><span>准音</span><span>偏高</span><span>+50</span>
+            </div>
+            <div class="meter-bar">
+              <div class="meter-center"></div>
+              <div class="meter-needle"></div>
+            </div>
+          </div>
+
+          <div class="meter-zone">
+            <span>偏低</span>
+            <span class="on">接近</span>
+            <span>准音</span>
+            <span>偏高</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>选择弦</h3>
+          <div class="strings">
+            <div class="str active">6<br>E</div>
+            <div class="str">5<br>A</div>
+            <div class="str">4<br>D</div>
+            <div class="str">3<br>G</div>
+            <div class="str">2<br>B</div>
+            <div class="str">1<br>e</div>
+          </div>
+          <div class="play-btn">播放参考音 · E2</div>
+          <div class="start-btn">开始监听</div>
+        </div>
+
+      </div>
+      <div class="tabbar">
+        <div class="tab active">调音器</div>
+        <div class="tab">和弦</div>
+        <div class="tab">扫弦</div>
+        <div class="tab">节奏</div>
+        <div class="tab">爬格子</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll(".theme-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.body.dataset.theme = btn.dataset.theme;
+        document.querySelectorAll(".theme-btn").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>

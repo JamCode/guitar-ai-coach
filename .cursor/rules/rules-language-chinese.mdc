@@ -1,0 +1,11 @@
+---
+description: .cursor/rules 下的规则统一使用中文
+globs: ".cursor/rules/**"
+alwaysApply: true
+---
+
+# Rules 语言规范（中文）
+
+- 在 `.cursor/rules/**` 下新增或修改规则文件时，`description` 与正文说明统一使用中文。
+- 仅在必须保留的专业术语、代码标识符、路径、命令中使用英文（如 `globs`、文件路径、SQL/代码关键字）。
+- 如需引用外文原文，请先给出中文表述，再附外文。

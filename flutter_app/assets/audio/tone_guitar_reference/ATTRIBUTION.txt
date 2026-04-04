@@ -1,0 +1,7 @@
+吉他参考音采样与前端 Vite 一致，来自 npm 包：
+
+  tonejs-instrument-guitar-acoustic-mp3 (MIT)
+  https://github.com/Makefully-Studios/tonejs-instruments
+
+本目录仅包含标准调弦六根空弦对应的单音文件：
+E2、A2、D3、G3、B3、E4（与 frontend/src/guitarAcousticSlimSampler.ts 所用音源同属一套）。

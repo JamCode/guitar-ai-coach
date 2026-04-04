@@ -1,0 +1,15 @@
+[Unit]
+Description=Guitar AI Coach Python Backend
+After=network.target
+
+[Service]
+Type=simple
+User=wanghan
+WorkingDirectory=/home/wanghan/guitar-ai-coach/backend/code
+EnvironmentFile=/home/wanghan/guitar-ai-coach/deploy/ecs/backend.env
+ExecStart=/usr/bin/python3 /home/wanghan/guitar-ai-coach/backend/code/index.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

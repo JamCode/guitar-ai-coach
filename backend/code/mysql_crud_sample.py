@@ -20,16 +20,9 @@ from contextlib import contextmanager
 import pymysql
 from pymysql.cursors import DictCursor
 
-_DDL = """
-CREATE TABLE IF NOT EXISTS demo_items (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  title VARCHAR(255) NOT NULL,
-  content TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-"""
+_SCHEMA_CHECKED = False
+_REQUIRED_TABLES = ("demo_items",)
+_DDL_HINT_PATH = "backend/database/ddl/demo_items.sql"
 
 
 def _config():
@@ -66,11 +59,24 @@ def get_connection():
 
 
 def ensure_schema():
-    """创建演示表（幂等）。"""
+    """校验演示表是否已由升级脚本创建。"""
+    global _SCHEMA_CHECKED
+    if _SCHEMA_CHECKED:
+        return
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute(_DDL)
-        conn.commit()
+            cur.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = DATABASE() AND table_name = %s",
+                ("demo_items",),
+            )
+            row = cur.fetchone() or {}
+            if str(row.get("table_name") or "") != "demo_items":
+                raise RuntimeError(
+                    f"missing table demo_items. Please execute {_DDL_HINT_PATH} "
+                    "once during upgrade/deployment."
+                )
+    _SCHEMA_CHECKED = True
 
 
 def list_items(limit=50):

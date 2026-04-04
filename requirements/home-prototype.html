@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>主页（和弦进行）— 线框原型</title>
+    <style>
+      :root {
+        --bd: #e5e5e5;
+        --bg: #f4f4f5;
+        --ink: #111;
+        --muted: rgba(17, 17, 17, 0.75);
+        --card: #fff;
+        --chip-bg: #f3f3f3;
+        --chip-on: #111;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--bg);
+        line-height: 1.45;
+        /* 为底部 Tab 留空，避免内容被挡住 */
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+      }
+      .wrap {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 16px 14px 24px;
+      }
+      .page-head {
+        margin-bottom: 14px;
+      }
+      .page-head h1 {
+        font-size: 1.25rem;
+        margin: 0 0 4px;
+      }
+      .page-head .sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0;
+      }
+      a.muted-link {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      /* 底部 Tab：更接近 App / PWA 单手操作习惯 */
+      .tab-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+        display: flex;
+        background: var(--card);
+        border-top: 1px solid var(--bd);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+      }
+      .tab-bar a {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 8px 6px 10px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        border-top: 3px solid transparent;
+        min-height: 52px;
+      }
+      .tab-bar a:hover {
+        color: var(--ink);
+        background: #fafafa;
+      }
+      .tab-bar a.tab-on {
+        color: var(--ink);
+        border-top-color: var(--ink);
+        font-weight: 800;
+      }
+      .tab-bar .tab-ico {
+        font-size: 20px;
+        line-height: 1;
+        opacity: 0.9;
+      }
+      .banner {
+        font-size: 12px;
+        color: #7a5a00;
+        background: #fff8e1;
+        border: 1px solid #e6d08c;
+        padding: 8px 10px;
+        border-radius: 8px;
+        margin-bottom: 14px;
+        line-height: 1.5;
+      }
+      .tech-card {
+        border: 1px solid var(--bd);
+        border-radius: 16px;
+        padding: 18px 18px 16px;
+        background: var(--card);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      }
+      .tech-title {
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 12px;
+      }
+      .section-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .chip {
+        border: 1px solid var(--bd);
+        background: var(--chip-bg);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 14px;
+        cursor: default;
+      }
+      .chip.on {
+        background: var(--chip-on);
+        color: #fff;
+        border-color: var(--chip-on);
+      }
+      .generate-btn {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--ink);
+        font-weight: 800;
+        font-size: 16px;
+        color: #fff;
+        background: var(--ink);
+        margin-bottom: 10px;
+      }
+      .result {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+      }
+      .result-head {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      .fake-line {
+        border: 1px dashed var(--bd);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: #333;
+        background: #fafafa;
+      }
+      .fake-line .hint {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .anno {
+        margin-top: 16px;
+        font-size: 12px;
+        color: var(--muted);
+        border-left: 3px solid #ccc;
+        padding-left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <a class="muted-link" href="./README.md">← 需求目录（README）</a>
+
+      <header class="page-head">
+        <h1>吉他 AI 教练</h1>
+        <p class="sub">主页线框 · 与现网逻辑近似，无真实请求</p>
+      </header>
+
+      <div class="banner">
+        <strong>主导航：</strong>使用屏幕<strong>底部 Tab</strong>在「和弦进行」与「和弦字典」之间切换（更接近手机 App / PWA）。实现时可用 Vue Router + 固定底栏组件。
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-title">音乐风格</div>
+        <div class="chips" aria-label="风格">
+          <span class="chip on">流行</span>
+          <span class="chip">民谣</span>
+          <span class="chip">摇滚</span>
+          <span class="chip">抒情</span>
+          <span class="chip">国风</span>
+        </div>
+
+        <div class="section-label">难度</div>
+        <div class="chips">
+          <span class="chip">初级</span>
+          <span class="chip on">中级</span>
+          <span class="chip">高级</span>
+        </div>
+
+        <div class="section-label">调号（12 调）</div>
+        <div class="chips">
+          <span class="chip on">C</span>
+          <span class="chip">G</span>
+          <span class="chip">D</span>
+          <span class="chip">…</span>
+        </div>
+
+        <button type="button" class="generate-btn">生成和弦</button>
+
+        <div class="result" aria-label="生成结果占位">
+          <div class="result-head">和弦进行（流行 · 中级 · C 调）</div>
+          <div class="fake-line">
+            1. C - Am - F - G
+            <span class="hint">线框示意：点和弦名可打开指法说明（与现网一致）</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="anno">
+        说明：正式实现时可在「和弦字典」Tab 内<strong>沿用同一套调号/难度状态</strong>（见需求文档 §1.4、§7.2），本 HTML 仅为跳转示意。
+      </p>
+    </div>
+
+    <nav class="tab-bar" aria-label="底部主导航">
+      <a class="tab-on" href="./home-prototype.html" aria-current="page">
+        <span class="tab-ico" aria-hidden="true">🎸</span>
+        <span>和弦进行</span>
+      </a>
+      <a href="./chord-dictionary-prototype.html">
+        <span class="tab-ico" aria-hidden="true">📖</span>
+        <span>和弦字典</span>
+      </a>
+    </nav>
+  </body>
+</html>

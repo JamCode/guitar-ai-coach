@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>原型 · 音程识别（练耳 MVP）</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
+
+    :root{
+      --bg:#f7f8fa;
+      --surface:#ffffff;
+      --surface-soft:#f3f4f7;
+      --text:#18181b;
+      --muted:#71717a;
+      --line:#ebecef;
+      --brand:#ff2442;
+      --brand-soft:#ffe9ed;
+      --success:#22a06b;
+      --success-soft:#e8f7f0;
+      --error:#e11d48;
+      --error-soft:#ffe4e8;
+      --radius:14px;
+      --phone-shadow:0 28px 72px rgba(24,24,27,.14);
+      --title-font:"Plus Jakarta Sans", "Noto Sans SC", sans-serif;
+      --body-font:"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    }
+
+    body[data-style="dark"]{
+      --bg:#111216;
+      --surface:#1a1b20;
+      --surface-soft:#14151a;
+      --text:#f4f4f5;
+      --muted:#a1a1aa;
+      --line:#2a2c34;
+      --brand:#ff4d67;
+      --brand-soft:#3a1e26;
+      --success:#34d399;
+      --success-soft:#14231c;
+      --error:#fb7185;
+      --error-soft:#3a1e26;
+      --phone-shadow:0 30px 90px rgba(2,6,23,.62);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100dvh;
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--body-font);
+      padding:20px 14px 32px;
+    }
+
+    .desk{ max-width:520px; margin:0 auto; }
+
+    .toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+    .toolbar h1{
+      margin:0;
+      font-family:var(--title-font);
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    .toolbar p{ margin:4px 0 0; font-size:13px; color:var(--muted); max-width:100%; }
+    .style-switch{
+      display:flex;
+      gap:6px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      border-radius:10px;
+      padding:4px;
+      align-self:flex-start;
+    }
+    .style-btn{
+      border:none;
+      background:transparent;
+      padding:6px 10px;
+      border-radius:8px;
+      font-size:12px;
+      font-weight:600;
+      color:var(--muted);
+      cursor:pointer;
+      font-family:var(--body-font);
+    }
+    .style-btn.active{ background:var(--brand-soft); color:var(--brand); }
+
+    .phone{
+      max-width:400px;
+      margin:0 auto;
+      background:var(--surface);
+      border-radius:36px;
+      border:1px solid var(--line);
+      box-shadow:var(--phone-shadow);
+      padding:18px 16px 22px;
+      position:relative;
+    }
+    .phone-notch{
+      width:120px;
+      height:28px;
+      background:var(--surface-soft);
+      border-radius:0 0 16px 16px;
+      margin:-18px auto 12px;
+      border:1px solid var(--line);
+      border-top:none;
+    }
+
+    .nav-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:14px;
+    }
+    .nav-back{
+      border:1px solid var(--line);
+      background:var(--surface-soft);
+      color:var(--text);
+      border-radius:10px;
+      padding:8px 12px;
+      font-size:14px;
+      cursor:pointer;
+      font-family:var(--body-font);
+    }
+    .nav-title{
+      font-family:var(--title-font);
+      font-weight:800;
+      font-size:17px;
+      flex:1;
+      text-align:center;
+    }
+    .nav-spacer{ width:72px; flex-shrink:0; }
+
+    .progress-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .progress-text{
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      font-family:var(--title-font);
+    }
+    .dots{ display:flex; gap:6px; flex:1; justify-content:flex-end; }
+    .dot{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--line);
+    }
+    .dot.on{ background:var(--brand); }
+
+    .card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      margin-bottom:12px;
+    }
+    .stem{
+      margin:0 0 8px;
+      font-size:16px;
+      font-weight:700;
+      line-height:1.45;
+    }
+    .hint{
+      margin:0;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .play-row{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+    }
+    .btn-play{
+      flex:1;
+      border:none;
+      border-radius:12px;
+      padding:14px 12px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      font-family:var(--body-font);
+      background:var(--brand);
+      color:#fff;
+    }
+    .btn-play.secondary{
+      flex:0 0 auto;
+      background:var(--surface-soft);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .options-title{
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      letter-spacing:.06em;
+      margin:16px 0 10px;
+      font-family:var(--title-font);
+    }
+
+    .opt-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .opt{
+            border:1px solid var(--line);
+      background:var(--surface-soft);
+      border-radius:12px;
+      padding:16px 12px;
+      text-align:center;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      font-family:var(--body-font);
+      color:var(--text);
+      transition:background .15s, border-color .15s, transform .1s;
+    }
+    .opt:hover{ border-color:var(--brand); }
+    .opt.selected{
+      border-color:var(--brand);
+      background:var(--brand-soft);
+      color:var(--brand);
+    }
+    .opt.correct{
+      border-color:var(--success);
+      background:var(--success-soft);
+      color:var(--success);
+    }
+    .opt.wrong{
+      border-color:var(--error);
+      background:var(--error-soft);
+      color:var(--error);
+    }
+    .opt:disabled{ opacity:.55; cursor:default; }
+
+    .feedback{
+      margin-top:14px;
+      padding:12px 14px;
+      border-radius:12px;
+      font-size:14px;
+      font-weight:600;
+      line-height:1.5;
+      display:none;
+    }
+    .feedback.show{ display:block; }
+    .feedback.ok{ background:var(--success-soft); color:var(--success); border:1px solid rgba(34,160,107,.35); }
+    .feedback.bad{ background:var(--error-soft); color:var(--error); border:1px solid rgba(225,29,72,.35); }
+
+    .btn-submit{
+      width:100%;
+      margin-top:14px;
+      border:none;
+      border-radius:14px;
+      padding:15px;
+      font-size:16px;
+      font-weight:800;
+      cursor:pointer;
+      font-family:var(--title-font);
+      background:var(--brand);
+      color:#fff;
+    }
+    .btn-submit:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .banner{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:12px;
+      color:var(--muted);
+      background:var(--surface-soft);
+      border:1px dashed var(--line);
+      line-height:1.55;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:24px;
+      transform:translateX(-50%);
+      background:var(--text);
+      color:var(--surface);
+      padding:10px 16px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:600;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s;
+      z-index:50;
+      max-width:min(92vw,360px);
+      text-align:center;
+    }
+    .toast.show{ opacity:.95; }
+  </style>
+</head>
+<body data-style="light">
+  <div class="desk">
+    <div class="toolbar">
+      <div>
+        <h1>音程识别 · 原型</h1>
+        <p>对齐《最小功能集合260402讨论》：两音 · 四选一 · 可重听 · 即时反馈（仅布局与流程示意）</p>
+      </div>
+      <div class="style-switch" role="group" aria-label="主题">
+        <button type="button" class="style-btn active" data-style="light">浅色系</button>
+        <button type="button" class="style-btn" data-style="dark">暗色系</button>
+      </div>
+    </div>
+
+    <div class="phone" aria-label="iPhone 示意框">
+      <div class="phone-notch" aria-hidden="true"></div>
+
+      <div class="nav-row">
+        <button type="button" class="nav-back" id="btnBack">返回</button>
+        <div class="nav-title">音程识别</div>
+        <div class="nav-spacer" aria-hidden="true"></div>
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-text">音程 · 第 1 / 5 题</span>
+        <div class="dots" aria-hidden="true">
+          <span class="dot on"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="stem">听两个音，选择它们之间的音程。</p>
+        <p class="hint">先播较低音，再播较高音；可多次点击「再听一遍」。</p>
+        <div class="play-row">
+          <button type="button" class="btn-play" id="btnPlay">播放</button>
+          <button type="button" class="btn-play secondary" id="btnReplay">再听一遍</button>
+        </div>
+      </div>
+
+      <p class="options-title">四选一</p>
+      <div class="opt-grid" id="optGrid" role="radiogroup" aria-label="音程选项">
+        <button type="button" class="opt" data-key="A" data-correct="0">大三度</button>
+        <button type="button" class="opt" data-key="B" data-correct="1">纯四度</button>
+        <button type="button" class="opt" data-key="C" data-correct="0">纯五度</button>
+        <button type="button" class="opt" data-key="D" data-correct="0">小六度</button>
+      </div>
+
+      <div class="feedback" id="feedback" role="status"></div>
+
+      <button type="button" class="btn-submit" id="btnSubmit" disabled>提交答案</button>
+
+      <p class="banner">
+        正式 App 中：四个选项由<strong>规则随机生成</strong>（非固定题库），本题示例的正确音程为<strong>纯四度</strong>。下一版可接 Web Audio 真实发声。
+      </p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (function(){
+      var body = document.body;
+      document.querySelectorAll('.style-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var s = btn.getAttribute('data-style');
+          body.setAttribute('data-style', s);
+          document.querySelectorAll('.style-btn').forEach(function(b){ b.classList.toggle('active', b === btn); });
+        });
+      });
+
+      var selected = null;
+      var revealed = false;
+      var correctKey = 'B';
+      var opts = document.querySelectorAll('.opt');
+      var fb = document.getElementById('feedback');
+      var submit = document.getElementById('btnSubmit');
+      var toast = document.getElementById('toast');
+      var toastT = null;
+
+      function showToast(msg){
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toastT);
+        toastT = setTimeout(function(){ toast.classList.remove('show'); }, 1600);
+      }
+
+      function resetOptionsVisual(){
+        opts.forEach(function(o){
+          o.classList.remove('selected','correct','wrong');
+          o.disabled = false;
+        });
+        fb.className = 'feedback';
+        fb.textContent = '';
+        selected = null;
+        revealed = false;
+        submit.disabled = true;
+      }
+
+      document.getElementById('btnPlay').addEventListener('click', function(){
+        showToast('（原型）此处将自动依次播放两个音');
+      });
+      document.getElementById('btnReplay').addEventListener('click', function(){
+        showToast('（原型）重复播放同一组双音');
+      });
+      document.getElementById('btnBack').addEventListener('click', function(){
+        showToast('（原型）返回训练主流程 / 首页');
+      });
+
+      opts.forEach(function(o){
+        o.addEventListener('click', function(){
+          if (revealed) return;
+          opts.forEach(function(x){ x.classList.remove('selected'); });
+          o.classList.add('selected');
+          selected = o.getAttribute('data-key');
+          submit.disabled = false;
+        });
+      });
+
+      submit.addEventListener('click', function(){
+        if (!selected || revealed) return;
+        revealed = true;
+        var ok = selected === correctKey;
+        opts.forEach(function(o){
+          o.disabled = true;
+          var k = o.getAttribute('data-key');
+          if (k === correctKey) o.classList.add('correct');
+          else if (k === selected) o.classList.add('wrong');
+        });
+        fb.className = 'feedback show ' + (ok ? 'ok' : 'bad');
+        fb.textContent = ok
+          ? '回答正确：纯四度。'
+          : '回答错误：正确答案是 B · 纯四度。';
+      });
+
+      document.querySelector('.nav-back').addEventListener('dblclick', resetOptionsVisual);
+    })();
+  </script>
+</body>
+</html>
