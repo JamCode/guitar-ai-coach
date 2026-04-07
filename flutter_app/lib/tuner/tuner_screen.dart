@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../ear/interval_ear_screen.dart';
 import 'note_math.dart';
 import 'tuner_controller.dart';
 
@@ -44,19 +43,6 @@ class _TunerScreenState extends State<TunerScreen> {
       appBar: AppBar(
         title: const Text('调音器'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            tooltip: '音程练耳',
-            icon: const Icon(Icons.hearing_rounded),
-            onPressed: () {
-              Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => const IntervalEarScreen(),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

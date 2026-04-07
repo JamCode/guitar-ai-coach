@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'audio/init_guitar_audio.dart';
 import 'app_theme.dart';
-import 'tuner/tuner_screen.dart';
+import 'shell/home_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +20,7 @@ class GuitarHelperApp extends StatelessWidget {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,
-        home: const TunerScreen(),
+        home: const HomeShell(),
       );
   }
 }
