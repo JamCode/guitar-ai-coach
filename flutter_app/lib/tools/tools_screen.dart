@@ -11,9 +11,33 @@ class ToolsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Card(
+          color: scheme.primaryContainer.withValues(alpha: 0.35),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded, color: scheme.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '更多能力在底部导航：点「练耳」进入和弦听辨、和弦进行；'
+                    '「我的谱」可导入文件；右上角可配 API 后使用和弦查询。',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         ListTile(
           leading: const Icon(Icons.graphic_eq_rounded),
           title: const Text('调音器'),
