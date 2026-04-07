@@ -27,7 +27,7 @@ class ToolsScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '更多能力在底部导航：点「练耳」进入和弦听辨、和弦进行；'
-                    '「我的谱」可导入文件；右上角可配 API 后使用和弦查询。',
+                    '「我的谱」可导入文件；和弦字典默认离线，联网为可选。',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: scheme.onPrimaryContainer,
                         ),
@@ -50,8 +50,8 @@ class ToolsScreen extends StatelessWidget {
         ),
         ListTile(
           leading: const Icon(Icons.piano_rounded),
-          title: const Text('和弦查询'),
-          subtitle: const Text('对接后端多套按法说明'),
+          title: const Text('和弦字典'),
+          subtitle: const Text('离线可查构成音与常见把位；可选联网更多按法'),
           onTap: () {
             Navigator.of(context).push<void>(
               MaterialPageRoute<void>(builder: (_) => const ChordLookupScreen()),

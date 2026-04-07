@@ -2,17 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../settings/api_base_url_store.dart';
 import '../settings/api_settings_screen.dart';
 import 'chord_api_repository.dart';
 import 'chord_models.dart';
 import 'chord_remote_repository.dart';
 import 'chord_symbol.dart';
+import 'chord_transpose_local.dart';
+import 'offline_chord_builder.dart';
 
-/// 和弦查询：下拉拼符号 → 变调预览 → 请求多套按法（骨架阶段无试听）。
+/// 和弦字典：**默认完全离线**查构成音与常见把位；可选联网拉取多套 AI 按法。
 class ChordLookupScreen extends StatefulWidget {
   const ChordLookupScreen({super.key, this.repository});
 
-  /// 测试注入；为 `null` 时使用默认 [ChordApiRepository]。
+  /// 测试注入；为 `null` 时使用默认 [ChordApiRepository]（仅联网按钮使用）。
   final ChordRemoteRepository? repository;
 
   @override
@@ -30,13 +33,14 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
   String _selectedLevel = '中级';
 
   String _displaySymbol = '';
-  bool _transposeBusy = false;
+  var _hasApiBase = false;
 
-  bool _loading = false;
+  bool _loadingOnline = false;
   bool _recalibrating = false;
   String? _errorText;
   ChordExplainMultiPayload? _result;
   String? _disclaimer;
+  var _lastResultFromOnline = false;
 
   @override
   void initState() {
@@ -47,7 +51,14 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
       _repo = ChordApiRepository();
       _ownsApiRepo = true;
     }
-    unawaited(_refreshDisplaySymbol());
+    _refreshDisplaySymbol();
+    unawaited(_refreshApiFlag());
+  }
+
+  Future<void> _refreshApiFlag() async {
+    final u = await ApiBaseUrlStore().load();
+    if (!mounted) return;
+    setState(() => _hasApiBase = u.isNotEmpty);
   }
 
   @override
@@ -65,7 +76,7 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
         bassId: _selBass,
       );
 
-  Future<void> _refreshDisplaySymbol() async {
+  void _refreshDisplaySymbol() {
     final sym = _builtSymbol.trim();
     if (sym.isEmpty) {
       setState(() => _displaySymbol = '');
@@ -75,20 +86,37 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
       setState(() => _displaySymbol = sym);
       return;
     }
-    setState(() => _transposeBusy = true);
-    final out = await _repo.transposeChord(
-      symbol: sym,
-      fromKey: ChordSelectCatalog.referenceKey,
-      toKey: _selectedKey,
+    final t = ChordTransposeLocal.transposeChordSymbol(
+      sym,
+      ChordSelectCatalog.referenceKey,
+      _selectedKey,
     );
-    if (!mounted) return;
+    setState(() => _displaySymbol = t);
+  }
+
+  void _fetchOffline() {
+    final sym = _displaySymbol.trim();
+    if (sym.isEmpty) {
+      setState(() {
+        _errorText = '请先选择和弦';
+        _result = null;
+        _disclaimer = null;
+        _lastResultFromOnline = false;
+      });
+      return;
+    }
+    final payload = buildOfflineChordPayload(displaySymbol: sym);
     setState(() {
-      _transposeBusy = false;
-      _displaySymbol = (out != null && out.isNotEmpty) ? out : sym;
+      _errorText = payload == null ? '无法从符号解析和弦（请检查根音与性质）' : null;
+      _result = payload;
+      _disclaimer = payload?.disclaimer;
+      _lastResultFromOnline = false;
+      _loadingOnline = false;
+      _recalibrating = false;
     });
   }
 
-  Future<void> _fetch({required bool force}) async {
+  Future<void> _fetchOnline({required bool force}) async {
     final sym = _displaySymbol.trim();
     if (sym.isEmpty) {
       setState(() {
@@ -103,7 +131,7 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
       if (force) {
         _recalibrating = true;
       } else {
-        _loading = true;
+        _loadingOnline = true;
       }
     });
     try {
@@ -117,25 +145,22 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
       setState(() {
         _result = data;
         _disclaimer = data.disclaimer.isNotEmpty ? data.disclaimer : null;
-        _loading = false;
+        _loadingOnline = false;
         _recalibrating = false;
+        _lastResultFromOnline = true;
       });
     } on ChordApiException catch (e) {
       if (!mounted) return;
       setState(() {
         _errorText = e.message;
-        _result = null;
-        _disclaimer = null;
-        _loading = false;
+        _loadingOnline = false;
         _recalibrating = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _errorText = '$e';
-        _result = null;
-        _disclaimer = null;
-        _loading = false;
+        _loadingOnline = false;
         _recalibrating = false;
       });
     }
@@ -148,17 +173,18 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('和弦查询'),
+        title: const Text('和弦字典'),
         actions: [
           IconButton(
             tooltip: 'API 设置',
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              Navigator.of(context).push<void>(
+            onPressed: () async {
+              await Navigator.of(context).push<void>(
                 MaterialPageRoute<void>(
                   builder: (_) => const ApiSettingsScreen(),
                 ),
               );
+              await _refreshApiFlag();
             },
           ),
         ],
@@ -167,7 +193,8 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '用下拉选择和弦，与 Web 和弦字典逻辑一致；需配置可访问的后端基址。',
+            '无需网络：先点「离线查和弦」看构成音与常见把位。'
+            ' 若已配置 API，可用联网查询获取更多按法。',
             style: theme.textTheme.bodySmall?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -187,19 +214,9 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  if (_transposeBusy)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        '变调预览计算中…',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
                   const SizedBox(height: 8),
                   Text(
-                    'C 调记谱：${_builtSymbol.isEmpty ? '—' : _builtSymbol} · 查看调：$_selectedKey · 难度：$_selectedLevel',
+                    'C 调记谱：${_builtSymbol.isEmpty ? '—' : _builtSymbol} · 查看调：$_selectedKey · 难度（仅联网）：$_selectedLevel',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -216,7 +233,7 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
             onChanged: (v) {
               if (v == null) return;
               setState(() => _selRoot = v);
-              unawaited(_refreshDisplaySymbol());
+              _refreshDisplaySymbol();
             },
           ),
           _LabeledDropdown<String>(
@@ -229,7 +246,7 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
             onChanged: (v) {
               if (v == null) return;
               setState(() => _selQual = v);
-              unawaited(_refreshDisplaySymbol());
+              _refreshDisplaySymbol();
             },
           ),
           _LabeledDropdown<String>(
@@ -242,21 +259,21 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
             onChanged: (v) {
               if (v == null) return;
               setState(() => _selBass = v);
-              unawaited(_refreshDisplaySymbol());
+              _refreshDisplaySymbol();
             },
           ),
           _LabeledDropdown<String>(
-            label: '目标调',
+            label: '目标调（变调预览）',
             value: _selectedKey,
             items: ChordSelectCatalog.keys,
             onChanged: (v) {
               if (v == null) return;
               setState(() => _selectedKey = v);
-              unawaited(_refreshDisplaySymbol());
+              _refreshDisplaySymbol();
             },
           ),
           _LabeledDropdown<String>(
-            label: '难度',
+            label: '难度（仅联网查询）',
             value: _selectedLevel,
             items: ChordSelectCatalog.levels,
             onChanged: (v) {
@@ -266,15 +283,26 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
           ),
           const SizedBox(height: 16),
           FilledButton(
-            key: const Key('chord_lookup_submit'),
-            onPressed: (_loading || _recalibrating) ? null : () => _fetch(force: false),
-            child: Text(_loading ? '加载中…' : '查看多种按法'),
+            key: const Key('chord_lookup_offline'),
+            onPressed: _loadingOnline || _recalibrating ? null : _fetchOffline,
+            child: const Text('离线查和弦'),
           ),
-          if (_result != null) ...[
+          const SizedBox(height: 8),
+          OutlinedButton(
+            key: const Key('chord_lookup_online'),
+            onPressed: (!_hasApiBase || _loadingOnline || _recalibrating)
+                ? null
+                : () => unawaited(_fetchOnline(force: false)),
+            child: Text(_loadingOnline ? '联网加载中…' : '联网查询更多按法'),
+          ),
+          if (_lastResultFromOnline && _result != null) ...[
             const SizedBox(height: 8),
             OutlinedButton(
-              onPressed: (_loading || _recalibrating) ? null : () => _fetch(force: true),
-              child: Text(_recalibrating ? '重新生成中…' : '指法不理想？让服务端重算'),
+              key: const Key('chord_lookup_recalibrate'),
+              onPressed: _loadingOnline || _recalibrating
+                  ? null
+                  : () => unawaited(_fetchOnline(force: true)),
+              child: Text(_recalibrating ? '重新生成中…' : '联网重新生成按法'),
             ),
           ],
           if (_errorText != null) ...[
@@ -375,7 +403,7 @@ class _ResultSection extends StatelessWidget {
           Text(s.notesExplainZh),
         ],
         const SizedBox(height: 16),
-        Text('多种按法', style: theme.textTheme.titleSmall),
+        Text('按法参考', style: theme.textTheme.titleSmall),
         const SizedBox(height: 8),
         for (var i = 0; i < payload.voicings.length; i++)
           Card(

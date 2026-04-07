@@ -40,7 +40,7 @@ void main() {
     expect(find.textContaining('听两个音'), findsOneWidget);
   });
 
-  testWidgets('和弦查询在 Fake 数据下展示按法', (WidgetTester tester) async {
+  testWidgets('和弦字典离线查询展示按法', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -94,13 +94,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle(const Duration(milliseconds: 16));
     expect(find.text('C'), findsWidgets);
-    await tester.ensureVisible(find.byKey(const Key('chord_lookup_submit')));
-    await tester.tap(find.byKey(const Key('chord_lookup_submit')));
+    await tester.ensureVisible(find.byKey(const Key('chord_lookup_offline')));
+    await tester.tap(find.byKey(const Key('chord_lookup_offline')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pumpAndSettle(const Duration(milliseconds: 16));
-    expect(find.text('多种按法'), findsOneWidget);
-    expect(find.text('开放'), findsOneWidget);
+    expect(find.text('按法参考'), findsOneWidget);
+    expect(find.textContaining('常用把位'), findsWidgets);
     expect(find.textContaining('6→1 弦'), findsWidgets);
   });
 
