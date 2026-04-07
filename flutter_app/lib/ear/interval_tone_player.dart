@@ -1,21 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 
+import '../audio/guitar_chromatic_path.dart';
+
 /// 真实吉他采样播放（来自 `tonejs-instrument-guitar-acoustic-mp3`，MIT 授权）。
 /// 采样覆盖 D2–D5（MIDI 38–74），每个半音一个 mp3。
 class IntervalTonePlayer {
-  static const _noteNames = [
-    'C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B',
-  ];
-
   final Map<int, AudioSource> _cache = {};
   bool _busy = false;
 
-  String _assetPath(int midi) {
-    final pitchClass = midi % 12;
-    final octave = midi ~/ 12 - 1;
-    return 'assets/audio/guitar_chromatic/${_noteNames[pitchClass]}$octave.mp3';
-  }
+  String _assetPath(int midi) => guitarChromaticAssetPath(midi);
 
   Future<AudioSource> _load(int midi) async {
     if (_cache.containsKey(midi)) return _cache[midi]!;

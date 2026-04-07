@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'ear_mcq_session_screen.dart';
 import 'interval_ear_screen.dart';
 
-/// 练耳 Tab：音程练习入口 + 一期 ABC 能力占位说明。
+/// 练耳 Tab：自由练习式入口（音程 / 和弦性质 / 和弦进行）+ C 占位。
 class EarHomeScreen extends StatelessWidget {
   const EarHomeScreen({super.key});
 
@@ -12,11 +13,19 @@ class EarHomeScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Text(
+          '自由练习',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurfaceVariant,
+              ),
+        ),
+        const SizedBox(height: 10),
         Card(
           child: ListTile(
             leading: Icon(Icons.play_circle_outline_rounded, color: scheme.primary),
             title: const Text('音程识别'),
-            subtitle: const Text('两音上行、四选一（已实现）'),
+            subtitle: const Text('两音上行、四选一'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.of(context).push<void>(
@@ -27,21 +36,52 @@ class EarHomeScreen extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(height: 12),
-        _StubCard(
-          title: 'A · 单和弦听辨',
-          body:
-              '大三 / 小三 / 属七 听辨与干扰项策略，见仓库 '
-              '`requirements/练耳训练一期-ABC-需求.md`。'
-              ' 题库种子：`requirements/练耳题库-一期种子.json`（本期未接入 App）。',
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.piano, color: scheme.primary),
+            title: const Text('和弦听辨'),
+            subtitle: const Text('大三 / 小三 / 属七 · 题库离线 · 吉他采样合成'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const EarMcqSessionScreen(
+                    title: '和弦听辨',
+                    bank: 'A',
+                    totalQuestions: 10,
+                  ),
+                ),
+              );
+            },
+          ),
         ),
-        _StubCard(
-          title: 'B · 和弦进行听辨',
-          body: '2～4 个和弦的常见进行，流行场景优先；与 Web 练耳一期范围一致，后续迭代接入。',
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.queue_music_rounded, color: scheme.primary),
+            title: const Text('和弦进行'),
+            subtitle: const Text('常见流行进行 · 四选一'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const EarMcqSessionScreen(
+                    title: '和弦进行',
+                    bank: 'B',
+                    totalQuestions: 10,
+                  ),
+                ),
+              );
+            },
+          ),
         ),
+        const SizedBox(height: 20),
         _StubCard(
           title: 'C · 错题本与每日 10 题',
-          body: '个性化复习与连续打卡指标，需本地/服务端学习记录表，本期仅占位。',
+          body:
+              '个性化复习与连续打卡；依赖本地学习记录。需求见 '
+              '`requirements/练耳训练一期-ABC-需求.md`。',
         ),
       ],
     );

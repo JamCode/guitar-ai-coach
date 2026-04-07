@@ -71,6 +71,7 @@ flutter:
   assets:
     - assets/audio/tone_guitar_reference/
     - assets/audio/guitar_chromatic/
+    - assets/data/ear_seed_v1.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:
