@@ -27,7 +27,7 @@ class ToolsScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '更多能力在底部导航：点「练耳」进入和弦听辨、和弦进行；'
-                    '「我的谱」可导入文件；和弦字典默认离线，联网为可选。',
+                    '「我的谱」可从相册或拍照添加多页图片；和弦字典默认离线，联网为可选。',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: scheme.onPrimaryContainer,
                         ),
@@ -71,7 +71,7 @@ class ToolsScreen extends StatelessWidget {
         ListTile(
           leading: const Icon(Icons.grid_on_outlined),
           title: const Text('和弦表'),
-          subtitle: const Text('常用三和弦与七和弦速查'),
+          subtitle: const Text('初/中/高分段 · 本地指法图速查'),
           onTap: () {
             Navigator.of(context).push<void>(
               MaterialPageRoute<void>(builder: (_) => const ChordChartScreen()),

@@ -1,14 +1,15 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
-import 'package:uuid/uuid.dart';
+import 'package:image_picker/image_picker.dart';
 
+import 'add_sheet_source_sheet.dart';
+import 'multi_capture_screen.dart';
+import 'sheet_draft_screen.dart';
 import 'sheet_entry.dart';
 import 'sheet_library_store.dart';
 
-/// 本地谱子列表：从系统文件选择器导入副本，支持删除；预览为占位。
+/// 本地谱子列表：相册多选或连拍导入，一谱多页；支持删除；详情预览为占位。
 class SheetLibraryScreen extends StatefulWidget {
   const SheetLibraryScreen({super.key});
 
@@ -49,61 +50,47 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
     }
   }
 
-  /// 由 [HomeShell] 上 FAB 调用。
+  /// 由 [HomeShell] 上 FAB 调用：先选拍照/相册，再进入取名与保存。
   Future<void> pickAndAddSheet() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const [
-          'pdf',
-          'png',
-          'jpg',
-          'jpeg',
-          'webp',
-          'txt',
-          'gp',
-          'gpx',
-        ],
-        withData: false,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final plat = result.files.single;
-      final path = plat.path;
-      if (path == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('无法读取该文件路径')),
-        );
-        return;
-      }
-      final source = File(path);
-      if (!await source.exists()) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('文件不存在')),
-        );
-        return;
-      }
-      final ext = p.extension(plat.name).toLowerCase();
-      final id = const Uuid().v4();
-      final storedName = '$id$ext';
-      final displayName = plat.name;
-      await _store.importFile(
-        source: source,
-        displayName: displayName,
-        id: id,
-        storedFileName: storedName,
-      );
+    if (!mounted) return;
+    final source = await showSheetImageSourceSheet(context);
+    if (!mounted || source == null) return;
+
+    List<XFile> batch = [];
+    if (source == SheetImageSource.gallery) {
+      final picked = await ImagePicker().pickMultiImage(imageQuality: 85);
       if (!mounted) return;
+      if (picked.isEmpty) return;
+      batch = picked;
+    } else {
+      batch = await Navigator.push<List<XFile>>(
+            context,
+            MaterialPageRoute<List<XFile>>(
+              fullscreenDialog: true,
+              builder: (_) => const MultiCaptureScreen(),
+            ),
+          ) ??
+          [];
+      if (!mounted) return;
+      if (batch.isEmpty) return;
+    }
+
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(
+        fullscreenDialog: true,
+        builder: (_) => SheetDraftScreen(
+          initialImages: batch,
+          store: _store,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (ok == true) {
       await _reload();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已添加：$displayName')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('导入失败：$e')),
+        const SnackBar(content: Text('已保存到「我的谱」')),
       );
     }
   }
@@ -114,7 +101,7 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(e.displayName),
-        content: const Text('谱面预览开发中。文件已保存在本应用目录，可在后续版本查看。'),
+        content: Text('共 ${e.pageCount} 页。谱面预览开发中；文件已保存在本应用目录。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -144,8 +131,8 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            '暂无谱子。点击右下角 + 从本机选择 PDF / 图片 等文件；'
-            ' 会复制到应用沙箱，避免系统授权过期导致打不开。',
+            '暂无谱子。点击右下角 +：可选择拍照（连拍多页）或从相册一次选多张；'
+            '再为谱子起名后保存。文件会复制到应用沙箱。',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -160,6 +147,8 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
       itemBuilder: (context, i) {
         final e = _entries[i];
         final date = DateTime.fromMillisecondsSinceEpoch(e.addedAtMs);
+        final dateStr =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
         return Dismissible(
           key: ValueKey(e.id),
           direction: DismissDirection.endToStart,
@@ -172,11 +161,9 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
           onDismissed: (_) => _onDelete(e),
           child: Card(
             child: ListTile(
-              leading: const Icon(Icons.insert_drive_file_outlined),
+              leading: _SheetEntryThumb(entry: e, store: _store),
               title: Text(e.displayName),
-              subtitle: Text(
-                '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-              ),
+              subtitle: Text('${e.pageCount} 张 · $dateStr'),
               onTap: () => _onOpen(e),
               trailing: IconButton(
                 icon: const Icon(Icons.delete_outline),
@@ -187,6 +174,84 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// 列表封面：首张仍存在的页图，否则占位图标。
+class _SheetEntryThumb extends StatefulWidget {
+  const _SheetEntryThumb({required this.entry, required this.store});
+
+  final SheetEntry entry;
+  final SheetLibraryStore store;
+
+  @override
+  State<_SheetEntryThumb> createState() => _SheetEntryThumbState();
+}
+
+class _SheetEntryThumbState extends State<_SheetEntryThumb> {
+  File? _file;
+  var _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SheetEntryThumb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.entry.id != widget.entry.id) {
+      _file = null;
+      _done = false;
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final f = await widget.store.resolveFirstStoredFile(widget.entry);
+    if (!mounted) return;
+    setState(() {
+      _file = f;
+      _done = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const size = 56.0;
+    if (!_done) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.outline),
+          ),
+        ),
+      );
+    }
+    if (_file == null) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Icon(Icons.insert_photo_outlined, color: theme.colorScheme.outline),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.file(
+        _file!,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            Icon(Icons.insert_photo_outlined, color: theme.colorScheme.outline),
+      ),
     );
   }
 }
