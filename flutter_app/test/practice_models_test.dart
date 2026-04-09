@@ -38,6 +38,7 @@ void main() {
     ];
 
     expect(computeTodayMinutes(sessions, now), 5);
+    expect(computeTodaySessions(sessions, now), 1);
   });
 
   test('computeStreakDays 正确计算连续打卡', () {

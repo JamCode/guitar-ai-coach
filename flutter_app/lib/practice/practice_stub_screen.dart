@@ -6,7 +6,10 @@ import 'practice_models.dart';
 
 /// 练习模块首页：提供任务入口、今日进度与历史记录。
 class PracticeStubScreen extends StatefulWidget {
-  const PracticeStubScreen({super.key});
+  const PracticeStubScreen({super.key, this.onOpenMySheets});
+
+  /// 打开「我的谱」页面，由外层壳统一路由。
+  final Future<void> Function()? onOpenMySheets;
 
   @override
   State<PracticeStubScreen> createState() => _PracticeStubScreenState();
@@ -15,7 +18,11 @@ class PracticeStubScreen extends StatefulWidget {
 class _PracticeStubScreenState extends State<PracticeStubScreen> {
   final _store = PracticeLocalStore();
   var _loading = true;
-  PracticeSummary _summary = const PracticeSummary(todayMinutes: 0, streakDays: 0);
+  PracticeSummary _summary = const PracticeSummary(
+    todayMinutes: 0,
+    todaySessions: 0,
+    streakDays: 0,
+  );
   List<PracticeSession> _sessions = <PracticeSession>[];
 
   static const _dailyGoalMinutes = 20;
@@ -45,10 +52,7 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
   Future<void> _openPracticeTask(PracticeTask task) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => _PracticeSessionScreen(
-          task: task,
-          store: _store,
-        ),
+        builder: (_) => _PracticeSessionScreen(task: task, store: _store),
       ),
     );
     if (!mounted) {
@@ -75,13 +79,20 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('今日目标：$_dailyGoalMinutes 分钟', style: theme.textTheme.titleMedium),
+                  Text(
+                    '今日目标：$_dailyGoalMinutes 分钟',
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text('已完成：${_summary.todayMinutes} 分钟'),
+                  Text('已练习：${_summary.todaySessions} 次'),
                   Text('连续打卡：${_summary.streakDays} 天'),
                   const SizedBox(height: 12),
                   LinearProgressIndicator(
-                    value: (_summary.todayMinutes / _dailyGoalMinutes).clamp(0, 1),
+                    value: (_summary.todayMinutes / _dailyGoalMinutes).clamp(
+                      0,
+                      1,
+                    ),
                   ),
                 ],
               ),
@@ -94,7 +105,9 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
             return Card(
               child: ListTile(
                 title: Text(task.name),
-                subtitle: Text('${task.targetMinutes} 分钟 · ${task.description}'),
+                subtitle: Text(
+                  '${task.targetMinutes} 分钟 · ${task.description}',
+                ),
                 trailing: FilledButton(
                   key: Key('practice_start_${task.id}'),
                   onPressed: () => _openPracticeTask(task),
@@ -103,6 +116,15 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
               ),
             );
           }),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              title: const Text('我的谱'),
+              subtitle: const Text('在曲谱中练习并累计时长与次数'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: widget.onOpenMySheets,
+            ),
+          ),
           const SizedBox(height: 8),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -136,7 +158,9 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
               (session) => Card(
                 child: ListTile(
                   title: Text(session.taskName),
-                  subtitle: Text('${_formatDate(session.endedAt)} · ${_formatDuration(session.durationSeconds)}'),
+                  subtitle: Text(
+                    '${_formatDate(session.endedAt)} · ${_formatDuration(session.durationSeconds)}',
+                  ),
                   trailing: Text('难度 ${session.difficulty}/5'),
                 ),
               ),
@@ -148,10 +172,7 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
 }
 
 class _PracticeSessionScreen extends StatefulWidget {
-  const _PracticeSessionScreen({
-    required this.task,
-    required this.store,
-  });
+  const _PracticeSessionScreen({required this.task, required this.store});
 
   final PracticeTask task;
   final PracticeLocalStore store;
@@ -198,7 +219,9 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
 
   Future<void> _finish() async {
     if (_elapsed == Duration.zero) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('先开始练习再结束哦')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('先开始练习再结束哦')));
       return;
     }
     _pause();
@@ -221,7 +244,9 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('记录已保存')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('记录已保存')));
     Navigator.of(context).pop();
   }
 
@@ -249,9 +274,7 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
         return leave == true;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.task.name),
-        ),
+        appBar: AppBar(title: Text(widget.task.name)),
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -342,9 +365,7 @@ class _FinishDialogState extends State<_FinishDialog> {
             TextField(
               key: const Key('practice_note_input'),
               controller: widget.noteController,
-              decoration: const InputDecoration(
-                labelText: '备注（可选）',
-              ),
+              decoration: const InputDecoration(labelText: '备注（可选）'),
             ),
           ],
         ),

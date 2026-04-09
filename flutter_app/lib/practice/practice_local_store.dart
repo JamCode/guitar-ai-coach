@@ -5,9 +5,7 @@ import 'practice_models.dart';
 
 /// 本地练习存储：一期仅依赖 SharedPreferences，无后端交互。
 class PracticeLocalStore {
-  PracticeLocalStore({
-    Uuid? uuid,
-  }) : _uuid = uuid ?? const Uuid();
+  PracticeLocalStore({Uuid? uuid}) : _uuid = uuid ?? const Uuid();
 
   static const _sessionsKey = 'practice_sessions_v1';
   final Uuid _uuid;
@@ -59,6 +57,7 @@ class PracticeLocalStore {
     final sessions = await loadSessions();
     return PracticeSummary(
       todayMinutes: computeTodayMinutes(sessions, current),
+      todaySessions: computeTodaySessions(sessions, current),
       streakDays: computeStreakDays(sessions, current),
     );
   }

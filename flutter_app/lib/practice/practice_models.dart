@@ -73,10 +73,12 @@ class PracticeSession {
 class PracticeSummary {
   const PracticeSummary({
     required this.todayMinutes,
+    required this.todaySessions,
     required this.streakDays,
   });
 
   final int todayMinutes;
+  final int todaySessions;
   final int streakDays;
 }
 
@@ -124,6 +126,17 @@ int computeTodayMinutes(List<PracticeSession> sessions, DateTime now) {
     }
   }
   return seconds ~/ 60;
+}
+
+/// 计算今日完成练习的次数。
+int computeTodaySessions(List<PracticeSession> sessions, DateTime now) {
+  var count = 0;
+  for (final session in sessions) {
+    if (_isSameDay(session.endedAt, now) && session.completed) {
+      count += 1;
+    }
+  }
+  return count;
 }
 
 /// 计算连续打卡天数：自然日内有至少一次 completed 即记 1 天。

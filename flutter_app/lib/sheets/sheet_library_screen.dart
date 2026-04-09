@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../practice/practice_local_store.dart';
+import '../practice/practice_models.dart';
 import 'add_sheet_source_sheet.dart';
 import 'multi_capture_screen.dart';
 import 'sheet_draft_screen.dart';
@@ -19,9 +21,17 @@ class SheetLibraryScreen extends StatefulWidget {
 
 class SheetLibraryScreenState extends State<SheetLibraryScreen> {
   final _store = SheetLibraryStore();
+  final _practiceStore = PracticeLocalStore();
   var _loading = true;
   List<SheetEntry> _entries = [];
   String? _error;
+  static const _sheetPracticeTask = PracticeTask(
+    id: 'sheet-practice',
+    name: '谱面跟练',
+    targetMinutes: 10,
+    description: '在我的谱中跟弹与复盘。',
+  );
+  static const _minPracticeSeconds = 30;
 
   @override
   void initState() {
@@ -63,7 +73,8 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
       if (picked.isEmpty) return;
       batch = picked;
     } else {
-      batch = await Navigator.push<List<XFile>>(
+      batch =
+          await Navigator.push<List<XFile>>(
             context,
             MaterialPageRoute<List<XFile>>(
               fullscreenDialog: true,
@@ -79,24 +90,22 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
       context,
       MaterialPageRoute<bool>(
         fullscreenDialog: true,
-        builder: (_) => SheetDraftScreen(
-          initialImages: batch,
-          store: _store,
-        ),
+        builder: (_) => SheetDraftScreen(initialImages: batch, store: _store),
       ),
     );
     if (!mounted) return;
     if (ok == true) {
       await _reload();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已保存到「我的谱」')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已保存到「我的谱」')));
     }
   }
 
   Future<void> _onOpen(SheetEntry e) async {
     if (!mounted) return;
+    final startedAt = DateTime.now();
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -110,6 +119,19 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
         ],
       ),
     );
+    final endedAt = DateTime.now();
+    final durationSeconds = endedAt.difference(startedAt).inSeconds;
+    if (durationSeconds >= _minPracticeSeconds) {
+      await _practiceStore.saveSession(
+        task: _sheetPracticeTask,
+        startedAt: startedAt,
+        endedAt: endedAt,
+        durationSeconds: durationSeconds,
+        completed: true,
+        difficulty: 3,
+        note: '曲谱：${e.displayName}',
+      );
+    }
   }
 
   Future<void> _onDelete(SheetEntry e) async {
@@ -135,8 +157,8 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
             '再为谱子起名后保存。文件会复制到应用沙箱。',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       );
@@ -156,7 +178,10 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
             color: Theme.of(context).colorScheme.error,
-            child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onError),
+            child: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.onError,
+            ),
           ),
           onDismissed: (_) => _onDelete(e),
           child: Card(
@@ -230,7 +255,10 @@ class _SheetEntryThumbState extends State<_SheetEntryThumb> {
           child: SizedBox(
             width: 24,
             height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.outline),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: theme.colorScheme.outline,
+            ),
           ),
         ),
       );
@@ -239,7 +267,10 @@ class _SheetEntryThumbState extends State<_SheetEntryThumb> {
       return SizedBox(
         width: size,
         height: size,
-        child: Icon(Icons.insert_photo_outlined, color: theme.colorScheme.outline),
+        child: Icon(
+          Icons.insert_photo_outlined,
+          color: theme.colorScheme.outline,
+        ),
       );
     }
     return ClipRRect(
