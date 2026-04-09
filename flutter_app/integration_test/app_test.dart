@@ -28,4 +28,24 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.textContaining('听两个音'), findsOneWidget);
   });
+
+  testWidgets('练习 Tab 展示今日任务入口', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.light,
+        home: const HomeShell(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('今日任务'), findsOneWidget);
+    expect(find.byKey(const Key('practice_start_chord-switch')), findsOneWidget);
+  });
 }
