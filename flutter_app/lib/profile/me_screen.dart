@@ -36,33 +36,10 @@ class _MeScreenState extends State<MeScreen> {
   }
 
   Future<void> _editNickname() async {
-    final controller = TextEditingController(text: _profile.nickname);
     final next = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('设置昵称'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '请输入昵称',
-            border: OutlineInputBorder(),
-          ),
-          maxLength: 20,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+      builder: (_) => _NicknameDialog(initialValue: _profile.nickname),
     );
-    controller.dispose();
     if (next == null) {
       return;
     }
@@ -137,6 +114,57 @@ class _MeScreenState extends State<MeScreen> {
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NicknameDialog extends StatefulWidget {
+  const _NicknameDialog({required this.initialValue});
+
+  final String initialValue;
+
+  @override
+  State<_NicknameDialog> createState() => _NicknameDialogState();
+}
+
+class _NicknameDialogState extends State<_NicknameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('设置昵称'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: '请输入昵称',
+          border: OutlineInputBorder(),
+        ),
+        maxLength: 20,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('保存'),
         ),
       ],
     );
