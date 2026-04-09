@@ -1,23 +1,96 @@
 import 'package:flutter/material.dart';
 
+import 'account_security_screen.dart';
+import 'help_feedback_screen.dart';
+import 'profile_store.dart';
 import '../settings/api_settings_screen.dart';
 
 /// 「我的」页面：承载个人资料与设置入口。
-class MeScreen extends StatelessWidget {
+class MeScreen extends StatefulWidget {
   const MeScreen({super.key});
 
   @override
+  State<MeScreen> createState() => _MeScreenState();
+}
+
+class _MeScreenState extends State<MeScreen> {
+  final _store = ProfileStore();
+  var _loading = true;
+  UserProfile _profile = const UserProfile(nickname: '');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final profile = await _store.loadOrCreate();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _profile = profile;
+      _loading = false;
+    });
+  }
+
+  Future<void> _editNickname() async {
+    final controller = TextEditingController(text: _profile.nickname);
+    final next = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('设置昵称'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '请输入昵称',
+            border: OutlineInputBorder(),
+          ),
+          maxLength: 20,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (next == null) {
+      return;
+    }
+    final saved = await _store.saveNickname(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _profile = saved);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('昵称已更新')));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Card(
           child: ListTile(
             leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-            title: const Text('王小吉'),
+            title: Text(_profile.nickname),
             subtitle: const Text('Lv.6 · 连续练习 12 天'),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {},
+            onTap: _editNickname,
           ),
         ),
         const SizedBox(height: 12),
@@ -37,16 +110,30 @@ class MeScreen extends StatelessWidget {
                 },
               ),
               const Divider(height: 1),
-              const ListTile(
-                leading: Icon(Icons.verified_user_outlined),
-                title: Text('账号与安全'),
-                trailing: Icon(Icons.chevron_right_rounded),
+              ListTile(
+                leading: const Icon(Icons.verified_user_outlined),
+                title: const Text('账号与安全'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AccountSecurityScreen(),
+                    ),
+                  );
+                },
               ),
               const Divider(height: 1),
-              const ListTile(
+              ListTile(
                 leading: Icon(Icons.help_outline),
                 title: Text('帮助与反馈'),
-                trailing: Icon(Icons.chevron_right_rounded),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HelpFeedbackScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
