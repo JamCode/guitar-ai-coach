@@ -42,5 +42,5 @@ alwaysApply: true
 ## 必查约束
 
 - 不得遗漏数据库 DDL 与初始化数据。
-- schema 变更必须放在 `backend/database/ddl/*.sql`。
+- schema 变更须使用 `backend/database/flyway/sql/V{版本}__描述.sql` 并通过 Flyway 执行；历史基线见 `backend/database/ddl/`（见 `database-ddl-policy.mdc`）。
 - 应用运行时代码不得嵌入 DDL。

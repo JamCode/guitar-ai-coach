@@ -7,6 +7,7 @@ alwaysApply: true
 # 数据库 DDL 规范
 
 - 绝不要在应用运行时代码中嵌入 DDL（`CREATE/ALTER/DROP TABLE`、索引 DDL）。
-- 所有 schema 变更必须放在 `backend/database/ddl/*.sql`。
-- DDL 由 DBA/运维脚本在部署或升级时一次性执行，不可由 API 请求自动触发。
+- **本期起**：所有**新增或变更**的可执行 schema 脚本必须放在 **`backend/database/flyway/sql/`**，文件名为 Flyway 格式 **`V{整数版本}__描述.sql`**（版本全局递增），由部署/运维在升级时通过 **Flyway CLI** 执行，不可由 API 请求自动触发。执行与防重由目标库表 **`flyway_schema_history`** 记录（详见 `backend/database/flyway/README.md`）。
+- **`backend/database/ddl/*.sql`** 仅保留为**历史基线**（新库首次建表与授权顺序见 `backend/database/ddl/README.md`）；**不要**仅在该目录追加本期新变更，以免与 Flyway 双轨导致漏执行或重复执行难以区分。
+- 已合并且已在任意环境由 Flyway 执行过的迁移文件**不得修改其内容**；修正须新增更高版本号的迁移文件。
 - 应用代码只能校验 schema 是否就绪，并提供可执行的错误提示。

@@ -134,7 +134,7 @@ curl -X POST "http://${ECS_HOST}/api/ear/admin/init-seed" \
 
 找歌和弦（第 4 tab）新增四张表 DDL：**`backend/database/ddl/song_chords_tables.sql`**，授权脚本：**`backend/database/ddl/grant_song_chords_tables_guitar_app.sql`**。执行后端前请先执行这两份 SQL，再用 `curl http://${ECS_HOST}/api/song-chords/health` 自检（应返回 `ok: true`）。
 
-原则：**DDL 仅放在 `backend/database/ddl/` 并在升级时一次性执行**；运行时代码不自动建表。
+原则：**历史基线**在 `backend/database/ddl/`（首次建库顺序见该目录 `README.md`）；**本期起新增 schema** 放在 **`backend/database/flyway/sql/V*__*.sql`**，发版时用 **Flyway** `migrate` 执行（见 `backend/database/flyway/README.md`）。运行时代码不自动建表。
 
 可将 DDL 目录同步到服务器便于运维：
 
