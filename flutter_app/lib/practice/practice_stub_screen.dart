@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'chord_practice_selection_screen.dart';
 import 'practice_local_store.dart';
 import 'practice_models.dart';
 
@@ -49,12 +50,25 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
   }
 
   /// 进入单任务练习页，结束后回流刷新首页数据。
+  ///
+  /// 和弦切换任务 (`chord-switch`) 跳转到专用选择页。
   Future<void> _openPracticeTask(PracticeTask task) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => _PracticeSessionScreen(task: task, store: _store),
-      ),
-    );
+    if (task.id == 'chord-switch') {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => ChordPracticeSelectionScreen(
+            task: task,
+            store: _store,
+          ),
+        ),
+      );
+    } else {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => _PracticeSessionScreen(task: task, store: _store),
+        ),
+      );
+    }
     if (!mounted) {
       return;
     }
@@ -252,8 +266,10 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
         final leave = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
@@ -271,7 +287,9 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
             ],
           ),
         );
-        return leave == true;
+        if (leave == true && mounted) {
+          Navigator.of(context).pop();
+        }
       },
       child: Scaffold(
         appBar: AppBar(title: Text(widget.task.name)),

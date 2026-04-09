@@ -27,6 +27,9 @@ class PracticeSession {
     required this.completed,
     required this.difficulty,
     this.note,
+    this.progressionId,
+    this.musicKey,
+    this.complexity,
   });
 
   final String id;
@@ -39,6 +42,11 @@ class PracticeSession {
   final int difficulty;
   final String? note;
 
+  /// 和弦进行练习专属字段（可空，兼容旧数据）。
+  final String? progressionId;
+  final String? musicKey;
+  final String? complexity;
+
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,
@@ -50,6 +58,9 @@ class PracticeSession {
       'completed': completed,
       'difficulty': difficulty,
       'note': note,
+      if (progressionId != null) 'progressionId': progressionId,
+      if (musicKey != null) 'musicKey': musicKey,
+      if (complexity != null) 'complexity': complexity,
     };
   }
 
@@ -65,6 +76,9 @@ class PracticeSession {
       completed: json['completed'] as bool? ?? false,
       difficulty: json['difficulty'] as int? ?? 3,
       note: json['note'] as String?,
+      progressionId: json['progressionId'] as String?,
+      musicKey: json['musicKey'] as String?,
+      complexity: json['complexity'] as String?,
     );
   }
 }
@@ -88,7 +102,7 @@ const List<PracticeTask> kDefaultPracticeTasks = <PracticeTask>[
     id: 'chord-switch',
     name: '和弦切换',
     targetMinutes: 5,
-    description: '目标：C-G-Am-F 平滑切换，注意手指提前预备。',
+    description: '多种进行 · 12 调 · 3 档复杂度',
   ),
   PracticeTask(
     id: 'rhythm-strum',

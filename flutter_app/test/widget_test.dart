@@ -5,21 +5,24 @@ import 'package:guitar_helper/chords/chord_lookup_screen.dart';
 import 'package:guitar_helper/chords/chord_models.dart';
 import 'package:guitar_helper/main.dart';
 import 'package:guitar_helper/shell/home_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_chord_repository.dart';
 
 void main() {
   testWidgets('主导航壳显示四个 Tab', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
         home: const HomeShell(),
       ),
     );
+    await tester.pump();
     expect(find.text('工具'), findsWidgets);
     expect(find.text('练耳'), findsWidgets);
     expect(find.text('练习'), findsWidgets);
-    expect(find.text('我的谱'), findsWidgets);
+    expect(find.text('我的'), findsWidgets);
   });
 
   testWidgets('练耳 Tab 可进入音程识别页', (WidgetTester tester) async {

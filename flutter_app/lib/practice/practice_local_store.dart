@@ -23,6 +23,9 @@ class PracticeLocalStore {
   }
 
   /// 新增会话并持久化。
+  ///
+  /// [progressionId]、[musicKey]、[complexity] 为和弦练习专属字段，
+  /// 其他任务类型可不传。
   Future<void> saveSession({
     required PracticeTask task,
     required DateTime startedAt,
@@ -31,6 +34,9 @@ class PracticeLocalStore {
     required bool completed,
     required int difficulty,
     String? note,
+    String? progressionId,
+    String? musicKey,
+    String? complexity,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final sessions = await loadSessions();
@@ -45,6 +51,9 @@ class PracticeLocalStore {
         completed: completed,
         difficulty: difficulty,
         note: note,
+        progressionId: progressionId,
+        musicKey: musicKey,
+        complexity: complexity,
       ),
     );
     sessions.sort((a, b) => b.endedAt.compareTo(a.endedAt));
