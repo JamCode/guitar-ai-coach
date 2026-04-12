@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import base64
+import binascii
 import json
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -55,6 +57,7 @@ from song_chords_db import (
     song_chords_mysql_enabled,
 )
 from auth_apple import handle_auth_apple_post, handle_auth_health_get
+from sheets_http import handle_sheets_routes
 
 
 DASHSCOPE_ENDPOINT = os.getenv(
@@ -256,6 +259,41 @@ def _request_method(event):
         or event.get("requestContext", {}).get("http", {}).get("method")
         or "GET"
     ).upper()
+
+
+def _merge_request_headers(event):
+    """合并 API 网关 [headers] / [multiValueHeaders] 为单值 dict（保留原始键名大小写混合）。"""
+    h = {}
+    raw = event.get("headers")
+    if isinstance(raw, dict):
+        for k, v in raw.items():
+            if isinstance(v, list) and v:
+                h[k] = v[-1]
+            else:
+                h[k] = v
+    mv = event.get("multiValueHeaders") or event.get("multi_value_headers")
+    if isinstance(mv, dict):
+        for k, v in mv.items():
+            if isinstance(v, list) and v:
+                h[k] = v[-1]
+    return h
+
+
+def _response_binary(status_code, body_bytes, content_type):
+    """返回图片等二进制体（函数计算常用 base64）。"""
+    if not isinstance(body_bytes, (bytes, bytearray)):
+        body_bytes = bytes(body_bytes or b"")
+    return {
+        "statusCode": status_code,
+        "headers": {
+            "Content-Type": content_type,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        },
+        "isBase64Encoded": True,
+        "body": base64.b64encode(body_bytes).decode("ascii"),
+    }
 
 
 def _normalize_ear_note_mode(mode):
@@ -764,9 +802,29 @@ def _explain_chord_multi_with_llm(symbol, key, level, *, recalibrate=False):
 
 def handler(event, context):
     event = _normalize_event(event)
+    event["headers"] = _merge_request_headers(event)
+    if event.get("isBase64Encoded"):
+        try:
+            raw_b = event.get("body") or ""
+            event["bodyRaw"] = base64.b64decode(raw_b) if isinstance(raw_b, str) else bytes(raw_b or b"")
+        except (ValueError, TypeError, binascii.Error):
+            event["bodyRaw"] = b""
+    elif "bodyRaw" not in event:
+        btxt = event.get("body")
+        event["bodyRaw"] = btxt.encode("utf-8", errors="ignore") if isinstance(btxt, str) else b""
     path = _request_path(event)
     method = _request_method(event)
     LOGGER.debug("Incoming request method=%s path=%s", method, path)
+
+    def _sheets_resp(code, payload):
+        return _response(code, payload)
+
+    def _sheets_bin(code, data, ctype):
+        return _response_binary(code, data, ctype)
+
+    sheets_out = handle_sheets_routes(event, _sheets_resp, _sheets_bin)
+    if sheets_out is not None:
+        return sheets_out
 
     if method == "OPTIONS":
         return _response(204, {"ok": True})
@@ -1674,10 +1732,13 @@ class _LocalHTTPHandler(BaseHTTPRequestHandler):
         if query:
             parsed = urllib.parse.parse_qs(query, keep_blank_values=True)
             query_dict = {k: (v[-1] if isinstance(v, list) and v else "") for k, v in parsed.items()}
+        hdrs = {k: v for k, v in self.headers.items()}
         event = {
             "httpMethod": method,
             "path": path,
             "body": raw_body.decode("utf-8", errors="ignore"),
+            "bodyRaw": raw_body,
+            "headers": hdrs,
             "isBase64Encoded": False,
             "requestContext": {"http": {"method": method, "path": path}},
             "queryStringParameters": query_dict,
@@ -1686,7 +1747,13 @@ class _LocalHTTPHandler(BaseHTTPRequestHandler):
         status_code = int(out.get("statusCode", 200))
         headers = out.get("headers", {})
         body = out.get("body", "")
-        payload = body.encode("utf-8") if isinstance(body, str) else body
+        if out.get("isBase64Encoded"):
+            try:
+                payload = base64.b64decode(body) if isinstance(body, str) else body
+            except (ValueError, TypeError):
+                payload = (body or "").encode("utf-8") if isinstance(body, str) else b""
+        else:
+            payload = body.encode("utf-8") if isinstance(body, str) else body
 
         self.send_response(status_code)
         for key, value in headers.items():

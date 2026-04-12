@@ -6,20 +6,30 @@ import 'package:image_picker/image_picker.dart';
 import 'add_sheet_source_sheet.dart';
 import 'multi_capture_screen.dart';
 import 'sheet_library_store.dart';
+import 'sheets_api_repository.dart';
 
-/// 选图完成后：展示缩略图、可继续添加、输入谱名并写入 [SheetLibraryStore]。
+/// 选图完成后：展示缩略图、可继续添加、输入谱名并保存。
+///
+/// 二选一：[remoteApi] 非空时上传到服务端；否则写入本地 [localStore]。
 class SheetDraftScreen extends StatefulWidget {
   const SheetDraftScreen({
     super.key,
     required this.initialImages,
-    required this.store,
-  });
+    this.localStore,
+    this.remoteApi,
+  }) : assert(
+          (localStore != null) ^ (remoteApi != null),
+          'Specify exactly one of localStore or remoteApi',
+        );
 
   /// 进入本页前已选好的图片（相册多选或连拍结果）。
   final List<XFile> initialImages;
 
-  /// 持久化目标。
-  final SheetLibraryStore store;
+  /// 本地持久化（与 [remoteApi] 互斥）。
+  final SheetLibraryStore? localStore;
+
+  /// 云端保存（与 [localStore] 互斥）。
+  final SheetsApiRepository? remoteApi;
 
   @override
   State<SheetDraftScreen> createState() => _SheetDraftScreenState();
@@ -123,15 +133,22 @@ class _SheetDraftScreenState extends State<SheetDraftScreen> {
     }
     setState(() => _saving = true);
     try {
-      final sources = _files.map((x) => File(x.path)).toList();
-      for (final f in sources) {
-        if (!await f.exists()) {
+      for (final x in _files) {
+        if (!await File(x.path).exists()) {
           throw StateError('临时文件已失效，请重新选择');
         }
       }
-      await widget.store.importSheetPages(sources: sources, displayName: name);
+      if (widget.remoteApi != null) {
+        await widget.remoteApi!.createSheet(displayName: name, images: _files);
+      } else {
+        final sources = _files.map((x) => File(x.path)).toList();
+        await widget.localStore!.importSheetPages(sources: sources, displayName: name);
+      }
       if (!mounted) return;
       Navigator.pop(context, true);
+    } on SheetsApiException catch (e) {
+      if (!mounted) return;
+      _toast(e.message);
     } catch (e) {
       if (!mounted) return;
       _toast('保存失败：$e');
