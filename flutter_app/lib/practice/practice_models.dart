@@ -64,7 +64,7 @@ class PracticeSession {
     };
   }
 
-  /// 从本地持久化 JSON 恢复会话。
+  /// 从 JSON 恢复会话（兼容服务端与本地历史字段）。
   static PracticeSession fromJson(Map<String, dynamic> json) {
     return PracticeSession(
       id: json['id'] as String,
@@ -72,15 +72,25 @@ class PracticeSession {
       taskName: json['taskName'] as String,
       startedAt: DateTime.parse(json['startedAt'] as String),
       endedAt: DateTime.parse(json['endedAt'] as String),
-      durationSeconds: json['durationSeconds'] as int,
+      durationSeconds: _asInt(json['durationSeconds'], 0),
       completed: json['completed'] as bool? ?? false,
-      difficulty: json['difficulty'] as int? ?? 3,
+      difficulty: _asInt(json['difficulty'], 3).clamp(1, 5),
       note: json['note'] as String?,
       progressionId: json['progressionId'] as String?,
       musicKey: json['musicKey'] as String?,
       complexity: json['complexity'] as String?,
     );
   }
+}
+
+int _asInt(dynamic v, int fallback) {
+  if (v is int) {
+    return v;
+  }
+  if (v is num) {
+    return v.toInt();
+  }
+  return fallback;
 }
 
 /// 练习首页展示统计数据。
@@ -125,10 +135,26 @@ String encodeSessions(List<PracticeSession> sessions) {
 
 /// 从字符串反序列化会话列表。
 List<PracticeSession> decodeSessions(String raw) {
-  final decoded = jsonDecode(raw) as List<dynamic>;
-  return decoded
-      .map((e) => PracticeSession.fromJson(e as Map<String, dynamic>))
-      .toList();
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) {
+      return <PracticeSession>[];
+    }
+    final out = <PracticeSession>[];
+    for (final e in decoded) {
+      if (e is! Map<String, dynamic>) {
+        continue;
+      }
+      try {
+        out.add(PracticeSession.fromJson(e));
+      } catch (_) {
+        // 跳过损坏元素
+      }
+    }
+    return out;
+  } catch (_) {
+    return <PracticeSession>[];
+  }
 }
 
 /// 计算今日已练习分钟数（向下取整）。

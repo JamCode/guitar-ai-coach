@@ -2,23 +2,35 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'chord_practice_selection_screen.dart';
-import 'practice_local_store.dart';
+import 'practice_api_repository.dart';
 import 'practice_models.dart';
+import 'practice_remote_store.dart';
+import 'practice_session_store.dart';
 
 /// 练习模块首页：提供任务入口、今日进度与历史记录。
 class PracticeStubScreen extends StatefulWidget {
-  const PracticeStubScreen({super.key, this.onOpenMySheets});
+  const PracticeStubScreen({
+    super.key,
+    this.onOpenMySheets,
+    this.sessionStore,
+  });
 
   /// 打开「我的谱」页面，由外层壳统一路由。
   final Future<void> Function()? onOpenMySheets;
+
+  /// 注入练习存储（测试用）；默认使用 [PracticeRemoteStore]（服务端为数据源）。
+  final PracticeSessionStore? sessionStore;
 
   @override
   State<PracticeStubScreen> createState() => _PracticeStubScreenState();
 }
 
 class _PracticeStubScreenState extends State<PracticeStubScreen> {
-  final _store = PracticeLocalStore();
+  late final PracticeSessionStore _store =
+      widget.sessionStore ?? PracticeRemoteStore();
+
   var _loading = true;
+  String? _loadError;
   PracticeSummary _summary = const PracticeSummary(
     todayMinutes: 0,
     todaySessions: 0,
@@ -36,17 +48,36 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
 
   /// 刷新首页统计与历史。
   Future<void> _refresh() async {
-    setState(() => _loading = true);
-    final summary = await _store.loadSummary();
-    final sessions = await _store.loadSessions();
-    if (!mounted) {
-      return;
-    }
     setState(() {
-      _summary = summary;
-      _sessions = sessions;
-      _loading = false;
+      _loading = true;
+      _loadError = null;
     });
+    try {
+      final summary = await _store.loadSummary();
+      final sessions = await _store.loadSessions();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _summary = summary;
+        _sessions = sessions;
+        _loading = false;
+      });
+    } on PracticeApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loadError = e.message;
+        _summary = const PracticeSummary(
+          todayMinutes: 0,
+          todaySessions: 0,
+          streakDays: 0,
+        );
+        _sessions = <PracticeSession>[];
+        _loading = false;
+      });
+    }
   }
 
   /// 进入单任务练习页，结束后回流刷新首页数据。
@@ -80,6 +111,28 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
     final theme = Theme.of(context);
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
+    }
+    if (_loadError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _loadError!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => unawaited(_refresh()),
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     final recentSessions = _sessions.take(3).toList();
     return RefreshIndicator(
@@ -189,7 +242,7 @@ class _PracticeSessionScreen extends StatefulWidget {
   const _PracticeSessionScreen({required this.task, required this.store});
 
   final PracticeTask task;
-  final PracticeLocalStore store;
+  final PracticeSessionStore store;
 
   @override
   State<_PracticeSessionScreen> createState() => _PracticeSessionScreenState();
@@ -246,15 +299,25 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
     if (result == null || _startedAt == null) {
       return;
     }
-    await widget.store.saveSession(
-      task: widget.task,
-      startedAt: _startedAt!,
-      endedAt: DateTime.now(),
-      durationSeconds: _elapsed.inSeconds,
-      completed: result.completed,
-      difficulty: result.difficulty,
-      note: result.note,
-    );
+    try {
+      await widget.store.saveSession(
+        task: widget.task,
+        startedAt: _startedAt!,
+        endedAt: DateTime.now(),
+        durationSeconds: _elapsed.inSeconds,
+        completed: result.completed,
+        difficulty: result.difficulty,
+        note: result.note,
+      );
+    } on PracticeApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+      return;
+    }
     if (!mounted) {
       return;
     }

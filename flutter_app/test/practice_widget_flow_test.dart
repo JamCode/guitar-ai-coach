@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:guitar_helper/practice/practice_fake_store.dart';
 import 'package:guitar_helper/practice/practice_stub_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('和弦切换按钮跳转到选择页', (tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: PracticeStubScreen()),
+      MaterialApp(
+        home: Scaffold(
+          body: PracticeStubScreen(sessionStore: PracticeFakeStore()),
+        ),
       ),
     );
     await tester.pump();
@@ -22,10 +23,11 @@ void main() {
   });
 
   testWidgets('节奏扫弦按钮直接进入计时页', (tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: PracticeStubScreen()),
+      MaterialApp(
+        home: Scaffold(
+          body: PracticeStubScreen(sessionStore: PracticeFakeStore()),
+        ),
       ),
     );
     await tester.pump();
@@ -39,10 +41,11 @@ void main() {
   });
 
   testWidgets('通用任务可完成记录并返回首页', (tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: PracticeStubScreen()),
+      MaterialApp(
+        home: Scaffold(
+          body: PracticeStubScreen(sessionStore: PracticeFakeStore()),
+        ),
       ),
     );
     await tester.pump();
