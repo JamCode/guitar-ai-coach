@@ -54,6 +54,7 @@ from song_chords_db import (
     search_song_chords,
     song_chords_mysql_enabled,
 )
+from auth_apple import handle_auth_apple_post, handle_auth_health_get
 
 
 DASHSCOPE_ENDPOINT = os.getenv(
@@ -769,6 +770,15 @@ def handler(event, context):
 
     if method == "OPTIONS":
         return _response(204, {"ok": True})
+
+    if method == "GET" and path in ("/auth/health", "/api/auth/health"):
+        code, payload = handle_auth_health_get()
+        return _response(code, payload)
+
+    if method == "POST" and path in ("/auth/apple", "/api/auth/apple"):
+        body = _extract_body(event)
+        code, payload = handle_auth_apple_post(body)
+        return _response(code, payload)
 
     if method == "GET" and path in ("/styles", "/api/styles"):
         styles = list(STYLE_TO_PROGRESSIONS.keys())

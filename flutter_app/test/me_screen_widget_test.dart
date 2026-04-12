@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:guitar_helper/auth/auth_controller.dart';
+import 'package:guitar_helper/auth/auth_scope.dart';
 import 'package:guitar_helper/profile/me_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('我的页可编辑昵称并保存', (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    final auth = AuthController();
+    await auth.bootstrap();
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: MeScreen())),
+      MaterialApp(
+        home: AuthScope(
+          notifier: auth,
+          child: const Scaffold(body: MeScreen()),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../auth/auth_scope.dart';
 import 'account_security_screen.dart';
 import 'help_feedback_screen.dart';
 import 'profile_store.dart';
@@ -109,6 +110,20 @@ class _MeScreenState extends State<MeScreen> {
                     MaterialPageRoute<void>(
                       builder: (_) => const HelpFeedbackScreen(),
                     ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('退出登录'),
+                onTap: () async {
+                  await AuthScope.of(context).logout();
+                  if (!context.mounted) {
+                    return;
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('已退出登录')),
                   );
                 },
               ),
