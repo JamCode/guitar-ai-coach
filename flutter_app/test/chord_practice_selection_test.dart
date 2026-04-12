@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:guitar_helper/practice/chord_practice_selection_screen.dart';
 import 'package:guitar_helper/practice/chord_progression_library.dart';
-import 'package:guitar_helper/practice/practice_local_store.dart';
+import 'package:guitar_helper/practice/practice_fake_store.dart';
 import 'package:guitar_helper/practice/practice_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,7 +22,7 @@ void main() {
     return MaterialApp(
       home: ChordPracticeSelectionScreen(
         task: chordTask,
-        store: PracticeLocalStore(),
+        store: PracticeFakeStore(),
       ),
     );
   }

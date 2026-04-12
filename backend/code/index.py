@@ -57,6 +57,7 @@ from song_chords_db import (
     song_chords_mysql_enabled,
 )
 from auth_apple import handle_auth_apple_post, handle_auth_health_get
+from practice_http import handle_practice_routes
 from sheets_http import handle_sheets_routes
 
 
@@ -825,6 +826,13 @@ def handler(event, context):
     sheets_out = handle_sheets_routes(event, _sheets_resp, _sheets_bin)
     if sheets_out is not None:
         return sheets_out
+
+    def _practice_resp(code, payload):
+        return _response(code, payload)
+
+    practice_out = handle_practice_routes(event, _practice_resp)
+    if practice_out is not None:
+        return practice_out
 
     if method == "OPTIONS":
         return _response(204, {"ok": True})

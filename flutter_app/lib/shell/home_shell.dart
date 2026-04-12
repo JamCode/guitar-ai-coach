@@ -17,6 +17,9 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   var _index = 0;
 
+  /// 首次进入「练习」Tab 后再挂载子树，避免冷启动即请求练习记录接口。
+  var _practiceTabMounted = false;
+
   static const _titles = ['工具', '练耳', '练习', '我的'];
 
   Future<void> _openMySheets() async {
@@ -34,13 +37,22 @@ class _HomeShellState extends State<HomeShell> {
         children: [
           const ToolsScreen(),
           const EarHomeScreen(),
-          PracticeStubScreen(onOpenMySheets: _openMySheets),
+          _practiceTabMounted
+              ? PracticeStubScreen(onOpenMySheets: _openMySheets)
+              : const SizedBox.expand(),
           const MeScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          setState(() {
+            _index = i;
+            if (i == 2) {
+              _practiceTabMounted = true;
+            }
+          });
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.handyman_outlined),

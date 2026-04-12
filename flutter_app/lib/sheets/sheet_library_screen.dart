@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../practice/practice_local_store.dart';
+import '../practice/practice_api_repository.dart';
 import '../practice/practice_models.dart';
+import '../practice/practice_remote_store.dart';
 import 'add_sheet_source_sheet.dart';
 import 'authenticated_sheet_image.dart';
 import 'multi_capture_screen.dart';
@@ -24,7 +25,7 @@ class SheetLibraryScreen extends StatefulWidget {
 class SheetLibraryScreenState extends State<SheetLibraryScreen> {
   final _api = SheetsApiRepository();
   final _localStore = SheetLibraryStore();
-  final _practiceStore = PracticeLocalStore();
+  final _practiceStore = PracticeRemoteStore();
   var _loading = true;
   List<SheetEntry> _entries = [];
   String? _error;
@@ -173,15 +174,22 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
     final endedAt = DateTime.now();
     final durationSeconds = endedAt.difference(startedAt).inSeconds;
     if (durationSeconds >= _minPracticeSeconds) {
-      await _practiceStore.saveSession(
-        task: _sheetPracticeTask,
-        startedAt: startedAt,
-        endedAt: endedAt,
-        durationSeconds: durationSeconds,
-        completed: true,
-        difficulty: 3,
-        note: '曲谱：${e.displayName}',
-      );
+      try {
+        await _practiceStore.saveSession(
+          task: _sheetPracticeTask,
+          startedAt: startedAt,
+          endedAt: endedAt,
+          durationSeconds: durationSeconds,
+          completed: true,
+          difficulty: 3,
+          note: '曲谱：${e.displayName}',
+        );
+      } on PracticeApiException catch (err) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(err.message)),
+        );
+      }
     }
   }
 

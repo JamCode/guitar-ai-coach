@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'chord_progression_library.dart';
-import 'practice_local_store.dart';
+import 'practice_api_repository.dart';
 import 'practice_models.dart';
+import 'practice_session_store.dart';
 
 /// 和弦练习配置：用户在选择页确定后传递给计时页。
 class ChordPracticeConfig {
@@ -30,7 +31,7 @@ class ChordPracticeSelectionScreen extends StatefulWidget {
   });
 
   final PracticeTask task;
-  final PracticeLocalStore store;
+  final PracticeSessionStore store;
 
   @override
   State<ChordPracticeSelectionScreen> createState() =>
@@ -240,7 +241,7 @@ class _ChordPracticeSessionScreen extends StatefulWidget {
   });
 
   final PracticeTask task;
-  final PracticeLocalStore store;
+  final PracticeSessionStore store;
   final ChordPracticeConfig config;
 
   @override
@@ -292,18 +293,24 @@ class _ChordPracticeSessionScreenState
     );
     if (result == null || _startedAt == null) return;
     final cfg = widget.config;
-    await widget.store.saveSession(
-      task: widget.task,
-      startedAt: _startedAt!,
-      endedAt: DateTime.now(),
-      durationSeconds: _elapsed.inSeconds,
-      completed: result.completed,
-      difficulty: result.difficulty,
-      note: result.note,
-      progressionId: cfg.progression.id,
-      musicKey: cfg.key,
-      complexity: cfg.complexity.name,
-    );
+    try {
+      await widget.store.saveSession(
+        task: widget.task,
+        startedAt: _startedAt!,
+        endedAt: DateTime.now(),
+        durationSeconds: _elapsed.inSeconds,
+        completed: result.completed,
+        difficulty: result.difficulty,
+        note: result.note,
+        progressionId: cfg.progression.id,
+        musicKey: cfg.key,
+        complexity: cfg.complexity.name,
+      );
+    } on PracticeApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('记录已保存')));
