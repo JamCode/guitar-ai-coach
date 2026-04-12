@@ -6,12 +6,14 @@ import 'package:image_picker/image_picker.dart';
 import '../practice/practice_local_store.dart';
 import '../practice/practice_models.dart';
 import 'add_sheet_source_sheet.dart';
+import 'authenticated_sheet_image.dart';
 import 'multi_capture_screen.dart';
 import 'sheet_draft_screen.dart';
 import 'sheet_entry.dart';
 import 'sheet_library_store.dart';
+import 'sheets_api_repository.dart';
 
-/// 本地谱子列表：相册多选或连拍导入，一谱多页；支持删除；详情预览为占位。
+/// 「我的谱」列表：已登录时走云端 API（须在线）；元数据与图片均在服务端。
 class SheetLibraryScreen extends StatefulWidget {
   const SheetLibraryScreen({super.key});
 
@@ -20,7 +22,8 @@ class SheetLibraryScreen extends StatefulWidget {
 }
 
 class SheetLibraryScreenState extends State<SheetLibraryScreen> {
-  final _store = SheetLibraryStore();
+  final _api = SheetsApiRepository();
+  final _localStore = SheetLibraryStore();
   final _practiceStore = PracticeLocalStore();
   var _loading = true;
   List<SheetEntry> _entries = [];
@@ -45,10 +48,16 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
       _error = null;
     });
     try {
-      final list = await _store.loadAll();
+      final list = await _api.listSheets();
       if (!mounted) return;
       setState(() {
         _entries = list;
+        _loading = false;
+      });
+    } on SheetsApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
         _loading = false;
       });
     } catch (e) {
@@ -60,7 +69,7 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
     }
   }
 
-  /// 由 [HomeShell] 上 FAB 调用：先选拍照/相册，再进入取名与保存。
+  /// 由 [SheetLibraryPage] 上 FAB 调用：先选拍照/相册，再进入取名与保存。
   Future<void> pickAndAddSheet() async {
     if (!mounted) return;
     final source = await showSheetImageSourceSheet(context);
@@ -90,7 +99,7 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
       context,
       MaterialPageRoute<bool>(
         fullscreenDialog: true,
-        builder: (_) => SheetDraftScreen(initialImages: batch, store: _store),
+        builder: (_) => SheetDraftScreen(initialImages: batch, remoteApi: _api),
       ),
     );
     if (!mounted) return;
@@ -108,15 +117,57 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
     final startedAt = DateTime.now();
     await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(e.displayName),
-        content: Text('共 ${e.pageCount} 页。谱面预览开发中；文件已保存在本应用目录。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('关闭'),
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.maxFinite,
+          height: MediaQuery.sizeOf(ctx).height * 0.75,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        e.displayName,
+                        style: Theme.of(ctx).textTheme.titleMedium,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '共 ${e.pageCount} 页 · 需联网查看',
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: PageView.builder(
+                  itemCount: e.pageCount,
+                  itemBuilder: (context, i) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: AuthenticatedSheetImage(
+                        sheetId: e.id,
+                        pageIndex: i,
+                        api: _api,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
     final endedAt = DateTime.now();
@@ -135,7 +186,13 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
   }
 
   Future<void> _onDelete(SheetEntry e) async {
-    await _store.remove(e.id);
+    try {
+      await _api.deleteSheet(e.id);
+    } on SheetsApiException catch (err) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err.message)));
+      return;
+    }
     if (!mounted) return;
     await _reload();
   }
@@ -146,69 +203,89 @@ class SheetLibraryScreenState extends State<SheetLibraryScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error != null) {
-      return Center(child: Text(_error!));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(_error!, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton(onPressed: _reload, child: const Text('重试')),
+            ],
+          ),
+        ),
+      );
     }
     if (_entries.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            '暂无谱子。点击右下角 +：可选择拍照（连拍多页）或从相册一次选多张；'
-            '再为谱子起名后保存。文件会复制到应用沙箱。',
+            '暂无谱子。点击右下角 +：拍照或相册多选；起名后保存到云端（需联网与已登录）。',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
         ),
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-      itemCount: _entries.length,
-      itemBuilder: (context, i) {
-        final e = _entries[i];
-        final date = DateTime.fromMillisecondsSinceEpoch(e.addedAtMs);
-        final dateStr =
-            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        return Dismissible(
-          key: ValueKey(e.id),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20),
-            color: Theme.of(context).colorScheme.error,
-            child: Icon(
-              Icons.delete_outline,
-              color: Theme.of(context).colorScheme.onError,
-            ),
-          ),
-          onDismissed: (_) => _onDelete(e),
-          child: Card(
-            child: ListTile(
-              leading: _SheetEntryThumb(entry: e, store: _store),
-              title: Text(e.displayName),
-              subtitle: Text('${e.pageCount} 张 · $dateStr'),
-              onTap: () => _onOpen(e),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _onDelete(e),
-                tooltip: '删除',
+    return RefreshIndicator(
+      onRefresh: _reload,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+        itemCount: _entries.length,
+        itemBuilder: (context, i) {
+          final e = _entries[i];
+          final date = DateTime.fromMillisecondsSinceEpoch(e.addedAtMs);
+          final dateStr =
+              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+          return Dismissible(
+            key: ValueKey(e.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              color: Theme.of(context).colorScheme.error,
+              child: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.onError,
               ),
             ),
-          ),
-        );
-      },
+            onDismissed: (_) => _onDelete(e),
+            child: Card(
+              child: ListTile(
+                leading: _SheetEntryThumb(entry: e, api: _api, localStore: _localStore),
+                title: Text(e.displayName),
+                subtitle: Text('${e.pageCount} 张 · $dateStr'),
+                onTap: () => _onOpen(e),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _onDelete(e),
+                  tooltip: '删除',
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
-/// 列表封面：首张仍存在的页图，否则占位图标。
+/// 列表封面：云端首图（Bearer）或本地首张文件。
 class _SheetEntryThumb extends StatefulWidget {
-  const _SheetEntryThumb({required this.entry, required this.store});
+  const _SheetEntryThumb({
+    required this.entry,
+    required this.api,
+    required this.localStore,
+  });
 
   final SheetEntry entry;
-  final SheetLibraryStore store;
+  final SheetsApiRepository api;
+  final SheetLibraryStore localStore;
 
   @override
   State<_SheetEntryThumb> createState() => _SheetEntryThumbState();
@@ -221,7 +298,7 @@ class _SheetEntryThumbState extends State<_SheetEntryThumb> {
   @override
   void initState() {
     super.initState();
-    _load();
+    _maybeLoadLocal();
   }
 
   @override
@@ -230,15 +307,23 @@ class _SheetEntryThumbState extends State<_SheetEntryThumb> {
     if (oldWidget.entry.id != widget.entry.id) {
       _file = null;
       _done = false;
-      _load();
+      _maybeLoadLocal();
     }
   }
 
-  Future<void> _load() async {
-    final f = await widget.store.resolveFirstStoredFile(widget.entry);
+  Future<void> _maybeLoadLocal() async {
+    if (widget.entry.storedFileNames.isNotEmpty) {
+      final f = await widget.localStore.resolveFirstStoredFile(widget.entry);
+      if (!mounted) return;
+      setState(() {
+        _file = f;
+        _done = true;
+      });
+      return;
+    }
     if (!mounted) return;
     setState(() {
-      _file = f;
+      _file = null;
       _done = true;
     });
   }
@@ -247,6 +332,21 @@ class _SheetEntryThumbState extends State<_SheetEntryThumb> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     const size = 56.0;
+    if (widget.entry.storedFileNames.isEmpty && widget.entry.serverPageCount != null) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: AuthenticatedSheetImage(
+            sheetId: widget.entry.id,
+            pageIndex: 0,
+            api: widget.api,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
     if (!_done) {
       return SizedBox(
         width: size,
