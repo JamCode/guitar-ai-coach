@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:guitar_helper/app_theme.dart';
 import 'package:guitar_helper/chords/chord_lookup_screen.dart';
 import 'package:guitar_helper/chords/chord_models.dart';
+import 'package:guitar_helper/auth/auth_controller.dart';
 import 'package:guitar_helper/main.dart';
 import 'package:guitar_helper/shell/home_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -107,9 +108,15 @@ void main() {
     expect(find.textContaining('6→1 弦'), findsWidgets);
   });
 
-  testWidgets('GuitarHelperApp 启动到工具 Tab', (WidgetTester tester) async {
-    await tester.pumpWidget(const GuitarHelperApp());
+  testWidgets('GuitarHelperApp 已登录时启动到工具 Tab', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'guitar_auth_access_token': 'test-jwt-token',
+    });
+    final auth = AuthController();
+    await auth.bootstrap();
+    await tester.pumpWidget(GuitarHelperApp(controller: auth));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('调音器'), findsOneWidget);
   });
 }
