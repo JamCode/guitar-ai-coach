@@ -22,7 +22,7 @@ void main() {
     expect(find.text('当前选择预览'), findsOneWidget);
   });
 
-  testWidgets('节奏扫弦按钮直接进入计时页', (tester) async {
+  testWidgets('节奏扫弦进入扫弦节奏图示页', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -36,8 +36,9 @@ void main() {
     await tester.tap(find.byKey(const Key('practice_start_rhythm-strum')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('practice_timer')), findsOneWidget);
+    expect(find.byKey(const Key('strumming_pattern_grid')), findsOneWidget);
     expect(find.text('节奏扫弦'), findsOneWidget);
+    expect(find.byKey(const Key('rhythm_finish_practice')), findsOneWidget);
   });
 
   testWidgets('通用任务可完成记录并返回首页', (tester) async {

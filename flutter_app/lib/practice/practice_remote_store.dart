@@ -36,6 +36,7 @@ class PracticeRemoteStore implements PracticeSessionStore {
     String? progressionId,
     String? musicKey,
     String? complexity,
+    String? rhythmPatternId,
   }) async {
     final session = PracticeSession(
       id: _uuid.v4(),
@@ -50,6 +51,7 @@ class PracticeRemoteStore implements PracticeSessionStore {
       progressionId: progressionId,
       musicKey: musicKey,
       complexity: complexity,
+      rhythmPatternId: rhythmPatternId,
     );
     await _api.createSession(session);
   }

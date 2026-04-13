@@ -3,9 +3,12 @@ import 'dart:async';
 
 import 'chord_practice_selection_screen.dart';
 import 'practice_api_repository.dart';
+import 'practice_finish_dialog.dart';
 import 'practice_models.dart';
 import 'practice_remote_store.dart';
 import 'practice_session_store.dart';
+import 'rhythm_strumming_screen.dart';
+import 'strumming_pattern.dart';
 
 /// 练习模块首页：提供任务入口、今日进度与历史记录。
 class PracticeStubScreen extends StatefulWidget {
@@ -47,6 +50,8 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
   }
 
   /// 刷新首页统计与历史。
+  ///
+  /// 任意一步失败时回落到空数据并结束加载，避免未捕获异常导致进程退出。
   Future<void> _refresh() async {
     setState(() {
       _loading = true;
@@ -82,12 +87,22 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
 
   /// 进入单任务练习页，结束后回流刷新首页数据。
   ///
-  /// 和弦切换任务 (`chord-switch`) 跳转到专用选择页。
+  /// 和弦切换任务 (`chord-switch`) 跳转到专用选择页；
+  /// 节奏扫弦 (`rhythm-strum`) 跳转到扫弦节奏图示页。
   Future<void> _openPracticeTask(PracticeTask task) async {
     if (task.id == 'chord-switch') {
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           builder: (_) => ChordPracticeSelectionScreen(
+            task: task,
+            store: _store,
+          ),
+        ),
+      );
+    } else if (task.id == 'rhythm-strum') {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => RhythmStrummingScreen(
             task: task,
             store: _store,
           ),
@@ -171,15 +186,13 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
           ...kDefaultPracticeTasks.map((task) {
             return Card(
               child: ListTile(
+                key: Key('practice_start_${task.id}'),
                 title: Text(task.name),
                 subtitle: Text(
                   '${task.targetMinutes} 分钟 · ${task.description}',
                 ),
-                trailing: FilledButton(
-                  key: Key('practice_start_${task.id}'),
-                  onPressed: () => _openPracticeTask(task),
-                  child: const Text('开始'),
-                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _openPracticeTask(task),
               ),
             );
           }),
@@ -226,7 +239,7 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
                 child: ListTile(
                   title: Text(session.taskName),
                   subtitle: Text(
-                    '${_formatDate(session.endedAt)} · ${_formatDuration(session.durationSeconds)}',
+                    _sessionSubtitleLine(session),
                   ),
                   trailing: Text('难度 ${session.difficulty}/5'),
                 ),
@@ -292,9 +305,9 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
       return;
     }
     _pause();
-    final result = await showDialog<_FinishResult>(
+    final result = await showPracticeFinishDialog(
       context: context,
-      builder: (_) => _FinishDialog(noteController: _noteController),
+      noteController: _noteController,
     );
     if (result == null || _startedAt == null) {
       return;
@@ -400,82 +413,6 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
   }
 }
 
-class _FinishDialog extends StatefulWidget {
-  const _FinishDialog({required this.noteController});
-
-  final TextEditingController noteController;
-
-  @override
-  State<_FinishDialog> createState() => _FinishDialogState();
-}
-
-class _FinishDialogState extends State<_FinishDialog> {
-  var _completed = true;
-  var _difficulty = 3;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('本次练习完成'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              title: const Text('完成目标'),
-              value: _completed,
-              onChanged: (v) => setState(() => _completed = v),
-            ),
-            Row(
-              children: [
-                const Text('主观难度'),
-                Expanded(
-                  child: Slider(
-                    key: const Key('practice_difficulty_slider'),
-                    value: _difficulty.toDouble(),
-                    min: 1,
-                    max: 5,
-                    divisions: 4,
-                    label: '$_difficulty',
-                    onChanged: (v) => setState(() => _difficulty = v.round()),
-                  ),
-                ),
-                Text('$_difficulty'),
-              ],
-            ),
-            TextField(
-              key: const Key('practice_note_input'),
-              controller: widget.noteController,
-              decoration: const InputDecoration(labelText: '备注（可选）'),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          key: const Key('practice_save_session'),
-          onPressed: () {
-            Navigator.of(context).pop(
-              _FinishResult(
-                completed: _completed,
-                difficulty: _difficulty,
-                note: widget.noteController.text.trim().isEmpty
-                    ? null
-                    : widget.noteController.text.trim(),
-              ),
-            );
-          },
-          child: const Text('保存记录'),
-        ),
-      ],
-    );
-  }
-}
-
 class _PracticeHistoryScreen extends StatelessWidget {
   const _PracticeHistoryScreen({required this.sessions});
 
@@ -494,7 +431,7 @@ class _PracticeHistoryScreen extends StatelessWidget {
                 return ListTile(
                   title: Text(session.taskName),
                   subtitle: Text(
-                    '${_formatDate(session.endedAt)} · ${_formatDuration(session.durationSeconds)}',
+                    _sessionSubtitleLine(session),
                   ),
                   trailing: Text('难度 ${session.difficulty}/5'),
                 );
@@ -504,16 +441,14 @@ class _PracticeHistoryScreen extends StatelessWidget {
   }
 }
 
-class _FinishResult {
-  const _FinishResult({
-    required this.completed,
-    required this.difficulty,
-    required this.note,
-  });
-
-  final bool completed;
-  final int difficulty;
-  final String? note;
+String _sessionSubtitleLine(PracticeSession session) {
+  final patternName = strummingPatternNameForId(session.rhythmPatternId);
+  final timePart =
+      '${_formatDate(session.endedAt)} · ${_formatDuration(session.durationSeconds)}';
+  if (patternName != null) {
+    return '$patternName · $timePart';
+  }
+  return timePart;
 }
 
 String _formatDuration(int seconds) {

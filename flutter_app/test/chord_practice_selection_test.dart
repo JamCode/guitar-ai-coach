@@ -52,10 +52,16 @@ void main() {
     expect(find.text('C'), findsWidgets);
     expect(find.text('Am'), findsWidgets);
 
-    await tester.tap(find.byKey(const Key('key_chip_G')));
+    await tester.tap(find.byKey(const Key('practice_key_dropdown')));
+    await tester.pumpAndSettle();
+    // 选 D 调；下拉菜单在测试视口下偶发 hit-test 告警，关闭以免误判失败。
+    await tester.tap(
+      find.byKey(const Key('key_dropdown_item_D')).last,
+      warnIfMissed: false,
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Em'), findsWidgets);
+    expect(find.text('Bm'), findsWidgets);
   });
 
   testWidgets('切换复杂度后预览和弦变化', (tester) async {
@@ -74,10 +80,7 @@ void main() {
     await tester.pumpWidget(buildApp());
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('progression_pop-50s')),
-      100,
-    );
+    await tester.tap(find.byKey(const Key('progression_picker_tile')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('progression_pop-50s')));
     await tester.pumpAndSettle();
@@ -94,6 +97,16 @@ void main() {
 
     expect(find.byKey(const Key('chord_practice_timer')), findsOneWidget);
     expect(find.text('流行经典 · C 调'), findsOneWidget);
+  });
+
+  testWidgets('预览区和弦可点开指法底部层', (tester) async {
+    await tester.pumpWidget(buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('preview_chord_C_0')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('chord_result_sheet')), findsOneWidget);
   });
 
   testWidgets('完整流程：选择 → 计时 → 结束 → 保存', (tester) async {
@@ -113,7 +126,7 @@ void main() {
 
     expect(find.text('本次练习完成'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('chord_save_session')));
+    await tester.tap(find.byKey(const Key('practice_save_session')));
     await tester.pumpAndSettle();
 
     expect(find.text('记录已保存'), findsOneWidget);

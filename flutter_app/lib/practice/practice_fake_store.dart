@@ -37,6 +37,7 @@ class PracticeFakeStore implements PracticeSessionStore {
     String? progressionId,
     String? musicKey,
     String? complexity,
+    String? rhythmPatternId,
   }) async {
     _buffer.add(
       PracticeSession(
@@ -52,6 +53,7 @@ class PracticeFakeStore implements PracticeSessionStore {
         progressionId: progressionId,
         musicKey: musicKey,
         complexity: complexity,
+        rhythmPatternId: rhythmPatternId,
       ),
     );
   }

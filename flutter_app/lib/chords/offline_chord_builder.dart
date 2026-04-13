@@ -45,6 +45,11 @@ class ParsedChordSymbol {
 
   static String _normalizeQualId(String q) {
     if (q.isEmpty) return '';
+    // 和弦切换练习里会出现扩展和弦符号，映射到离线拼字/按法可用的性质。
+    if (q == 'm7b5') return 'm7b5';
+    if (q == 'maj9') return 'maj7';
+    if (q == 'm9') return 'm7';
+    if (q == '9') return '7';
     const order = ['maj7', 'm7', 'sus2', 'sus4', 'add9', 'dim', 'aug', 'm', '7'];
     for (final o in order) {
       if (q == o) return o;
@@ -197,7 +202,8 @@ List<ChordVoicingItem> _syntheticBarrePair(ParsedChordSymbol p) {
   if (rootPc == null) return [];
   final f = (rootPc - 4 + 12) % 12;
 
-  final isMinor = p.qualId == 'm' || p.qualId == 'm7';
+  final isMinor =
+      p.qualId == 'm' || p.qualId == 'm7' || p.qualId == 'm7b5';
   final List<int> a;
   final List<int> b;
   if (isMinor) {

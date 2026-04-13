@@ -7,6 +7,9 @@ import '../sheets/sheet_library_page.dart';
 import '../tools/tools_screen.dart';
 
 /// 底部四 Tab 壳：工具 / 练耳 / 练习 / 我的。
+///
+/// 「练习」页仅在用户**首次点选该 Tab** 后才插入子树，避免未点练习时
+/// 因本地练习数据损坏导致冷启动闪退。
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 

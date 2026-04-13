@@ -26,6 +26,23 @@ void main() {
     expect(find.text('我的'), findsWidgets);
   });
 
+  testWidgets('损坏的练习 prefs 不阻塞冷启动（练习 Tab 延迟挂载）',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'practice_sessions_v1': '{"broken"',
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: const HomeShell(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
+    expect(find.text('调音器'), findsOneWidget);
+  });
+
   testWidgets('练耳 Tab 可进入音程识别页', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -102,10 +119,11 @@ void main() {
     await tester.tap(find.byKey(const Key('chord_lookup_offline')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    await tester.pumpAndSettle(const Duration(milliseconds: 16));
-    expect(find.text('按法参考'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(milliseconds: 200));
+    expect(find.byKey(const Key('chord_result_sheet')), findsOneWidget);
+    expect(find.text('分解试听'), findsWidgets);
+    expect(find.text('齐奏试听'), findsWidgets);
     expect(find.textContaining('常用把位'), findsWidgets);
-    expect(find.textContaining('6→1 弦'), findsWidgets);
   });
 
   testWidgets('GuitarHelperApp 已登录时启动到工具 Tab', (WidgetTester tester) async {

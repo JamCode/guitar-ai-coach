@@ -17,6 +17,7 @@ abstract class PracticeSessionStore {
     String? progressionId,
     String? musicKey,
     String? complexity,
+    String? rhythmPatternId,
   });
 
   /// 基于 [loadSessions] 的结果计算首页统计（今日分钟数、次数、连续天数）。

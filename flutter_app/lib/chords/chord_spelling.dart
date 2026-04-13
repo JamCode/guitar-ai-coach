@@ -71,6 +71,8 @@ List<int> _intervalsForQual(String qualId) {
       return [0, 4, 7, 11];
     case 'm7':
       return [0, 3, 7, 10];
+    case 'm7b5':
+      return [0, 3, 6, 10];
     case 'sus2':
       return [0, 2, 7];
     case 'sus4':
@@ -99,6 +101,8 @@ String chordQualityExplainZh(String qualId) {
       return '大七和弦：大三和弦上大七度，色彩更亮、更爵士。';
     case 'm7':
       return '小七和弦：小三和弦上加小七度。';
+    case 'm7b5':
+      return '半减七和弦（小七减五）：减三和弦上加小七度。';
     case 'sus2':
       return '挂二和弦：用二度替代三度，色彩空灵。';
     case 'sus4':

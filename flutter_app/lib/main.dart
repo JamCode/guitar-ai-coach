@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'audio/init_guitar_audio.dart';
@@ -5,14 +7,22 @@ import 'app_theme.dart';
 import 'auth/apple_login_screen.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_scope.dart';
+import 'diagnostics/crash_log_store.dart';
 import 'shell/home_shell.dart';
 
+/// 冷启动：初始化音频、崩溃日志与登录态，再进入应用。
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initGuitarAudio();
-  final auth = AuthController();
-  await auth.bootstrap();
-  runApp(GuitarHelperApp(controller: auth));
+  await runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await CrashLogStore.instance.ensureInitialized();
+    CrashLogStore.instance.installHandlers();
+    await initGuitarAudio();
+    final auth = AuthController();
+    await auth.bootstrap();
+    runApp(GuitarHelperApp(controller: auth));
+  }, (Object error, StackTrace stack) {
+    CrashLogStore.instance.recordError(error, stack, source: 'runZonedGuarded');
+  });
 }
 
 class GuitarHelperApp extends StatelessWidget {

@@ -7,6 +7,7 @@ import '../settings/api_settings_screen.dart';
 import 'chord_api_repository.dart';
 import 'chord_models.dart';
 import 'chord_remote_repository.dart';
+import 'chord_result_bottom_sheet.dart';
 import 'chord_symbol.dart';
 import 'chord_transpose_local.dart';
 import 'offline_chord_builder.dart';
@@ -39,7 +40,6 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
   bool _recalibrating = false;
   String? _errorText;
   ChordExplainMultiPayload? _result;
-  String? _disclaimer;
   var _lastResultFromOnline = false;
 
   @override
@@ -94,13 +94,27 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
     setState(() => _displaySymbol = t);
   }
 
+  /// 在帧结束后弹出底部结果层，避免在 build 过程中直接 `showModalBottomSheet`。
+  void _scheduleShowResultSheet(
+    ChordExplainMultiPayload payload,
+    String? disclaimer,
+  ) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await showChordResultBottomSheet(
+        context: context,
+        payload: payload,
+        disclaimer: disclaimer,
+      );
+    });
+  }
+
   void _fetchOffline() {
     final sym = _displaySymbol.trim();
     if (sym.isEmpty) {
       setState(() {
         _errorText = '请先选择和弦';
         _result = null;
-        _disclaimer = null;
         _lastResultFromOnline = false;
       });
       return;
@@ -109,11 +123,14 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
     setState(() {
       _errorText = payload == null ? '无法从符号解析和弦（请检查根音与性质）' : null;
       _result = payload;
-      _disclaimer = payload?.disclaimer;
       _lastResultFromOnline = false;
       _loadingOnline = false;
       _recalibrating = false;
     });
+    if (payload != null) {
+      final d = payload.disclaimer.trim();
+      _scheduleShowResultSheet(payload, d.isNotEmpty ? d : null);
+    }
   }
 
   Future<void> _fetchOnline({required bool force}) async {
@@ -122,7 +139,6 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
       setState(() {
         _errorText = '请先选择和弦';
         _result = null;
-        _disclaimer = null;
       });
       return;
     }
@@ -144,11 +160,12 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
       if (!mounted) return;
       setState(() {
         _result = data;
-        _disclaimer = data.disclaimer.isNotEmpty ? data.disclaimer : null;
         _loadingOnline = false;
         _recalibrating = false;
         _lastResultFromOnline = true;
       });
+      final disc = data.disclaimer.trim();
+      _scheduleShowResultSheet(data, disc.isNotEmpty ? disc : null);
     } on ChordApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -318,7 +335,6 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
               ),
             ),
           ],
-          if (_result != null) _ResultSection(payload: _result!, disclaimer: _disclaimer),
         ],
       ),
     );
@@ -372,91 +388,6 @@ class _LabeledDropdown<T> extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ResultSection extends StatelessWidget {
-  const _ResultSection({
-    required this.payload,
-    required this.disclaimer,
-  });
-
-  final ChordExplainMultiPayload payload;
-  final String? disclaimer;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final s = payload.chordSummary;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        Text('和弦说明', style: theme.textTheme.titleMedium),
-        if (s.notesLetters.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text('构成音：${s.notesLetters.join(' · ')}'),
-        ],
-        if (s.notesExplainZh.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(s.notesExplainZh),
-        ],
-        const SizedBox(height: 16),
-        Text('按法参考', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 8),
-        for (var i = 0; i < payload.voicings.length; i++)
-          Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    payload.voicings[i].labelZh,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '起算品格：${payload.voicings[i].explain.baseFret}',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '6→1 弦：${formatFretsLine(payload.voicings[i].explain.frets)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                  if (payload.voicings[i].explain.barre != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '横按：${payload.voicings[i].explain.barre!.fret} 品 '
-                      '（弦 ${payload.voicings[i].explain.barre!.fromString}–${payload.voicings[i].explain.barre!.toString_}）',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                  if (payload.voicings[i].explain.voicingExplainZh.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(payload.voicings[i].explain.voicingExplainZh),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        if (disclaimer != null && disclaimer!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            disclaimer!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ],
     );
   }
 }

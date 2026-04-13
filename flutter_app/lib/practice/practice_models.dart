@@ -30,6 +30,7 @@ class PracticeSession {
     this.progressionId,
     this.musicKey,
     this.complexity,
+    this.rhythmPatternId,
   });
 
   final String id;
@@ -47,6 +48,9 @@ class PracticeSession {
   final String? musicKey;
   final String? complexity;
 
+  /// 节奏扫弦练习所选内置节奏型 id（可空，兼容旧数据）。
+  final String? rhythmPatternId;
+
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,
@@ -61,6 +65,7 @@ class PracticeSession {
       if (progressionId != null) 'progressionId': progressionId,
       if (musicKey != null) 'musicKey': musicKey,
       if (complexity != null) 'complexity': complexity,
+      if (rhythmPatternId != null) 'rhythmPatternId': rhythmPatternId,
     };
   }
 
@@ -79,6 +84,7 @@ class PracticeSession {
       progressionId: json['progressionId'] as String?,
       musicKey: json['musicKey'] as String?,
       complexity: json['complexity'] as String?,
+      rhythmPatternId: json['rhythmPatternId'] as String?,
     );
   }
 }

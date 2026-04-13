@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../chords/chord_quick_reference.dart';
 import 'chord_progression_library.dart';
 import 'practice_api_repository.dart';
+import 'practice_finish_dialog.dart';
 import 'practice_models.dart';
 import 'practice_session_store.dart';
 
@@ -23,6 +25,8 @@ class ChordPracticeConfig {
 }
 
 /// 和弦进行选择页：选进行 / 调 / 复杂度，预览实际和弦名，进入练习。
+///
+/// 和弦进行列表在底部弹层中展示并支持搜索，避免主页面过长滚动。
 class ChordPracticeSelectionScreen extends StatefulWidget {
   const ChordPracticeSelectionScreen({
     super.key,
@@ -69,6 +73,30 @@ class _ChordPracticeSelectionScreenState
     );
   }
 
+  /// 长列表改为底部弹层 + 搜索，主屏一屏内完成调性/复杂度/预览。
+  void _openProgressionPicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+          ),
+          child: _ChordProgressionPickerSheet(
+            selectedId: _selectedProgression.id,
+            onSelected: (p) {
+              Navigator.of(ctx).pop();
+              setState(() => _selectedProgression = p);
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -100,25 +128,33 @@ class _ChordPracticeSelectionScreenState
                         Wrap(
                           spacing: 8,
                           runSpacing: 4,
-                          children: chords
-                              .map((c) => Chip(
-                                    label: Text(
-                                      c,
-                                      key: Key('preview_chord_$c'),
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ))
-                              .toList(),
+                          children: [
+                            for (var i = 0; i < chords.length; i++)
+                              ActionChip(
+                                label: Text(
+                                  chords[i],
+                                  key: Key('preview_chord_${chords[i]}_$i'),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                tooltip: '查看指法',
+                                onPressed: () {
+                                  showChordQuickReferenceSheet(
+                                    context,
+                                    chords[i],
+                                  );
+                                },
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(
-                          '${_selectedProgression.name} · $_selectedKey 调 · ${_selectedComplexity.label}',
+                          '${_selectedProgression.name} · $_selectedKey 调 · '
+                          '${_selectedComplexity.label} · 点和弦名查看指法',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onPrimaryContainer
-                                .withValues(alpha: 0.7),
+                                .withValues(alpha: 0.72),
                           ),
                         ),
                       ],
@@ -126,26 +162,42 @@ class _ChordPracticeSelectionScreenState
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-                // ---- 调性选择 ----
+                // ---- 调性选择（下拉，节省纵向空间）----
                 Text('调性', style: theme.textTheme.titleSmall),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: kMusicKeys.map((k) {
-                    final selected = k == _selectedKey;
-                    return ChoiceChip(
-                      key: Key('key_chip_$k'),
-                      label: Text(k),
-                      selected: selected,
-                      onSelected: (_) => setState(() => _selectedKey = k),
-                    );
-                  }).toList(),
+                const SizedBox(height: 6),
+                InputDecorator(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      key: const Key('practice_key_dropdown'),
+                      isExpanded: true,
+                      isDense: true,
+                      value: _selectedKey,
+                      items: [
+                        for (final k in kMusicKeys)
+                          DropdownMenuItem<String>(
+                            key: Key('key_dropdown_item_$k'),
+                            value: k,
+                            child: Text(k),
+                          ),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() => _selectedKey = v);
+                      },
+                    ),
+                  ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // ---- 复杂度选择 ----
                 Text('复杂度', style: theme.textTheme.titleSmall),
@@ -163,52 +215,35 @@ class _ChordPracticeSelectionScreenState
                       setState(() => _selectedComplexity = s.first),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-                // ---- 进行列表 ----
+                // ---- 和弦进行（底部弹层，避免主列表过长）----
                 Text('和弦进行', style: theme.textTheme.titleSmall),
                 const SizedBox(height: 8),
-                ...kProgressionStyles.expand((style) {
-                  final progs = kChordProgressions
-                      .where((p) => p.style == style)
-                      .toList();
-                  if (progs.isEmpty) return <Widget>[];
-                  return [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4, bottom: 4),
-                      child: Text(
-                        kStyleLabels[style] ?? style,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    key: const Key('progression_picker_tile'),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                    ...progs.map((prog) {
-                      final isSelected =
-                          prog.id == _selectedProgression.id;
-                      return Card(
-                        elevation: isSelected ? 2 : 0,
-                        color: isSelected
-                            ? theme.colorScheme.secondaryContainer
-                            : null,
-                        child: ListTile(
-                          key: Key('progression_${prog.id}'),
-                          title: Text(prog.name),
-                          subtitle: Text(prog.romanNumerals),
-                          trailing: isSelected
-                              ? Icon(
-                                  Icons.check_circle,
-                                  color: theme.colorScheme.primary,
-                                )
-                              : null,
-                          onTap: () => setState(
-                              () => _selectedProgression = prog),
-                        ),
-                      );
-                    }),
-                  ];
-                }),
-                const SizedBox(height: 80),
+                    leading: Icon(
+                      Icons.queue_music_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: Text(_selectedProgression.name),
+                    subtitle: Text(
+                      '${kStyleLabels[_selectedProgression.style] ?? _selectedProgression.style} · '
+                      '${_selectedProgression.romanNumerals}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: _openProgressionPicker,
+                  ),
+                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -224,6 +259,141 @@ class _ChordPracticeSelectionScreenState
             label: const Text('开始练习'),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 和弦进行列表：按风格分组，支持按名称/级数/风格关键字筛选。
+class _ChordProgressionPickerSheet extends StatefulWidget {
+  const _ChordProgressionPickerSheet({
+    required this.selectedId,
+    required this.onSelected,
+  });
+
+  final String selectedId;
+  final ValueChanged<ChordProgression> onSelected;
+
+  @override
+  State<_ChordProgressionPickerSheet> createState() =>
+      _ChordProgressionPickerSheetState();
+}
+
+class _ChordProgressionPickerSheetState extends State<_ChordProgressionPickerSheet> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<ChordProgression> _filtered() {
+    final q = _searchController.text.trim().toLowerCase();
+    if (q.isEmpty) return kChordProgressions;
+    return kChordProgressions.where((p) {
+      final styleZh = kStyleLabels[p.style]?.toLowerCase() ?? '';
+      return p.name.toLowerCase().contains(q) ||
+          p.romanNumerals.toLowerCase().contains(q) ||
+          p.style.toLowerCase().contains(q) ||
+          styleZh.contains(q);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final maxH = MediaQuery.sizeOf(context).height * 0.82;
+    final filtered = _filtered();
+
+    return SizedBox(
+      height: maxH,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Text(
+              '选择和弦进行',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: '搜索名称、级数或风格',
+                prefixIcon: Icon(Icons.search_rounded),
+                border: OutlineInputBorder(),
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 12),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(
+                    child: Text(
+                      '没有匹配的进行中',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    children: [
+                      ...kProgressionStyles.expand((style) {
+                        final progs =
+                            filtered.where((p) => p.style == style).toList();
+                        if (progs.isEmpty) return <Widget>[];
+                        return [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                            child: Text(
+                              kStyleLabels[style] ?? style,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          ...progs.map((prog) {
+                            final isSelected = prog.id == widget.selectedId;
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 2,
+                              ),
+                              elevation: isSelected ? 2 : 0,
+                              color: isSelected
+                                  ? theme.colorScheme.secondaryContainer
+                                  : null,
+                              child: ListTile(
+                                key: Key('progression_${prog.id}'),
+                                dense: true,
+                                title: Text(prog.name),
+                                subtitle: Text(prog.romanNumerals),
+                                trailing: isSelected
+                                    ? Icon(
+                                        Icons.check_circle,
+                                        color: theme.colorScheme.primary,
+                                      )
+                                    : null,
+                                onTap: () => widget.onSelected(prog),
+                              ),
+                            );
+                          }),
+                        ];
+                      }),
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -287,9 +457,9 @@ class _ChordPracticeSessionScreenState
       return;
     }
     _pause();
-    final result = await showDialog<_FinishResult>(
+    final result = await showPracticeFinishDialog(
       context: context,
-      builder: (_) => _FinishDialog(noteController: _noteController),
+      noteController: _noteController,
     );
     if (result == null || _startedAt == null) return;
     final cfg = widget.config;
@@ -366,15 +536,47 @@ class _ChordPracticeSessionScreenState
                     spacing: 8,
                     runSpacing: 6,
                     alignment: WrapAlignment.center,
-                    children: cfg.resolvedChords.map((c) {
-                      return Text(
-                        c,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                    children: [
+                      for (var i = 0; i < cfg.resolvedChords.length; i++)
+                        Tooltip(
+                          message: '查看指法',
+                          child: InkWell(
+                            onTap: () => showChordQuickReferenceSheet(
+                              context,
+                              cfg.resolvedChords[i],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                              child: Text(
+                                cfg.resolvedChords[i],
+                                key: Key(
+                                  'session_chord_${cfg.resolvedChords[i]}_$i',
+                                ),
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: theme.colorScheme.primary
+                                      .withValues(alpha: 0.35),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      );
-                    }).toList(),
+                    ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '点击和弦名查看指法',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
@@ -423,99 +625,6 @@ class _ChordPracticeSessionScreenState
       ),
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// 结束弹窗（复用逻辑，独立 StatefulWidget 避免依赖泄漏）
-// ---------------------------------------------------------------------------
-
-class _FinishDialog extends StatefulWidget {
-  const _FinishDialog({required this.noteController});
-
-  final TextEditingController noteController;
-
-  @override
-  State<_FinishDialog> createState() => _FinishDialogState();
-}
-
-class _FinishDialogState extends State<_FinishDialog> {
-  var _completed = true;
-  var _difficulty = 3;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('本次练习完成'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              title: const Text('完成目标'),
-              value: _completed,
-              onChanged: (v) => setState(() => _completed = v),
-            ),
-            Row(
-              children: [
-                const Text('主观难度'),
-                Expanded(
-                  child: Slider(
-                    key: const Key('chord_difficulty_slider'),
-                    value: _difficulty.toDouble(),
-                    min: 1,
-                    max: 5,
-                    divisions: 4,
-                    label: '$_difficulty',
-                    onChanged: (v) =>
-                        setState(() => _difficulty = v.round()),
-                  ),
-                ),
-                Text('$_difficulty'),
-              ],
-            ),
-            TextField(
-              key: const Key('chord_note_input'),
-              controller: widget.noteController,
-              decoration: const InputDecoration(labelText: '备注（可选）'),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          key: const Key('chord_save_session'),
-          onPressed: () {
-            Navigator.of(context).pop(
-              _FinishResult(
-                completed: _completed,
-                difficulty: _difficulty,
-                note: widget.noteController.text.trim().isEmpty
-                    ? null
-                    : widget.noteController.text.trim(),
-              ),
-            );
-          },
-          child: const Text('保存记录'),
-        ),
-      ],
-    );
-  }
-}
-
-class _FinishResult {
-  const _FinishResult({
-    required this.completed,
-    required this.difficulty,
-    required this.note,
-  });
-
-  final bool completed;
-  final int difficulty;
-  final String? note;
 }
 
 String _formatDuration(int seconds) {

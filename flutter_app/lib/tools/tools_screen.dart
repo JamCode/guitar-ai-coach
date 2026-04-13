@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../chords/chord_lookup_screen.dart';
+import 'fretboard_screen.dart';
 import '../theory/chord_chart_screen.dart';
 import '../theory/theory_screen.dart';
 import '../tuner/tuner_screen.dart';
 
-/// 工具 Tab 入口：调音、和弦查询、静态乐理与和弦表。
+/// 工具 Tab 入口：调音、吉他指板、和弦查询、静态乐理与和弦表。
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
 
@@ -29,8 +30,8 @@ class ToolsScreen extends StatelessWidget {
                     '更多能力在底部导航：点「练耳」进入和弦听辨、和弦进行；'
                     '「我的谱」可从相册或拍照添加多页图片；和弦字典默认离线，联网为可选。',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                        ),
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
               ],
@@ -49,12 +50,25 @@ class ToolsScreen extends StatelessWidget {
           },
         ),
         ListTile(
+          key: const Key('tools_open_fretboard'),
+          leading: const Icon(Icons.view_week_outlined),
+          title: const Text('吉他指板'),
+          subtitle: const Text('竖向指板 · 音名 · 变调夹'),
+          onTap: () {
+            Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const FretboardScreen()),
+            );
+          },
+        ),
+        ListTile(
           leading: const Icon(Icons.piano_rounded),
           title: const Text('和弦字典'),
           subtitle: const Text('离线可查构成音与常见把位；可选联网更多按法'),
           onTap: () {
             Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => const ChordLookupScreen()),
+              MaterialPageRoute<void>(
+                builder: (_) => const ChordLookupScreen(),
+              ),
             );
           },
         ),
