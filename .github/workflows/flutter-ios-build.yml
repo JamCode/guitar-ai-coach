@@ -79,7 +79,7 @@ jobs:
             <string>manual</string>
             <key>provisioningProfiles</key>
             <dict>
-              <key>com.hanwang.guitarhelper</key>
+              <key>com.wanghan.guitarhelper</key>
               <string>${PROFILE_SPECIFIER}</string>
             </dict>
           </dict>
@@ -121,7 +121,7 @@ jobs:
 #   导出 .p12 时设置的密码
 #
 # IOS_PROVISION_PROFILE_BASE64
-#   与上述证书匹配、且包含 Bundle ID com.hanwang.guitarhelper 的 .mobileprovision 文件 base64
+#   与上述证书匹配、且包含 Bundle ID com.wanghan.guitarhelper 的 .mobileprovision 文件 base64
 #
 # IOS_KEYCHAIN_PASSWORD
 #   任意强随机字符串（仅用于 CI 临时钥匙串）
