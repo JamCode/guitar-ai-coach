@@ -529,42 +529,42 @@ async function playOne(index: number, frets: number[]) {
 
 @media (prefers-color-scheme: dark) {
   .dict-title {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .dict-sub {
-    color: rgba(248, 248, 248, 0.65);
+    color: rgba(216, 220, 230, 0.65);
   }
   .dict-quiz-link {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .dict-section {
     background: rgba(15, 15, 18, 0.96);
     border-color: rgba(255, 255, 255, 0.14);
   }
   .dict-section-h {
-    color: rgba(248, 248, 248, 0.8);
+    color: rgba(216, 220, 230, 0.8);
   }
   .live-chord {
     background: linear-gradient(180deg, rgba(58, 105, 151, 0.34) 0%, rgba(40, 66, 102, 0.3) 100%);
     border-color: rgba(138, 187, 237, 0.58);
   }
   .live-label {
-    color: rgba(248, 248, 248, 0.8);
+    color: rgba(216, 220, 230, 0.8);
   }
   .live-parts {
-    color: rgba(248, 248, 248, 0.92);
+    color: rgba(216, 220, 230, 0.92);
   }
   .live-key {
-    color: rgba(248, 248, 248, 0.8);
+    color: rgba(216, 220, 230, 0.8);
     border-top-color: rgba(188, 214, 240, 0.55);
   }
   .field-label {
-    color: rgba(248, 248, 248, 0.92);
+    color: rgba(216, 220, 230, 0.92);
   }
   .field-select {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.2);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .dict-primary {
     border-color: #fff;
@@ -574,25 +574,25 @@ async function playOne(index: number, frets: number[]) {
   .dict-secondary {
     border-color: rgba(255, 255, 255, 0.26);
     background: rgba(255, 255, 255, 0.08);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .summary-notes,
   .dict-voicings-h {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .voicing-card {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.12);
   }
   .voicing-tags {
-    color: rgba(248, 248, 248, 0.84);
+    color: rgba(216, 220, 230, 0.84);
   }
   .summary-p,
   .voicing-txt {
-    color: rgba(248, 248, 248, 0.9);
+    color: rgba(216, 220, 230, 0.9);
   }
   .dict-disclaimer {
-    color: rgba(248, 248, 248, 0.74);
+    color: rgba(216, 220, 230, 0.74);
   }
 }
 </style>

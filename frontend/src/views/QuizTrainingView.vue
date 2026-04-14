@@ -652,25 +652,25 @@ onBeforeUnmount(() => {
 
 @media (prefers-color-scheme: dark) {
   .quiz-title {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .quiz-sub {
-    color: rgba(248, 248, 248, 0.82);
+    color: rgba(216, 220, 230, 0.82);
   }
   .quiz-section {
     border-color: rgba(255, 255, 255, 0.14);
     background: rgba(15, 15, 18, 0.96);
   }
   .quiz-section-h {
-    color: rgba(248, 248, 248, 0.8);
+    color: rgba(216, 220, 230, 0.8);
   }
   .field-label {
-    color: rgba(248, 248, 248, 0.92);
+    color: rgba(216, 220, 230, 0.92);
   }
   .field-select {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.2);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .btn-primary {
     border-color: #ffffff;
@@ -680,21 +680,21 @@ onBeforeUnmount(() => {
   .btn-secondary {
     border-color: rgba(255, 255, 255, 0.26);
     background: rgba(255, 255, 255, 0.08);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .progress {
-    color: rgba(248, 248, 248, 0.84);
+    color: rgba(216, 220, 230, 0.84);
   }
   .auto-next-toggle {
-    color: rgba(248, 248, 248, 0.86);
+    color: rgba(216, 220, 230, 0.86);
   }
   .stem {
-    color: rgba(248, 248, 248, 0.96);
+    color: rgba(216, 220, 230, 0.96);
   }
   .option {
     border-color: rgba(255, 255, 255, 0.18);
     background: rgba(255, 255, 255, 0.06);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .option.selected {
     border-color: #ffffff;
@@ -708,10 +708,10 @@ onBeforeUnmount(() => {
     background: rgba(255, 138, 128, 0.16);
   }
   .option-top {
-    color: rgba(248, 248, 248, 0.82);
+    color: rgba(216, 220, 230, 0.82);
   }
   .option-f {
-    color: rgba(248, 248, 248, 0.9);
+    color: rgba(216, 220, 230, 0.9);
   }
   .ok {
     color: #8fe7b0;
@@ -720,20 +720,20 @@ onBeforeUnmount(() => {
     color: #ff8a80;
   }
   .result-line {
-    color: rgba(248, 248, 248, 0.92);
+    color: rgba(216, 220, 230, 0.92);
   }
   .result-line.muted {
-    color: rgba(248, 248, 248, 0.82);
+    color: rgba(216, 220, 230, 0.82);
   }
   .quality-box {
     border-color: rgba(255, 255, 255, 0.14);
     background: rgba(255, 255, 255, 0.06);
   }
   .quality-title {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .quality-list {
-    color: rgba(248, 248, 248, 0.9);
+    color: rgba(216, 220, 230, 0.9);
   }
 }
 

@@ -6,7 +6,8 @@ abstract final class AppTheme {
   static const _bgLight = Color(0xFFF7F8FA);
   static const _surfaceLight = Color(0xFFFFFFFF);
   static const _surfaceSoftLight = Color(0xFFF3F4F7);
-  static const _textLight = Color(0xFF18181B);
+  /// 主文字：略浅于纯黑，降低浅色界面下的刺眼感（与 Web `--text-h` 对齐思路）。
+  static const _textLight = Color(0xFF2A2633);
   static const _mutedLight = Color(0xFF71717A);
   static const _lineLight = Color(0xFFEBECEF);
   static const _brandLight = Color(0xFFFF2442);
@@ -17,8 +18,9 @@ abstract final class AppTheme {
   static const _bgDark = Color(0xFF111216);
   static const _surfaceDark = Color(0xFF1A1B20);
   static const _surfaceSoftDark = Color(0xFF14151A);
-  static const _textDark = Color(0xFFF4F4F5);
-  static const _mutedDark = Color(0xFFA1A1AA);
+  /// 深色模式主文字：偏冷灰而非近白，减轻暗色下的眩光（与 Web 深色主字一致）。
+  static const _textDark = Color(0xFFD8DCE6);
+  static const _mutedDark = Color(0xFF9CA3AF);
   static const _lineDark = Color(0xFF2A2C34);
   static const _brandDark = Color(0xFFFF4D67);
   static const _brandSoftDark = Color(0xFF3A1E26);

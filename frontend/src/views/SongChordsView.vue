@@ -595,21 +595,21 @@ function onSwitchDifficulty(next: DifficultyId) {
 
 @media (prefers-color-scheme: dark) {
   .song-title {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .song-sub {
-    color: rgba(248, 248, 248, 0.82);
+    color: rgba(216, 220, 230, 0.82);
   }
   .song-label {
-    color: rgba(248, 248, 248, 0.92);
+    color: rgba(216, 220, 230, 0.92);
   }
   .song-input {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.22);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .song-input::placeholder {
-    color: rgba(248, 248, 248, 0.58);
+    color: rgba(216, 220, 230, 0.58);
   }
   .song-main-btn {
     border-color: #ffffff;
@@ -619,15 +619,15 @@ function onSwitchDifficulty(next: DifficultyId) {
   .song-sub-btn {
     border-color: rgba(255, 255, 255, 0.26);
     background: rgba(255, 255, 255, 0.08);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .song-status {
-    color: rgba(248, 248, 248, 0.84);
+    color: rgba(216, 220, 230, 0.84);
   }
   .difficulty-btn {
     border-color: rgba(255, 255, 255, 0.28);
     background: rgba(255, 255, 255, 0.08);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .difficulty-btn.on {
     border-color: #ffffff;
@@ -639,11 +639,11 @@ function onSwitchDifficulty(next: DifficultyId) {
     background: rgba(15, 15, 18, 0.96);
   }
   .result-title {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .chip {
     border-color: rgba(255, 255, 255, 0.22);
-    color: rgba(248, 248, 248, 0.9);
+    color: rgba(216, 220, 230, 0.9);
   }
   .chip.em {
     color: #c6f6d1;
@@ -656,27 +656,27 @@ function onSwitchDifficulty(next: DifficultyId) {
   .v2-box {
     border-color: rgba(255, 255, 255, 0.16);
     background: rgba(255, 255, 255, 0.06);
-    color: rgba(248, 248, 248, 0.92);
+    color: rgba(216, 220, 230, 0.92);
   }
   .mini-select {
     border-color: rgba(255, 255, 255, 0.24);
     background: rgba(255, 255, 255, 0.08);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
   .chart-section-title {
-    color: rgba(248, 248, 248, 0.82);
+    color: rgba(216, 220, 230, 0.82);
   }
   .chord-row {
     color: #8dc6ff;
   }
   .lyric-row {
-    color: rgba(248, 248, 248, 0.94);
+    color: rgba(216, 220, 230, 0.94);
   }
   .why {
-    color: rgba(248, 248, 248, 0.82);
+    color: rgba(216, 220, 230, 0.82);
   }
   .chart-fallback {
-    color: rgba(248, 248, 248, 0.92);
+    color: rgba(216, 220, 230, 0.92);
   }
 }
 </style>

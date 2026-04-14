@@ -26,10 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>需要访问麦克风以识别吉他音高并完成调音。</string>
 	<key>NSCameraUsageDescription</key>
 	<string>需要使用相机拍摄谱子照片并保存到「我的谱」。</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>需要访问麦克风以识别吉他音高并完成调音。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>需要从相册选择谱子图片并保存到「我的谱」。</string>
 	<key>UIApplicationSceneManifest</key>

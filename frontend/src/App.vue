@@ -64,7 +64,7 @@ import { RouterLink, RouterView } from 'vue-router'
   gap: 2px;
   padding: 8px 6px 10px;
   text-decoration: none;
-  color: rgba(17, 17, 17, 0.55);
+  color: rgba(28, 24, 36, 0.52);
   font-size: 11px;
   font-weight: 600;
   border-top: 3px solid transparent;
@@ -73,13 +73,13 @@ import { RouterLink, RouterView } from 'vue-router'
 }
 
 .tab-bar .tab:hover {
-  color: #111111;
+  color: #2a2633;
   background: #fafafa;
 }
 
 .tab-bar .tab--active {
-  color: #111111;
-  border-top-color: #111111;
+  color: #2a2633;
+  border-top-color: #2a2633;
   font-weight: 800;
 }
 
@@ -94,15 +94,15 @@ import { RouterLink, RouterView } from 'vue-router'
     border-top-color: rgba(255, 255, 255, 0.12);
   }
   .tab-bar .tab {
-    color: rgba(248, 248, 248, 0.55);
+    color: rgba(216, 220, 230, 0.55);
   }
   .tab-bar .tab:hover {
-    color: #f8f8f8;
+    color: #d8dce6;
     background: rgba(255, 255, 255, 0.06);
   }
   .tab-bar .tab--active {
-    color: #f8f8f8;
-    border-top-color: #ffffff;
+    color: #d8dce6;
+    border-top-color: rgba(255, 255, 255, 0.85);
   }
 }
 </style>

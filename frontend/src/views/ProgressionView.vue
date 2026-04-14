@@ -894,17 +894,17 @@ onMounted(async () => {
   }
 
   .tech-title {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .section-label {
-    color: rgba(248, 248, 248, 0.72);
+    color: rgba(216, 220, 230, 0.72);
   }
 
   .chip {
     border-color: rgba(255, 255, 255, 0.16);
     background: rgba(255, 255, 255, 0.06);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .chip:hover {
@@ -980,7 +980,7 @@ onMounted(async () => {
   padding: 5px 10px;
   border-radius: 999px;
   border: 1px solid #e5e5e5;
-  background: #f8f8f8;
+  background: #f0f1f4;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -1330,7 +1330,7 @@ onMounted(async () => {
   }
 
   .result-head {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .playback-toolbar {
@@ -1339,17 +1339,17 @@ onMounted(async () => {
   }
 
   .playback-toolbar-label {
-    color: rgba(248, 248, 248, 0.84);
+    color: rgba(216, 220, 230, 0.84);
   }
 
   .playback-toolbar-hint {
-    color: rgba(248, 248, 248, 0.74);
+    color: rgba(216, 220, 230, 0.74);
   }
 
   .bpm-chip {
     border-color: rgba(255, 255, 255, 0.18);
     background: rgba(255, 255, 255, 0.08);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .bpm-chip:hover {
@@ -1368,7 +1368,7 @@ onMounted(async () => {
 
   .result-loading,
   .result-empty {
-    color: rgba(248, 248, 248, 0.84);
+    color: rgba(216, 220, 230, 0.84);
   }
 
   .progression-item {
@@ -1389,7 +1389,7 @@ onMounted(async () => {
   .prog-play-btn {
     border-color: rgba(255, 255, 255, 0.22);
     background: rgba(255, 255, 255, 0.08);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .prog-play-btn:hover {
@@ -1403,23 +1403,23 @@ onMounted(async () => {
   }
 
   .num {
-    color: rgba(248, 248, 248, 0.82);
+    color: rgba(216, 220, 230, 0.82);
   }
 
   .prog {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .chord-sep {
-    color: rgba(248, 248, 248, 0.74);
+    color: rgba(216, 220, 230, 0.74);
   }
 
   .chord-token {
-    text-decoration-color: rgba(248, 248, 248, 0.35);
+    text-decoration-color: rgba(216, 220, 230, 0.35);
   }
 
   .chord-token:hover {
-    text-decoration-color: rgba(248, 248, 248, 0.65);
+    text-decoration-color: rgba(216, 220, 230, 0.65);
   }
 
   .chord-token:focus-visible {
@@ -1441,12 +1441,12 @@ onMounted(async () => {
   }
 
   .sheet-title {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .sheet-close {
     background: rgba(255, 255, 255, 0.1);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .sheet-close:hover {
@@ -1455,7 +1455,7 @@ onMounted(async () => {
 
   .sheet-loading,
   .sheet-error {
-    color: rgba(248, 248, 248, 0.7);
+    color: rgba(216, 220, 230, 0.7);
   }
 
   .sheet-error {
@@ -1463,15 +1463,15 @@ onMounted(async () => {
   }
 
   .sheet-h {
-    color: rgba(248, 248, 248, 0.8);
+    color: rgba(216, 220, 230, 0.8);
   }
 
   .sheet-notes {
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .sheet-p {
-    color: rgba(248, 248, 248, 0.9);
+    color: rgba(216, 220, 230, 0.9);
   }
 
   .sheet-actions {
@@ -1496,7 +1496,7 @@ onMounted(async () => {
   .sheet-recalibrate {
     border-color: rgba(255, 255, 255, 0.22);
     background: rgba(255, 255, 255, 0.06);
-    color: #f8f8f8;
+    color: #d8dce6;
   }
 
   .sheet-recalibrate:hover:not(:disabled) {
@@ -1509,15 +1509,15 @@ onMounted(async () => {
   }
 
   .sheet-disclaimer {
-    color: rgba(248, 248, 248, 0.74);
+    color: rgba(216, 220, 230, 0.74);
   }
 
   .tip {
-    color: rgba(248, 248, 248, 0.84);
+    color: rgba(216, 220, 230, 0.84);
   }
 
   .song-empty {
-    color: rgba(248, 248, 248, 0.84);
+    color: rgba(216, 220, 230, 0.84);
   }
 }
 </style>

@@ -3,8 +3,9 @@
  * 主界面视觉以 App.vue 的 scoped 样式为主；下文 .hero / #social / .counter 等为 Vite 模板遗留，当前应用未使用。
  */
 :root {
-  --text: #3f3a48;
-  --text-h: #08060d;
+  /* 略降低对比度，减轻长时间阅读的刺眼感 */
+  --text: #4a4452;
+  --text-h: #1c1824;
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
@@ -36,8 +37,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #c7ced8;
-    --text-h: #f3f4f6;
+    --text: #aeb6c4;
+    --text-h: #d9dde6;
     --bg: #16171d;
     --border: #2e303a;
     --code-bg: #1f2028;
