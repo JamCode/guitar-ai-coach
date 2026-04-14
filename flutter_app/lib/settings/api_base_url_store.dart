@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_env.dart';
+
 /// 持久化保存后端 API 基址（与 Web 的 `VITE_API_BASE_URL` 同语义，通常含 `/api` 后缀）。
 ///
 /// 副作用：读写 [SharedPreferences]。
@@ -9,10 +11,7 @@ class ApiBaseUrlStore {
   static const _key = 'guitar_api_base_url';
 
   /// 编译期注入的默认基址（`--dart-define=GUITAR_API_BASE_URL=...`），仅在用户未保存过配置时使用。
-  static const String kCompileTimeDefault = String.fromEnvironment(
-    'GUITAR_API_BASE_URL',
-    defaultValue: 'http://47.110.78.65/api',
-  );
+  static const String kCompileTimeDefault = AppEnv.apiBaseUrl;
 
   /// 返回去掉末尾 `/` 的基址；若从未配置且编译期也未定义，返回空字符串。
   Future<String> load() async {
