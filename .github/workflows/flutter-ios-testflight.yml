@@ -242,8 +242,10 @@ jobs:
             -destination 'generic/platform=iOS' \
             -archivePath build/ios/archive/Runner.xcarchive \
             archive \
+            CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=7R8RS88G2M \
-            CODE_SIGN_IDENTITY="Apple Distribution"
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_SPECIFIER"
 
           xcodebuild -exportArchive \
             -archivePath build/ios/archive/Runner.xcarchive \
