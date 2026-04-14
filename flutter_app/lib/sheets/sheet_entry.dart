@@ -9,6 +9,8 @@ class SheetEntry {
     required this.storedFileNames,
     required this.addedAtMs,
     this.serverPageCount,
+    this.parseStatus = 'rawOnly',
+    this.parsedUpdatedAtMs,
   });
 
   final String id;
@@ -20,16 +22,39 @@ class SheetEntry {
 
   /// 云端谱页数；非空时优先于 [storedFileNames.length]。
   final int? serverPageCount;
+  final String parseStatus;
+  final int? parsedUpdatedAtMs;
 
   int get pageCount => serverPageCount ?? storedFileNames.length;
 
+  SheetEntry copyWith({
+    String? displayName,
+    List<String>? storedFileNames,
+    int? addedAtMs,
+    int? serverPageCount,
+    String? parseStatus,
+    int? parsedUpdatedAtMs,
+  }) {
+    return SheetEntry(
+      id: id,
+      displayName: displayName ?? this.displayName,
+      storedFileNames: storedFileNames ?? this.storedFileNames,
+      addedAtMs: addedAtMs ?? this.addedAtMs,
+      serverPageCount: serverPageCount ?? this.serverPageCount,
+      parseStatus: parseStatus ?? this.parseStatus,
+      parsedUpdatedAtMs: parsedUpdatedAtMs ?? this.parsedUpdatedAtMs,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'displayName': displayName,
-        'storedFileNames': storedFileNames,
-        'addedAtMs': addedAtMs,
-        if (serverPageCount != null) 'serverPageCount': serverPageCount,
-      };
+    'id': id,
+    'displayName': displayName,
+    'storedFileNames': storedFileNames,
+    'addedAtMs': addedAtMs,
+    if (serverPageCount != null) 'serverPageCount': serverPageCount,
+    'parseStatus': parseStatus,
+    if (parsedUpdatedAtMs != null) 'parsedUpdatedAtMs': parsedUpdatedAtMs,
+  };
 
   /// 解析索引项；兼容旧版单文件字段 `storedFileName`。
   static SheetEntry? fromJson(Object? raw) {
@@ -48,10 +73,24 @@ class SheetEntry {
     } else if (spcRaw is num) {
       spc = spcRaw.toInt();
     }
+    final statusRaw = raw['parseStatus'];
+    final parseStatus = statusRaw is String && statusRaw.isNotEmpty
+        ? statusRaw
+        : 'rawOnly';
+    final parsedAtRaw = raw['parsedUpdatedAtMs'];
+    int? parsedUpdatedAtMs;
+    if (parsedAtRaw is int) {
+      parsedUpdatedAtMs = parsedAtRaw;
+    } else if (parsedAtRaw is num) {
+      parsedUpdatedAtMs = parsedAtRaw.toInt();
+    }
 
     final namesRaw = raw['storedFileNames'];
     if (namesRaw is List) {
-      final names = namesRaw.whereType<String>().where((s) => s.isNotEmpty).toList();
+      final names = namesRaw
+          .whereType<String>()
+          .where((s) => s.isNotEmpty)
+          .toList();
       if (names.isNotEmpty) {
         return SheetEntry(
           id: id,
@@ -59,6 +98,8 @@ class SheetEntry {
           storedFileNames: names,
           addedAtMs: t,
           serverPageCount: spc,
+          parseStatus: parseStatus,
+          parsedUpdatedAtMs: parsedUpdatedAtMs,
         );
       }
     }
@@ -70,6 +111,8 @@ class SheetEntry {
         storedFileNames: [legacy],
         addedAtMs: t,
         serverPageCount: spc,
+        parseStatus: parseStatus,
+        parsedUpdatedAtMs: parsedUpdatedAtMs,
       );
     }
     if (spc != null && spc > 0) {
@@ -79,6 +122,8 @@ class SheetEntry {
         storedFileNames: const [],
         addedAtMs: t,
         serverPageCount: spc,
+        parseStatus: parseStatus,
+        parsedUpdatedAtMs: parsedUpdatedAtMs,
       );
     }
     return null;

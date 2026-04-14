@@ -43,7 +43,7 @@ class ReferenceTonePlayer {
     if (stringIndex < 0 || stringIndex >= _assetPaths.length) return;
     try {
       await _ensureSources();
-      await SoLoud.instance.play(
+      SoLoud.instance.play(
         _sources![stringIndex],
         volume: _volume,
       );

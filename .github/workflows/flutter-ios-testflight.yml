@@ -124,51 +124,6 @@ jobs:
         run: pod install
         working-directory: flutter_app/ios
 
-      - name: Boot iOS simulator
-        id: simulator
-        run: |
-          set -euo pipefail
-          SIMULATOR_ID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 16/ {print $2; exit}')
-          if [ -z "${SIMULATOR_ID:-}" ]; then
-            SIMULATOR_ID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 15/ {print $2; exit}')
-          fi
-          if [ -z "${SIMULATOR_ID:-}" ]; then
-            echo "::error::No available iPhone simulator found on runner."
-            exit 1
-          fi
-          xcrun simctl boot "$SIMULATOR_ID" || true
-          xcrun simctl bootstatus "$SIMULATOR_ID" -b
-          echo "id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
-          echo "Booted simulator: $SIMULATOR_ID"
-
-      - name: Check CI auth secret for integration tests
-        env:
-          E2E_CI_AUTH_SECRET: ${{ secrets.E2E_CI_AUTH_SECRET }}
-        run: |
-          if [ -z "${E2E_CI_AUTH_SECRET:-}" ]; then
-            echo "::error::Missing secret E2E_CI_AUTH_SECRET for iOS integration tests."
-            exit 1
-          fi
-
-      - name: Run Flutter integration tests on iOS simulator
-        env:
-          E2E_CI_AUTH_SECRET: ${{ secrets.E2E_CI_AUTH_SECRET }}
-        run: |
-          set -euo pipefail
-          mkdir -p build
-          flutter test integration_test -d "${{ steps.simulator.outputs.id }}" --reporter expanded \
-            --dart-define=E2E_CI_AUTH_SECRET="${E2E_CI_AUTH_SECRET}" \
-            --dart-define=E2E_CI_USER_KEY="github-actions-${{ github.run_id }}" \
-            --dart-define=E2E_REQUIRE_CI_AUTH=true | tee build/integration-test.log
-
-      - name: Upload integration test artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: guitar-helper-integration-test-log
-          path: flutter_app/build/integration-test.log
-          if-no-files-found: warn
-
       - name: Install signing certificate and provisioning profile
         if: steps.upload_mode.outputs.enabled == 'true'
         env:
@@ -327,7 +282,7 @@ jobs:
             echo "- Workflow result: \`${{ job.status }}\`"
             echo "- iOS build number: \`${{ steps.build_number.outputs.current }}\`"
             echo "- Previous build number: \`${{ steps.build_number.outputs.previous || 'N/A' }}\`"
-            echo "- Integration tests: \`completed\`"
+            echo "- Integration tests: \`moved to dedicated workflow\`"
             echo "- TestFlight upload enabled: \`${{ steps.upload_mode.outputs.enabled }}\`"
             if [ "${{ steps.upload_mode.outputs.enabled }}" = "true" ]; then
               echo "- TestFlight upload: \`attempted\`"

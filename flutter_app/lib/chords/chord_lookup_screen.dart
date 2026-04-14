@@ -1,72 +1,32 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-import '../settings/api_base_url_store.dart';
-import 'chord_api_repository.dart';
 import 'chord_models.dart';
-import 'chord_remote_repository.dart';
 import 'chord_result_bottom_sheet.dart';
 import 'chord_symbol.dart';
 import 'chord_transpose_local.dart';
 import 'offline_chord_builder.dart';
 
-/// 和弦字典：**默认完全离线**查构成音与常见把位；可选联网拉取多套 AI 按法。
+/// 和弦字典：完全离线查构成音与常见把位。
 class ChordLookupScreen extends StatefulWidget {
-  const ChordLookupScreen({super.key, this.repository});
-
-  /// 测试注入；为 `null` 时使用默认 [ChordApiRepository]（仅联网按钮使用）。
-  final ChordRemoteRepository? repository;
+  const ChordLookupScreen({super.key});
 
   @override
   State<ChordLookupScreen> createState() => _ChordLookupScreenState();
 }
 
 class _ChordLookupScreenState extends State<ChordLookupScreen> {
-  late final ChordRemoteRepository _repo;
-  var _ownsApiRepo = false;
-
   String _selRoot = 'C';
   String _selQual = '';
   String _selBass = '';
   String _selectedKey = 'C';
-  String _selectedLevel = '中级';
 
   String _displaySymbol = '';
-  var _hasApiBase = false;
-
-  bool _loadingOnline = false;
-  bool _recalibrating = false;
   String? _errorText;
-  ChordExplainMultiPayload? _result;
-  var _lastResultFromOnline = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.repository != null) {
-      _repo = widget.repository!;
-    } else {
-      _repo = ChordApiRepository();
-      _ownsApiRepo = true;
-    }
     _refreshDisplaySymbol();
-    unawaited(_refreshApiFlag());
-  }
-
-  Future<void> _refreshApiFlag() async {
-    final u = await ApiBaseUrlStore().load();
-    if (!mounted) return;
-    setState(() => _hasApiBase = u.isNotEmpty);
-  }
-
-  @override
-  void dispose() {
-    final r = _repo;
-    if (_ownsApiRepo && r is ChordApiRepository) {
-      r.close();
-    }
-    super.dispose();
   }
 
   String get _builtSymbol => buildChordSymbol(
@@ -113,72 +73,16 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
     if (sym.isEmpty) {
       setState(() {
         _errorText = '请先选择和弦';
-        _result = null;
-        _lastResultFromOnline = false;
       });
       return;
     }
     final payload = buildOfflineChordPayload(displaySymbol: sym);
     setState(() {
       _errorText = payload == null ? '无法从符号解析和弦（请检查根音与性质）' : null;
-      _result = payload;
-      _lastResultFromOnline = false;
-      _loadingOnline = false;
-      _recalibrating = false;
     });
     if (payload != null) {
       final d = payload.disclaimer.trim();
       _scheduleShowResultSheet(payload, d.isNotEmpty ? d : null);
-    }
-  }
-
-  Future<void> _fetchOnline({required bool force}) async {
-    final sym = _displaySymbol.trim();
-    if (sym.isEmpty) {
-      setState(() {
-        _errorText = '请先选择和弦';
-        _result = null;
-      });
-      return;
-    }
-    setState(() {
-      _errorText = null;
-      if (force) {
-        _recalibrating = true;
-      } else {
-        _loadingOnline = true;
-      }
-    });
-    try {
-      final data = await _repo.explainMulti(
-        symbol: sym,
-        key: _selectedKey,
-        level: _selectedLevel,
-        forceRefresh: force,
-      );
-      if (!mounted) return;
-      setState(() {
-        _result = data;
-        _loadingOnline = false;
-        _recalibrating = false;
-        _lastResultFromOnline = true;
-      });
-      final disc = data.disclaimer.trim();
-      _scheduleShowResultSheet(data, disc.isNotEmpty ? disc : null);
-    } on ChordApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorText = e.message;
-        _loadingOnline = false;
-        _recalibrating = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorText = '$e';
-        _loadingOnline = false;
-        _recalibrating = false;
-      });
     }
   }
 
@@ -195,8 +99,7 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '无需网络：先点「离线查和弦」看构成音与常见把位。'
-            ' 如需更多按法，可直接用联网查询。',
+            '无需网络：点「查询和弦指法」即可查看构成音与常见把位。',
             style: theme.textTheme.bodySmall?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -218,7 +121,7 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'C 调记谱：${_builtSymbol.isEmpty ? '—' : _builtSymbol} · 查看调：$_selectedKey · 难度（仅联网）：$_selectedLevel',
+                    'C 调记谱：${_builtSymbol.isEmpty ? '—' : _builtSymbol} · 查看调：$_selectedKey',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -274,39 +177,12 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
               _refreshDisplaySymbol();
             },
           ),
-          _LabeledDropdown<String>(
-            label: '难度（仅联网查询）',
-            value: _selectedLevel,
-            items: ChordSelectCatalog.levels,
-            onChanged: (v) {
-              if (v == null) return;
-              setState(() => _selectedLevel = v);
-            },
-          ),
           const SizedBox(height: 16),
           FilledButton(
             key: const Key('chord_lookup_offline'),
-            onPressed: _loadingOnline || _recalibrating ? null : _fetchOffline,
-            child: const Text('离线查和弦'),
+            onPressed: _fetchOffline,
+            child: const Text('查询和弦指法'),
           ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            key: const Key('chord_lookup_online'),
-            onPressed: (!_hasApiBase || _loadingOnline || _recalibrating)
-                ? null
-                : () => unawaited(_fetchOnline(force: false)),
-            child: Text(_loadingOnline ? '联网加载中…' : '联网查询更多按法'),
-          ),
-          if (_lastResultFromOnline && _result != null) ...[
-            const SizedBox(height: 8),
-            OutlinedButton(
-              key: const Key('chord_lookup_recalibrate'),
-              onPressed: _loadingOnline || _recalibrating
-                  ? null
-                  : () => unawaited(_fetchOnline(force: true)),
-              child: Text(_recalibrating ? '重新生成中…' : '联网重新生成按法'),
-            ),
-          ],
           if (_errorText != null) ...[
             const SizedBox(height: 12),
             Card(

@@ -63,7 +63,7 @@ SPEC CHECKSUMS:
   audio_session: 9bb7f6c970f21241b19f5a3658097ae459681ba0
   camera_avfoundation: 968a9a5323c79a99c166ad9d7866bfd2047b5a9b
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_soloud: 272cc604453b6ca135f274045fb259e7c6426122
+  flutter_soloud: 36ce2187d963af39574624a05fb03a62cdbac976
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
@@ -72,6 +72,6 @@ SPEC CHECKSUMS:
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
 
-PODFILE CHECKSUM: e0556f836af8bf3ed2bd7d89f77cadcee9664eb3
+PODFILE CHECKSUM: 04c445ab973a61da5b387dabbe6505fa37eb2396
 
 COCOAPODS: 1.16.2

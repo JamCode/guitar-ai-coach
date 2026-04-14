@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'practice_api_repository.dart';
 import 'practice_finish_dialog.dart';
 import 'practice_models.dart';
 import 'practice_session_store.dart';
@@ -62,11 +61,13 @@ class _RhythmStrummingScreenState extends State<RhythmStrummingScreen> {
         note: result.note,
         rhythmPatternId: _pattern.id,
       );
-    } on PracticeApiException catch (e) {
+    } catch (e) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('保存失败：$e')));
       return;
     }
     if (!mounted) {

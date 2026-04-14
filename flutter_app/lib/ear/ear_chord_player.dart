@@ -35,7 +35,7 @@ class EarChordPlayer {
     try {
       for (final midi in midis) {
         final src = await _load(midi);
-        final h = await SoLoud.instance.play(src, volume: volume);
+        final h = SoLoud.instance.play(src, volume: volume);
         await Future<void>.delayed(ringDuration);
         SoLoud.instance.fadeVolume(h, 0, fadeDuration);
         await Future<void>.delayed(fadeDuration);
@@ -63,7 +63,7 @@ class EarChordPlayer {
         sources.add(await _load(m));
       }
       for (final src in sources) {
-        handles.add(await SoLoud.instance.play(src, volume: volume));
+        handles.add(SoLoud.instance.play(src, volume: volume));
       }
       await Future<void>.delayed(hold);
       for (final h in handles) {
@@ -99,7 +99,7 @@ class EarChordPlayer {
     try {
       for (var i = 0; i < midis.length; i++) {
         final src = await _load(midis[i]);
-        final h = await SoLoud.instance.play(src, volume: volume);
+        final h = SoLoud.instance.play(src, volume: volume);
         handles.add(h);
         await Future<void>.delayed(stagger);
       }

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'chord_practice_selection_screen.dart';
-import 'practice_api_repository.dart';
 import 'practice_finish_dialog.dart';
+import 'practice_local_store.dart';
 import 'practice_models.dart';
-import 'practice_remote_store.dart';
 import 'practice_session_store.dart';
 import 'rhythm_strumming_screen.dart';
 import 'strumming_pattern.dart';
@@ -21,7 +20,7 @@ class PracticeStubScreen extends StatefulWidget {
   /// 打开「我的谱」页面，由外层壳统一路由。
   final Future<void> Function()? onOpenMySheets;
 
-  /// 注入练习存储（测试用）；默认使用 [PracticeRemoteStore]（服务端为数据源）。
+  /// 注入练习存储（测试用）；默认使用 [PracticeLocalStore]（本地持久化）。
   final PracticeSessionStore? sessionStore;
 
   @override
@@ -30,7 +29,7 @@ class PracticeStubScreen extends StatefulWidget {
 
 class _PracticeStubScreenState extends State<PracticeStubScreen> {
   late final PracticeSessionStore _store =
-      widget.sessionStore ?? PracticeRemoteStore();
+      widget.sessionStore ?? PracticeLocalStore();
 
   var _loading = true;
   String? _loadError;
@@ -68,12 +67,10 @@ class _PracticeStubScreenState extends State<PracticeStubScreen> {
         _sessions = sessions;
         _loading = false;
       });
-    } on PracticeApiException catch (e) {
-      if (!mounted) {
-        return;
-      }
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _loadError = e.message;
+        _loadError = '读取本地练习记录失败：$e';
         _summary = const PracticeSummary(
           todayMinutes: 0,
           todaySessions: 0,
@@ -322,12 +319,12 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
         difficulty: result.difficulty,
         note: result.note,
       );
-    } on PracticeApiException catch (e) {
+    } catch (e) {
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
+        SnackBar(content: Text('保存失败：$e')),
       );
       return;
     }
@@ -346,6 +343,7 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
+        final navigator = Navigator.of(context);
         final leave = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
@@ -353,18 +351,18 @@ class _PracticeSessionScreenState extends State<_PracticeSessionScreen> {
             content: const Text('当前练习尚未保存，确定要返回吗？'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () => navigator.pop(false),
                 child: const Text('继续练习'),
               ),
               FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed: () => navigator.pop(true),
                 child: const Text('放弃返回'),
               ),
             ],
           ),
         );
-        if (leave == true && mounted) {
-          Navigator.of(context).pop();
+        if (leave == true && context.mounted) {
+          navigator.pop();
         }
       },
       child: Scaffold(

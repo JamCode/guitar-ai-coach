@@ -115,14 +115,16 @@ SightSingingPitchTracker _defaultPitchTrackerBuilder() =>
 class _DefaultSightSingingRepository implements SightSingingRepository {
   const _DefaultSightSingingRepository();
 
+  static final LocalSightSingingRepository _repo = LocalSightSingingRepository();
+
   @override
   Future<SightSingingResult> fetchResult(String sessionId) {
-    return HttpSightSingingRepository().fetchResult(sessionId);
+    return _repo.fetchResult(sessionId);
   }
 
   @override
   Future<SightSingingQuestion?> nextQuestion(String sessionId) {
-    return HttpSightSingingRepository().nextQuestion(sessionId);
+    return _repo.nextQuestion(sessionId);
   }
 
   @override
@@ -131,7 +133,7 @@ class _DefaultSightSingingRepository implements SightSingingRepository {
     required bool includeAccidental,
     required int questionCount,
   }) {
-    return HttpSightSingingRepository().startSession(
+    return _repo.startSession(
       pitchRange: pitchRange,
       includeAccidental: includeAccidental,
       questionCount: questionCount,
@@ -147,7 +149,7 @@ class _DefaultSightSingingRepository implements SightSingingRepository {
     required int stableHitMs,
     required int durationMs,
   }) {
-    return HttpSightSingingRepository().submitAnswer(
+    return _repo.submitAnswer(
       sessionId: sessionId,
       questionId: questionId,
       answers: answers,

@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'sheet_entry.dart';
+import 'sheet_parsed_models.dart';
 
 /// 读写 `sheets_index.json` 与 `sheets/` 目录下的谱子页文件副本。
 class SheetLibraryStore {
@@ -29,6 +30,11 @@ class SheetLibraryStore {
       await dir.create(recursive: true);
     }
     return dir;
+  }
+
+  Future<File> _parsedFile(String sheetId) async {
+    final dir = await _sheetsDir();
+    return File(p.join(dir.path, '${sheetId}_parsed.json'));
   }
 
   /// 读取全部条目（文件损坏时返回空列表）。
@@ -83,6 +89,7 @@ class SheetLibraryStore {
       displayName: displayName,
       storedFileNames: storedNames,
       addedAtMs: DateTime.now().millisecondsSinceEpoch,
+      parseStatus: SheetParseStatus.rawOnly.name,
     );
     final all = await loadAll();
     all.add(entry);
@@ -110,8 +117,45 @@ class SheetLibraryStore {
           await f.delete();
         }
       }
+      final parsed = await _parsedFile(victim.id);
+      if (await parsed.exists()) {
+        await parsed.delete();
+      }
     }
     await _writeAll(keep);
+  }
+
+  /// 读取结构化结果（不存在或损坏返回 null）。
+  Future<SheetParsedData?> loadParsed(String sheetId) async {
+    final f = await _parsedFile(sheetId);
+    if (!await f.exists()) return null;
+    try {
+      final decoded = jsonDecode(await f.readAsString());
+      return SheetParsedData.fromJson(decoded);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 保存结构化结果并回写索引状态。
+  Future<void> saveParsed(SheetParsedData data) async {
+    final f = await _parsedFile(data.sheetId);
+    await f.writeAsString(data.toEncodedJson());
+    final all = await loadAll();
+    final next = <SheetEntry>[];
+    for (final entry in all) {
+      if (entry.id != data.sheetId) {
+        next.add(entry);
+        continue;
+      }
+      next.add(
+        entry.copyWith(
+          parseStatus: data.parseStatus.name,
+          parsedUpdatedAtMs: data.updatedAtMs,
+        ),
+      );
+    }
+    await _writeAll(next);
   }
 
   /// 解析 [e] 在沙箱中仍存在的页文件（保持 [SheetEntry.storedFileNames] 顺序，跳过缺失）。

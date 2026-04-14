@@ -12,8 +12,9 @@ class FretboardTonePlayer {
   final Map<int, AudioSource> _cache = {};
 
   static const double _volume = 0.52;
-  static const Duration _ringDuration = Duration(milliseconds: 460);
-  static const Duration _fadeDuration = Duration(milliseconds: 170);
+  // 参考调音器听感：先让采样自然延音，再在尾部做更柔和的淡出，避免“突然消失”。
+  static const Duration _ringDuration = Duration(milliseconds: 900);
+  static const Duration _fadeDuration = Duration(milliseconds: 280);
 
   Future<AudioSource> _load(int midi) async {
     if (_cache.containsKey(midi)) return _cache[midi]!;
@@ -33,12 +34,13 @@ class FretboardTonePlayer {
   Future<void> playMidi(int midi) async {
     try {
       final src = await _load(midi);
-      final handle = await SoLoud.instance.play(src, volume: _volume);
+      final handle = SoLoud.instance.play(src, volume: _volume);
       unawaited(
         Future<void>(() async {
           await Future<void>.delayed(_ringDuration);
           SoLoud.instance.fadeVolume(handle, 0, _fadeDuration);
-          await Future<void>.delayed(_fadeDuration);
+          // 给淡出留一点安全余量，避免在边界时刻 stop 造成瞬态突兀。
+          await Future<void>.delayed(_fadeDuration + const Duration(milliseconds: 80));
           await SoLoud.instance.stop(handle);
         }),
       );

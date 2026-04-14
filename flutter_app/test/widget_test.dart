@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:guitar_helper/app_theme.dart';
 import 'package:guitar_helper/chords/chord_lookup_screen.dart';
-import 'package:guitar_helper/chords/chord_models.dart';
-import 'package:guitar_helper/auth/auth_controller.dart';
 import 'package:guitar_helper/main.dart';
 import 'package:guitar_helper/shell/home_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'fake_chord_repository.dart';
 
 void main() {
   testWidgets('主导航壳显示四个 Tab', (WidgetTester tester) async {
@@ -67,48 +63,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    const json = '''
-{
-  "chord_summary": {
-    "symbol": "C",
-    "notes_letters": ["C", "E", "G"],
-    "notes_explain_zh": "大三和弦。"
-  },
-  "voicings": [
-    {
-      "label_zh": "开放",
-      "explain": {
-        "frets": [-1, 3, 2, 0, 1, 0],
-        "fingers": [null, 3, 2, null, 1, null],
-        "base_fret": 1,
-        "barre": null,
-        "voicing_explain_zh": "常用开放把位。"
-      }
-    },
-    {
-      "label_zh": "横按",
-      "explain": {
-        "frets": [3, 3, 5, 5, 5, 3],
-        "fingers": [1, 1, 3, 4, 4, 1],
-        "base_fret": 3,
-        "barre": null,
-        "voicing_explain_zh": "可移动形。"
-      }
-    }
-  ],
-  "disclaimer": "仅供参考。"
-}
-''';
-    final payload = ChordExplainMultiPayload.tryParseJsonString(json)!;
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
-        home: ChordLookupScreen(
-          repository: FakeChordRepository(
-            transposeResult: 'C',
-            payload: payload,
-          ),
-        ),
+        home: const ChordLookupScreen(),
       ),
     );
     await tester.pump();
@@ -126,13 +84,8 @@ void main() {
     expect(find.textContaining('常用把位'), findsWidgets);
   });
 
-  testWidgets('GuitarHelperApp 已登录时启动到工具 Tab', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      'guitar_auth_access_token': 'test-jwt-token',
-    });
-    final auth = AuthController();
-    await auth.bootstrap();
-    await tester.pumpWidget(GuitarHelperApp(controller: auth));
+  testWidgets('GuitarHelperApp 启动到工具 Tab', (WidgetTester tester) async {
+    await tester.pumpWidget(const GuitarHelperApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('调音器'), findsOneWidget);

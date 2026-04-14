@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
+import 'dart:math';
+import 'package:uuid/uuid.dart';
 
-import 'package:http/http.dart' as http;
-
-import '../settings/api_base_url_store.dart';
 import 'sight_singing_models.dart';
 
 /// 视唱会话数据源。
@@ -27,16 +24,15 @@ abstract class SightSingingRepository {
   Future<SightSingingResult> fetchResult(String sessionId);
 }
 
-/// 基于 `/ear-note/session/*` 的视唱后端实现。
-class HttpSightSingingRepository implements SightSingingRepository {
-  HttpSightSingingRepository({
-    ApiBaseUrlStore? baseUrlStore,
-    http.Client? client,
-  }) : _store = baseUrlStore ?? ApiBaseUrlStore(),
-       _client = client ?? http.Client();
+/// 本地离线版视唱仓库：在内存中维护单次训练会话与结果。
+class LocalSightSingingRepository implements SightSingingRepository {
+  LocalSightSingingRepository({Uuid? uuid, Random? random})
+      : _uuid = uuid ?? const Uuid(),
+        _random = random ?? Random();
 
-  final ApiBaseUrlStore _store;
-  final http.Client _client;
+  final Uuid _uuid;
+  final Random _random;
+  final Map<String, _LocalSession> _sessions = <String, _LocalSession>{};
 
   @override
   Future<SightSingingSessionStart> startSession({
@@ -44,27 +40,25 @@ class HttpSightSingingRepository implements SightSingingRepository {
     required bool includeAccidental,
     required int questionCount,
   }) async {
-    final data = await _post('/ear-note/session/start', {
-      'mode': 'single_note',
-      'pitch_range': pitchRange,
-      'include_accidental': includeAccidental,
-      'question_count': questionCount,
-    });
-    final configMap = _map(data['config']);
+    final range = _noteRangeFor(pitchRange);
+    final config = SightSingingConfig(
+      minNote: range.minNote,
+      maxNote: range.maxNote,
+      questionCount: questionCount,
+      includeAccidental: includeAccidental,
+    );
+    final sessionId = _uuid.v4();
+    final notes = _buildQuestionNotes(
+      config: config,
+      includeAccidental: includeAccidental,
+      questionCount: questionCount,
+    );
+    final session = _LocalSession(config: config, questionNotes: notes);
+    _sessions[sessionId] = session;
     return SightSingingSessionStart(
-      sessionId: (data['session_id'] ?? '').toString(),
-      config: SightSingingConfig(
-        minNote: (_map(configMap['pitch_range'])['min_note'] ?? 'C4')
-            .toString(),
-        maxNote: (_map(configMap['pitch_range'])['max_note'] ?? 'B4')
-            .toString(),
-        questionCount: _int(
-          configMap['question_count'],
-          fallback: questionCount,
-        ),
-        includeAccidental: includeAccidental,
-      ),
-      question: _parseQuestion(data['question']),
+      sessionId: sessionId,
+      config: config,
+      question: _questionFor(session, 0),
     );
   }
 
@@ -77,110 +71,110 @@ class HttpSightSingingRepository implements SightSingingRepository {
     required int stableHitMs,
     required int durationMs,
   }) async {
-    await _post('/ear-note/session/answer', {
-      'session_id': sessionId,
-      'question_id': questionId,
-      'answers': answers,
-      'avg_cents_abs': avgCentsAbs,
-      'stable_hit_ms': stableHitMs,
-      'duration_ms': durationMs,
-    });
+    final session = _sessions[sessionId];
+    if (session == null) {
+      throw SightSingingApiException('训练会话不存在，请重新开始');
+    }
+    if (questionId != 'q-${session.currentIndex + 1}') {
+      throw SightSingingApiException('题目状态已变化，请重新开始本题');
+    }
+    final isCorrect = avgCentsAbs <= 30 && stableHitMs >= 700;
+    session.answered += 1;
+    if (isCorrect) {
+      session.correct += 1;
+    }
   }
 
   @override
   Future<SightSingingQuestion?> nextQuestion(String sessionId) async {
-    final data = await _post('/ear-note/session/next', {
-      'session_id': sessionId,
-    });
-    return _parseQuestion(data['question']);
+    final session = _sessions[sessionId];
+    if (session == null) {
+      throw SightSingingApiException('训练会话不存在，请重新开始');
+    }
+    session.currentIndex += 1;
+    if (session.currentIndex >= session.questionNotes.length) {
+      return null;
+    }
+    return _questionFor(session, session.currentIndex);
   }
 
   @override
   Future<SightSingingResult> fetchResult(String sessionId) async {
-    final base = await _baseUrl();
-    final uri = Uri.parse('$base/ear-note/session/result/$sessionId');
-    final http.Response resp;
-    try {
-      resp = await _client.get(uri);
-    } on SocketException catch (_) {
-      throw _networkUnavailable();
-    } on http.ClientException catch (_) {
-      throw _networkUnavailable();
+    final session = _sessions.remove(sessionId);
+    if (session == null) {
+      throw SightSingingApiException('训练会话不存在，请重新开始');
     }
-    if (resp.statusCode != 200) {
-      throw SightSingingApiException('获取结果失败（${resp.statusCode}）');
-    }
-    final data = _map(jsonDecode(resp.body));
-    final summary = _map(data['summary']);
+    final total = session.questionNotes.length;
+    final answered = session.answered.clamp(0, total);
+    final correct = session.correct.clamp(0, answered);
+    final accuracy = answered == 0 ? 0.0 : correct / answered;
     return SightSingingResult(
-      answered: _int(summary['answered']),
-      correct: _int(summary['correct']),
-      total: _int(summary['total']),
-      accuracy: _double(summary['accuracy']),
+      answered: answered,
+      correct: correct,
+      total: total,
+      accuracy: accuracy,
     );
   }
 
-  Future<Map<String, dynamic>> _post(
-    String path,
-    Map<String, dynamic> body,
-  ) async {
-    final base = await _baseUrl();
-    final uri = Uri.parse('$base$path');
-    final http.Response resp;
-    try {
-      resp = await _client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-    } on SocketException catch (_) {
-      throw _networkUnavailable();
-    } on http.ClientException catch (_) {
-      throw _networkUnavailable();
-    }
-    Map<String, dynamic> data = {};
-    try {
-      data = _map(jsonDecode(resp.body));
-    } catch (_) {}
-    if (resp.statusCode != 200) {
-      final msg = data['error']?.toString() ?? '请求失败';
-      throw SightSingingApiException('$msg（${resp.statusCode}）');
-    }
-    return data;
-  }
-
-  SightSingingApiException _networkUnavailable() {
-    return SightSingingApiException('网络不可达，请检查网络连接或稍后重试');
-  }
-
-  Future<String> _baseUrl() async {
-    final base = await _store.load();
-    if (base.isEmpty) {
-      throw SightSingingApiException('当前环境未配置 API 地址');
-    }
-    return base;
-  }
-
-  SightSingingQuestion? _parseQuestion(Object? obj) {
-    if (obj == null) return null;
-    final map = _map(obj);
-    final notes = (_list(
-      map['target_notes'],
-    )).map((e) => e.toString()).toList();
+  SightSingingQuestion _questionFor(_LocalSession session, int index) {
     return SightSingingQuestion(
-      id: (map['question_id'] ?? '').toString(),
-      index: _int(map['index'], fallback: 1),
-      totalQuestions: _int(map['total_questions'], fallback: 10),
-      targetNotes: notes,
+      id: 'q-${index + 1}',
+      index: index + 1,
+      totalQuestions: session.questionNotes.length,
+      targetNotes: <String>[session.questionNotes[index]],
     );
   }
 
-  static Map<String, dynamic> _map(Object? v) =>
-      v is Map<String, dynamic> ? v : <String, dynamic>{};
-  static List<dynamic> _list(Object? v) => v is List ? v : <dynamic>[];
-  static int _int(Object? v, {int fallback = 0}) =>
-      v is num ? v.toInt() : int.tryParse('$v') ?? fallback;
-  static double _double(Object? v) => v is num ? v.toDouble() : 0;
+  List<String> _buildQuestionNotes({
+    required SightSingingConfig config,
+    required bool includeAccidental,
+    required int questionCount,
+  }) {
+    final candidates = _candidateNotes(
+      minNote: config.minNote,
+      maxNote: config.maxNote,
+      includeAccidental: includeAccidental,
+    );
+    if (candidates.isEmpty) {
+      return List<String>.filled(questionCount, 'C4');
+    }
+    return List<String>.generate(
+      questionCount,
+      (_) => candidates[_random.nextInt(candidates.length)],
+    );
+  }
+
+  List<String> _candidateNotes({
+    required String minNote,
+    required String maxNote,
+    required bool includeAccidental,
+  }) {
+    final min = _noteNameToMidi(minNote);
+    final max = _noteNameToMidi(maxNote);
+    final start = min <= max ? min : max;
+    final end = min <= max ? max : min;
+    final out = <String>[];
+    for (var midi = start; midi <= end; midi++) {
+      final note = _midiToNoteName(midi);
+      if (!includeAccidental && note.contains('#')) {
+        continue;
+      }
+      out.add(note);
+    }
+    return out;
+  }
+
+  _LocalRange _noteRangeFor(String range) {
+    switch (range) {
+      case 'low':
+        return const _LocalRange(minNote: 'C3', maxNote: 'B3');
+      case 'wide':
+        return const _LocalRange(minNote: 'C3', maxNote: 'B4');
+      case 'mid':
+      default:
+        return const _LocalRange(minNote: 'C4', maxNote: 'B4');
+    }
+  }
 }
 
 class SightSingingApiException implements Exception {
@@ -189,4 +183,65 @@ class SightSingingApiException implements Exception {
 
   @override
   String toString() => message;
+}
+
+class _LocalSession {
+  _LocalSession({required this.config, required this.questionNotes});
+
+  final SightSingingConfig config;
+  final List<String> questionNotes;
+  int currentIndex = 0;
+  int answered = 0;
+  int correct = 0;
+}
+
+class _LocalRange {
+  const _LocalRange({required this.minNote, required this.maxNote});
+
+  final String minNote;
+  final String maxNote;
+}
+
+int _noteNameToMidi(String note) {
+  final n = note.trim().toUpperCase();
+  final m = RegExp(r'^([A-G])(#?)(\d)$').firstMatch(n);
+  if (m == null) return 60;
+  final name = '${m.group(1)}${m.group(2) ?? ''}';
+  final octave = int.tryParse(m.group(3) ?? '4') ?? 4;
+  const names = <String>[
+    'C',
+    'C#',
+    'D',
+    'D#',
+    'E',
+    'F',
+    'F#',
+    'G',
+    'G#',
+    'A',
+    'A#',
+    'B',
+  ];
+  final idx = names.indexOf(name);
+  return (octave + 1) * 12 + (idx < 0 ? 0 : idx);
+}
+
+String _midiToNoteName(int midi) {
+  const names = <String>[
+    'C',
+    'C#',
+    'D',
+    'D#',
+    'E',
+    'F',
+    'F#',
+    'G',
+    'G#',
+    'A',
+    'A#',
+    'B',
+  ];
+  final note = names[midi % 12];
+  final octave = midi ~/ 12 - 1;
+  return '$note$octave';
 }

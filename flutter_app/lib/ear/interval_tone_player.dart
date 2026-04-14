@@ -35,7 +35,7 @@ class IntervalTonePlayer {
 
       for (final midi in [lowMidi, highMidi]) {
         final src = await _load(midi);
-        final handle = await SoLoud.instance.play(src, volume: volume);
+        final handle = SoLoud.instance.play(src, volume: volume);
         await Future<void>.delayed(ringDuration);
         SoLoud.instance.fadeVolume(handle, 0, fadeDuration);
         await Future<void>.delayed(fadeDuration);

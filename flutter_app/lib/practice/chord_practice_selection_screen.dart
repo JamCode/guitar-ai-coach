@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../chords/chord_quick_reference.dart';
 import 'chord_progression_library.dart';
-import 'practice_api_repository.dart';
 import 'practice_finish_dialog.dart';
 import 'practice_models.dart';
 import 'practice_session_store.dart';
@@ -476,9 +475,11 @@ class _ChordPracticeSessionScreenState
         musicKey: cfg.key,
         complexity: cfg.complexity.name,
       );
-    } on PracticeApiException catch (e) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('保存失败：$e')));
       return;
     }
     if (!mounted) return;
@@ -496,6 +497,7 @@ class _ChordPracticeSessionScreenState
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
+        final navigator = Navigator.of(context);
         final leave = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
@@ -503,18 +505,18 @@ class _ChordPracticeSessionScreenState
             content: const Text('当前练习尚未保存，确定要返回吗？'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () => navigator.pop(false),
                 child: const Text('继续练习'),
               ),
               FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed: () => navigator.pop(true),
                 child: const Text('放弃返回'),
               ),
             ],
           ),
         );
-        if (leave == true && mounted) {
-          Navigator.of(context).pop();
+        if (leave == true && context.mounted) {
+          navigator.pop();
         }
       },
       child: Scaffold(
