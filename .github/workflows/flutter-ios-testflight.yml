@@ -110,9 +110,9 @@ jobs:
           xcodebuild -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
+            -destination 'generic/platform=iOS' \
             -archivePath build/ios/archive/Runner.xcarchive \
             archive \
-            CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=7R8RS88G2M \
             CODE_SIGN_IDENTITY="Apple Distribution"
 
