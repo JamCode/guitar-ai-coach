@@ -320,7 +320,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Optional mobile webhook notification
-        if: always() && secrets.MOBILE_NOTIFY_WEBHOOK_URL != ''
+        if: always() && env.WEBHOOK_URL != ''
         env:
           WEBHOOK_URL: ${{ secrets.MOBILE_NOTIFY_WEBHOOK_URL }}
         run: |
