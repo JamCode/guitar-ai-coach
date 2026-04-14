@@ -303,6 +303,18 @@ sudo -n nginx -t
 
 ---
 
+## GitHub Actions 自动部署（后端 Python + Flyway）
+
+仓库工作流：`.github/workflows/ecs-backend-deploy.yml`。
+
+- **触发**：向 `main` 或 `tiaoyinqi` **push**，且变更落在 `backend/code/**` 或 `backend/database/flyway/sql/**`（或 `flyway.conf`）时；也可在 Actions 里 **手动 Run workflow**（会尽量执行 Flyway + 同步后端并重启，见工作流内注释）。
+- **Python 有变更**：`rsync backend/code/` 到 ECS，再 `sudo systemctl restart guitar-ai-coach-backend`，并对 `http://127.0.0.1:18080/styles` 做冒烟。
+- **Flyway 有变更**：在 GitHub Runner 上经 **SSH 隧道**连接 ECS 可达的 MySQL，执行 `flyway validate` / `flyway migrate`（不对外开端口）；随后将 `backend/database/flyway/` rsync 到服务器便于运维对照。
+
+需在 GitHub 仓库配置 **Secrets / Variables**（名称与说明见工作流文件头部注释）。**勿**将 SSH 私钥或数据库密码写入仓库。
+
+---
+
 ## 相关文件
 
 | 文件 | 说明 |

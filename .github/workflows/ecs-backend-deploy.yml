@@ -1,0 +1,173 @@
+# Push 到指定分支后：若 backend Python 或 Flyway 迁移有变更，则自动部署到阿里云 ECS。
+#
+# 需在仓库 Settings → Secrets and variables → Actions 中配置：
+#
+# Secrets（必填）
+#   ECS_SSH_PRIVATE_KEY     登录 ECS 的 SSH 私钥全文（与 README 中 ECS_KEY 一致，勿提交仓库）
+#   FLYWAY_USER             MySQL 用户（建议与 backend.env 中 MYSQL_USER 一致，如 guitar_app）
+#   FLYWAY_PASSWORD         MySQL 密码（与 MYSQL_PASSWORD 一致）
+#
+# Secrets（选填，不配则用下方 Variables / 默认值）
+#   FLYWAY_DATABASE         库名，默认 guitar_ai_coach
+#
+# Variables（Repository variables，非敏感，选填）
+#   ECS_HOST                  默认 47.110.78.65（与 deploy/ecs/README.md 一致）
+#   ECS_USER                  默认 wanghan
+#   ECS_PATH                  默认 /home/wanghan/guitar-ai-coach
+#   ECS_MYSQL_HOST            隧道在 ECS 上连到的 MySQL 主机，默认 127.0.0.1（若库在 RDS 可填 RDS 内网域名）
+#   ECS_MYSQL_PORT            MySQL 端口，默认 3306
+#
+# 前置条件（一次性）：
+#   - ECS 上已按 deploy/ecs/README.md 配置 systemd、backend.env、MySQL 与 Flyway baseline
+#   - SSH 公钥已加入 ECS，且 wanghan 可对 guitar-ai-coach-backend 执行 NOPASSWD restart
+#
+name: ECS backend deploy (Python + Flyway)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+      - tiaoyinqi
+    paths:
+      - "backend/code/**"
+      - "backend/database/flyway/sql/**"
+      - "backend/database/flyway/flyway.conf"
+      - ".github/workflows/ecs-backend-deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ecs-backend-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      flyway: ${{ steps.filter.outputs.flyway }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            python:
+              - 'backend/code/**'
+            flyway:
+              - 'backend/database/flyway/sql/**'
+              - 'backend/database/flyway/flyway.conf'
+
+  deploy:
+    name: Deploy to ECS
+    needs: changes
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.python == 'true' ||
+      needs.changes.outputs.flyway == 'true'
+    runs-on: ubuntu-latest
+    env:
+      ECS_HOST: ${{ vars.ECS_HOST }}
+      ECS_USER: ${{ vars.ECS_USER }}
+      ECS_PATH: ${{ vars.ECS_PATH }}
+      ECS_MYSQL_HOST: ${{ vars.ECS_MYSQL_HOST }}
+      ECS_MYSQL_PORT: ${{ vars.ECS_MYSQL_PORT }}
+      FLYWAY_DATABASE: ${{ secrets.FLYWAY_DATABASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve ECS / DB defaults
+        run: |
+          echo "ECS_HOST=${ECS_HOST:-47.110.78.65}" >> "$GITHUB_ENV"
+          echo "ECS_USER=${ECS_USER:-wanghan}" >> "$GITHUB_ENV"
+          echo "ECS_PATH=${ECS_PATH:-/home/wanghan/guitar-ai-coach}" >> "$GITHUB_ENV"
+          echo "ECS_MYSQL_HOST=${ECS_MYSQL_HOST:-127.0.0.1}" >> "$GITHUB_ENV"
+          echo "ECS_MYSQL_PORT=${ECS_MYSQL_PORT:-3306}" >> "$GITHUB_ENV"
+          echo "FLYWAY_DATABASE=${FLYWAY_DATABASE:-guitar_ai_coach}" >> "$GITHUB_ENV"
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.ECS_SSH_PRIVATE_KEY }}" ]; then
+            echo "::error::Missing secret ECS_SSH_PRIVATE_KEY"
+            exit 1
+          fi
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ECS_SSH_PRIVATE_KEY }}" > ~/.ssh/ecs_deploy_key
+          chmod 600 ~/.ssh/ecs_deploy_key
+          ssh-keyscan -H "$ECS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Install Flyway CLI
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.flyway == 'true'
+        run: |
+          FLYWAY_VERSION=10.15.0
+          curl -fsSL -o /tmp/flyway.tar.gz \
+            "https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/${FLYWAY_VERSION}/flyway-commandline-${FLYWAY_VERSION}.tar.gz"
+          tar -xzf /tmp/flyway.tar.gz -C /tmp
+          sudo mv "/tmp/flyway-${FLYWAY_VERSION}" /opt/flyway
+          sudo ln -sf /opt/flyway/flyway /usr/local/bin/flyway
+          flyway -v
+
+      - name: Flyway validate & migrate (SSH tunnel to ECS MySQL)
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.flyway == 'true'
+        env:
+          FLYWAY_USER: ${{ secrets.FLYWAY_USER }}
+          FLYWAY_PASSWORD: ${{ secrets.FLYWAY_PASSWORD }}
+        run: |
+          if [ -z "${FLYWAY_USER:-}" ] || [ -z "${FLYWAY_PASSWORD:-}" ]; then
+            echo "::error::Flyway 路径有变更或手动触发时需要配置 Secrets: FLYWAY_USER, FLYWAY_PASSWORD"
+            exit 1
+          fi
+          # Runner 本机 13306 → 经 ECS 转发到 ECS_MYSQL_HOST:ECS_MYSQL_PORT（不在公网暴露 MySQL）
+          ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new -o ExitOnForwardFailure=yes \
+            -f -N -L "127.0.0.1:13306:${ECS_MYSQL_HOST}:${ECS_MYSQL_PORT}" \
+            "${ECS_USER}@${ECS_HOST}"
+          sleep 2
+          cleanup() {
+            pkill -f "ecs_deploy_key.*127.0.0.1:13306:" || true
+          }
+          trap cleanup EXIT
+          cd backend/database/flyway
+          export FLYWAY_URL="jdbc:mysql://127.0.0.1:13306/${FLYWAY_DATABASE}?characterEncoding=utf8&useSSL=false"
+          flyway info
+          flyway validate
+          flyway migrate
+
+      - name: Rsync Flyway directory to ECS (optional on-server copy)
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.flyway == 'true'
+        run: |
+          rsync -avz -e "ssh -i $HOME/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new" \
+            backend/database/flyway/ "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/backend/database/flyway/"
+
+      - name: Rsync Python backend
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        run: |
+          rsync -avz -e "ssh -i $HOME/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new" \
+            backend/code/ "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/backend/code/"
+
+      - name: Restart backend service
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        run: |
+          ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
+            "${ECS_USER}@${ECS_HOST}" \
+            "sudo systemctl restart guitar-ai-coach-backend && sudo systemctl is-active guitar-ai-coach-backend"
+
+      - name: Smoke check (ECS localhost)
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        run: |
+          code=$(ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
+            "${ECS_USER}@${ECS_HOST}" \
+            "curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/styles" || echo "000")
+          echo "HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Backend smoke check failed (expected 200, got $code)"
+            exit 1
+          fi
