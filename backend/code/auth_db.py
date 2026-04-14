@@ -32,7 +32,13 @@ def ensure_apple_auth_schema():
                 (_APPLE_USERS_TABLE,),
             )
             row = cur.fetchone() or {}
-            if str(row.get("table_name") or "") != _APPLE_USERS_TABLE:
+            # 兼容不同 MySQL / 驱动返回的列名大小写（table_name / TABLE_NAME）。
+            table_name = str(
+                row.get("table_name")
+                or row.get("TABLE_NAME")
+                or (next(iter(row.values()), "") if isinstance(row, dict) else "")
+            )
+            if table_name != _APPLE_USERS_TABLE:
                 raise RuntimeError(
                     "missing table apple_users. Apply Flyway migration "
                     "backend/database/flyway/sql/V2__add_apple_users.sql "
