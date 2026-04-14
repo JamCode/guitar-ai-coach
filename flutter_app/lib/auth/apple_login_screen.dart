@@ -10,7 +10,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'auth_api.dart';
 import 'auth_session_store.dart';
 
-/// 未登录时的首屏：仅 iOS 提供 Sign in with Apple；配置 API 基址后换发本站 token。
+/// 未登录时的首屏：仅 iOS 提供 Sign in with Apple，并用内置固定 API 地址换发本站 token。
 class AppleLoginScreen extends StatefulWidget {
   const AppleLoginScreen({super.key, required this.onLoggedIn});
 

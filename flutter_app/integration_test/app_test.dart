@@ -11,7 +11,6 @@ import 'package:guitar_helper/settings/api_base_url_store.dart';
 import 'package:flutter/material.dart';
 
 const _kAccessTokenKey = 'guitar_auth_access_token';
-const _kApiBaseKey = 'guitar_api_base_url';
 const _kCiSecret = String.fromEnvironment('E2E_CI_AUTH_SECRET', defaultValue: '');
 const _kCiUserKey = String.fromEnvironment(
   'E2E_CI_USER_KEY',
@@ -25,7 +24,6 @@ Future<void> _prepareLoggedInSession() async {
     fail('API base URL is empty, cannot bootstrap CI login session.');
   }
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(_kApiBaseKey, base);
 
   if (_kCiSecret.isEmpty) {
     if (_kRequireCiAuth) {
