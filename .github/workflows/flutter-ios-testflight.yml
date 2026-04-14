@@ -141,11 +141,25 @@ jobs:
           echo "id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
           echo "Booted simulator: $SIMULATOR_ID"
 
+      - name: Check CI auth secret for integration tests
+        env:
+          E2E_CI_AUTH_SECRET: ${{ secrets.E2E_CI_AUTH_SECRET }}
+        run: |
+          if [ -z "${E2E_CI_AUTH_SECRET:-}" ]; then
+            echo "::error::Missing secret E2E_CI_AUTH_SECRET for iOS integration tests."
+            exit 1
+          fi
+
       - name: Run Flutter integration tests on iOS simulator
+        env:
+          E2E_CI_AUTH_SECRET: ${{ secrets.E2E_CI_AUTH_SECRET }}
         run: |
           set -euo pipefail
           mkdir -p build
-          flutter test integration_test -d "${{ steps.simulator.outputs.id }}" --reporter expanded | tee build/integration-test.log
+          flutter test integration_test -d "${{ steps.simulator.outputs.id }}" --reporter expanded \
+            --dart-define=E2E_CI_AUTH_SECRET="${E2E_CI_AUTH_SECRET}" \
+            --dart-define=E2E_CI_USER_KEY="github-actions-${{ github.run_id }}" \
+            --dart-define=E2E_REQUIRE_CI_AUTH=true | tee build/integration-test.log
 
       - name: Upload integration test artifact
         if: always()
@@ -346,6 +360,12 @@ jobs:
 #
 # APP_STORE_CONNECT_PRIVATE_KEY
 #   下载的 .p8 文件全文（含 BEGIN/END 行），原样粘贴到 Secret（多行）
+#
+# 集成测试登录（CI 专用）
+#
+# E2E_CI_AUTH_SECRET
+#   供 integration_test 调用 /api/auth/ci-login 时使用的共享密钥；需与 ECS 上 CI_AUTH_SECRET 一致
+#   同时确保 ECS backend.env 配置：CI_AUTH_ENABLED=true
 #
 # 注意：
 # - 每次上传 TestFlight 前须在 pubspec.yaml 递增 build 号（version: x.y.z+build）。
