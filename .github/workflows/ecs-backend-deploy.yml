@@ -156,6 +156,13 @@ jobs:
           rsync -avz -e "ssh -i $HOME/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new" \
             backend/code/ "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/backend/code/"
 
+      - name: pip install backend requirements on ECS
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        run: |
+          ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
+            "${ECS_USER}@${ECS_HOST}" \
+            "python3 -m pip install --user -r \"${ECS_PATH}/backend/code/requirements.txt\""
+
       - name: Restart backend service
         if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
         run: |

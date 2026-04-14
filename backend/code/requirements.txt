@@ -1,4 +1,6 @@
 # 生产依赖写在这里；部署前在项目根目录执行 `s build` 会按 FC 文档打包依赖。
-PyMySQL>=1.1.0,<2
-PyJWT>=2.8.0,<3
-cryptography>=42.0.0
+# 约束说明：线上 ECS 若为 Python 3.6，pip 会解析到 PyMySQL 1.0.x、PyJWT 2.4.x、cryptography 40.x；
+# 本机 Python 3.10+ 会解析到较新版本，仍满足下界。
+PyMySQL>=1.0.2,<2
+PyJWT>=2.1.0,<3
+cryptography>=3.4,<42
