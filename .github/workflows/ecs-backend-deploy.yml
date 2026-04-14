@@ -27,15 +27,7 @@ permissions:
   contents: read
 
 on:
-  push:
-    branches:
-      - main
-      - tiaoyinqi
-    paths:
-      - "backend/code/**"
-      - "backend/database/flyway/sql/**"
-      - "backend/database/flyway/flyway.conf"
-      - ".github/workflows/ecs-backend-deploy.yml"
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -69,9 +61,13 @@ jobs:
     needs: changes
     if: |
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_call' ||
       needs.changes.outputs.python == 'true' ||
       needs.changes.outputs.flyway == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      python_changed: ${{ steps.filter-deploy.outputs.python_changed }}
+      flyway_changed: ${{ steps.filter-deploy.outputs.flyway_changed }}
     env:
       ECS_HOST: ${{ vars.ECS_HOST }}
       ECS_USER: ${{ vars.ECS_USER }}
@@ -91,6 +87,17 @@ jobs:
           echo "ECS_MYSQL_PORT=${ECS_MYSQL_PORT:-3306}" >> "$GITHUB_ENV"
           echo "FLYWAY_DATABASE=${FLYWAY_DATABASE:-guitar_ai_coach}" >> "$GITHUB_ENV"
 
+      - name: Resolve changed scopes for summary
+        id: filter-deploy
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
+            echo "python_changed=true" >> "$GITHUB_OUTPUT"
+            echo "flyway_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "python_changed=${{ needs.changes.outputs.python }}" >> "$GITHUB_OUTPUT"
+            echo "flyway_changed=${{ needs.changes.outputs.flyway }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check required secrets
         run: |
           if [ -z "${{ secrets.ECS_SSH_PRIVATE_KEY }}" ]; then
@@ -106,7 +113,7 @@ jobs:
           ssh-keyscan -H "$ECS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Install Flyway CLI
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.flyway == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.flyway == 'true'
         run: |
           FLYWAY_VERSION=10.15.0
           curl -fsSL -o /tmp/flyway.tar.gz \
@@ -117,7 +124,7 @@ jobs:
           flyway -v
 
       - name: Flyway validate & migrate (SSH tunnel to ECS MySQL)
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.flyway == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.flyway == 'true'
         env:
           FLYWAY_USER: ${{ secrets.FLYWAY_USER }}
           FLYWAY_PASSWORD: ${{ secrets.FLYWAY_PASSWORD }}
@@ -145,33 +152,34 @@ jobs:
           flyway validate
 
       - name: Rsync Flyway directory to ECS (optional on-server copy)
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.flyway == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.flyway == 'true'
         run: |
           rsync -avz -e "ssh -i $HOME/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new" \
             backend/database/flyway/ "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/backend/database/flyway/"
 
       - name: Rsync Python backend
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.python == 'true'
         run: |
           rsync -avz -e "ssh -i $HOME/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new" \
             backend/code/ "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/backend/code/"
 
       - name: pip install backend requirements on ECS
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.python == 'true'
         run: |
           ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
             "${ECS_USER}@${ECS_HOST}" \
             "python3 -m pip install --user -r \"${ECS_PATH}/backend/code/requirements.txt\""
 
       - name: Restart backend service
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.python == 'true'
         run: |
           ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
             "${ECS_USER}@${ECS_HOST}" \
             "sudo systemctl restart guitar-ai-coach-backend && sudo systemctl is-active guitar-ai-coach-backend"
 
       - name: Smoke check (ECS localhost)
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+        id: smoke_check
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.python == 'true'
         run: |
           set +e
           code=""
@@ -186,3 +194,26 @@ jobs:
           done
           echo "::error::Backend smoke check failed after retries (expected 200, last=${code:-empty})"
           exit 1
+
+      - name: Write backend deployment summary
+        if: always()
+        run: |
+          SUMMARY_FILE="$RUNNER_TEMP/backend-deploy-summary.md"
+          {
+            echo "## ECS Backend Deploy Result"
+            echo ""
+            echo "- Workflow result: \`${{ job.status }}\`"
+            echo "- Python changed: \`${{ steps.filter-deploy.outputs.python_changed }}\`"
+            echo "- Flyway changed: \`${{ steps.filter-deploy.outputs.flyway_changed }}\`"
+            echo "- Target ECS host: \`${ECS_HOST}\`"
+            echo "- Target ECS path: \`${ECS_PATH}\`"
+          } > "$SUMMARY_FILE"
+          cat "$SUMMARY_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backend deployment summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-deploy-summary
+          path: ${{ runner.temp }}/backend-deploy-summary.md
+          if-no-files-found: error

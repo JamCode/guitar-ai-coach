@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-import '../settings/api_base_url_store.dart';
 import 'auth_api.dart';
 import 'auth_session_store.dart';
 
@@ -24,27 +23,11 @@ class AppleLoginScreen extends StatefulWidget {
 
 class _AppleLoginScreenState extends State<AppleLoginScreen> {
   final _session = AuthSessionStore();
-  final _apiBaseStore = ApiBaseUrlStore();
   final _authApi = AuthApi();
   var _busy = false;
-  var _apiBasePreview = '';
 
   static bool get _appleAvailable =>
       !kIsWeb && !kIsWasm && (Platform.isIOS || Platform.isMacOS);
-
-  @override
-  void initState() {
-    super.initState();
-    _loadApiPreview();
-  }
-
-  Future<void> _loadApiPreview() async {
-    final s = await _apiBaseStore.load();
-    if (!mounted) {
-      return;
-    }
-    setState(() => _apiBasePreview = s.isEmpty ? '未配置' : s);
-  }
 
   String _randomNonce([int length = 32]) {
     const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -114,38 +97,6 @@ class _AppleLoginScreenState extends State<AppleLoginScreen> {
     }
   }
 
-  Future<void> _editApiBase() async {
-    final controller = TextEditingController(text: await _apiBaseStore.load());
-    final next = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('API 服务地址'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: '例如 https://example.com/api',
-            border: OutlineInputBorder(),
-          ),
-          keyboardType: TextInputType.url,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (next == null) {
-      return;
-    }
-    await _apiBaseStore.save(next);
-    await _loadApiPreview();
-  }
-
   @override
   Widget build(BuildContext context) {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
@@ -169,15 +120,6 @@ class _AppleLoginScreenState extends State<AppleLoginScreen> {
               '使用 Apple 账号登录以继续使用',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: muted),
-            ),
-            const SizedBox(height: 32),
-            Card(
-              child: ListTile(
-                title: const Text('API 服务地址'),
-                subtitle: Text(_apiBasePreview, maxLines: 2, overflow: TextOverflow.ellipsis),
-                trailing: const Icon(Icons.edit_outlined),
-                onTap: _busy ? null : _editApiBase,
-              ),
             ),
             const SizedBox(height: 24),
             if (_appleAvailable) ...[

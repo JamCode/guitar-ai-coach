@@ -25,7 +25,7 @@ class PracticeApiRepository {
   Future<String> _base() async {
     final b = await _baseStore.load();
     if (b.isEmpty) {
-      throw PracticeApiException('请配置 API 服务地址（通常以 /api 结尾）。');
+      throw PracticeApiException('当前环境未配置可用 API 地址，请联系管理员。');
     }
     return b;
   }

@@ -24,7 +24,7 @@ class AuthApi {
   }) async {
     final base = await _store.load();
     if (base.isEmpty) {
-      throw AuthApiException('请先在登录页配置 API 服务地址（通常以 /api 结尾）。');
+      throw AuthApiException('当前环境未配置可用 API 地址，请联系管理员。');
     }
     final uri = Uri.parse('$base/auth/apple');
     http.Response resp;

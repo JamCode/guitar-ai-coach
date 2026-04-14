@@ -6,7 +6,6 @@ import 'app_version_info.dart';
 import 'app_version_screen.dart';
 import 'help_feedback_screen.dart';
 import 'profile_store.dart';
-import '../settings/api_settings_screen.dart';
 
 /// 「我的」页面：承载个人资料与设置入口。
 class MeScreen extends StatefulWidget {
@@ -88,19 +87,6 @@ class _MeScreenState extends State<MeScreen> {
         Card(
           child: Column(
             children: [
-              ListTile(
-                leading: const Icon(Icons.settings_outlined),
-                title: const Text('设置'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const ApiSettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-              const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.verified_user_outlined),
                 title: const Text('账号与安全'),

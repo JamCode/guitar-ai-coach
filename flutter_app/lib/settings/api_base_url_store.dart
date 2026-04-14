@@ -11,7 +11,7 @@ class ApiBaseUrlStore {
   /// 编译期注入的默认基址（`--dart-define=GUITAR_API_BASE_URL=...`），仅在用户未保存过配置时使用。
   static const String kCompileTimeDefault = String.fromEnvironment(
     'GUITAR_API_BASE_URL',
-    defaultValue: '',
+    defaultValue: 'http://47.110.78.65/api',
   );
 
   /// 返回去掉末尾 `/` 的基址；若从未配置且编译期也未定义，返回空字符串。

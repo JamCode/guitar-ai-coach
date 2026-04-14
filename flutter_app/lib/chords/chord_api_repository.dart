@@ -60,7 +60,7 @@ class ChordApiRepository implements ChordRemoteRepository {
   }) async {
     final base = await _store.load();
     if (base.isEmpty) {
-      throw ChordApiException('请先在「API 设置」中填写服务基址（通常以 /api 结尾）。');
+      throw ChordApiException('当前环境未配置可用 API 地址，请联系管理员。');
     }
     final uri = Uri.parse('$base/chords/explain-multi');
     final body = <String, dynamic>{

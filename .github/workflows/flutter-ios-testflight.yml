@@ -9,7 +9,23 @@
 name: Flutter iOS TestFlight
 
 on:
+  workflow_call:
+    inputs:
+      upload_to_testflight:
+        description: "Whether to upload IPA to TestFlight"
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
+    inputs:
+      upload_to_testflight:
+        description: "Whether to upload IPA to TestFlight"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
 
 concurrency:
   group: flutter-ios-testflight-${{ github.workflow }}-${{ github.ref }}
@@ -25,6 +41,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -37,7 +55,108 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Resolve upload mode
+        id: upload_mode
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "enabled=${{ github.event.inputs.upload_to_testflight }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=${{ inputs.upload_to_testflight }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate iOS build number increment
+        id: build_number
+        env:
+          GH_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import sys
+
+          pubspec = pathlib.Path("pubspec.yaml").read_text(encoding="utf-8")
+          m = re.search(r"^version:\s*\d+\.\d+\.\d+\+(\d+)\s*$", pubspec, flags=re.M)
+          if not m:
+              print("::error::Cannot parse build number from flutter_app/pubspec.yaml")
+              sys.exit(1)
+
+          current = int(m.group(1))
+          previous = None
+          try:
+              old_pubspec = subprocess.check_output(
+                  ["git", "show", "HEAD~1:flutter_app/pubspec.yaml"],
+                  stderr=subprocess.DEVNULL,
+                  text=True,
+              )
+              pm = re.search(r"^version:\s*\d+\.\d+\.\d+\+(\d+)\s*$", old_pubspec, flags=re.M)
+              if pm:
+                  previous = int(pm.group(1))
+          except Exception:
+              previous = None
+
+          output_path = os.environ["GITHUB_OUTPUT"]
+          with open(output_path, "a", encoding="utf-8") as f:
+              f.write(f"current={current}\n")
+              f.write(f"previous={'' if previous is None else previous}\n")
+
+          print(f"Detected iOS build number: {current}")
+          if previous is None:
+              print("No previous pubspec version found, skip monotonic check.")
+              sys.exit(0)
+
+          print(f"Previous iOS build number: {previous}")
+          if os.environ.get("GH_EVENT_NAME") in {"push", "workflow_call"} and current <= previous:
+              print(
+                  "::error::pubspec build number must increase before TestFlight upload "
+                  f"(current={current}, previous={previous})"
+              )
+              sys.exit(1)
+          PY
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: CocoaPods
+        run: pod install
+        working-directory: flutter_app/ios
+
+      - name: Boot iOS simulator
+        id: simulator
+        run: |
+          set -euo pipefail
+          SIMULATOR_ID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 16/ {print $2; exit}')
+          if [ -z "${SIMULATOR_ID:-}" ]; then
+            SIMULATOR_ID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 15/ {print $2; exit}')
+          fi
+          if [ -z "${SIMULATOR_ID:-}" ]; then
+            echo "::error::No available iPhone simulator found on runner."
+            exit 1
+          fi
+          xcrun simctl boot "$SIMULATOR_ID" || true
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          echo "id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
+          echo "Booted simulator: $SIMULATOR_ID"
+
+      - name: Run Flutter integration tests on iOS simulator
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          flutter test integration_test -d "${{ steps.simulator.outputs.id }}" --reporter expanded | tee build/integration-test.log
+
+      - name: Upload integration test artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guitar-helper-integration-test-log
+          path: flutter_app/build/integration-test.log
+          if-no-files-found: warn
+
       - name: Install signing certificate and provisioning profile
+        if: steps.upload_mode.outputs.enabled == 'true'
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
           P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
@@ -69,6 +188,7 @@ jobs:
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$PP_UUID.mobileprovision"
 
       - name: Write ExportOptions.plist (App Store)
+        if: steps.upload_mode.outputs.enabled == 'true'
         env:
           PROFILE_SPECIFIER: ${{ secrets.IOS_APPSTORE_PROVISIONING_PROFILE_NAME }}
         run: |
@@ -92,17 +212,12 @@ jobs:
           </plist>
           EOF
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: CocoaPods
-        run: pod install
-        working-directory: flutter_app/ios
-
       - name: Build iOS artifacts without codesign
+        if: steps.upload_mode.outputs.enabled == 'true'
         run: flutter build ios --release --no-codesign
 
       - name: Archive and export IPA with manual signing
+        if: steps.upload_mode.outputs.enabled == 'true'
         env:
           PROFILE_SPECIFIER: ${{ secrets.IOS_APPSTORE_PROVISIONING_PROFILE_NAME }}
         run: |
@@ -122,6 +237,7 @@ jobs:
             -exportOptionsPlist ios/ExportOptions-ci-appstore.plist
 
       - name: Upload IPA artifact
+        if: steps.upload_mode.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: guitar-helper-ios-appstore-ipa
@@ -129,6 +245,7 @@ jobs:
           if-no-files-found: error
 
       - name: Install App Store Connect API key for altool
+        if: steps.upload_mode.outputs.enabled == 'true'
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
@@ -147,6 +264,7 @@ jobs:
           chmod 600 "$KEY_FILE"
 
       - name: Upload to App Store Connect (TestFlight)
+        if: steps.upload_mode.outputs.enabled == 'true'
         env:
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
@@ -168,6 +286,35 @@ jobs:
           if [ -f "$KEYCHAIN_PATH" ]; then
             security delete-keychain "$KEYCHAIN_PATH" || true
           fi
+
+      - name: Write release summary
+        if: always()
+        run: |
+          {
+            echo "## iOS Release Result"
+            echo ""
+            echo "- Workflow result: \`${{ job.status }}\`"
+            echo "- iOS build number: \`${{ steps.build_number.outputs.current }}\`"
+            echo "- Previous build number: \`${{ steps.build_number.outputs.previous || 'N/A' }}\`"
+            echo "- Integration tests: \`completed\`"
+            echo "- TestFlight upload enabled: \`${{ steps.upload_mode.outputs.enabled }}\`"
+            if [ "${{ steps.upload_mode.outputs.enabled }}" = "true" ]; then
+              echo "- TestFlight upload: \`attempted\`"
+            else
+              echo "- TestFlight upload: \`skipped by input\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Optional mobile webhook notification
+        if: always() && secrets.MOBILE_NOTIFY_WEBHOOK_URL != ''
+        env:
+          WEBHOOK_URL: ${{ secrets.MOBILE_NOTIFY_WEBHOOK_URL }}
+        run: |
+          payload=$(cat <<EOF
+          {"text":"[guitar-ai-coach] iOS pipeline: ${{ job.status }} | build=${{ steps.build_number.outputs.current }} | upload=${{ steps.upload_mode.outputs.enabled }} | run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+          EOF
+          )
+          curl -sS -X POST -H "Content-Type: application/json" -d "$payload" "$WEBHOOK_URL" >/dev/null
 
 # -----------------------------------------------------------------------------
 # 需在仓库 Settings → Secrets and variables → Actions 中新增：

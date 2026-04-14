@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../settings/api_base_url_store.dart';
-import '../settings/api_settings_screen.dart';
 import 'chord_api_repository.dart';
 import 'chord_models.dart';
 import 'chord_remote_repository.dart';
@@ -191,27 +190,13 @@ class _ChordLookupScreenState extends State<ChordLookupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('和弦字典'),
-        actions: [
-          IconButton(
-            tooltip: 'API 设置',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () async {
-              await Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ApiSettingsScreen(),
-                ),
-              );
-              await _refreshApiFlag();
-            },
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
             '无需网络：先点「离线查和弦」看构成音与常见把位。'
-            ' 若已配置 API，可用联网查询获取更多按法。',
+            ' 如需更多按法，可直接用联网查询。',
             style: theme.textTheme.bodySmall?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
