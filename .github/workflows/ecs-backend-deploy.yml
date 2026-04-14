@@ -137,9 +137,10 @@ jobs:
           trap cleanup EXIT
           cd backend/database/flyway
           export FLYWAY_URL="jdbc:mysql://127.0.0.1:13306/${FLYWAY_DATABASE}?characterEncoding=utf8&useSSL=false"
+          # 库已由 database/ddl 等建过表、但尚无 flyway_schema_history 时，须 baseline 后再跑版本迁移
+          export FLYWAY_BASELINE_ON_MIGRATE=true
           flyway info
-          # 勿在 migrate 前单独 validate：空库存在 pending 版本时 Flyway 10+ 会报
-          # "Detected resolved migration not applied" 并失败；migrate 默认 validateOnMigrate
+          # 勿在 migrate 前单独 validate：存在 pending 版本时 Flyway 10+ 会失败；migrate 含 validateOnMigrate
           flyway migrate
           flyway validate
 
