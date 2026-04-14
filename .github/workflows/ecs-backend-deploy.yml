@@ -138,8 +138,10 @@ jobs:
           cd backend/database/flyway
           export FLYWAY_URL="jdbc:mysql://127.0.0.1:13306/${FLYWAY_DATABASE}?characterEncoding=utf8&useSSL=false"
           flyway info
-          flyway validate
+          # 勿在 migrate 前单独 validate：空库存在 pending 版本时 Flyway 10+ 会报
+          # "Detected resolved migration not applied" 并失败；migrate 默认 validateOnMigrate
           flyway migrate
+          flyway validate
 
       - name: Rsync Flyway directory to ECS (optional on-server copy)
         if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.flyway == 'true'
