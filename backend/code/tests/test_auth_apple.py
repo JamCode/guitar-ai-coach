@@ -5,10 +5,13 @@ from unittest.mock import patch
 
 import jwt
 
-from auth_apple import handle_auth_apple_post
+from auth_apple import APPLE_JWKS_URL, handle_auth_apple_post
 
 
 class TestAuthAppleHandler(unittest.TestCase):
+    def test_jwks_url_uses_official_keys_endpoint(self):
+        self.assertEqual(APPLE_JWKS_URL, "https://appleid.apple.com/auth/keys")
+
     def setUp(self):
         self._prev_secret = os.environ.get("AUTH_JWT_SECRET")
         os.environ["AUTH_JWT_SECRET"] = "unit-test-secret-at-least-16-chars"

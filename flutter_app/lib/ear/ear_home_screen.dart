@@ -99,56 +99,7 @@ class EarHomeScreen extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(height: 20),
-        _StubCard(
-          title: 'C · 错题本与每日 10 题',
-          body:
-              '个性化复习与连续打卡；依赖本地学习记录。需求见 '
-              '`requirements/练耳训练一期-ABC-需求.md`。',
-        ),
       ],
-    );
-  }
-}
-
-class _StubCard extends StatelessWidget {
-  const _StubCard({required this.title, required this.body});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '即将推出',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

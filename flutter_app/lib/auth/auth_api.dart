@@ -57,6 +57,41 @@ class AuthApi {
     }
     return token.trim();
   }
+
+  /// 测试登录：使用后端测试入口直接换发 access_token。
+  Future<String> loginTestUser({String testUserKey = 'mobile-default'}) async {
+    final base = await _store.load();
+    if (base.isEmpty) {
+      throw AuthApiException('当前环境未配置可用 API 地址，请联系管理员。');
+    }
+    final uri = Uri.parse('$base/auth/test-login');
+    http.Response resp;
+    try {
+      resp = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'test_user_key': testUserKey}),
+      );
+    } catch (e) {
+      throw AuthApiException('网络错误：$e');
+    }
+    Map<String, dynamic>? map;
+    try {
+      final decoded = jsonDecode(resp.body);
+      map = decoded is Map<String, dynamic> ? decoded : null;
+    } catch (_) {
+      map = null;
+    }
+    if (resp.statusCode != 200) {
+      final msg = map?['detail'] ?? map?['error'] ?? resp.body;
+      throw AuthApiException('测试登录失败（${resp.statusCode}）：$msg');
+    }
+    final token = map?['access_token'];
+    if (token is! String || token.trim().isEmpty) {
+      throw AuthApiException('服务端未返回 access_token');
+    }
+    return token.trim();
+  }
 }
 
 /// [AuthApi] 的可读错误。

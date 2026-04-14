@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 
+import 'auth_api.dart';
 import 'auth_session_store.dart';
 
 /// 应用级登录态：冷启动从 [AuthSessionStore] 恢复，登录/登出时通知监听者。
 class AuthController extends ChangeNotifier {
   AuthController({AuthSessionStore? sessionStore})
-      : _session = sessionStore ?? AuthSessionStore();
+      : _session = sessionStore ?? AuthSessionStore(),
+        _authApi = AuthApi();
 
   final AuthSessionStore _session;
+  final AuthApi _authApi;
   var _ready = false;
   var _loggedIn = false;
 
@@ -17,6 +20,15 @@ class AuthController extends ChangeNotifier {
   /// 在 [runApp] 前调用：读取本地 token 决定是否已登录。
   Future<void> bootstrap() async {
     _loggedIn = await _session.isLoggedIn();
+    if (!_loggedIn) {
+      try {
+        final access = await _authApi.loginTestUser();
+        await _session.saveAccessToken(access);
+        _loggedIn = true;
+      } on AuthApiException {
+        _loggedIn = false;
+      }
+    }
     _ready = true;
     notifyListeners();
   }

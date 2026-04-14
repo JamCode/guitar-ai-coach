@@ -32,6 +32,8 @@
 	<string>需要使用相机拍摄谱子照片并保存到「我的谱」。</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>47.110.78.65</key>

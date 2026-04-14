@@ -57,7 +57,7 @@ from song_chords_db import (
     song_chords_mysql_enabled,
 )
 from auth_apple import handle_auth_apple_post, handle_auth_health_get
-from auth_ci import handle_auth_ci_login_post
+from auth_ci import handle_auth_ci_login_post, handle_auth_test_login_post
 from practice_http import handle_practice_routes
 from sheets_http import handle_sheets_routes
 
@@ -906,6 +906,11 @@ def handler(event, context):
     if method == "POST" and path in ("/auth/ci-login", "/api/auth/ci-login"):
         body = _extract_body(event)
         code, payload = handle_auth_ci_login_post(body)
+        return _response(code, payload)
+
+    if method == "POST" and path in ("/auth/test-login", "/api/auth/test-login"):
+        body = _extract_body(event)
+        code, payload = handle_auth_test_login_post(body)
         return _response(code, payload)
 
     if method == "GET" and path in ("/styles", "/api/styles"):

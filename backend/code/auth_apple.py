@@ -15,7 +15,8 @@ from auth_jwt import issue_access_token
 LOGGER = logging.getLogger("guitar_ai_backend.auth_apple")
 
 APPLE_ISSUER = "https://appleid.apple.com"
-APPLE_JWKS_URL = "https://appleid.apple.com/auth/jwks"
+# Apple 官方 JWKS 地址（用于校验 identity_token 的签名）。
+APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 _JWKS_CLIENT = None
 _JWKS_CLIENT_AT = 0.0
 _JWKS_TTL = 300.0

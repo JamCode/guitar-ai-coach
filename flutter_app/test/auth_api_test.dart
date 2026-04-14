@@ -28,6 +28,24 @@ void main() {
     );
     expect(tok, 'our.jwt.here');
   });
+
+  test('loginTestUser 解析 access_token', () async {
+    final store = _FakeBaseUrlStore('http://localhost:9/api');
+    final client = MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(request.url.toString(), 'http://localhost:9/api/auth/test-login');
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['test_user_key'], 'mobile-default');
+      return http.Response(
+        jsonEncode({'access_token': 'test.jwt.token'}),
+        200,
+        headers: {'Content-Type': 'application/json'},
+      );
+    });
+    final api = AuthApi(baseUrlStore: store, client: client);
+    final tok = await api.loginTestUser();
+    expect(tok, 'test.jwt.token');
+  });
 }
 
 /// 最小假实现：避免依赖 SharedPreferences 在纯单元测试中的异步初始化。

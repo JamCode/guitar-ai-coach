@@ -16,4 +16,18 @@ void main() {
     expect(find.text('E'), findsWidgets);
     expect(find.textContaining('标准调弦'), findsOneWidget);
   });
+
+  testWidgets('点击任意音位不会报错', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: FretboardScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(InkWell).first);
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(tester.takeException(), isNull);
+  });
 }

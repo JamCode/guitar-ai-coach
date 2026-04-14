@@ -20,6 +20,10 @@ def _ci_secret():
     return (os.getenv("CI_AUTH_SECRET") or "").strip()
 
 
+def _test_login_enabled():
+    return _truthy_env("TEST_AUTH_ENABLED")
+
+
 def _sanitize_ci_user_key(raw):
     key = str(raw or "").strip().lower()
     if not key:
@@ -68,5 +72,37 @@ def handle_auth_ci_login_post(body):
             "token_type": "Bearer",
             "expires_in": 3600,
             "ci_user_key": ci_user_key,
+        },
+    )
+
+
+def handle_auth_test_login_post(body):
+    """处理 `POST /auth/test-login`，返回 (status_code, payload)。"""
+    if not _test_login_enabled():
+        return (404, {"error": "not_found"})
+    if body is None:
+        body = {}
+    if not isinstance(body, dict):
+        return (400, {"error": "invalid_json", "detail": "请求体须为 JSON 对象"})
+    if not apple_auth_mysql_enabled():
+        return (503, {"error": "mysql_not_configured"})
+
+    test_user_key = _sanitize_ci_user_key(body.get("test_user_key") or "mobile-default")
+    apple_sub = f"test.user.{test_user_key}"
+    try:
+        user_id = upsert_user_by_apple_sub(apple_sub)
+        access = issue_access_token(user_id=user_id, apple_sub=apple_sub, ttl_seconds=3600)
+    except ValueError as e:
+        return (400, {"error": "bad_request", "detail": str(e)})
+    except RuntimeError as e:
+        return (503, {"error": "user_persist_failed", "detail": str(e)})
+
+    return (
+        200,
+        {
+            "access_token": access,
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "test_user_key": test_user_key,
         },
     )

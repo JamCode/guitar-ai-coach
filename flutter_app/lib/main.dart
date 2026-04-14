@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import 'audio/init_guitar_audio.dart';
 import 'app_theme.dart';
-import 'auth/apple_login_screen.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_scope.dart';
 import 'diagnostics/crash_log_store.dart';
@@ -57,9 +56,7 @@ class GuitarHelperApp extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             );
           },
-          home: controller.loggedIn
-              ? const HomeShell()
-              : AppleLoginScreen(onLoggedIn: controller.markLoggedIn),
+          home: const HomeShell(),
         );
       },
     );

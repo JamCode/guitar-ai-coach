@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -98,7 +99,14 @@ class HttpSightSingingRepository implements SightSingingRepository {
   Future<SightSingingResult> fetchResult(String sessionId) async {
     final base = await _baseUrl();
     final uri = Uri.parse('$base/ear-note/session/result/$sessionId');
-    final resp = await _client.get(uri);
+    final http.Response resp;
+    try {
+      resp = await _client.get(uri);
+    } on SocketException catch (_) {
+      throw _networkUnavailable();
+    } on http.ClientException catch (_) {
+      throw _networkUnavailable();
+    }
     if (resp.statusCode != 200) {
       throw SightSingingApiException('获取结果失败（${resp.statusCode}）');
     }
@@ -118,11 +126,18 @@ class HttpSightSingingRepository implements SightSingingRepository {
   ) async {
     final base = await _baseUrl();
     final uri = Uri.parse('$base$path');
-    final resp = await _client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
+    final http.Response resp;
+    try {
+      resp = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+    } on SocketException catch (_) {
+      throw _networkUnavailable();
+    } on http.ClientException catch (_) {
+      throw _networkUnavailable();
+    }
     Map<String, dynamic> data = {};
     try {
       data = _map(jsonDecode(resp.body));
@@ -132,6 +147,10 @@ class HttpSightSingingRepository implements SightSingingRepository {
       throw SightSingingApiException('$msg（${resp.statusCode}）');
     }
     return data;
+  }
+
+  SightSingingApiException _networkUnavailable() {
+    return SightSingingApiException('网络不可达，请检查网络连接或稍后重试');
   }
 
   Future<String> _baseUrl() async {
