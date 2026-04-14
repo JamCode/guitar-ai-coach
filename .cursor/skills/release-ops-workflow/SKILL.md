@@ -1,6 +1,6 @@
 ---
 name: release-ops-workflow
-description: 统一处理发布运维任务：Flutter iOS 本机或 GitHub Actions 打包并上传 TestFlight、ECS 前后端部署、环境变量与密钥配置管理、发布前后检查与回滚建议。用户提到“打包”“TestFlight”“GitHub Actions”“CI”“上线”“部署”“配置管理”“环境变量”“发布流程”时启用。
+description: 统一处理发布运维任务：Flutter iOS 本机或 GitHub Actions 打包并上传 TestFlight、阿里云 ECS SSH 运维登录约定、Python 后端与 Flyway 部署、环境变量与密钥配置管理、发布前后检查与回滚建议。用户提到“打包”“TestFlight”“GitHub Actions”“CI”“上线”“部署”“ECS”“阿里云”“SSH”“登录服务器”“运维”“配置管理”“环境变量”“发布流程”时启用。
 ---
 
 # 发布与运维工作流（iOS + ECS + 配置管理）
@@ -17,6 +17,60 @@ description: 统一处理发布运维任务：Flutter iOS 本机或 GitHub Actio
 2. **密钥不入库**：`.p8`、`.pem`、`backend.env` 实值、token 只放本机安全路径或 CI Secret。
 3. **发布有检查点**：发布前检查 + 发布后冒烟 + 可回滚路径。
 4. **命令优先可复现**：优先执行仓库已有文档中的标准命令，不临时发明流程。
+
+## 运维连接约定：阿里云 ECS（本仓库固定信息）
+
+**对 Agent 的强制口径**：用户要求「登录云服务器 / ECS / 查线上库配置」时，**默认已知**下列约定；应直接在本机用 SSH 执行或给出命令，**不要**回答「不知道服务器地址或路径」。密码、DashScope Key 等敏感值**从不写进本 skill**，须从服务器或本机 `deploy/ecs/backend.env` **现读**（该文件已被 `.gitignore`，勿提交）。
+
+### SSH 与私钥路径
+
+| 项 | 约定值 |
+| --- | --- |
+| **ECS 公网 IP** | `47.110.78.65`（与 `deploy/ecs/README.md` 一致；若变更以用户或 Variables 为准） |
+| **SSH 用户** | `wanghan` |
+| **本机私钥（常用）** | 仓库根目录 `my-ecs-key2.pem`（与 `*.pem` 在 `.gitignore` 中；**勿提交 Git**） |
+| **SSH 命令模板** | `ssh -i /path/to/guitar-ai-coach/my-ecs-key2.pem -o StrictHostKeyChecking=accept-new wanghan@47.110.78.65 "<远程命令>"` |
+
+本机执行前建议：`chmod 600 my-ecs-key2.pem`。
+
+### 服务器上项目路径与进程
+
+| 项 | 路径或名称 |
+| --- | --- |
+| **项目根** | `/home/wanghan/guitar-ai-coach`（即下文 `ECS_PATH`） |
+| **Python 后端代码** | `/home/wanghan/guitar-ai-coach/backend/code` |
+| **后端环境变量文件** | `/home/wanghan/guitar-ai-coach/deploy/ecs/backend.env` |
+| **Nginx 静态站点根** | `/home/wanghan/guitar-ai-coach/site`（`ECS_SITE`） |
+| **systemd 服务名** | `guitar-ai-coach-backend` |
+| **后端本机监听** | `127.0.0.1:18080` |
+
+### MySQL（线上配置从哪读）
+
+- 连接参数在 **ECS** 的 `deploy/ecs/backend.env` 中，变量名为：`MYSQL_HOST`、`MYSQL_PORT`、`MYSQL_USER`、`MYSQL_PASSWORD`、`MYSQL_DATABASE`。
+- **当前环境典型约定**（非密钥、便于对齐 GitHub Actions；若与线上文件不一致以线上为准）：
+  - `MYSQL_HOST`：`localhost`
+  - `MYSQL_PORT`：`3306`
+  - `MYSQL_USER`：`guitar_app`
+  - `MYSQL_DATABASE`：`guitar_ai_coach`
+  - `MYSQL_PASSWORD`：**仅**在 `backend.env` 或用户提供的 Secret 中，**禁止**写入 skill、禁止贴到聊天日志。
+- 在 ECS 上查看（不含解密需求时只看键名）：  
+  `grep '^MYSQL_' /home/wanghan/guitar-ai-coach/deploy/ecs/backend.env`
+
+### Flyway（与线上库一致）
+
+- 迁移脚本目录（仓库内）：`backend/database/flyway/sql/`
+- 在服务器上同步后常见路径：`/home/wanghan/guitar-ai-coach/backend/database/flyway/`
+- 详见：`backend/database/flyway/README.md`
+
+### GitHub Actions 与数据库相关的 Secret 名称（交叉引用）
+
+- 工作流：`.github/workflows/ecs-backend-deploy.yml`
+- `FLYWAY_USER` / `FLYWAY_PASSWORD`：与 ECS `backend.env` 中 `MYSQL_USER` / `MYSQL_PASSWORD` 一致；在 GitHub **Settings → Secrets and variables → Actions** 配置。
+- `ECS_SSH_PRIVATE_KEY`：`my-ecs-key2.pem` 的**全文**（多行粘贴）。
+
+### 本机开发副本（与 ECS 对照）
+
+- 本机示例/编辑路径：`deploy/ecs/backend.env`（与 ECS 同步用 `rsync`，见 `deploy/ecs/README.md`）。
 
 ## 单次任务执行顺序
 
