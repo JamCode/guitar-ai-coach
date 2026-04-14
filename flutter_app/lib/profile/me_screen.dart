@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../auth/auth_scope.dart';
 import 'account_security_screen.dart';
+import 'app_version_info.dart';
+import 'app_version_screen.dart';
 import 'help_feedback_screen.dart';
 import 'profile_store.dart';
 import '../settings/api_settings_screen.dart';
@@ -17,12 +19,14 @@ class MeScreen extends StatefulWidget {
 class _MeScreenState extends State<MeScreen> {
   final _store = ProfileStore();
   var _loading = true;
+  var _versionText = '--';
   UserProfile _profile = const UserProfile(nickname: '');
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadVersionInfo();
   }
 
   Future<void> _loadProfile() async {
@@ -34,6 +38,15 @@ class _MeScreenState extends State<MeScreen> {
       _profile = profile;
       _loading = false;
     });
+  }
+
+  /// 读取版本号摘要，在「我的」页入口直出当前构建版本。
+  Future<void> _loadVersionInfo() async {
+    final info = await AppVersionInfoLoader.load();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _versionText = info.displayVersion);
   }
 
   Future<void> _editNickname() async {
@@ -115,6 +128,20 @@ class _MeScreenState extends State<MeScreen> {
               ),
               const Divider(height: 1),
               ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('关于与版本'),
+                subtitle: Text(_versionText),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AppVersionScreen(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
                 leading: const Icon(Icons.logout),
                 title: const Text('退出登录'),
                 onTap: () async {
@@ -122,9 +149,9 @@ class _MeScreenState extends State<MeScreen> {
                   if (!context.mounted) {
                     return;
                   }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('已退出登录')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('已退出登录')));
                 },
               ),
             ],
