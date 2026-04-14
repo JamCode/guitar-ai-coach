@@ -226,6 +226,22 @@ jobs:
           </plist>
           EOF
 
+      - name: Prepare Runner signing settings for CI archive
+        if: steps.upload_mode.outputs.enabled == 'true'
+        run: |
+          # Keep local dev_phone profile for developers, but clear it in CI
+          # so archive won't be pinned to a non-AppStore provisioning profile.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("ios/Runner.xcodeproj/project.pbxproj")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              '"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = dev_phone;',
+              '"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "";',
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
+
       - name: Build iOS artifacts without codesign
         if: steps.upload_mode.outputs.enabled == 'true'
         run: flutter build ios --release --no-codesign
@@ -244,8 +260,7 @@ jobs:
             archive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=7R8RS88G2M \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_SPECIFIER"
+            CODE_SIGN_IDENTITY="Apple Distribution"
 
           xcodebuild -exportArchive \
             -archivePath build/ios/archive/Runner.xcarchive \
