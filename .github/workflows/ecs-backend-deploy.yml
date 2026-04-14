@@ -166,11 +166,16 @@ jobs:
       - name: Smoke check (ECS localhost)
         if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
         run: |
-          code=$(ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
-            "${ECS_USER}@${ECS_HOST}" \
-            "curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/styles" || echo "000")
-          echo "HTTP $code"
-          if [ "$code" != "200" ]; then
-            echo "::error::Backend smoke check failed (expected 200, got $code)"
-            exit 1
-          fi
+          set +e
+          code=""
+          for i in 1 2 3 4 5 6 7 8; do
+            code=$(ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
+              "${ECS_USER}@${ECS_HOST}" \
+              "curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 5 http://127.0.0.1:18080/styles" 2>/dev/null)
+            code=$(echo -n "$code" | tr -d '\r\n ')
+            echo "smoke try $i: HTTP ${code:-empty}"
+            [ "$code" = "200" ] && exit 0
+            sleep 4
+          done
+          echo "::error::Backend smoke check failed after retries (expected 200, last=${code:-empty})"
+          exit 1
