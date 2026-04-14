@@ -91,7 +91,12 @@ EAR_SEED_DEFAULT_PATH = os.getenv(
 LEVEL_IDS = ("初级", "中级", "高级")
 LEVEL_DEFAULT = "中级"
 EAR_NOTE_PITCH_CLASSES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-EAR_NOTE_OCTAVE = 4
+EAR_NOTE_DEFAULT_RANGE = ("C4", "B4")
+EAR_NOTE_PRESET_RANGES = {
+    "low": ("C3", "B3"),
+    "mid": ("C4", "B4"),
+    "wide": ("C3", "B4"),
+}
 _EAR_NOTE_SESSIONS = {}
 _EAR_NOTE_SESSION_LOCK = threading.Lock()
 
@@ -303,20 +308,71 @@ def _normalize_ear_note_mode(mode):
     return m if m in ("single_note", "multi_note") else "single_note"
 
 
-def _ear_note_allowed_pitches(include_accidental):
+def _parse_note_with_octave(note):
+    m = re.match(r"^([A-G])([#b]?)([0-8])$", str(note or "").strip().upper())
+    if not m:
+        return None
+    name = f"{m.group(1)}{m.group(2)}"
+    octave = int(m.group(3))
+    if name not in EAR_NOTE_PITCH_CLASSES:
+        return None
+    idx = EAR_NOTE_PITCH_CLASSES.index(name)
+    midi = (octave + 1) * 12 + idx
+    return {"name": name, "octave": octave, "midi": midi}
+
+
+def _normalize_ear_note_range(pitch_range):
+    if isinstance(pitch_range, (tuple, list)) and len(pitch_range) == 2:
+        low_s = str(pitch_range[0]).strip().upper()
+        high_s = str(pitch_range[1]).strip().upper()
+        low = _parse_note_with_octave(low_s)
+        high = _parse_note_with_octave(high_s)
+        if low and high and low["midi"] <= high["midi"]:
+            return (low_s, high_s)
+    if isinstance(pitch_range, str):
+        key = pitch_range.strip().lower()
+        if key in EAR_NOTE_PRESET_RANGES:
+            return EAR_NOTE_PRESET_RANGES[key]
+        if "-" in key:
+            parts = [x.strip().upper() for x in key.split("-", 1)]
+            if len(parts) == 2:
+                low = _parse_note_with_octave(parts[0])
+                high = _parse_note_with_octave(parts[1])
+                if low and high and low["midi"] <= high["midi"]:
+                    return (parts[0], parts[1])
+    return EAR_NOTE_DEFAULT_RANGE
+
+
+def _ear_note_allowed_pitches(include_accidental, pitch_range):
+    low_name, high_name = _normalize_ear_note_range(pitch_range)
+    low = _parse_note_with_octave(low_name)
+    high = _parse_note_with_octave(high_name)
+    if not low or not high or low["midi"] > high["midi"]:
+        low = _parse_note_with_octave(EAR_NOTE_DEFAULT_RANGE[0])
+        high = _parse_note_with_octave(EAR_NOTE_DEFAULT_RANGE[1])
     if include_accidental:
-        pcs = EAR_NOTE_PITCH_CLASSES
+        pcs = set(EAR_NOTE_PITCH_CLASSES)
     else:
-        pcs = ["C", "D", "E", "F", "G", "A", "B"]
-    return [f"{pc}{EAR_NOTE_OCTAVE}" for pc in pcs]
+        pcs = {"C", "D", "E", "F", "G", "A", "B"}
+    notes = []
+    for midi in range(low["midi"], high["midi"] + 1):
+        octave = midi // 12 - 1
+        pc = EAR_NOTE_PITCH_CLASSES[midi % 12]
+        if pc in pcs:
+            notes.append(f"{pc}{octave}")
+    return notes
 
 
 def _ear_note_pitch_label(note):
-    return str(note or "").strip().upper().replace(str(EAR_NOTE_OCTAVE), "")
+    raw = str(note or "").strip().upper()
+    parsed = _parse_note_with_octave(raw)
+    return parsed["name"] if parsed else raw
 
 
-def _generate_ear_note_questions(*, question_count, notes_per_question, include_accidental):
-    allowed_notes = _ear_note_allowed_pitches(include_accidental)
+def _generate_ear_note_questions(
+    *, question_count, notes_per_question, include_accidental, pitch_range
+):
+    allowed_notes = _ear_note_allowed_pitches(include_accidental, pitch_range)
     if not allowed_notes:
         return []
     max_repeat = max(2, int((question_count * notes_per_question) / max(1, len(allowed_notes))) + 2)
@@ -1143,6 +1199,7 @@ def handler(event, context):
         body = _extract_body(event)
         mode = _normalize_ear_note_mode(body.get("mode"))
         include_accidental = _truthy_body_flag(body.get("include_accidental"))
+        pitch_range = body.get("pitch_range")
         notes_per_question = body.get("notes_per_question", 1)
         question_count = body.get("question_count", 10)
         try:
@@ -1157,17 +1214,20 @@ def handler(event, context):
         notes_per_question = max(1, min(notes_per_question, 5))
         question_count = max(1, min(question_count, 50))
         session_id = f"ens_{uuid.uuid4().hex[:16]}"
+        normalized_pitch_range = _normalize_ear_note_range(pitch_range)
         questions = _generate_ear_note_questions(
             question_count=question_count,
             notes_per_question=notes_per_question,
             include_accidental=include_accidental,
+            pitch_range=normalized_pitch_range,
         )
-        notes = _ear_note_allowed_pitches(include_accidental)
+        notes = _ear_note_allowed_pitches(include_accidental, normalized_pitch_range)
         now_ts = int(time.time())
         session = {
             "session_id": session_id,
             "mode": mode,
             "include_accidental": bool(include_accidental),
+            "pitch_range": normalized_pitch_range,
             "notes_per_question": notes_per_question,
             "question_count": question_count,
             "notes": notes,
@@ -1185,9 +1245,12 @@ def handler(event, context):
                 "config": {
                     "mode": mode,
                     "include_accidental": bool(include_accidental),
+                    "pitch_range": {
+                        "min_note": normalized_pitch_range[0],
+                        "max_note": normalized_pitch_range[1],
+                    },
                     "notes_per_question": notes_per_question,
                     "question_count": question_count,
-                    "pitch_range": f"C{EAR_NOTE_OCTAVE}-B{EAR_NOTE_OCTAVE}",
                     "standard_tone": "A4",
                 },
                 "question": _ear_note_public_question(session, questions[0]) if questions else None,
@@ -1291,6 +1354,10 @@ def handler(event, context):
                 "config": {
                     "mode": session.get("mode"),
                     "include_accidental": session.get("include_accidental"),
+                    "pitch_range": {
+                        "min_note": (session.get("pitch_range") or EAR_NOTE_DEFAULT_RANGE)[0],
+                        "max_note": (session.get("pitch_range") or EAR_NOTE_DEFAULT_RANGE)[1],
+                    },
                     "notes_per_question": session.get("notes_per_question"),
                     "question_count": session.get("question_count"),
                 },

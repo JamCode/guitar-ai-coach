@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'ear_mcq_session_screen.dart';
 import 'interval_ear_screen.dart';
+import 'sight_singing_setup_screen.dart';
 
 /// 练耳 Tab：自由练习式入口（音程 / 和弦性质 / 和弦进行）+ C 占位。
 class EarHomeScreen extends StatelessWidget {
@@ -16,14 +17,17 @@ class EarHomeScreen extends StatelessWidget {
         Text(
           '自由练习',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurfaceVariant,
-              ),
+            fontWeight: FontWeight.w700,
+            color: scheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 10),
         Card(
           child: ListTile(
-            leading: Icon(Icons.play_circle_outline_rounded, color: scheme.primary),
+            leading: Icon(
+              Icons.play_circle_outline_rounded,
+              color: scheme.primary,
+            ),
             title: const Text('音程识别'),
             subtitle: const Text('两音上行、四选一'),
             trailing: const Icon(Icons.chevron_right),
@@ -71,6 +75,25 @@ class EarHomeScreen extends StatelessWidget {
                     bank: 'B',
                     totalQuestions: 10,
                   ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: Icon(
+              Icons.record_voice_over_rounded,
+              color: scheme.primary,
+            ),
+            title: const Text('视唱训练'),
+            subtitle: const Text('单音视唱 · 可选音域 · 麦克风实时判定'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const SightSingingSetupScreen(),
                 ),
               );
             },
