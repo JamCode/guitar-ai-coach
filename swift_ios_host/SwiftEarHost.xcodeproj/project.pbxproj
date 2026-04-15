@@ -15,10 +15,12 @@
 		E69983D149243B7A6D946061 /* Tuner in Frameworks */ = {isa = PBXBuildFile; productRef = D68C530C664DD0805DDA1187 /* Tuner */; };
 		EE8F0E2991EB41875CAF9588 /* Ear in Frameworks */ = {isa = PBXBuildFile; productRef = EEDC03120E5A07496D4BF215 /* Ear */; };
 		F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */ = {isa = PBXBuildFile; productRef = 231960F99C0DA8778FB6E8A8 /* Chords */; };
+		FF25AEF3B37D59AF2314A8E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 119222F862F03CC58F905D72 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftEarHostApp.swift; sourceTree = "<group>"; };
+		119222F862F03CC58F905D72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		95FB8986AD18C574ADA77797 /* SwiftEarHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SwiftEarHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7BAB7DF709977E2E26FF769 /* swift_app */ = {isa = PBXFileReference; lastKnownFileType = folder; name = swift_app; path = ../swift_app; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -69,6 +71,7 @@
 		E3B619BA47B7442D39430D3E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				119222F862F03CC58F905D72 /* Assets.xcassets */,
 				117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */,
 			);
 			path = Sources;
@@ -82,6 +85,7 @@
 			buildConfigurationList = 2090FAAF0A9E07A5FD2A6AF8 /* Build configuration list for PBXNativeTarget "SwiftEarHost" */;
 			buildPhases = (
 				CE041BBA4C300C385E723F37 /* Sources */,
+				9D44C236D8CABD1758554958 /* Resources */,
 				24597B75D5975260031B689D /* Frameworks */,
 			);
 			buildRules = (
@@ -135,6 +139,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		9D44C236D8CABD1758554958 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF25AEF3B37D59AF2314A8E7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		CE041BBA4C300C385E723F37 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -153,7 +168,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = SwiftEarHost;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
+				INFOPLIST_KEY_CFBundleName = "AI吉他";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麦克风用于视唱训练与调音识别。";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -294,7 +310,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = SwiftEarHost;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
+				INFOPLIST_KEY_CFBundleName = "AI吉他";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麦克风用于视唱训练与调音识别。";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
