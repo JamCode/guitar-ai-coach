@@ -23,8 +23,20 @@ struct SwiftEarHostApp: App {
         let tab = UITabBarAppearance()
         tab.configureWithOpaqueBackground()
         tab.backgroundColor = UIColor(SwiftAppTheme.bg)
+        tab.stackedLayoutAppearance.selected.iconColor = UIColor(SwiftAppTheme.brand)
+        tab.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: UIColor(SwiftAppTheme.brand)
+        ]
+        tab.stackedLayoutAppearance.normal.iconColor = UIColor(SwiftAppTheme.muted)
+        tab.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor(SwiftAppTheme.muted)
+        ]
+        tab.inlineLayoutAppearance = tab.stackedLayoutAppearance
+        tab.compactInlineLayoutAppearance = tab.stackedLayoutAppearance
         UITabBar.appearance().standardAppearance = tab
         UITabBar.appearance().scrollEdgeAppearance = tab
+        UITabBar.appearance().tintColor = UIColor(SwiftAppTheme.brand)
+        UITabBar.appearance().unselectedItemTintColor = UIColor(SwiftAppTheme.muted)
 
         UITableView.appearance().backgroundColor = .clear
     }
