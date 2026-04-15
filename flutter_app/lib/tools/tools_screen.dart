@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../chords/chord_lookup_screen.dart';
+import '../chords_live/live_chord_screen.dart';
 import 'fretboard_screen.dart';
 import '../theory/chord_chart_screen.dart';
 import '../theory/theory_screen.dart';
@@ -15,6 +16,16 @@ class ToolsScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        ListTile(
+          leading: const Icon(Icons.multitrack_audio_rounded),
+          title: const Text('实时和弦建议（Beta）'),
+          subtitle: const Text('监听音乐并实时显示主和弦与候选'),
+          onTap: () {
+            Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const LiveChordScreen()),
+            );
+          },
+        ),
         ListTile(
           leading: const Icon(Icons.graphic_eq_rounded),
           title: const Text('调音器'),

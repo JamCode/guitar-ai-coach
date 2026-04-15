@@ -19,6 +19,15 @@ import UIKit
         }
         result(self?.distributionChannel() ?? "Release")
       }
+
+      let liveChordHandler = LiveChordMethodHandler()
+      let liveChordChannel = FlutterMethodChannel(
+        name: "guitar_helper/live_chord",
+        binaryMessenger: controller.binaryMessenger
+      )
+      liveChordChannel.setMethodCallHandler { call, result in
+        liveChordHandler.handle(call: call, result: result)
+      }
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
