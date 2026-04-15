@@ -49,14 +49,18 @@ struct SwiftEarHostApp: App {
 }
 
 private struct RootTabView: View {
+    @State private var selectedTab: Int = 0
+    @State private var practiceTabMounted: Bool = false
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             NavigationStack {
                 ToolsTabView()
             }
             .tabItem {
                 Label("工具", systemImage: "wrench.and.screwdriver")
             }
+            .tag(0)
 
             NavigationStack {
                 EarHomeView()
@@ -64,22 +68,34 @@ private struct RootTabView: View {
             .tabItem {
                 Label("练耳", systemImage: "ear")
             }
+            .tag(1)
 
             NavigationStack {
-                PlaceholderView(
-                    title: "练习",
-                    detail: "该 Tab 还未在 Swift 版本迁移。当前可先体验工具与练耳。"
-                )
+                if practiceTabMounted {
+                    PracticeHomeView()
+                } else {
+                    PlaceholderView(
+                        title: "练习",
+                        detail: "首次进入该 Tab 后才会加载练习数据。"
+                    )
+                }
             }
             .tabItem {
                 Label("练习", systemImage: "figure.strengthtraining.traditional")
             }
+            .tag(2)
 
             NavigationStack {
                 ProfileHomeView()
             }
             .tabItem {
                 Label("我的", systemImage: "person")
+            }
+            .tag(3)
+        }
+        .onChange(of: selectedTab) { _, newValue in
+            if newValue == 2 {
+                practiceTabMounted = true
             }
         }
     }

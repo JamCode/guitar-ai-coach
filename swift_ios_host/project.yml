@@ -40,3 +40,15 @@ targets:
         product: Profile
       - package: GuitarAICoach
         product: Ear
+
+  SwiftEarHostTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.jamcode.swift-ear-host.tests
+    dependencies:
+      - target: SwiftEarHost
