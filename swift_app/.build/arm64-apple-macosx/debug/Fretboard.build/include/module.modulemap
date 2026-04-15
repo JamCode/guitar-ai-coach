@@ -1,0 +1,3 @@
+module Fretboard {
+    header "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/include/Fretboard-Swift.h"
+}

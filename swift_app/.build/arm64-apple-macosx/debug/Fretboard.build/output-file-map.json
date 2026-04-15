@@ -1,0 +1,33 @@
+{
+  "": {
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardMath.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardMath.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardMath.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardMath~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardMath.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardMath.dia"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardTonePlayer.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardTonePlayer.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardTonePlayer.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardTonePlayer~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardTonePlayer.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardTonePlayer.dia"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardView.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardView.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardView.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardView~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardView.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardView.dia"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardViewModel.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardViewModel.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardViewModel.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardViewModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardViewModel.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Fretboard.build/FretboardViewModel.dia"
+  }
+}

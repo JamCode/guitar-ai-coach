@@ -1,0 +1,19 @@
+{
+  "": {
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Tests/Integration/LiveChordIntegrationTests.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/LiveChordIntegrationTests.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/LiveChordIntegrationTests.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/LiveChordIntegrationTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/LiveChordIntegrationTests.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/LiveChordIntegrationTests.dia"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Tests/Integration/ToolsIntegrationTests.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/ToolsIntegrationTests.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/ToolsIntegrationTests.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/ToolsIntegrationTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/ToolsIntegrationTests.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachIntegrationTests.build/ToolsIntegrationTests.dia"
+  }
+}

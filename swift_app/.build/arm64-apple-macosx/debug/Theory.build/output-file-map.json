@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Theory.build/primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Theory/TheoryView.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Theory.build/TheoryView.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Theory.build/TheoryView.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Theory.build/TheoryView~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Theory.build/TheoryView.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Theory.build/TheoryView.dia"
+  }
+}

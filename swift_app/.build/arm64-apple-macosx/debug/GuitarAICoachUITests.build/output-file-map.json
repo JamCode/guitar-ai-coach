@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachUITests.build/primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Tests/UI/ToolsUITests.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachUITests.build/ToolsUITests.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachUITests.build/ToolsUITests.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachUITests.build/ToolsUITests~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachUITests.build/ToolsUITests.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/GuitarAICoachUITests.build/ToolsUITests.dia"
+  }
+}

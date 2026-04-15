@@ -1,0 +1,26 @@
+{
+  "": {
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/ChordsLive/LiveChordController.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordController.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordController.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordController~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordController.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordController.dia"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/ChordsLive/LiveChordStateMachine.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordStateMachine.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordStateMachine.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordStateMachine~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordStateMachine.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordStateMachine.dia"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/ChordsLive/LiveChordView.swift": {
+    "dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordView.d",
+    "object": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordView.swift.o",
+    "swiftmodule": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordView~partial.swiftmodule",
+    "swift-dependencies": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordView.swiftdeps",
+    "diagnostics": "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/LiveChordView.dia"
+  }
+}

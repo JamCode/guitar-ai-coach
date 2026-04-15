@@ -1,0 +1,10 @@
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/AppEnvironment.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/AudioEngineService.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/AudioQualityBaseline.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/LiveChordAudioRingBuffer.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/LiveChordDecoder.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/LiveChordEngine.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/LiveChordModels.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/LiveChordNNLSChromaExtractor.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/PitchMath.swift
+/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Core/TunerPitchDetector.swift

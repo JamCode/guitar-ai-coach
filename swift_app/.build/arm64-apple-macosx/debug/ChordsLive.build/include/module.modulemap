@@ -1,0 +1,3 @@
+module ChordsLive {
+    header "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/ChordsLive.build/include/ChordsLive-Swift.h"
+}

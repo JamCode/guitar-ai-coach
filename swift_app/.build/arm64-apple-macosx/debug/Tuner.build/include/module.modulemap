@@ -1,0 +1,3 @@
+module Tuner {
+    header "/Users/wanghan/Documents/guitar-ai-coach/swift_app/.build/arm64-apple-macosx/debug/Tuner.build/include/Tuner-Swift.h"
+}
