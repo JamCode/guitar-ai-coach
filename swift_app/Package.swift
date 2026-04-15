@@ -9,7 +9,8 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "GuitarAICoachApp", targets: ["App"])
+        .executable(name: "GuitarAICoachApp", targets: ["App"]),
+        .library(name: "Ear", targets: ["Ear"])
     ],
     targets: [
         .executableTarget(

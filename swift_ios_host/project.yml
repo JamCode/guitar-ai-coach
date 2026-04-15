@@ -1,0 +1,27 @@
+name: SwiftEarHost
+options:
+  minimumXcodeGenVersion: 2.38.0
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  GuitarAICoach:
+    path: ../swift_app
+targets:
+  SwiftEarHost:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jamcode.swift-ear-host
+        PRODUCT_NAME: SwiftEarHost
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: SwiftEarHost
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: 需要麦克风用于视唱训练与调音识别。
+        SWIFT_VERSION: 5.10
+    dependencies:
+      - package: GuitarAICoach
+        product: Ear
