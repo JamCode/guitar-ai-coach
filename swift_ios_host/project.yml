@@ -37,4 +37,6 @@ targets:
       - package: GuitarAICoach
         product: ChordChart
       - package: GuitarAICoach
+        product: Profile
+      - package: GuitarAICoach
         product: Ear

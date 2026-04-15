@@ -6,6 +6,7 @@ import Chords
 import ChordsLive
 import Theory
 import ChordChart
+import Profile
 import Core
 
 @main
@@ -63,10 +64,7 @@ private struct RootTabView: View {
             }
 
             NavigationStack {
-                PlaceholderView(
-                    title: "我的",
-                    detail: "该 Tab 还未在 Swift 版本迁移。"
-                )
+                ProfileHomeView()
             }
             .tabItem {
                 Label("我的", systemImage: "person")

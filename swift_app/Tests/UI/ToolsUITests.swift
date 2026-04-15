@@ -5,6 +5,7 @@ import XCTest
 @testable import ChordsLive
 @testable import Theory
 @testable import ChordChart
+@testable import Profile
 @testable import Ear
 
 final class ToolsUITests: XCTestCase {
@@ -15,6 +16,11 @@ final class ToolsUITests: XCTestCase {
         _ = LiveChordView()
         _ = TheoryView()
         _ = ChordChartView()
+        _ = ProfileHomeView()
+        _ = HelpFeedbackView()
+        _ = AppVersionView()
+        _ = AccountSecurityView()
+        _ = DiagnosticLogsView()
         _ = EarHomeView()
         _ = IntervalEarView()
         _ = EarMcqSessionView(title: "和弦听辨", bank: "A")

@@ -17,6 +17,7 @@ let package = Package(
         .library(name: "ChordsLive", targets: ["ChordsLive"]),
         .library(name: "Theory", targets: ["Theory"]),
         .library(name: "ChordChart", targets: ["ChordChart"]),
+        .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Ear", targets: ["Ear"])
     ],
     targets: [
@@ -69,6 +70,11 @@ let package = Package(
             path: "Sources/Features/ChordChart"
         ),
         .target(
+            name: "Profile",
+            dependencies: ["Core"],
+            path: "Sources/Features/Profile"
+        ),
+        .target(
             name: "Ear",
             dependencies: ["Core", "Tuner"],
             path: "Sources/Features/Ear",
@@ -78,17 +84,17 @@ let package = Package(
         ),
         .testTarget(
             name: "GuitarAICoachUnitTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Ear"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Profile", "Ear"],
             path: "Tests/Unit"
         ),
         .testTarget(
             name: "GuitarAICoachIntegrationTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Ear"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Profile", "Ear"],
             path: "Tests/Integration"
         ),
         .testTarget(
             name: "GuitarAICoachUITests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Ear"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Profile", "Ear"],
             path: "Tests/UI"
         )
     ]
