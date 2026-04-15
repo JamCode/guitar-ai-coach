@@ -27,25 +27,24 @@ public struct LiveChordView: View {
                 .padding(.bottom, 12)
         }
         .navigationTitle("实时和弦建议（Beta）")
+        .appPageBackground()
     }
 
     private func statusCard(state: LiveChordUiState) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Circle()
-                    .fill(state.isListening ? .green : .gray)
+                    .fill(state.isListening ? SwiftAppTheme.dynamic(.green, .green) : SwiftAppTheme.muted)
                     .frame(width: 8, height: 8)
-                Text(state.status).foregroundStyle(.secondary)
+                Text(state.status).foregroundStyle(SwiftAppTheme.muted)
             }
             Text("Confidence \((state.confidence * 100).rounded())%")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SwiftAppTheme.muted)
             ProgressView(value: max(0, min(1, state.confidence)))
+                .tint(SwiftAppTheme.brand)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .appCard()
     }
 
     private func mainChordCard(state: LiveChordUiState) -> some View {
@@ -63,15 +62,12 @@ public struct LiveChordView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(cand.label == state.stableChord ? Color.blue.opacity(0.2) : Color.gray.opacity(0.15))
+                    .background(cand.label == state.stableChord ? SwiftAppTheme.brandSoft : SwiftAppTheme.surfaceSoft)
                     .clipShape(Capsule())
                 }
             }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .appCard()
     }
 
     private func timelineCard(state: LiveChordUiState) -> some View {
@@ -84,16 +80,13 @@ public struct LiveChordView: View {
                             .font(.headline)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(chord == state.stableChord ? Color.blue.opacity(0.2) : Color.gray.opacity(0.15))
+                            .background(chord == state.stableChord ? SwiftAppTheme.brandSoft : SwiftAppTheme.surfaceSoft)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 }
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .appCard()
     }
 
     private func controls(state: LiveChordUiState) -> some View {
@@ -104,19 +97,19 @@ public struct LiveChordView: View {
                     else { await controller.start() }
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .appPrimaryButton()
 
             HStack {
                 Button("快速识别") {
                     Task { await controller.setMode(.fast) }
                 }
                 .buttonStyle(.bordered)
-                .tint(state.mode == .fast ? .blue : .gray)
+                .tint(state.mode == .fast ? SwiftAppTheme.brand : SwiftAppTheme.muted)
                 Button("稳定识别") {
                     Task { await controller.setMode(.stable) }
                 }
                 .buttonStyle(.bordered)
-                .tint(state.mode == .stable ? .blue : .gray)
+                .tint(state.mode == .stable ? SwiftAppTheme.brand : SwiftAppTheme.muted)
             }
         }
     }

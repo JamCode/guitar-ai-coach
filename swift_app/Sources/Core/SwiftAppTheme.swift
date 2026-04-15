@@ -61,6 +61,24 @@ public extension View {
                     .stroke(SwiftAppTheme.line, lineWidth: 1)
             )
     }
+
+    func appSectionTitle() -> some View {
+        self
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(SwiftAppTheme.muted)
+    }
+
+    func appPrimaryButton() -> some View {
+        self
+            .buttonStyle(.borderedProminent)
+            .tint(SwiftAppTheme.brand)
+    }
+
+    func appSecondaryButton() -> some View {
+        self
+            .buttonStyle(.bordered)
+            .tint(SwiftAppTheme.muted)
+    }
 }
 
 public extension Color {

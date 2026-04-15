@@ -1,4 +1,5 @@
 import SwiftUI
+import Core
 
 public struct TunerView: View {
     @StateObject private var viewModel = TunerViewModel()
@@ -7,46 +8,60 @@ public struct TunerView: View {
     public init() {}
 
     public var body: some View {
-        List {
-            if let errorText = viewModel.errorText {
-                Text(errorText).foregroundStyle(.red)
-            }
-            Section("状态") {
-                Text(viewModel.statusMessage)
-                HStack(alignment: .lastTextBaseline, spacing: 16) {
-                    Text(viewModel.noteName)
-                        .font(.system(size: 48, weight: .bold))
-                    VStack(alignment: .leading) {
-                        Text(viewModel.frequencyHz.map { String(format: "%.1f Hz", $0) } ?? "-- Hz")
-                        Text("目标：第 \(6 - viewModel.selectedStringIndex) 弦 · \(String(format: "%.2f Hz", viewModel.targetHz))")
-                        Text(String(format: "%+.0f cent", viewModel.cents))
-                            .foregroundStyle(.blue)
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                if let errorText = viewModel.errorText {
+                    Text(errorText).foregroundStyle(.red).appCard()
                 }
-                MeterBar(cents: viewModel.cents, active: viewModel.frequencyHz != nil)
-                    .frame(height: 20)
-            }
-            Section("选择弦") {
-                HStack(spacing: 8) {
-                    ForEach(0..<6, id: \.self) { i in
-                        Button(labels[i]) {
-                            viewModel.setSelectedString(i)
-                            if viewModel.isListening {
-                                viewModel.updateFrequencySample(viewModel.targetHz)
-                            }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("状态").appSectionTitle()
+                    Text(viewModel.statusMessage).foregroundStyle(SwiftAppTheme.muted)
+                    HStack(alignment: .lastTextBaseline, spacing: 16) {
+                        Text(viewModel.noteName)
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundStyle(SwiftAppTheme.text)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(viewModel.frequencyHz.map { String(format: "%.1f Hz", $0) } ?? "-- Hz")
+                                .foregroundStyle(SwiftAppTheme.text)
+                            Text("目标：第 \(6 - viewModel.selectedStringIndex) 弦 · \(String(format: "%.2f Hz", viewModel.targetHz))")
+                                .foregroundStyle(SwiftAppTheme.muted)
+                            Text(String(format: "%+.0f cent", viewModel.cents))
+                                .foregroundStyle(SwiftAppTheme.brand)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(viewModel.selectedStringIndex == i ? .blue : .gray)
+                    }
+                    MeterBar(cents: viewModel.cents, active: viewModel.frequencyHz != nil)
+                        .frame(height: 20)
+                }
+                .appCard()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("选择弦").appSectionTitle()
+                    HStack(spacing: 8) {
+                        ForEach(0..<6, id: \.self) { i in
+                            Button(labels[i]) {
+                                viewModel.setSelectedString(i)
+                                if viewModel.isListening {
+                                    viewModel.updateFrequencySample(viewModel.targetHz)
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(viewModel.selectedStringIndex == i ? SwiftAppTheme.brand : SwiftAppTheme.surfaceSoft)
+                            .foregroundStyle(viewModel.selectedStringIndex == i ? Color.white : SwiftAppTheme.text)
+                        }
                     }
                 }
-            }
-            Section {
+                .appCard()
+
                 Button(viewModel.isListening ? "停止监听" : "开始监听") {
                     viewModel.isListening ? viewModel.stop() : viewModel.start()
                 }
+                .appPrimaryButton()
             }
+            .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle("调音器")
+        .appPageBackground()
     }
 }
 
@@ -59,14 +74,14 @@ private struct MeterBar: View {
             let maxC = 50.0
             let t = min(1.0, max(0.0, (cents + maxC) / (2.0 * maxC)))
             ZStack(alignment: .leading) {
-                Capsule().fill(.gray.opacity(0.25))
+                Capsule().fill(SwiftAppTheme.surfaceSoft)
                 Rectangle()
-                    .fill(.secondary)
+                    .fill(SwiftAppTheme.line)
                     .frame(width: 2)
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 if active {
                     Capsule()
-                        .fill(.blue)
+                        .fill(SwiftAppTheme.brand)
                         .frame(width: 14)
                         .position(x: geo.size.width * t, y: geo.size.height / 2)
                 }

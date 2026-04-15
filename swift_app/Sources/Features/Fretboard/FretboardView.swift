@@ -1,4 +1,5 @@
 import SwiftUI
+import Core
 
 public struct FretboardView: View {
     @StateObject private var viewModel = FretboardViewModel()
@@ -7,39 +8,51 @@ public struct FretboardView: View {
     public init() {}
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("标准调弦 E A D G B E").foregroundStyle(.secondary)
-            HStack {
-                Text("变调夹 \(viewModel.capo) 品")
-                Slider(value: Binding(
-                    get: { Double(viewModel.capo) },
-                    set: { viewModel.capo = Int($0.rounded()) }
-                ), in: 0...12, step: 1)
-            }
-            Toggle("仅自然音", isOn: $viewModel.naturalOnly)
-            Toggle("左右镜像", isOn: $viewModel.mirror)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("标准调弦 E A D G B E")
+                    .foregroundStyle(SwiftAppTheme.muted)
 
-            ScrollView([.vertical, .horizontal]) {
-                LazyVStack(alignment: .leading, spacing: 6) {
-                    ForEach(0...maxFret, id: \.self) { fret in
-                        HStack(spacing: 4) {
-                            Text(fret == 0 ? "0 空弦" : "\(fret)")
-                                .frame(width: 44, alignment: .leading)
-                                .foregroundStyle(.secondary)
-                            ForEach(stringIndices(), id: \.self) { stringIndex in
-                                Button(viewModel.labelForCell(stringIndex: stringIndex, fret: fret) ?? "·") {
-                                    viewModel.playCell(stringIndex: stringIndex, fret: fret)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("变调夹 \(viewModel.capo) 品").foregroundStyle(SwiftAppTheme.text)
+                        Slider(value: Binding(
+                            get: { Double(viewModel.capo) },
+                            set: { viewModel.capo = Int($0.rounded()) }
+                        ), in: 0...12, step: 1)
+                        .tint(SwiftAppTheme.brand)
+                    }
+                    Toggle("仅自然音", isOn: $viewModel.naturalOnly)
+                    Toggle("左右镜像", isOn: $viewModel.mirror)
+                }
+                .appCard()
+
+                ScrollView([.vertical, .horizontal]) {
+                    LazyVStack(alignment: .leading, spacing: 6) {
+                        ForEach(0...maxFret, id: \.self) { fret in
+                            HStack(spacing: 4) {
+                                Text(fret == 0 ? "0 空弦" : "\(fret)")
+                                    .frame(width: 44, alignment: .leading)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                                ForEach(stringIndices(), id: \.self) { stringIndex in
+                                    Button(viewModel.labelForCell(stringIndex: stringIndex, fret: fret) ?? "·") {
+                                        viewModel.playCell(stringIndex: stringIndex, fret: fret)
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .tint(SwiftAppTheme.surfaceSoft)
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .frame(width: 50)
                                 }
-                                .buttonStyle(.bordered)
-                                .frame(width: 50)
                             }
                         }
                     }
                 }
+                .appCard()
             }
+            .padding(SwiftAppTheme.pagePadding)
         }
-        .padding(16)
         .navigationTitle("吉他指板")
+        .appPageBackground()
     }
 
     private func stringIndices() -> [Int] {

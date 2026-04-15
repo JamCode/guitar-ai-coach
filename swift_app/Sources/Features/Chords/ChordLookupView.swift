@@ -1,4 +1,5 @@
 import SwiftUI
+import Core
 
 public struct ChordLookupView: View {
     @State private var root = "C"
@@ -24,46 +25,59 @@ public struct ChordLookupView: View {
     }
 
     public var body: some View {
-        Form {
-            Section("当前和弦") {
-                Text(displaySymbol.isEmpty ? "—" : displaySymbol).font(.title.bold())
-                Text("C 调记谱：\(builtSymbol.isEmpty ? "—" : builtSymbol) · 查看调：\(selectedKey)")
-                    .foregroundStyle(.secondary)
-            }
-            Section("选择") {
-                Picker("根音", selection: $root) {
-                    ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("当前和弦").appSectionTitle()
+                    Text(displaySymbol.isEmpty ? "—" : displaySymbol)
+                        .font(.title.bold())
+                        .foregroundStyle(SwiftAppTheme.text)
+                    Text("C 调记谱：\(builtSymbol.isEmpty ? "—" : builtSymbol) · 查看调：\(selectedKey)")
+                        .foregroundStyle(SwiftAppTheme.muted)
                 }
-                Picker("和弦性质", selection: $quality) {
-                    ForEach(ChordSelectCatalog.qualOptions) { Text($0.label).tag($0.id) }
-                }
-                Picker("低音 / 转位", selection: $bass) {
-                    ForEach(ChordSelectCatalog.bassOptions) { Text($0.label).tag($0.id) }
-                }
-                Picker("目标调（变调预览）", selection: $selectedKey) {
-                    ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
-                }
-            }
-            Section {
-                Button("查询和弦指法") {
-                    let symbol = displaySymbol.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if symbol.isEmpty {
-                        errorText = "请先选择和弦"
-                        resultPayload = nil
-                        return
+                .appCard()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("选择").appSectionTitle()
+                    Picker("根音", selection: $root) {
+                        ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
                     }
-                    if let payload = OfflineChordBuilder.buildPayload(displaySymbol: symbol) {
-                        errorText = nil
-                        resultPayload = payload
-                    } else {
-                        errorText = "无法从符号解析和弦（请检查根音与性质）"
-                        resultPayload = nil
+                    Picker("和弦性质", selection: $quality) {
+                        ForEach(ChordSelectCatalog.qualOptions) { Text($0.label).tag($0.id) }
+                    }
+                    Picker("低音 / 转位", selection: $bass) {
+                        ForEach(ChordSelectCatalog.bassOptions) { Text($0.label).tag($0.id) }
+                    }
+                    Picker("目标调（变调预览）", selection: $selectedKey) {
+                        ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
                     }
                 }
-                if let errorText { Text(errorText).foregroundStyle(.red) }
+                .appCard()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Button("查询和弦指法") {
+                        let symbol = displaySymbol.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if symbol.isEmpty {
+                            errorText = "请先选择和弦"
+                            resultPayload = nil
+                            return
+                        }
+                        if let payload = OfflineChordBuilder.buildPayload(displaySymbol: symbol) {
+                            errorText = nil
+                            resultPayload = payload
+                        } else {
+                            errorText = "无法从符号解析和弦（请检查根音与性质）"
+                            resultPayload = nil
+                        }
+                    }
+                    .appPrimaryButton()
+                    if let errorText { Text(errorText).foregroundStyle(.red) }
+                }
             }
+            .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle("和弦字典")
+        .appPageBackground()
         .sheet(item: Binding(
             get: { resultPayload.map(ResultSheetModel.init(payload:)) },
             set: { _ in resultPayload = nil }
@@ -88,7 +102,7 @@ private struct ChordResultSheet: View {
             if !payload.chordSummary.notesLetters.isEmpty {
                 Text("构成音：\(payload.chordSummary.notesLetters.joined(separator: " · "))")
             }
-            Text(payload.chordSummary.notesExplainZh).font(.subheadline).foregroundStyle(.secondary)
+            Text(payload.chordSummary.notesExplainZh).font(.subheadline).foregroundStyle(SwiftAppTheme.muted)
 
             TabView(selection: $pageIndex) {
                 ForEach(Array(payload.voicings.enumerated()), id: \.offset) { index, item in
@@ -109,7 +123,7 @@ private struct ChordResultSheet: View {
             .frame(height: 200)
 
             if !payload.disclaimer.isEmpty {
-                Text(payload.disclaimer).font(.footnote).foregroundStyle(.secondary)
+                Text(payload.disclaimer).font(.footnote).foregroundStyle(SwiftAppTheme.muted)
             }
         }
         .padding(20)
