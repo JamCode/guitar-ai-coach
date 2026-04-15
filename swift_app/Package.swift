@@ -10,6 +10,13 @@ let package = Package(
     ],
     products: [
         .executable(name: "GuitarAICoachApp", targets: ["App"]),
+        .library(name: "Core", targets: ["Core"]),
+        .library(name: "Tuner", targets: ["Tuner"]),
+        .library(name: "Fretboard", targets: ["Fretboard"]),
+        .library(name: "Chords", targets: ["Chords"]),
+        .library(name: "ChordsLive", targets: ["ChordsLive"]),
+        .library(name: "Theory", targets: ["Theory"]),
+        .library(name: "ChordChart", targets: ["ChordChart"]),
         .library(name: "Ear", targets: ["Ear"])
     ],
     targets: [

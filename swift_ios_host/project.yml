@@ -24,4 +24,16 @@ targets:
         SWIFT_VERSION: 5.10
     dependencies:
       - package: GuitarAICoach
+        product: Tuner
+      - package: GuitarAICoach
+        product: Fretboard
+      - package: GuitarAICoach
+        product: Chords
+      - package: GuitarAICoach
+        product: ChordsLive
+      - package: GuitarAICoach
+        product: Theory
+      - package: GuitarAICoach
+        product: ChordChart
+      - package: GuitarAICoach
         product: Ear

@@ -7,8 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1C78E5853E20B93F79B3421E /* ChordChart in Frameworks */ = {isa = PBXBuildFile; productRef = BC4B202C5F0E941A20A787C7 /* ChordChart */; };
 		4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */; };
-		E69983D149243B7A6D946061 /* Ear in Frameworks */ = {isa = PBXBuildFile; productRef = EEDC03120E5A07496D4BF215 /* Ear */; };
+		6C61AD5387584DE05CBAEEFC /* Fretboard in Frameworks */ = {isa = PBXBuildFile; productRef = 680D96401F590C260C21FB94 /* Fretboard */; };
+		85F401EA077A7B0339A02A78 /* Theory in Frameworks */ = {isa = PBXBuildFile; productRef = C9114C609DD92E8E533D0FF7 /* Theory */; };
+		AC95FA8C2C108EB623BE6679 /* ChordsLive in Frameworks */ = {isa = PBXBuildFile; productRef = B1D1A8040EE477067D835C6D /* ChordsLive */; };
+		E69983D149243B7A6D946061 /* Tuner in Frameworks */ = {isa = PBXBuildFile; productRef = D68C530C664DD0805DDA1187 /* Tuner */; };
+		EE8F0E2991EB41875CAF9588 /* Ear in Frameworks */ = {isa = PBXBuildFile; productRef = EEDC03120E5A07496D4BF215 /* Ear */; };
+		F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */ = {isa = PBXBuildFile; productRef = 231960F99C0DA8778FB6E8A8 /* Chords */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,7 +28,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E69983D149243B7A6D946061 /* Ear in Frameworks */,
+				E69983D149243B7A6D946061 /* Tuner in Frameworks */,
+				6C61AD5387584DE05CBAEEFC /* Fretboard in Frameworks */,
+				F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */,
+				AC95FA8C2C108EB623BE6679 /* ChordsLive in Frameworks */,
+				85F401EA077A7B0339A02A78 /* Theory in Frameworks */,
+				1C78E5853E20B93F79B3421E /* ChordChart in Frameworks */,
+				EE8F0E2991EB41875CAF9588 /* Ear in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +90,12 @@
 			);
 			name = SwiftEarHost;
 			packageProductDependencies = (
+				D68C530C664DD0805DDA1187 /* Tuner */,
+				680D96401F590C260C21FB94 /* Fretboard */,
+				231960F99C0DA8778FB6E8A8 /* Chords */,
+				B1D1A8040EE477067D835C6D /* ChordsLive */,
+				C9114C609DD92E8E533D0FF7 /* Theory */,
+				BC4B202C5F0E941A20A787C7 /* ChordChart */,
 				EEDC03120E5A07496D4BF215 /* Ear */,
 			);
 			productName = SwiftEarHost;
@@ -323,6 +341,30 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		231960F99C0DA8778FB6E8A8 /* Chords */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Chords;
+		};
+		680D96401F590C260C21FB94 /* Fretboard */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Fretboard;
+		};
+		B1D1A8040EE477067D835C6D /* ChordsLive */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ChordsLive;
+		};
+		BC4B202C5F0E941A20A787C7 /* ChordChart */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ChordChart;
+		};
+		C9114C609DD92E8E533D0FF7 /* Theory */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Theory;
+		};
+		D68C530C664DD0805DDA1187 /* Tuner */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Tuner;
+		};
 		EEDC03120E5A07496D4BF215 /* Ear */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Ear;
