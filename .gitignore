@@ -2,3 +2,4 @@
 *.pem
 deploy/ecs/backend.env
 backend/logs/
+swift_app/.build/
