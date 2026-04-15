@@ -71,7 +71,10 @@ let package = Package(
         .target(
             name: "Ear",
             dependencies: ["Core", "Tuner"],
-            path: "Sources/Features/Ear"
+            path: "Sources/Features/Ear",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "GuitarAICoachUnitTests",

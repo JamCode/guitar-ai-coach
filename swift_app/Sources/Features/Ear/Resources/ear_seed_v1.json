@@ -1,0 +1,7580 @@
+{
+  "version": "ear_seed_v1",
+  "generated_at": "2026-03-31T03:02:07+00:00",
+  "generator": {
+    "script": "requirements/generate_ear_seed_v1.py",
+    "seed": 20260331,
+    "strategy": "offline-prebuilt-no-llm"
+  },
+  "notes": [
+    "本期不接入大模型，题库离线预生成。",
+    "A: 单和弦听辨（大三/小三/属七）；B: 常见进行听辨。",
+    "C 模式不单独建题，复用 A/B 题池并按规则组卷。"
+  ],
+  "banks": {
+    "A": [
+      {
+        "id": "EA0001",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "C",
+        "chord_symbol": "C",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：C ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/C/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "C"
+        ]
+      },
+      {
+        "id": "EA0002",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "C",
+        "chord_symbol": "Cm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：C ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/C/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "C"
+        ]
+      },
+      {
+        "id": "EA0003",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "C",
+        "chord_symbol": "C7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：C ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/C/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "C"
+        ]
+      },
+      {
+        "id": "EA0004",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "C#",
+        "chord_symbol": "C#",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：C# ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/C#/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "C#"
+        ]
+      },
+      {
+        "id": "EA0005",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "C#",
+        "chord_symbol": "C#m",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：C# ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/C#/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "C#"
+        ]
+      },
+      {
+        "id": "EA0006",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "C#",
+        "chord_symbol": "C#7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：C# ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/C#/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "小三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "C#"
+        ]
+      },
+      {
+        "id": "EA0007",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "D",
+        "chord_symbol": "D",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：D ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/D/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "小三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "D"
+        ]
+      },
+      {
+        "id": "EA0008",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "D",
+        "chord_symbol": "Dm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：D ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/D/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "D"
+        ]
+      },
+      {
+        "id": "EA0009",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "D",
+        "chord_symbol": "D7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：D ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/D/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "D"
+        ]
+      },
+      {
+        "id": "EA0010",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Eb",
+        "chord_symbol": "Eb",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：Eb ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Eb/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "Eb"
+        ]
+      },
+      {
+        "id": "EA0011",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Eb",
+        "chord_symbol": "Ebm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：Eb ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Eb/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "小三",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "Eb"
+        ]
+      },
+      {
+        "id": "EA0012",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Eb",
+        "chord_symbol": "Eb7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：Eb ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Eb/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "Eb"
+        ]
+      },
+      {
+        "id": "EA0013",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "E",
+        "chord_symbol": "E",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：E ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/E/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "E"
+        ]
+      },
+      {
+        "id": "EA0014",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "E",
+        "chord_symbol": "Em",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：E ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/E/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "E"
+        ]
+      },
+      {
+        "id": "EA0015",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "E",
+        "chord_symbol": "E7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：E ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/E/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "E"
+        ]
+      },
+      {
+        "id": "EA0016",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "F",
+        "chord_symbol": "F",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：F ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/F/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "小三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "F"
+        ]
+      },
+      {
+        "id": "EA0017",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "F",
+        "chord_symbol": "Fm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：F ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/F/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "F"
+        ]
+      },
+      {
+        "id": "EA0018",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "F",
+        "chord_symbol": "F7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：F ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/F/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "小三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "F"
+        ]
+      },
+      {
+        "id": "EA0019",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "F#",
+        "chord_symbol": "F#",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：F# ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/F#/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "F#"
+        ]
+      },
+      {
+        "id": "EA0020",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "F#",
+        "chord_symbol": "F#m",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：F# ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/F#/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "F#"
+        ]
+      },
+      {
+        "id": "EA0021",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "F#",
+        "chord_symbol": "F#7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：F# ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/F#/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "F#"
+        ]
+      },
+      {
+        "id": "EA0022",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "G",
+        "chord_symbol": "G",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：G ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/G/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "小三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "G"
+        ]
+      },
+      {
+        "id": "EA0023",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "G",
+        "chord_symbol": "Gm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：G ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/G/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "G"
+        ]
+      },
+      {
+        "id": "EA0024",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "G",
+        "chord_symbol": "G7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：G ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/G/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "G"
+        ]
+      },
+      {
+        "id": "EA0025",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Ab",
+        "chord_symbol": "Ab",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：Ab ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Ab/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "Ab"
+        ]
+      },
+      {
+        "id": "EA0026",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Ab",
+        "chord_symbol": "Abm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：Ab ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Ab/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "Ab"
+        ]
+      },
+      {
+        "id": "EA0027",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Ab",
+        "chord_symbol": "Ab7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：Ab ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Ab/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "Ab"
+        ]
+      },
+      {
+        "id": "EA0028",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "A",
+        "chord_symbol": "A",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：A ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/A/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "A"
+        ]
+      },
+      {
+        "id": "EA0029",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "A",
+        "chord_symbol": "Am",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：A ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/A/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "A"
+        ]
+      },
+      {
+        "id": "EA0030",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "A",
+        "chord_symbol": "A7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：A ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/A/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "A"
+        ]
+      },
+      {
+        "id": "EA0031",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Bb",
+        "chord_symbol": "Bb",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：Bb ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Bb/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "Bb"
+        ]
+      },
+      {
+        "id": "EA0032",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Bb",
+        "chord_symbol": "Bbm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：Bb ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Bb/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "Bb"
+        ]
+      },
+      {
+        "id": "EA0033",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "Bb",
+        "chord_symbol": "Bb7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：Bb ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/Bb/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "属七",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "Bb"
+        ]
+      },
+      {
+        "id": "EA0034",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "B",
+        "chord_symbol": "B",
+        "target_quality": "major",
+        "prompt_zh": "听音后判断和弦性质：B ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/B/major.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "maj7",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "大三",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "major",
+          "B"
+        ]
+      },
+      {
+        "id": "EA0035",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "B",
+        "chord_symbol": "Bm",
+        "target_quality": "minor",
+        "prompt_zh": "听音后判断和弦性质：B ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/B/minor.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "属七",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "小三",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "minor",
+          "B"
+        ]
+      },
+      {
+        "id": "EA0036",
+        "mode": "A",
+        "question_type": "single_chord_quality",
+        "difficulty": "A1",
+        "root": "B",
+        "chord_symbol": "B7",
+        "target_quality": "dominant7",
+        "prompt_zh": "听音后判断和弦性质：B ?",
+        "audio_ref": {
+          "pack": "ear_v1_acoustic",
+          "key": "a/B/dominant7.mp3",
+          "tempo_bpm": 72,
+          "duration_sec": 2.8
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "属七",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "大三",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "小三",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "maj7",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "A",
+          "dominant7",
+          "B"
+        ]
+      }
+    ],
+    "B": [
+      {
+        "id": "EB0001",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/C/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "C",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0002",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/C/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "C",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0003",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/C/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "C",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0004",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/C/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "C",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0005",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/C/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "C",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0006",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/C/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "C",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0007",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "C",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/C/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "C",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0008",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "C",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/C/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "C",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0009",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "C",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/C/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "C",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0010",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "C",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/C/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "C",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0011",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C#",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/C#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "C#",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0012",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C#",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/C#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "C#",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0013",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C#",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/C#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "C#",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0014",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C#",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/C#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "C#",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0015",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C#",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/C#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "C#",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0016",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "C#",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/C#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "C#",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0017",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "C#",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/C#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "C#",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0018",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "C#",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/C#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "C#",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0019",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "C#",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/C#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "C#",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0020",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "C#",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/C#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "C#",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0021",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "D",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/D/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "D",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0022",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "D",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/D/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "D",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0023",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "D",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/D/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "D",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0024",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "D",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/D/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "D",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0025",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "D",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/D/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "D",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0026",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "D",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/D/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "D",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0027",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "D",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/D/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "D",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0028",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "D",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/D/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "D",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0029",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "D",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/D/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "D",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0030",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "D",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/D/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "D",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0031",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Eb",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/Eb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "Eb",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0032",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Eb",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/Eb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "Eb",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0033",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Eb",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/Eb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "Eb",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0034",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Eb",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/Eb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "Eb",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0035",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Eb",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/Eb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "Eb",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0036",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Eb",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/Eb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "Eb",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0037",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "Eb",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/Eb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "Eb",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0038",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "Eb",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/Eb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "Eb",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0039",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "Eb",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/Eb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "Eb",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0040",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "Eb",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/Eb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "Eb",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0041",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "E",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/E/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "E",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0042",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "E",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/E/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "E",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0043",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "E",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/E/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "E",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0044",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "E",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/E/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "E",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0045",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "E",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/E/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "E",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0046",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "E",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/E/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "E",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0047",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "E",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/E/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "E",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0048",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "E",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/E/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "E",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0049",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "E",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/E/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "E",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0050",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "E",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/E/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "E",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0051",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/F/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "F",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0052",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/F/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "F",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0053",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/F/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "F",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0054",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/F/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "F",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0055",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/F/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "F",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0056",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/F/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "F",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0057",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "F",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/F/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "F",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0058",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "F",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/F/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "F",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0059",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "F",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/F/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "F",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0060",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "F",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/F/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "F",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0061",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F#",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/F#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "F#",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0062",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F#",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/F#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "F#",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0063",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F#",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/F#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "F#",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0064",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F#",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/F#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "F#",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0065",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F#",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/F#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "F#",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0066",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "F#",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/F#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "F#",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0067",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "F#",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/F#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "F#",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0068",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "F#",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/F#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "F#",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0069",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "F#",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/F#/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "F#",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0070",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "F#",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/F#/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "F#",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0071",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "G",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/G/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "G",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0072",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "G",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/G/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "G",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0073",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "G",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/G/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "G",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0074",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "G",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/G/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "G",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0075",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "G",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/G/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "G",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0076",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "G",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/G/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "G",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0077",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "G",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/G/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "G",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0078",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "G",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/G/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "G",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0079",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "G",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/G/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "G",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0080",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "G",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/G/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "G",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0081",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Ab",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/Ab/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "Ab",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0082",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Ab",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/Ab/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "Ab",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0083",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Ab",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/Ab/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "Ab",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0084",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Ab",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/Ab/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "Ab",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0085",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Ab",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/Ab/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "Ab",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0086",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Ab",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/Ab/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "Ab",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0087",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "Ab",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/Ab/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "Ab",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0088",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "Ab",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/Ab/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "Ab",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0089",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "Ab",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/Ab/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "Ab",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0090",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "Ab",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/Ab/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "Ab",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0091",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "A",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/A/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "A",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0092",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "A",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/A/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "A",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0093",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "A",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/A/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "A",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0094",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "A",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/A/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "A",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0095",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "A",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/A/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "A",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0096",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "A",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/A/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "A",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0097",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "A",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/A/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "A",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0098",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "A",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/A/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "A",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0099",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "A",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/A/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "A",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0100",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "A",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/A/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "A",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0101",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Bb",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/Bb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "Bb",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0102",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Bb",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/Bb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "Bb",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0103",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Bb",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/Bb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "Bb",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0104",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Bb",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/Bb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "Bb",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0105",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Bb",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/Bb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "Bb",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0106",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "Bb",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/Bb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "ii-V-I",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "Bb",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0107",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "Bb",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/Bb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "Bb",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0108",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "Bb",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/Bb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "Bb",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0109",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "Bb",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/Bb/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "Bb",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0110",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "Bb",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/Bb/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "Bb",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0111",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "B",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/B/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "B",
+          "std"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0112",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "B",
+        "progression_id": "P01",
+        "progression_roman": "I-V-vi-IV",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P01/B/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-V-vi-IV",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P01",
+          "B",
+          "alt"
+        ],
+        "hint_zh": "流行主副歌常见进行"
+      },
+      {
+        "id": "EB0113",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "B",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/B/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "B",
+          "std"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0114",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "B",
+        "progression_id": "P02",
+        "progression_roman": "vi-IV-I-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P02/B/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "vi-IV-I-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P02",
+          "B",
+          "alt"
+        ],
+        "hint_zh": "反向流行进行"
+      },
+      {
+        "id": "EB0115",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "B",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/B/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "B",
+          "std"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0116",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B2",
+        "music_key": "B",
+        "progression_id": "P03",
+        "progression_roman": "I-vi-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P03/B/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-vi-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P03",
+          "B",
+          "alt"
+        ],
+        "hint_zh": "经典 50s 进行"
+      },
+      {
+        "id": "EB0117",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "B",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/B/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "C",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "D",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "B",
+          "std"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0118",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B3",
+        "music_key": "B",
+        "progression_id": "P04",
+        "progression_roman": "ii-V-I",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P04/B/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "A",
+        "options": [
+          {
+            "key": "A",
+            "label": "ii-V-I",
+            "is_correct": true
+          },
+          {
+            "key": "B",
+            "label": "I-vi-IV-V",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P04",
+          "B",
+          "alt"
+        ],
+        "hint_zh": "功能回归进行"
+      },
+      {
+        "id": "EB0119",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "B",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "std",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/B/std.mp3",
+          "tempo_bpm": 78,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "B",
+        "options": [
+          {
+            "key": "A",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "I-IV-V",
+            "is_correct": true
+          },
+          {
+            "key": "C",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "B",
+          "std"
+        ],
+        "hint_zh": "基础三和弦进行"
+      },
+      {
+        "id": "EB0120",
+        "mode": "B",
+        "question_type": "progression_recognition",
+        "difficulty": "B1",
+        "music_key": "B",
+        "progression_id": "P05",
+        "progression_roman": "I-IV-V",
+        "variant_id": "alt",
+        "prompt_zh": "听和弦进行，选择最符合的一项",
+        "audio_ref": {
+          "pack": "ear_v1_progression",
+          "key": "b/P05/B/alt.mp3",
+          "tempo_bpm": 92,
+          "duration_sec": 6.0
+        },
+        "correct_option_key": "D",
+        "options": [
+          {
+            "key": "A",
+            "label": "vi-IV-I-V",
+            "is_correct": false
+          },
+          {
+            "key": "B",
+            "label": "ii-V-I",
+            "is_correct": false
+          },
+          {
+            "key": "C",
+            "label": "I-V-vi-IV",
+            "is_correct": false
+          },
+          {
+            "key": "D",
+            "label": "I-IV-V",
+            "is_correct": true
+          }
+        ],
+        "tags": [
+          "ear",
+          "mvp",
+          "B",
+          "P05",
+          "B",
+          "alt"
+        ],
+        "hint_zh": "基础三和弦进行"
+      }
+    ]
+  },
+  "daily_plan_blueprint": {
+    "mode": "C",
+    "daily_question_count": 10,
+    "composition": [
+      {
+        "source": "mistake_book",
+        "count": 6
+      },
+      {
+        "source": "weak_dimension",
+        "count": 2
+      },
+      {
+        "source": "retention",
+        "count": 2
+      }
+    ],
+    "priority_formula": "0.5*recency + 0.3*error_count + 0.2*low_accuracy_tag"
+  },
+  "stats": {
+    "A_total": 36,
+    "B_total": 120,
+    "total": 156
+  }
+}

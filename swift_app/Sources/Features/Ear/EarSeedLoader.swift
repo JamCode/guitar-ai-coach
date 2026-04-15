@@ -39,18 +39,8 @@ public actor EarSeedLoader {
     }
 
     private func loadRawData() throws -> Data {
-        if let bundleURL = Bundle.main.url(forResource: "ear_seed_v1", withExtension: "json") {
+        if let bundleURL = Bundle.module.url(forResource: "ear_seed_v1", withExtension: "json") {
             return try Data(contentsOf: bundleURL)
-        }
-        let fm = FileManager.default
-        let cwd = URL(fileURLWithPath: fm.currentDirectoryPath)
-        let candidates = [
-            cwd.appendingPathComponent("../flutter_app/assets/data/ear_seed_v1.json"),
-            cwd.appendingPathComponent("flutter_app/assets/data/ear_seed_v1.json"),
-            cwd.appendingPathComponent("assets/data/ear_seed_v1.json")
-        ]
-        for fileURL in candidates where fm.fileExists(atPath: fileURL.path) {
-            return try Data(contentsOf: fileURL)
         }
         throw EarSeedLoaderError.seedFileNotFound
     }
