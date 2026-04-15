@@ -5,6 +5,7 @@ import Chords
 import ChordsLive
 import Theory
 import ChordChart
+import Ear
 
 public struct ToolsHomeView: View {
     public init() {}
@@ -12,6 +13,15 @@ public struct ToolsHomeView: View {
     public var body: some View {
         NavigationStack {
             List {
+                NavigationLink {
+                    EarHomeView()
+                } label: {
+                    toolsRow(
+                        title: "练耳",
+                        subtitle: "音程/和弦/视唱训练",
+                        systemImage: "ear"
+                    )
+                }
                 NavigationLink {
                     LiveChordView()
                 } label: {

@@ -5,6 +5,7 @@ import XCTest
 @testable import ChordsLive
 @testable import Theory
 @testable import ChordChart
+@testable import Ear
 
 final class ToolsUITests: XCTestCase {
     func testViewsCanBeConstructed() {
@@ -14,6 +15,10 @@ final class ToolsUITests: XCTestCase {
         _ = LiveChordView()
         _ = TheoryView()
         _ = ChordChartView()
+        _ = EarHomeView()
+        _ = IntervalEarView()
+        _ = EarMcqSessionView(title: "和弦听辨", bank: "A")
+        _ = SightSingingSetupView()
     }
 }
 

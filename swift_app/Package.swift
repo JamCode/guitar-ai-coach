@@ -21,7 +21,8 @@ let package = Package(
                 "Chords",
                 "ChordsLive",
                 "Theory",
-                "ChordChart"
+                "ChordChart",
+                "Ear"
             ],
             path: "Sources/App"
         ),
@@ -59,19 +60,24 @@ let package = Package(
             dependencies: ["Core"],
             path: "Sources/Features/ChordChart"
         ),
+        .target(
+            name: "Ear",
+            dependencies: ["Core", "Tuner"],
+            path: "Sources/Features/Ear"
+        ),
         .testTarget(
             name: "GuitarAICoachUnitTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Ear"],
             path: "Tests/Unit"
         ),
         .testTarget(
             name: "GuitarAICoachIntegrationTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Ear"],
             path: "Tests/Integration"
         ),
         .testTarget(
             name: "GuitarAICoachUITests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Ear"],
             path: "Tests/UI"
         )
     ]
