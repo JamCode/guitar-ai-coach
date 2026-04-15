@@ -1,0 +1,33 @@
+---
+description: Flutter 移动端健壮性：本地数据、冷启动异步、Tab 挂载，降低真机闪退
+globs: flutter_app/**/*.dart
+alwaysApply: false
+---
+
+# Flutter 移动端健壮性（防闪退）
+
+在修改或新增 `flutter_app/**/*.dart` 时，对**本地持久化、首启路径、异步边界**按下列要求执行，避免 Release 真机上因未捕获异常或未处理 Future 直接退出进程。
+
+## 本地持久化（SharedPreferences、本地 JSON 文件等）
+
+- **读取**：`jsonDecode`、反序列化、`as` 强转一律视为可能失败；须 **try/catch** 或专用安全解析函数，失败时**降级**（空列表 / 默认值 / 移除损坏键），**禁止**让异常冒泡到未 `await` 的 Future。
+- **写入**：接受极端情况（杀进程、磁盘异常）下数据可能损坏；读取侧必须能自愈，不要假设「曾经写成功就永远合法」。
+- **新增键**：同时考虑**回归测试**（合法数据 + 损坏/半截字符串 + 类型不符），至少一种单测或 Widget 测覆盖降级行为。
+
+## 冷启动与 `main`
+
+- **重依赖初始化**（音频引擎、大同步 IO 等）：若放在 `runApp` 之前，须评估失败时用户是否应仍能进入 App；失败时应有 **明确降级或错误页**，避免无声闪退。
+- **全局未捕获错误**：工程已接入诊断落盘时，新增模块的异步入口仍须 **本地 try/catch** 或 `mounted` 检查，不得依赖「全局一定能兜住」而省略业务层防护。
+
+## 导航壳与 `IndexedStack` / 多 Tab
+
+- 对**会读本地库、解析大数据**的 Tab 页：默认**不要**在冷启动时与其他 Tab 一并挂载；采用**首次进入该 Tab 再插入子树**（或等价懒加载），避免「用户从未点进某 Tab 却因该 Tab 数据损坏而无法进 App」。
+
+## 异步与 `setState`
+
+- `Future` 在 `initState` 中启动时：回调里 **`mounted` 判断**；关键路径优先 **`await` + try/catch** 收尾，慎用裸 **`unawaited`** 加载 prefs/网络；若使用 `unawaited`，被调函数内部必须自行吞掉可预期异常。
+- `setState` 前确认 `mounted`（含 `await` 之后）。
+
+## 与现有规则的关系
+
+- 界面生命周期、弹窗、`dispose` 等仍遵守 **`developer-delivery-workflow`** 技能中的「Flutter 界面防崩溃约束」与本仓库其他 `flutter_app` 相关规则。

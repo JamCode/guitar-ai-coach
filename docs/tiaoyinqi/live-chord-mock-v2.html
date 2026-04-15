@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>实时和弦识别 - Dark iOS Mock V2</title>
+  <style>
+    :root {
+      --bg: #0b0d11;
+      --bg-soft: #11151c;
+      --card: #141a22;
+      --line: #232b37;
+      --text: #ecf1f8;
+      --muted: #9aa8bd;
+      --accent: #69d0b3;
+      --accent-soft: rgba(105, 208, 179, 0.18);
+      --accent-alt: #74b9ff;
+      --danger: #ff7d8e;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 700px at 50% -10%, #1a2230 0%, var(--bg) 42%, #080a0e 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      min-height: 800px;
+      border: 1px solid #1f2530;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00)), var(--bg);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen {
+      padding: 18px 18px 124px;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+
+    .top-status {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.2px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(105, 208, 179, 0.7);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.35); opacity: 1; }
+    }
+
+    .hero {
+      margin-top: 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: center;
+      position: relative;
+    }
+
+    .wave-bg {
+      position: absolute;
+      inset: 10% 8% auto;
+      height: 190px;
+      pointer-events: none;
+      opacity: 0.33;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(116,185,255,0.22), transparent 60%),
+        repeating-linear-gradient(
+          90deg,
+          rgba(105,208,179,0.00) 0px,
+          rgba(105,208,179,0.00) 10px,
+          rgba(105,208,179,0.09) 11px,
+          rgba(105,208,179,0.00) 12px
+        );
+      border-radius: 20px;
+      filter: blur(0.4px);
+    }
+
+    .main-chord {
+      font-size: 100px;
+      line-height: 0.95;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      min-height: 96px;
+      transition: opacity 220ms ease, transform 220ms ease;
+      text-shadow: 0 8px 28px rgba(0,0,0,0.3);
+      z-index: 1;
+    }
+
+    .main-chord.fade {
+      opacity: 0.45;
+      transform: translateY(4px);
+    }
+
+    .key-line {
+      font-size: 13px;
+      color: var(--muted);
+      z-index: 1;
+    }
+
+    .candidates {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: center;
+      color: #c8d3e5;
+      opacity: 0.84;
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+      z-index: 1;
+    }
+
+    .candidates span {
+      transition: opacity 180ms ease, transform 180ms ease;
+      opacity: 0.62;
+      cursor: default;
+    }
+
+    .candidates span.active {
+      opacity: 1;
+      color: var(--accent);
+      transform: scale(1.03);
+    }
+
+    .confidence-wrap {
+      width: 86%;
+      margin-top: 2px;
+      z-index: 1;
+    }
+
+    .confidence-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .confidence-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #1c2430;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .confidence-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-alt), var(--accent));
+      transition: width 260ms ease;
+      box-shadow: 0 0 18px rgba(105,208,179,0.45);
+    }
+
+    .timeline-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px 12px 10px;
+    }
+
+    .timeline-title {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      letter-spacing: 0.2px;
+    }
+
+    .timeline {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .timeline::-webkit-scrollbar { display: none; }
+
+    .segment {
+      flex: 0 0 auto;
+      min-width: 54px;
+      text-align: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #2a3340;
+      background: #181f2a;
+      color: #d8e1ef;
+      font-size: 16px;
+      font-weight: 700;
+      transition: all 220ms ease;
+    }
+
+    .segment.current {
+      border-color: var(--accent);
+      color: #0f1c19;
+      background: linear-gradient(180deg, #89e5cc, #69d0b3);
+      box-shadow: 0 4px 18px rgba(105,208,179,0.35);
+      transform: translateY(-1px);
+    }
+
+    .controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 14px 16px 18px;
+      border-top: 1px solid #1d2430;
+      background: linear-gradient(180deg, rgba(11,13,17,0.4), rgba(11,13,17,0.92) 28%, rgba(11,13,17,1) 100%);
+      backdrop-filter: blur(8px);
+      display: grid;
+      gap: 10px;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      background: #151c27;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #74dcc0, #58c8aa);
+      color: #072018;
+      border-color: #72d9be;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: #121924;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 4px;
+    }
+
+    .mode {
+      border: none;
+      border-radius: 9px;
+      padding: 9px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+    .mode.on {
+      background: var(--accent-soft);
+      color: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(105,208,179,0.32);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="screen">
+      <div class="top-status" id="topStatus">
+        <span class="dot"></span>
+        <span>🎵 Listening…</span>
+      </div>
+
+      <section class="hero">
+        <div class="wave-bg" aria-hidden="true"></div>
+        <div class="main-chord" id="mainChord">Am</div>
+        <div class="key-line" id="keyLine">Key: C Major</div>
+
+        <div class="candidates" id="candidates">
+          <span class="active">Am</span>
+          <span>F</span>
+          <span>G</span>
+        </div>
+
+        <div class="confidence-wrap">
+          <div class="confidence-head">
+            <span>Confidence</span>
+            <span id="confLabel">78%</span>
+          </div>
+          <div class="confidence-track">
+            <div class="confidence-bar" id="confBar"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="timeline-card">
+        <div class="timeline-title">最近和弦进行（稳定后写入）</div>
+        <div class="timeline" id="timeline">
+          <div class="segment">C</div>
+          <div class="segment">G</div>
+          <div class="segment">Am</div>
+          <div class="segment">F</div>
+          <div class="segment">C</div>
+          <div class="segment current">Am</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="controls">
+      <div class="button-row">
+        <button class="btn primary" id="toggleBtn">暂停</button>
+        <button class="btn" id="simulateBtn">模拟噪声</button>
+      </div>
+      <div class="mode-switch">
+        <button class="mode" id="modeRealtime">快速识别</button>
+        <button class="mode on" id="modeStable">稳定识别</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const mainChordEl = document.getElementById("mainChord");
+    const candidatesEl = document.getElementById("candidates");
+    const confBarEl = document.getElementById("confBar");
+    const confLabelEl = document.getElementById("confLabel");
+    const timelineEl = document.getElementById("timeline");
+    const topStatusEl = document.getElementById("topStatus");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const simulateBtn = document.getElementById("simulateBtn");
+    const modeRealtime = document.getElementById("modeRealtime");
+    const modeStable = document.getElementById("modeStable");
+
+    const sequence = [
+      { main: "Am", cand: ["Am", "F", "G"], conf: 0.78 },
+      { main: "F", cand: ["F", "Am", "C"], conf: 0.74 },
+      { main: "C", cand: ["C", "G", "Em"], conf: 0.82 },
+      { main: "G", cand: ["G", "C", "D"], conf: 0.69 },
+      { main: "Am", cand: ["Am", "C", "F"], conf: 0.76 }
+    ];
+
+    let idx = 0;
+    let listening = true;
+    let noisy = false;
+    let mode = "stable"; // stable | realtime
+    let lastStableChord = "Am";
+    let stableCandidate = "Am";
+    let stableHit = 0;
+    let tickMs = 550;
+    let timer = null;
+
+    function startTimer() {
+      stopTimer();
+      timer = setInterval(tick, tickMs);
+    }
+
+    function stopTimer() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function setMode(next) {
+      mode = next;
+      modeRealtime.classList.toggle("on", mode === "realtime");
+      modeStable.classList.toggle("on", mode === "stable");
+      tickMs = mode === "stable" ? 550 : 280;
+      if (listening) startTimer();
+    }
+
+    function setStatus(text, withDot = true) {
+      topStatusEl.innerHTML = withDot
+        ? '<span class="dot"></span><span>' + text + '</span>'
+        : '<span style="color: var(--danger)">' + text + '</span>';
+    }
+
+    function renderCandidates(cands, main) {
+      candidatesEl.innerHTML = cands
+        .map((c, i) => `<span class="${(c === main && i === 0) ? "active" : ""}">${c}</span>`)
+        .join("");
+    }
+
+    function updateTimeline(chord) {
+      const prev = timelineEl.querySelector(".segment.current");
+      if (prev) prev.classList.remove("current");
+
+      const last = timelineEl.lastElementChild;
+      if (last && last.textContent === chord) {
+        last.classList.add("current");
+        last.scrollIntoView({ behavior: "smooth", inline: "end", block: "nearest" });
+        return;
+      }
+
+      const item = document.createElement("div");
+      item.className = "segment current";
+      item.textContent = chord;
+      timelineEl.appendChild(item);
+
+      while (timelineEl.children.length > 8) {
+        timelineEl.removeChild(timelineEl.firstElementChild);
+      }
+      item.scrollIntoView({ behavior: "smooth", inline: "end", block: "nearest" });
+    }
+
+    function swapMainChord(chord) {
+      if (mainChordEl.textContent === chord) return;
+      mainChordEl.classList.add("fade");
+      setTimeout(() => {
+        mainChordEl.textContent = chord;
+        mainChordEl.classList.remove("fade");
+      }, 120);
+    }
+
+    function setConfidence(v) {
+      const pct = Math.max(0, Math.min(1, v));
+      confBarEl.style.width = `${Math.round(pct * 100)}%`;
+      confLabelEl.textContent = `${Math.round(pct * 100)}%`;
+    }
+
+    // Main chord stability logic:
+    // - candidates update frequently
+    // - main chord updates with short delay (~300ms equivalent by requiring consecutive hits in stable mode)
+    function commitByStability(nextMain) {
+      if (mode === "realtime") {
+        lastStableChord = nextMain;
+        swapMainChord(nextMain);
+        updateTimeline(nextMain);
+        return;
+      }
+
+      if (nextMain === stableCandidate) {
+        stableHit += 1;
+      } else {
+        stableCandidate = nextMain;
+        stableHit = 1;
+      }
+
+      if (stableHit >= 2 && lastStableChord !== stableCandidate) {
+        lastStableChord = stableCandidate;
+        swapMainChord(lastStableChord);
+        updateTimeline(lastStableChord);
+      }
+    }
+
+    function tick() {
+      if (!listening) return;
+
+      if (noisy) {
+        setStatus("No clear chord detected", false);
+        renderCandidates(["Am", "F", "G"], "Am");
+        setConfidence(0.28);
+        return;
+      }
+
+      setStatus("🎵 Listening…", true);
+
+      const frame = sequence[idx % sequence.length];
+      idx += 1;
+
+      renderCandidates(frame.cand, frame.main); // more frequent
+      setConfidence(frame.conf);
+      commitByStability(frame.main); // delayed stable update
+    }
+
+    toggleBtn.addEventListener("click", () => {
+      listening = !listening;
+      toggleBtn.textContent = listening ? "暂停" : "开始";
+      if (listening) {
+        setStatus("🎵 Listening…", true);
+        startTimer();
+      } else {
+        setStatus("Paused", false);
+        stopTimer();
+      }
+    });
+
+    simulateBtn.addEventListener("click", () => {
+      noisy = !noisy;
+      simulateBtn.textContent = noisy ? "恢复正常" : "模拟噪声";
+      if (!noisy && listening) setStatus("🎵 Listening…", true);
+    });
+
+    modeRealtime.addEventListener("click", () => setMode("realtime"));
+    modeStable.addEventListener("click", () => setMode("stable"));
+
+    // Init
+    setMode("stable");
+    setConfidence(0.78);
+    startTimer();
+  </script>
+</body>
+</html>

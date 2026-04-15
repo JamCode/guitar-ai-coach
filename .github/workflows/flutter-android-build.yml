@@ -1,0 +1,58 @@
+# 云端构建 Flutter Android 安装包；完成后在 GitHub Actions 运行页下载 Artifact（APK）。
+# 当前 release 使用项目内 debug 签名配置，仅适合内测；上架商店需改为正式 keystore 与密钥管理。
+name: Flutter Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - tiaoyinqi
+      - main
+      - master
+    paths:
+      - "flutter_app/**"
+      - ".github/workflows/flutter-android-build.yml"
+  pull_request:
+    paths:
+      - "flutter_app/**"
+      - ".github/workflows/flutter-android-build.yml"
+
+concurrency:
+  group: flutter-android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: flutter_app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: guitar-helper-android-release
+          path: flutter_app/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

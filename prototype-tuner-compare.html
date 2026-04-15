@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>调音器布局 A/B 对比</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
+    :root{
+      --bg:#f7f8fa;
+      --surface:#ffffff;
+      --soft:#f3f4f7;
+      --text:#18181b;
+      --muted:#71717a;
+      --line:#ebecef;
+      --brand:#ff2442;
+      --brand-soft:#ffe9ed;
+      --green:#22a06b;
+      --green-soft:#e3fcef;
+      --radius:16px;
+      --shadow:0 5px 18px rgba(24,24,27,.05);
+      --phone-shadow:0 28px 72px rgba(24,24,27,.14);
+      --title:"Plus Jakarta Sans","Noto Sans SC",sans-serif;
+      --body:"Noto Sans SC","PingFang SC","Hiragino Sans GB",sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--body);
+      padding:24px 16px 48px;
+    }
+
+    .page-title{
+      text-align:center;
+      margin:0 0 6px;
+      font-family:var(--title);
+      font-size:26px;
+      font-weight:800;
+    }
+    .page-desc{
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      margin:0 0 24px;
+    }
+
+    .compare{
+      display:flex;
+      gap:24px;
+      justify-content:center;
+      align-items:flex-start;
+      flex-wrap:wrap;
+    }
+
+    .col{
+      flex:0 0 auto;
+    }
+    .col-label{
+      text-align:center;
+      margin-bottom:10px;
+    }
+    .col-label b{
+      font-size:15px;
+      font-weight:700;
+    }
+    .col-label p{
+      margin:4px 0 0;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .phone{
+      width:375px;
+      max-width:90vw;
+      border:10px solid #d8dce2;
+      border-radius:40px;
+      overflow:hidden;
+      background:var(--surface);
+      box-shadow:var(--phone-shadow);
+    }
+
+    .status{
+      height:26px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 16px;
+      font-size:11px;
+      color:var(--muted);
+      border-bottom:1px solid var(--line);
+    }
+
+    .nav-header{
+      padding:12px 16px 10px;
+      border-bottom:1px solid var(--line);
+    }
+    .nav-header h2{
+      margin:0;
+      font-size:17px;
+      font-weight:700;
+    }
+    .nav-header p{
+      margin:4px 0 0;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .body{
+      padding:16px;
+      min-height:580px;
+      background:var(--soft);
+    }
+
+    .card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      margin-bottom:12px;
+      box-shadow:var(--shadow);
+    }
+    .card h3{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    /* ===== 弦选择器（共用） ===== */
+    .strings{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:8px;
+      margin-top:12px;
+    }
+    .str{
+      text-align:center;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:8px 0;
+      font-size:12px;
+      font-weight:600;
+      color:var(--muted);
+      background:var(--surface);
+    }
+    .str.active{
+      border-color:var(--brand);
+      color:var(--brand);
+      background:var(--brand-soft);
+    }
+
+    /* ===== 模式切换（共用） ===== */
+    .mode{
+      display:flex;
+      gap:6px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:4px;
+      background:var(--surface);
+    }
+    .mode button{
+      flex:1;
+      border:0;
+      border-radius:8px;
+      padding:7px 6px;
+      background:transparent;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .mode button.active{
+      background:var(--brand-soft);
+      color:var(--brand);
+    }
+
+    /* ===== 播放按钮（共用） ===== */
+    .play-btn{
+      width:100%;
+      border:1px solid var(--brand);
+      background:var(--surface);
+      color:var(--brand);
+      border-radius:10px;
+      padding:10px;
+      font-size:13px;
+      font-weight:600;
+      text-align:center;
+      margin-top:12px;
+    }
+
+    .start-btn{
+      width:100%;
+      border:1px solid var(--brand);
+      background:var(--brand);
+      color:#fff;
+      border-radius:10px;
+      padding:10px;
+      font-size:13px;
+      font-weight:600;
+      text-align:center;
+      margin-top:8px;
+    }
+
+    /* ===== A: 圆盘式 ===== */
+    .dial-wrap{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:8px 0 4px;
+    }
+    .dial{
+      width:200px;
+      height:200px;
+      border-radius:50%;
+      border:3px solid var(--line);
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--surface);
+    }
+    .dial-ring{
+      position:absolute;
+      inset:6px;
+      border-radius:50%;
+      border:8px solid var(--soft);
+      overflow:hidden;
+    }
+    .dial-arc{
+      position:absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      border-radius:50%;
+      border:8px solid transparent;
+      border-top-color:var(--brand);
+      transform:rotate(-10deg);
+    }
+    .dial-center{
+      position:relative;
+      z-index:1;
+      text-align:center;
+    }
+    .dial-note{
+      font-family:var(--title);
+      font-size:52px;
+      font-weight:800;
+      line-height:1;
+    }
+    .dial-hz{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+    .dial-cents{
+      font-size:14px;
+      font-weight:700;
+      color:var(--brand);
+      margin-top:4px;
+    }
+
+    .dial-ticks{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-top:12px;
+      width:200px;
+      padding:0 8px;
+    }
+    .dial-ticks span{
+      font-size:10px;
+      color:var(--muted);
+    }
+
+    .dial-indicator{
+      position:absolute;
+      top:14px;
+      left:50%;
+      transform:translateX(-50%);
+      width:3px;
+      height:14px;
+      border-radius:2px;
+      background:var(--brand);
+    }
+
+    .dial-target{
+      margin-top:10px;
+      text-align:center;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .dial-target b{
+      color:var(--text);
+    }
+
+    /* ===== B: 仪表条式 ===== */
+    .meter-wrap{
+      padding:4px 0;
+    }
+    .meter-note-row{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+    }
+    .meter-note{
+      font-family:var(--title);
+      font-size:56px;
+      font-weight:800;
+      line-height:1;
+    }
+    .meter-info{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .meter-hz{
+      font-size:13px;
+      color:var(--muted);
+    }
+    .meter-target{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .meter-target b{
+      color:var(--text);
+    }
+    .meter-cents{
+      font-size:14px;
+      font-weight:700;
+      color:var(--brand);
+      margin-top:2px;
+    }
+
+    .meter-bar-wrap{
+      margin-top:14px;
+    }
+    .meter-labels{
+      display:flex;
+      justify-content:space-between;
+      font-size:10px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .meter-bar{
+      height:12px;
+      border-radius:999px;
+      background:var(--soft);
+      border:1px solid var(--line);
+      position:relative;
+      overflow:visible;
+    }
+    .meter-center{
+      position:absolute;
+      top:-4px;
+      left:50%;
+      transform:translateX(-50%);
+      width:2px;
+      height:20px;
+      background:var(--line);
+      border-radius:2px;
+    }
+    .meter-needle{
+      position:absolute;
+      top:-6px;
+      left:45%;
+      transform:translateX(-50%);
+      width:14px;
+      height:24px;
+      border-radius:7px;
+      background:var(--brand);
+      border:2px solid var(--surface);
+      box-shadow:0 2px 8px rgba(255,36,66,.3);
+    }
+    .meter-zone{
+      display:flex;
+      justify-content:center;
+      gap:8px;
+      margin-top:10px;
+    }
+    .meter-zone span{
+      font-size:11px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color:var(--muted);
+    }
+    .meter-zone span.on{
+      border-color:var(--green);
+      color:var(--green);
+      background:var(--green-soft);
+    }
+
+    /* ===== 底部TabBar（共用） ===== */
+    .tabbar{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:4px;
+      border-top:1px solid var(--line);
+      background:var(--surface);
+      padding:8px;
+    }
+    .tab{
+      text-align:center;
+      border-radius:8px;
+      padding:6px 4px;
+      font-size:10px;
+      font-weight:600;
+      color:var(--muted);
+    }
+    .tab.active{
+      color:var(--brand);
+      background:var(--brand-soft);
+    }
+  </style>
+</head>
+<body>
+  <h1 class="page-title">调音器布局对比</h1>
+  <p class="page-desc">A 圆盘式（类 GuitarTuna）vs B 仪表条式（类 PitchLab），选一种往下做。</p>
+
+  <div class="compare">
+
+    <!-- ========== A: 圆盘式 ========== -->
+    <div class="col">
+      <div class="col-label">
+        <b>A · 圆盘式</b>
+        <p>中心大音名 + 弧形偏差 + 顶部指针</p>
+      </div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>5G · 100%</span></div>
+        <div class="nav-header">
+          <h2>调音器</h2>
+          <p>自动识别 · 标准调音</p>
+        </div>
+        <div class="body">
+
+          <div class="card">
+            <div class="mode">
+              <button class="active" type="button">自动识别</button>
+              <button type="button">手动选弦</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="dial-wrap">
+              <div class="dial">
+                <div class="dial-ring">
+                  <div class="dial-arc"></div>
+                </div>
+                <div class="dial-indicator"></div>
+                <div class="dial-center">
+                  <div class="dial-note">E</div>
+                  <div class="dial-hz">164.81 Hz</div>
+                  <div class="dial-cents">-8 cent</div>
+                </div>
+              </div>
+              <div class="dial-ticks">
+                <span>-50</span><span>-25</span><span>0</span><span>+25</span><span>+50</span>
+              </div>
+              <div class="dial-target">第 6 弦 · 目标 <b>E2 (82.41Hz)</b></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>选择弦</h3>
+            <div class="strings">
+              <div class="str active">6<br>E</div>
+              <div class="str">5<br>A</div>
+              <div class="str">4<br>D</div>
+              <div class="str">3<br>G</div>
+              <div class="str">2<br>B</div>
+              <div class="str">1<br>e</div>
+            </div>
+            <div class="play-btn">播放参考音 · E2</div>
+            <div class="start-btn">开始监听</div>
+          </div>
+
+        </div>
+        <div class="tabbar">
+          <div class="tab active">调音器</div>
+          <div class="tab">和弦</div>
+          <div class="tab">扫弦</div>
+          <div class="tab">节奏</div>
+          <div class="tab">爬格子</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== B: 仪表条式 ========== -->
+    <div class="col">
+      <div class="col-label">
+        <b>B · 仪表条式</b>
+        <p>大音名左上 + 横向偏差条 + 状态标签</p>
+      </div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>5G · 100%</span></div>
+        <div class="nav-header">
+          <h2>调音器</h2>
+          <p>自动识别 · 标准调音</p>
+        </div>
+        <div class="body">
+
+          <div class="card">
+            <div class="mode">
+              <button class="active" type="button">自动识别</button>
+              <button type="button">手动选弦</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="meter-wrap">
+              <div class="meter-note-row">
+                <div class="meter-note">E</div>
+                <div class="meter-info">
+                  <div class="meter-hz">164.81 Hz</div>
+                  <div class="meter-target">第 6 弦 · 目标 <b>E2</b></div>
+                  <div class="meter-cents">-8 cent · 偏低</div>
+                </div>
+              </div>
+
+              <div class="meter-bar-wrap">
+                <div class="meter-labels">
+                  <span>-50</span><span>偏低</span><span>准音</span><span>偏高</span><span>+50</span>
+                </div>
+                <div class="meter-bar">
+                  <div class="meter-center"></div>
+                  <div class="meter-needle"></div>
+                </div>
+              </div>
+
+              <div class="meter-zone">
+                <span>偏低</span>
+                <span class="on">接近</span>
+                <span>准音</span>
+                <span>偏高</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>选择弦</h3>
+            <div class="strings">
+              <div class="str active">6<br>E</div>
+              <div class="str">5<br>A</div>
+              <div class="str">4<br>D</div>
+              <div class="str">3<br>G</div>
+              <div class="str">2<br>B</div>
+              <div class="str">1<br>e</div>
+            </div>
+            <div class="play-btn">播放参考音 · E2</div>
+            <div class="start-btn">开始监听</div>
+          </div>
+
+        </div>
+        <div class="tabbar">
+          <div class="tab active">调音器</div>
+          <div class="tab">和弦</div>
+          <div class="tab">扫弦</div>
+          <div class="tab">节奏</div>
+          <div class="tab">爬格子</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

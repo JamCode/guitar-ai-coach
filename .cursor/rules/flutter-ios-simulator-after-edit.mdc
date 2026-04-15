@@ -1,0 +1,21 @@
+---
+description: 修改 Flutter 工程后自动在本机拉起 iOS 模拟器
+globs: flutter_app/**
+alwaysApply: false
+---
+
+# Flutter 改动后的 iOS 模拟器
+
+当本轮对话中**已完成对 `flutter_app/` 内代码或配置的实质修改**（不仅讨论方案）时，在收尾前应在终端**自动执行**下列步骤，无需只口述让用户自己做：
+
+1. **启动 Simulator 应用**：`open -a Simulator`
+2. **启动本仓库偏好的模拟器**（Boot 后 `flutter devices` 才会出现 iOS）：
+   - 首选 UDID：`F877F638-03AC-4C4B-ADDF-5631C27FEB05`（设备名通常为「iPhone 16 Flutter」）
+   - 命令：`xcrun simctl boot F877F638-03AC-4C4B-ADDF-5631C27FEB05`
+   - 若输出表示已在运行 / 已 Booted，可忽略错误，继续下一步
+3. **按需确认**：`cd flutter_app && flutter devices`，应能看到上述 iOS 模拟器
+
+说明：
+
+- 「拉起来」指 **Simulator 已打开且目标机型为 Booted**，**不**默认绑死每次都必须 `flutter run`（耗时长）；若用户明确要求验证运行或联调，再执行 `flutter run -d <UDID>`。
+- 若环境无 Xcode / 模拟器不可用，终端报错则如实说明，不必反复重试。

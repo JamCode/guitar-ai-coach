@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的谱 OCR + 变调 交互图</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --sub: #6b7280;
+      --line: #d1d5db;
+      --primary: #2563eb;
+      --ok: #059669;
+      --warn: #d97706;
+      --error: #dc2626;
+      --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .desc {
+      margin: 0 0 18px;
+      color: var(--sub);
+      font-size: 14px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1.9fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 10px;
+    }
+
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .node:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .node.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+      background: #eff6ff;
+    }
+
+    .node .title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .node .meta {
+      color: var(--sub);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .arrow {
+      text-align: center;
+      color: var(--sub);
+      font-size: 12px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .legend {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--sub);
+    }
+
+    .dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #fafafa;
+    }
+
+    .dot i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .screens {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(230px, 1fr));
+      gap: 12px;
+    }
+
+    .phone {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      min-height: 410px;
+      display: none;
+      flex-direction: column;
+    }
+
+    .phone.show {
+      display: flex;
+      animation: fade 0.2s ease;
+    }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status {
+      background: #111827;
+      color: #e5e7eb;
+      font-size: 11px;
+      padding: 4px 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .appbar {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 10px 12px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .body {
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .box {
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      background: #f8fafc;
+      color: #334155;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #dbeafe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .error { color: var(--error); }
+
+    .footnote {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--sub);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .screens {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .screens {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>「我的谱」OCR 结构化保存 + 一键变调 交互图</h1>
+    <p class="desc">
+      点击左侧流程节点，右侧会切换展示该节点对应页面示意。此稿用于评审交互路径，不代表最终视觉样式。
+    </p>
+
+    <div class="layout">
+      <section class="card">
+        <h2>页面流程（全链路）</h2>
+        <div class="flow" id="flow">
+          <div class="node active" data-step="library">
+            <div class="title">1) 我的谱列表</div>
+            <div class="meta">入口：查看已有谱子，点击「+」添加新谱</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="pick-source">
+            <div class="title">2) 选择来源（拍照/相册）</div>
+            <div class="meta">Action Sheet：相册多选或连拍</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="draft">
+            <div class="title">3) 新建谱子草稿</div>
+            <div class="meta">预览页、删图、补图、输入谱名、保存</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="ocr-progress">
+            <div class="title">4) OCR 识别中</div>
+            <div class="meta">逐页识别：提取和弦/旋律/歌词，显示进度</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="review">
+            <div class="title">5) 识别结果校对</div>
+            <div class="meta">按段编辑：和弦、旋律、歌词；可手动纠错</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="save-structured">
+            <div class="title">6) 结构化保存成功</div>
+            <div class="meta">落盘 parsed.json + 原图，回到「我的谱」</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="detail">
+            <div class="title">7) 谱子详情（结构化视图）</div>
+            <div class="meta">查看分段，进入变调工具</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="transpose">
+            <div class="title">8) 一键变调</div>
+            <div class="meta">选择目标调，和弦即时转调，旋律/歌词保持</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="node" data-step="error-fallback">
+            <div class="title">9) 异常兜底（可回退图片模式）</div>
+            <div class="meta">识别失败时可继续仅保存图片，不阻断主流程</div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span class="dot"><i style="background:#2563eb;"></i>主流程</span>
+          <span class="dot"><i style="background:#d97706;"></i>需人工确认</span>
+          <span class="dot"><i style="background:#dc2626;"></i>异常/降级路径</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>页面示意（点击左侧节点联动）</h2>
+        <div class="screens">
+          <article class="phone show" data-screen="library">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>我的谱</span><span>＋</span></div>
+            <div class="body">
+              <div class="box">列表项：小幸运（2页）</div>
+              <div class="box">列表项：夜空中最亮的星（3页）</div>
+              <div class="box">空态文案：暂无谱子，点击 + 添加</div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="pick-source">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>添加谱子</span><span>取消</span></div>
+            <div class="body">
+              <div class="box">Action Sheet</div>
+              <div class="box">拍照导入（多页）</div>
+              <div class="box">相册多选</div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="draft">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>新建谱子</span><span>保存</span></div>
+            <div class="body">
+              <div class="box">缩略图序列（可删除，可继续添加）</div>
+              <div class="box">输入：谱子名称</div>
+              <div class="row">
+                <span class="chip">取消</span>
+                <span class="chip">保存并识别</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="ocr-progress">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>识别中</span><span>后台继续</span></div>
+            <div class="body">
+              <div class="box">第 1/3 页 OCR 中...</div>
+              <div class="box">进度条 45%</div>
+              <div class="box">提示：正在提取 和弦 / 旋律 / 歌词</div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="review">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>识别结果校对</span><span>下一步</span></div>
+            <div class="body">
+              <div class="box"><strong>段落 1 和弦</strong><br />C  D7  G7  C</div>
+              <div class="box"><strong>段落 1 旋律</strong><br />033551 17 | 76366-</div>
+              <div class="box"><strong>段落 1 歌词</strong><br />我听见雨滴落在 青青草地</div>
+              <div class="row">
+                <span class="chip warn">标记不确定词</span>
+                <span class="chip">手动编辑</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="save-structured">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>保存完成</span><span>关闭</span></div>
+            <div class="body">
+              <div class="box ok">已保存图片与结构化内容</div>
+              <div class="box">格式：segments + chords + melody + lyrics</div>
+              <div class="box">回到「我的谱」并显示新条目</div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="detail">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>小幸运</span><span>变调</span></div>
+            <div class="body">
+              <div class="box">原调：C</div>
+              <div class="box">段落列表（和弦/旋律/歌词）</div>
+              <div class="box">可切换：图片页 / 结构化页</div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="transpose">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>一键变调</span><span>应用</span></div>
+            <div class="body">
+              <div class="row">
+                <span class="chip">C</span>
+                <span class="chip">Db</span>
+                <span class="chip">D</span>
+                <span class="chip">Eb</span>
+              </div>
+              <div class="box"><strong>预览：</strong><br />C → D，D7 → E7，G7 → A7</div>
+              <div class="box">歌词与旋律不变，仅和弦转调</div>
+            </div>
+          </article>
+
+          <article class="phone" data-screen="error-fallback">
+            <div class="status"><span>9:41</span><span>5G 100%</span></div>
+            <div class="appbar"><span>识别失败</span><span>重试</span></div>
+            <div class="body">
+              <div class="box error">部分页面识别质量较低</div>
+              <div class="box">可选：继续仅保存图片</div>
+              <div class="box">可选：手动输入和弦/歌词/旋律</div>
+            </div>
+          </article>
+        </div>
+
+        <p class="footnote">
+          评审建议：先确认「校对页」与「变调页」的信息密度，再决定是否需要拆分为多步向导（逐段校对）以降低一次输入负担。
+        </p>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const nodes = Array.from(document.querySelectorAll(".node"));
+    const screens = Array.from(document.querySelectorAll(".phone"));
+
+    function showStep(step) {
+      nodes.forEach((n) => n.classList.toggle("active", n.dataset.step === step));
+      screens.forEach((s) => s.classList.toggle("show", s.dataset.screen === step));
+    }
+
+    nodes.forEach((node) => {
+      node.addEventListener("click", () => showStep(node.dataset.step));
+    });
+  </script>
+</body>
+</html>

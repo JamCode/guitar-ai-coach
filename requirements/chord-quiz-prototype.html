@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>和弦题库训练 — 线框原型</title>
+    <style>
+      :root {
+        --bd: #c8c8c8;
+        --bg: #f4f4f5;
+        --ink: #111;
+        --muted: #555;
+        --card: #fff;
+        --ok: #1e7b3a;
+        --bad: #b42318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--bg);
+        line-height: 1.45;
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+      }
+      .wrap {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 16px 14px 24px;
+      }
+      .head {
+        margin-bottom: 14px;
+      }
+      h1 {
+        font-size: 1.2rem;
+        margin: 0 0 4px;
+      }
+      .sub {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      section {
+        border: 1px dashed var(--bd);
+        border-radius: 10px;
+        background: var(--card);
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      section h2 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .row > * {
+        flex: 1;
+      }
+      label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 13px;
+      }
+      select {
+        width: 100%;
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px;
+        font-size: 15px;
+      }
+      .btn {
+        width: 100%;
+        margin-top: 10px;
+        border: 1px solid var(--ink);
+        background: var(--ink);
+        color: #fff;
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .btn.secondary {
+        background: #fff;
+        color: var(--ink);
+      }
+      .progress {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .stem {
+        font-size: 15px;
+        margin-bottom: 10px;
+      }
+      .stem strong {
+        font-size: 1.6rem;
+        margin-left: 6px;
+      }
+      .choices {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .choice {
+        border: 1px solid var(--bd);
+        border-radius: 10px;
+        padding: 9px;
+        background: #fff;
+        cursor: pointer;
+      }
+      .choice.on {
+        border: 2px solid #111;
+      }
+      .diagram {
+        height: 74px;
+        border: 1px dashed #999;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .choice small {
+        color: var(--muted);
+      }
+      .feedback {
+        margin-top: 10px;
+        border-radius: 8px;
+        padding: 9px 10px;
+        font-size: 13px;
+      }
+      .ok {
+        color: var(--ok);
+        background: #effbf3;
+        border: 1px solid #b7e4c2;
+      }
+      .bad {
+        color: var(--bad);
+        background: #fef1f1;
+        border: 1px solid #f0c0c0;
+      }
+      .hidden {
+        display: none !important;
+      }
+      ul {
+        margin: 6px 0 0;
+        padding-left: 16px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        color: var(--muted);
+        border: 1px solid var(--bd);
+        border-radius: 999px;
+        padding: 2px 8px;
+        margin: 0 6px 6px 0;
+      }
+      .tab-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+        display: flex;
+        background: var(--card);
+        border-top: 1px solid var(--bd);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .tab-bar a {
+        flex: 1;
+        text-align: center;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 8px 6px 10px;
+        border-top: 3px solid transparent;
+      }
+      .tab-bar a.on {
+        color: var(--ink);
+        border-top-color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <h1>和弦题库训练（线框）</h1>
+        <p class="sub">题干显示和弦名，选择正确按法；目标是强化记忆，不是考乐理推导。</p>
+      </header>
+
+      <section id="setup">
+        <h2>训练设置</h2>
+        <div class="row">
+          <div>
+            <label for="difficulty">难度</label>
+            <select id="difficulty">
+              <option value="beginner">初级（大三 / 小三 / 属七）</option>
+              <option value="intermediate">中级（maj7 / m7 / sus / add9）</option>
+              <option value="advanced">高级（dim / aug / m7b5 / slash）</option>
+            </select>
+          </div>
+        </div>
+        <p style="font-size: 12px; color: #555; margin: 10px 0 0">训练节奏：不限题量，想练几道就做几道。</p>
+        <p style="font-size: 12px; color: #555; margin: 8px 0 0">
+          性质覆盖示例：<span class="tag">大三</span><span class="tag">小三</span><span class="tag">属七</span>
+          <span class="tag">maj7</span><span class="tag">m7</span><span class="tag">sus</span>
+        </p>
+        <button id="startBtn" class="btn">开始训练</button>
+      </section>
+
+      <section id="quiz" class="hidden">
+        <h2>答题</h2>
+        <div class="progress" id="progress"></div>
+        <div class="stem">请选择和弦 <strong id="stemChord">Am</strong> 的正确按法</div>
+        <div class="choices" id="choices"></div>
+        <div id="feedback" class="feedback hidden"></div>
+        <button id="submitBtn" class="btn">提交答案</button>
+        <button id="nextBtn" class="btn secondary hidden">下一题</button>
+        <button id="finishBtn" class="btn secondary">结束本次训练</button>
+      </section>
+
+      <section id="result" class="hidden">
+        <h2>训练结果</h2>
+        <p id="scoreLine" style="margin: 0 0 8px"></p>
+        <p id="qualityLine" style="margin: 0 0 8px; font-size: 13px; color: #555"></p>
+        <div>
+          <strong style="font-size: 14px">错题回顾</strong>
+          <ul id="wrongList"></ul>
+        </div>
+        <button id="againBtn" class="btn">继续训练</button>
+        <button id="retryWrongBtn" class="btn">再练错题</button>
+        <button id="restartBtn" class="btn secondary">重新选难度</button>
+      </section>
+    </main>
+
+    <nav class="tab-bar">
+      <a href="./home-prototype.html">和弦进行</a>
+      <a href="./chord-dictionary-prototype.html">和弦字典</a>
+      <a href="./chord-quiz-prototype.html" class="on">训练题库</a>
+    </nav>
+
+    <script>
+      const BANK = {
+        beginner: [
+          { chord: "C", quality: "大三", answer: "x32010" },
+          { chord: "G", quality: "大三", answer: "320003" },
+          { chord: "Am", quality: "小三", answer: "x02210" },
+          { chord: "Em", quality: "小三", answer: "022000" },
+          { chord: "D7", quality: "属七", answer: "xx0212" },
+          { chord: "A7", quality: "属七", answer: "x02020" }
+        ],
+        intermediate: [
+          { chord: "Cmaj7", quality: "大七", answer: "x32000" },
+          { chord: "Am7", quality: "小七", answer: "x02010" },
+          { chord: "Dsus4", quality: "挂四", answer: "xx0233" },
+          { chord: "Asus2", quality: "挂二", answer: "x02200" },
+          { chord: "Bm", quality: "小三", answer: "x24432" },
+          { chord: "F", quality: "大三", answer: "133211" }
+        ],
+        advanced: [
+          { chord: "C#m7b5", quality: "半减七", answer: "x4545x" },
+          { chord: "Gaug", quality: "增三", answer: "3x1003" },
+          { chord: "Adim", quality: "减三", answer: "x01212" },
+          { chord: "D/F#", quality: "转位", answer: "2x0232" },
+          { chord: "G/B", quality: "转位", answer: "x20003" },
+          { chord: "F#m7", quality: "小七", answer: "242222" }
+        ]
+      };
+
+      const setupEl = document.getElementById("setup");
+      const quizEl = document.getElementById("quiz");
+      const resultEl = document.getElementById("result");
+      const choicesEl = document.getElementById("choices");
+      const progressEl = document.getElementById("progress");
+      const stemChordEl = document.getElementById("stemChord");
+      const feedbackEl = document.getElementById("feedback");
+      const scoreLineEl = document.getElementById("scoreLine");
+      const qualityLineEl = document.getElementById("qualityLine");
+      const wrongListEl = document.getElementById("wrongList");
+
+      const startBtn = document.getElementById("startBtn");
+      const submitBtn = document.getElementById("submitBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const finishBtn = document.getElementById("finishBtn");
+      const retryWrongBtn = document.getElementById("retryWrongBtn");
+      const againBtn = document.getElementById("againBtn");
+      const restartBtn = document.getElementById("restartBtn");
+
+      let selected = null;
+      let currentLevel = "beginner";
+      let currentQuestion = null;
+      let askedCount = 0;
+      let correct = 0;
+      let wrongs = [];
+      let qualityStats = {};
+      let wrongMode = false;
+      let recentChords = [];
+      const RECENT_WINDOW = 5;
+
+      function shuffle(arr) {
+        return [...arr].sort(() => Math.random() - 0.5);
+      }
+
+      function buildQuestionFromEntry(entry, base) {
+        const distractors = shuffle(
+          base.filter((x) => x.answer !== entry.answer).map((x) => x.answer)
+        ).slice(0, 3);
+        const options = shuffle([entry.answer, ...distractors]).map((fingering) => ({
+          fingering,
+          isAnswer: fingering === entry.answer
+        }));
+        return { ...entry, options };
+      }
+
+      function getQuestionBase() {
+        if (!wrongMode || !wrongs.length) return BANK[currentLevel];
+        const map = new Map();
+        wrongs.forEach((item) => {
+          map.set(item.chord, item);
+        });
+        return [...map.values()];
+      }
+
+      function buildOneQuestion() {
+        const base = getQuestionBase();
+        const candidatePool = base.filter((item) => !recentChords.includes(item.chord));
+        const source = candidatePool.length ? candidatePool : base;
+        const entry = source[Math.floor(Math.random() * source.length)];
+        return buildQuestionFromEntry(entry, BANK[currentLevel]);
+      }
+
+      function renderQuestion() {
+        currentQuestion = buildOneQuestion();
+        selected = null;
+        feedbackEl.className = "feedback hidden";
+        feedbackEl.textContent = "";
+        submitBtn.classList.remove("hidden");
+        nextBtn.classList.add("hidden");
+
+        progressEl.textContent = `已完成 ${askedCount} 题｜答对 ${correct} 题`;
+        stemChordEl.textContent = currentQuestion.chord;
+        choicesEl.innerHTML = "";
+
+        currentQuestion.options.forEach((opt, i) => {
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = "choice";
+          card.innerHTML = `
+            <div class="diagram">指法图 ${String.fromCharCode(65 + i)}</div>
+            <strong>${opt.fingering}</strong><br />
+            <small>候选按法</small>
+          `;
+          card.addEventListener("click", () => {
+            [...choicesEl.querySelectorAll(".choice")].forEach((x) => x.classList.remove("on"));
+            card.classList.add("on");
+            selected = opt;
+          });
+          choicesEl.appendChild(card);
+        });
+      }
+
+      function submitAnswer() {
+        if (!selected) {
+          alert("请先选择一个按法。");
+          return;
+        }
+        askedCount += 1;
+        const q = currentQuestion;
+        qualityStats[q.quality] = qualityStats[q.quality] || { right: 0, total: 0 };
+        qualityStats[q.quality].total += 1;
+
+        if (selected.isAnswer) {
+          correct += 1;
+          qualityStats[q.quality].right += 1;
+          feedbackEl.className = "feedback ok";
+          feedbackEl.textContent = `回答正确：${q.chord}（${q.quality}）的标准按法是 ${q.answer}`;
+        } else {
+          wrongs.push({ chord: q.chord, quality: q.quality, answer: q.answer });
+          feedbackEl.className = "feedback bad";
+          feedbackEl.textContent = `回答错误：正确按法是 ${q.answer}。记忆提示：先看和弦性质，再看根音位置。`;
+        }
+        recentChords.push(q.chord);
+        if (recentChords.length > RECENT_WINDOW) {
+          recentChords = recentChords.slice(recentChords.length - RECENT_WINDOW);
+        }
+        progressEl.textContent = `已完成 ${askedCount} 题｜答对 ${correct} 题`;
+        submitBtn.classList.add("hidden");
+        nextBtn.classList.remove("hidden");
+      }
+
+      function showResult() {
+        quizEl.classList.add("hidden");
+        resultEl.classList.remove("hidden");
+
+        const percent = askedCount ? Math.round((correct / askedCount) * 100) : 0;
+        scoreLineEl.textContent = `已完成 ${askedCount} 题，答对 ${correct} 题（正确率 ${percent}%）`;
+        const qualityText = Object.entries(qualityStats)
+          .map(([k, v]) => `${k} ${Math.round((v.right / v.total) * 100)}%`)
+          .join(" ｜ ");
+        qualityLineEl.textContent = `性质维度：${qualityText || "暂无数据"}`;
+
+        wrongListEl.innerHTML = "";
+        if (!wrongs.length) {
+          const li = document.createElement("li");
+          li.textContent = "当前没有错题，建议提高难度继续练习。";
+          wrongListEl.appendChild(li);
+        } else {
+          wrongs.slice(-20).forEach((w) => {
+            const li = document.createElement("li");
+            li.textContent = `${w.chord}（${w.quality}），正确按法：${w.answer}`;
+            wrongListEl.appendChild(li);
+          });
+        }
+      }
+
+      function startTraining(resetStats = true) {
+        if (resetStats) {
+          askedCount = 0;
+          correct = 0;
+          wrongs = [];
+          qualityStats = {};
+          wrongMode = false;
+          recentChords = [];
+        }
+        setupEl.classList.add("hidden");
+        resultEl.classList.add("hidden");
+        quizEl.classList.remove("hidden");
+        renderQuestion();
+      }
+
+      startBtn.addEventListener("click", () => {
+        currentLevel = document.getElementById("difficulty").value;
+        startTraining(true);
+      });
+
+      submitBtn.addEventListener("click", submitAnswer);
+      nextBtn.addEventListener("click", renderQuestion);
+      finishBtn.addEventListener("click", showResult);
+
+      againBtn.addEventListener("click", () => {
+        wrongMode = false;
+        resultEl.classList.add("hidden");
+        quizEl.classList.remove("hidden");
+        renderQuestion();
+      });
+
+      retryWrongBtn.addEventListener("click", () => {
+        if (!wrongs.length) {
+          alert("当前没有错题，可直接继续训练。");
+          return;
+        }
+        wrongMode = true;
+        resultEl.classList.add("hidden");
+        quizEl.classList.remove("hidden");
+        renderQuestion();
+      });
+
+      restartBtn.addEventListener("click", () => {
+        resultEl.classList.add("hidden");
+        quizEl.classList.add("hidden");
+        setupEl.classList.remove("hidden");
+      });
+    </script>
+  </body>
+</html>

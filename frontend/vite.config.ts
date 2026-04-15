@@ -1,3 +1,6 @@
+/**
+ * Vite 构建配置：Vue 单页应用 + PWA（离线缓存、manifest、应用名来自环境变量）。
+ */
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'

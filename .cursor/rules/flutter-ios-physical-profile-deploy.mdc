@@ -1,0 +1,15 @@
+---
+description: 将 flutter_app 安装到实体 iPhone 时默认使用 Profile 模式，便于拔线后从桌面启动
+alwaysApply: true
+---
+
+# 真机部署默认 Profile
+
+当用户要求把 **`flutter_app` 安装或运行到实体 iPhone**（例如「刷到手机」「真机跑」「装到手机」「run 到手机」），除非用户**明确**要 **Debug** 或 **Release**，否则应：
+
+1. **交互运行并安装**：使用 **`flutter run --profile`**，并用 **`flutter devices`** 确认后通过 **`-d <设备 id>`** 指向当前已连接、非模拟器的 iOS 真机。
+2. **只要构建产物**：使用与当前 Flutter 版本一致的 **Profile 构建**（例如 **`flutter build ipa --profile`**）；若 CLI 不支持该子命令，则采用官方文档中等价的 Profile 产出方式，并在回复中说明。
+
+**避免**在真机场景下默认使用无 **`--profile`** 的 **`flutter run`**（即 Debug），以免出现「拔线后从桌面点开无法启动」的问题。
+
+若用户同时指定模拟器，模拟器仍可按项目既有规则（如 `flutter-ios-simulator-after-edit.mdc`）处理；**仅对实体 iPhone 部署**适用本条的 Profile 默认。

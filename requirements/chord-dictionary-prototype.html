@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>和弦字典 — 线框原型（低保真）</title>
+    <style>
+      :root {
+        --bd: #bbb;
+        --bg: #f4f4f5;
+        --ink: #111;
+        --muted: #555;
+        --card: #fff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--bg);
+        line-height: 1.45;
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+      }
+      .wrap {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 16px 14px 24px;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 4px;
+      }
+      .sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+      section {
+        border: 1px dashed var(--bd);
+        border-radius: 10px;
+        padding: 12px 12px 14px;
+        margin-bottom: 14px;
+        background: var(--card);
+      }
+      section > h2 {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      .field {
+        margin-bottom: 10px;
+      }
+      .field:last-of-type {
+        margin-bottom: 0;
+      }
+      .field-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+      }
+      select.field-select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 15px;
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+      }
+      .btn {
+        width: 100%;
+        margin-top: 12px;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-weight: 800;
+        border: 1px solid var(--ink);
+        background: var(--ink);
+        color: #fff;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        opacity: 0.92;
+      }
+      .voicing {
+        border: 1px solid var(--bd);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fafafa;
+      }
+      .voicing:last-child {
+        margin-bottom: 0;
+      }
+      .voicing .tags {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .voicing .diagram {
+        height: 120px;
+        border: 1px dashed #999;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: var(--muted);
+        background: #fff;
+        margin-bottom: 8px;
+      }
+      .voicing .txt {
+        font-size: 13px;
+        color: #333;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .banner {
+        font-size: 12px;
+        color: #7a5a00;
+        background: #fff8e1;
+        border: 1px solid #e6d08c;
+        padding: 8px 10px;
+        border-radius: 8px;
+        margin-bottom: 14px;
+      }
+      a.back {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .note {
+        margin: 12px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      /* 筛选时始终可见：与谱对照用的和弦名 */
+      .live-chord {
+        background: linear-gradient(180deg, #eef6ff 0%, #f8fbff 100%);
+        border: 1px solid #9ec5e8;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        text-align: center;
+      }
+      .live-chord .live-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .live-chord .live-sym {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        margin: 8px 0 6px;
+        line-height: 1.15;
+        word-break: break-all;
+      }
+      .live-chord .live-parts {
+        font-size: 13px;
+        color: #333;
+        line-height: 1.5;
+      }
+      .live-chord .live-key {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed #bcd;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .live-chord .live-key strong {
+        color: var(--ink);
+      }
+      .tab-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+        display: flex;
+        background: var(--card);
+        border-top: 1px solid var(--bd);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+      }
+      .tab-bar a {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 8px 6px 10px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        border-top: 3px solid transparent;
+        min-height: 52px;
+      }
+      .tab-bar a:hover {
+        color: var(--ink);
+        background: #fafafa;
+      }
+      .tab-bar a.tab-on {
+        color: var(--ink);
+        border-top-color: var(--ink);
+        font-weight: 800;
+      }
+      .tab-bar .tab-ico {
+        font-size: 20px;
+        line-height: 1;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p style="margin: 0 0 8px; font-size: 13px">
+        <a class="back" href="./README.md">← 需求 README</a>
+      </p>
+      <h1>和弦字典</h1>
+      <p class="sub">线框原型 · 仅布局与流程示意，无真实接口与乐理计算</p>
+
+      <div class="banner">
+        说明：顶部浅蓝区域会<strong>随下拉实时显示</strong>当前和弦字母名与组成，便于与谱对照；点「查看指法」展开占位结果；「目标调」仅更新文案示意（非真实变调）。
+      </div>
+
+      <section aria-labelledby="sec-pick">
+        <h2 id="sec-pick">选择和弦</h2>
+
+        <div class="live-chord" aria-live="polite" aria-atomic="true">
+          <div class="live-label">当前和弦（与谱子上的字母是否一致）</div>
+          <div class="live-sym" id="sym-live">—</div>
+          <div class="live-parts" id="sym-parts">请依次选择根音与性质</div>
+          <div class="live-key">
+            目标调：<strong id="key-live">C</strong> · 正式版将据此请求按法；若启用变调，字母名会随目标调更新。
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="sel-root">根音</label>
+          <select id="sel-root" class="field-select"></select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="sel-qual">和弦性质</label>
+          <select id="sel-qual" class="field-select"></select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="sel-bass">低音 / 转位（可选）</label>
+          <select id="sel-bass" class="field-select"></select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="sel-key">目标调（变调查看）</label>
+          <select id="sel-key" class="field-select"></select>
+        </div>
+
+        <p class="note">
+          原型说明：正式版换调后会用 <code>/chords/transpose</code> 更新符号，并以新 <code>key</code> 请求多套按法。
+        </p>
+      </section>
+
+      <section>
+        <h2>查询</h2>
+        <p class="hint" style="margin: 0 0 12px; font-size: 13px; color: var(--muted)">
+          和弦名称已在上方<strong>随筛选实时更新</strong>。请对照谱子确认无误后，再查看指法。
+        </p>
+        <button type="button" class="btn" id="btn-go">查看指法</button>
+      </section>
+
+      <section id="results" class="hidden" aria-labelledby="sec-res">
+        <h2 id="sec-res">多种按法（示意 · 共 3 条）</h2>
+        <p class="hint" style="margin: 0 0 12px; font-size: 12px; color: var(--muted)">
+          当前查看调：<strong id="key-label">C</strong> · 难度：中级（示意）
+        </p>
+        <div class="voicing">
+          <div class="tags">开放把位 · 推荐入门</div>
+          <div class="diagram">指法图占位</div>
+          <div class="txt">说明占位：空弦与低把位，适合弹唱衔接。</div>
+        </div>
+        <div class="voicing">
+          <div class="tags">第 3 品附近 · 横按</div>
+          <div class="diagram">指法图占位</div>
+          <div class="txt">说明占位：便于与邻近和弦在同一区域移动。</div>
+        </div>
+        <div class="voicing">
+          <div class="tags">高把位 · 省略低音弦</div>
+          <div class="diagram">指法图占位</div>
+          <div class="txt">说明占位：音色更紧，注意闷音弦标记与谱一致。</div>
+        </div>
+        <p class="note">正式版：每条可带「重新校准」；免责声明接现有文案。</p>
+      </section>
+    </div>
+
+    <script>
+      const roots = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
+      const quals = [
+        { id: "", label: "大三（无后缀）" },
+        { id: "m", label: "小三 (m)" },
+        { id: "7", label: "属七 (7)" },
+        { id: "maj7", label: "大七 (maj7)" },
+        { id: "m7", label: "小七 (m7)" },
+        { id: "sus2", label: "sus2" },
+        { id: "sus4", label: "sus4" },
+        { id: "add9", label: "add9" },
+        { id: "dim", label: "dim" },
+        { id: "aug", label: "aug" },
+      ]
+      const bassNotes = [
+        "",
+        "/C",
+        "/Db",
+        "/D",
+        "/Eb",
+        "/E",
+        "/F",
+        "/Gb",
+        "/G",
+        "/Ab",
+        "/A",
+        "/Bb",
+        "/B",
+      ]
+
+      function fillSelect(sel, options, getValue, getLabel, current) {
+        sel.innerHTML = ""
+        for (const o of options) {
+          const v = getValue(o)
+          const opt = document.createElement("option")
+          opt.value = v
+          opt.textContent = getLabel(o)
+          if (v === current) opt.selected = true
+          sel.appendChild(opt)
+        }
+      }
+
+      function symbol() {
+        const root = document.getElementById("sel-root").value
+        const qual = document.getElementById("sel-qual").value
+        const bass = document.getElementById("sel-bass").value
+        if (!root) return "—"
+        return root + qual + bass
+      }
+
+      function refreshPreview() {
+        const sym = symbol()
+        const root = document.getElementById("sel-root").value
+        const qualVal = document.getElementById("sel-qual").value
+        const ql = quals.find((q) => q.id === qualVal)
+        const qualLabel = ql ? ql.label.replace(/\s*\([^)]*\)\s*$/, "").trim() : "—"
+        const bass = document.getElementById("sel-bass").value
+        const bassLabel = bass === "" ? "无转位（非 slash）" : "slash 低音为 " + bass.slice(1)
+        const key = document.getElementById("sel-key").value
+
+        document.getElementById("sym-live").textContent = sym
+        document.getElementById("sym-parts").textContent =
+          root && sym !== "—"
+            ? "组成：根音 " + root + " · 性质 " + qualLabel + " · " + bassLabel
+            : "请依次选择根音与和弦性质"
+        document.getElementById("key-live").textContent = key
+        document.getElementById("key-label").textContent = key
+      }
+
+      function init() {
+        fillSelect(
+          document.getElementById("sel-root"),
+          roots,
+          (x) => x,
+          (x) => x,
+          "C",
+        )
+        fillSelect(
+          document.getElementById("sel-qual"),
+          quals,
+          (x) => x.id,
+          (x) => x.label,
+          "",
+        )
+        fillSelect(
+          document.getElementById("sel-bass"),
+          bassNotes,
+          (x) => x,
+          (x) => (x === "" ? "无转位" : "低音 " + x.slice(1)),
+          "",
+        )
+        fillSelect(
+          document.getElementById("sel-key"),
+          roots,
+          (x) => x,
+          (x) => x + " 调",
+          "C",
+        )
+
+        ;["sel-root", "sel-qual", "sel-bass", "sel-key"].forEach((id) => {
+          document.getElementById(id).addEventListener("change", refreshPreview)
+        })
+
+        document.getElementById("btn-go").addEventListener("click", () => {
+          document.getElementById("results").classList.remove("hidden")
+        })
+
+        refreshPreview()
+      }
+
+      init()
+    </script>
+
+    <nav class="tab-bar" aria-label="底部主导航">
+      <a href="./home-prototype.html">
+        <span class="tab-ico" aria-hidden="true">🎸</span>
+        <span>和弦进行</span>
+      </a>
+      <a class="tab-on" href="./chord-dictionary-prototype.html" aria-current="page">
+        <span class="tab-ico" aria-hidden="true">📖</span>
+        <span>和弦字典</span>
+      </a>
+    </nav>
+  </body>
+</html>

@@ -15,6 +15,9 @@
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
-    "vue": "^3.5.30"
+    "tone": "^14.9.17",
+    "tonejs-instrument-guitar-acoustic-mp3": "^1.1.2",
+    "vue": "^3.5.30",
+    "vue-router": "^4.6.4"
   }
 }

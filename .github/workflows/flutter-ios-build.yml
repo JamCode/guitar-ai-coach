@@ -1,0 +1,134 @@
+# 云端构建 Flutter iOS IPA（需在仓库 GitHub Secrets 中配置 Apple 签名材料，见文件末尾说明）。
+# 真机安装：下载 Artifact 中的 .ipa，用 Apple Configurator / 企业 MDM / 内部分发工具安装；或改用 TestFlight（需 App Store Connect API，本工作流未包含上传）。
+name: Flutter iOS IPA
+
+# 默认仅手动运行：未在仓库配置 Apple 签名 Secrets 前，自动 push 触发会导致失败。
+# 配好 Secrets 后，可自行在本文件增加 push / pull_request 触发器。
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: flutter-ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: flutter_app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install signing certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+          PROFILE_SPECIFIER: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+        run: |
+          set -euo pipefail
+          for var in BUILD_CERTIFICATE_BASE64 P12_PASSWORD BUILD_PROVISION_PROFILE_BASE64 KEYCHAIN_PASSWORD PROFILE_SPECIFIER; do
+            if [ -z "${!var:-}" ]; then
+              echo "::error::Missing required env for signing (check GitHub Secrets IOS_* in workflow comments)."
+              exit 1
+            fi
+          done
+          CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
+          PP_PATH="$RUNNER_TEMP/build_pp.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          python3 -c "import base64, os, pathlib; pathlib.Path('$CERTIFICATE_PATH').write_bytes(base64.b64decode(os.environ['BUILD_CERTIFICATE_BASE64']))"
+          python3 -c "import base64, os, pathlib; pathlib.Path('$PP_PATH').write_bytes(base64.b64decode(os.environ['BUILD_PROVISION_PROFILE_BASE64']))"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          security cms -D -i "$PP_PATH" > "$RUNNER_TEMP/profile.plist"
+          PP_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$RUNNER_TEMP/profile.plist")
+          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$PP_UUID.mobileprovision"
+
+      - name: Write ExportOptions.plist for manual signing
+        env:
+          PROFILE_SPECIFIER: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+        run: |
+          cat > ios/ExportOptions-ci.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>ad-hoc</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.wanghan.guitarhelper</key>
+              <string>${PROFILE_SPECIFIER}</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: CocoaPods
+        run: pod install
+        working-directory: flutter_app/ios
+
+      - name: Build iOS IPA
+        run: flutter build ipa --release --export-options-plist=ios/ExportOptions-ci.plist
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: guitar-helper-ios-ipa
+          path: flutter_app/build/ios/ipa/*.ipa
+          if-no-files-found: error
+
+      - name: Delete CI keychain
+        if: always()
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          if [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+
+# -----------------------------------------------------------------------------
+# 需在仓库 Settings → Secrets and variables → Actions 中新增：
+#
+# IOS_BUILD_CERTIFICATE_BASE64
+#   分发证书或开发证书的 .p12 经 base64 一整行（macOS: base64 -i cert.p12 | pbcopy）
+#
+# IOS_P12_PASSWORD
+#   导出 .p12 时设置的密码
+#
+# IOS_PROVISION_PROFILE_BASE64
+#   与上述证书匹配、且包含 Bundle ID com.wanghan.guitarhelper 的 .mobileprovision 文件 base64
+#
+# IOS_KEYCHAIN_PASSWORD
+#   任意强随机字符串（仅用于 CI 临时钥匙串）
+#
+# IOS_PROVISIONING_PROFILE_NAME
+#   Apple 开发者网站里该描述文件的「名称」字段（与 UUID 不同），须与 ad-hoc 描述文件一致
+#
+# 描述文件须为 Ad Hoc（本工作流 export method 为 ad-hoc），并在描述文件中勾选需安装 IPA 的各台设备 UDID。
+# 若改用 development 证书与 Development 描述文件，请将 ExportOptions-ci.plist 生成步骤中的 method 改为 development。
+# -----------------------------------------------------------------------------

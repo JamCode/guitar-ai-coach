@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>实时和弦建议 - UI Mock</title>
+  <style>
+    :root{
+      --bg:#F7F8FA;
+      --surface:#FFFFFF;
+      --surface-soft:#F3F4F7;
+      --text:#2A2633;
+      --muted:#71717A;
+      --line:#EBECEF;
+      --brand:#FF2442;
+      --brand-soft:#FFE9ED;
+      --success:#22A06B;
+      --warn:#E6A700;
+      --danger:#D63A49;
+      --radius:14px;
+    }
+    [data-theme="dark"]{
+      --bg:#111216;
+      --surface:#1A1B20;
+      --surface-soft:#14151A;
+      --text:#D8DCE6;
+      --muted:#9CA3AF;
+      --line:#2A2C34;
+      --brand:#FF4D67;
+      --brand-soft:#3A1E26;
+      --success:#5CD39A;
+      --warn:#F6C453;
+      --danger:#FF7A88;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      display:flex; justify-content:center; padding:20px;
+    }
+    .phone{
+      width:390px; max-width:100%; min-height:780px;
+      background:var(--bg); border:1px solid var(--line); border-radius:24px;
+      overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.08);
+    }
+    .appbar{
+      position:sticky; top:0; z-index:3;
+      height:56px; display:flex; align-items:center; justify-content:center;
+      border-bottom:1px solid var(--line); background:var(--bg); font-weight:700;
+    }
+    .appbar .left, .appbar .right{
+      position:absolute; top:0; height:56px; display:flex; align-items:center; color:var(--muted); font-size:14px;
+    }
+    .appbar .left{left:14px}
+    .appbar .right{right:14px; gap:8px}
+    .content{padding:16px 16px 96px}
+    .card{
+      background:var(--surface); border:1px solid var(--line);
+      border-radius:var(--radius); padding:16px; margin-bottom:12px;
+    }
+    .muted{color:var(--muted)}
+    .title{font-size:15px; font-weight:700; margin-bottom:8px}
+    .status{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px; font-size:12px;
+      background:var(--surface-soft); color:var(--muted); border:1px solid var(--line);
+    }
+    .dot{width:8px; height:8px; border-radius:50%}
+    .dot.ok{background:var(--success)}
+    .dot.warn{background:var(--warn)}
+    .dot.bad{background:var(--danger)}
+
+    .chord-main{
+      margin-top:12px; display:flex; align-items:baseline; gap:10px;
+    }
+    .chord-main .symbol{font-size:56px; font-weight:800; line-height:1}
+    .chord-main .meta{font-size:13px; color:var(--muted)}
+    .unknown{
+      color:var(--muted); font-weight:700; font-size:34px;
+    }
+
+    .meter{
+      margin-top:12px;
+      height:10px; background:var(--surface-soft); border:1px solid var(--line); border-radius:999px; overflow:hidden;
+    }
+    .meter > div{height:100%; width:68%; background:linear-gradient(90deg,var(--success),#8AE3B8)}
+
+    .candidates{display:grid; gap:8px; margin-top:10px}
+    .chip{
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--surface-soft); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+      cursor:pointer;
+    }
+    .chip.active{border-color:var(--brand); background:var(--brand-soft)}
+    .chip .left{font-weight:700}
+    .chip .score{font-size:12px; color:var(--muted)}
+
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    .pill{
+      padding:8px 12px; border:1px solid var(--line); border-radius:999px; background:var(--surface-soft);
+      font-size:12px; color:var(--muted); cursor:pointer;
+    }
+    .pill.on{color:var(--brand); border-color:var(--brand); background:var(--brand-soft); font-weight:600}
+
+    .hint{
+      margin-top:10px; font-size:12px; color:var(--muted);
+      background:var(--surface-soft); border:1px dashed var(--line); border-radius:10px; padding:10px;
+    }
+
+    .bottom{
+      position:fixed; bottom:20px; width:min(390px, calc(100% - 40px));
+      padding:0 16px;
+    }
+    .btn{
+      width:100%; border:none; border-radius:14px; padding:14px 16px; font-size:16px; font-weight:700; cursor:pointer;
+      background:var(--brand); color:#fff;
+    }
+    .btn.secondary{background:var(--surface); color:var(--text); border:1px solid var(--line); margin-top:8px}
+
+    .toast{
+      display:none; margin-top:10px; font-size:12px; color:var(--muted); text-align:center;
+    }
+
+    .sheet{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom:-420px; width:min(390px, calc(100% - 40px)); background:var(--surface);
+      border:1px solid var(--line); border-top-left-radius:16px; border-top-right-radius:16px;
+      padding:16px; transition:.25s ease; z-index:5;
+      box-shadow:0 -10px 24px rgba(0,0,0,.12);
+    }
+    .sheet.show{bottom:20px}
+    .sheet h4{margin:0 0 8px}
+    .sheet .actions{display:flex; gap:8px; margin-top:12px}
+    .sheet .actions button{
+      flex:1; border-radius:10px; padding:10px 12px; border:1px solid var(--line); background:var(--surface-soft); color:var(--text); cursor:pointer;
+    }
+    .sheet .actions button.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+  </style>
+</head>
+<body data-theme="light">
+  <div class="phone">
+    <div class="appbar">
+      <div class="left">返回</div>
+      实时和弦建议（Beta）
+      <div class="right">
+        <span id="themeBtn" class="pill">深色</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="card">
+        <div class="title">状态</div>
+        <div id="statusBadge" class="status">
+          <span class="dot warn"></span>
+          <span id="statusText">未开始监听</span>
+        </div>
+
+        <div id="mainGood" style="display:none">
+          <div class="chord-main">
+            <div id="mainChord" class="symbol">Am</div>
+            <div class="meta">
+              <div>稳定输出</div>
+              <div id="confidenceText">置信度 0.78</div>
+            </div>
+          </div>
+          <div class="meter"><div id="signalMeter"></div></div>
+        </div>
+
+        <div id="mainUnknown" style="display:block; margin-top:14px">
+          <div class="unknown">Unknown</div>
+          <div class="hint">开始后若环境嘈杂或音源过远，将先显示 Unknown，避免误判。</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title">候选和弦 Top-3</div>
+        <div class="candidates" id="candidateList">
+          <div class="chip active" data-chord="Am" data-score="0.78">
+            <div class="left">Am</div><div class="score">0.78</div>
+          </div>
+          <div class="chip" data-chord="C" data-score="0.14">
+            <div class="left">C</div><div class="score">0.14</div>
+          </div>
+          <div class="chip" data-chord="F" data-score="0.05">
+            <div class="left">F</div><div class="score">0.05</div>
+          </div>
+        </div>
+        <div class="hint">点击候选可查看和弦详情（后续可跳转和弦字典）。</div>
+      </div>
+
+      <div class="card">
+        <div class="title">实时策略（MVP）</div>
+        <div class="row">
+          <span class="pill on" id="unknownMode">低置信度显示 Unknown</span>
+          <span class="pill on">连续2帧确认切换</span>
+          <span class="pill">最短显示 700ms</span>
+        </div>
+        <div class="hint">这组策略用于减少“乱跳和弦”，更贴近你当前 App 的稳态体验。</div>
+      </div>
+
+      <div class="toast" id="toast">已切换到监听中</div>
+    </div>
+
+    <div class="bottom">
+      <button class="btn" id="toggleBtn">开始监听</button>
+      <button class="btn secondary" id="noiseBtn">模拟噪声场景</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="detailSheet">
+    <h4 id="sheetTitle">Am</h4>
+    <div class="muted" id="sheetDesc">置信度 0.78。建议优先尝试该和弦按法。</div>
+    <div class="actions">
+      <button id="closeSheet">关闭</button>
+      <button class="primary">查看和弦字典</button>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      listening: false,
+      noisy: false,
+      theme: "light",
+      chord: "Am",
+      confidence: 0.78
+    };
+
+    const toggleBtn = document.getElementById("toggleBtn");
+    const noiseBtn = document.getElementById("noiseBtn");
+    const statusBadge = document.getElementById("statusBadge");
+    const statusText = document.getElementById("statusText");
+    const mainGood = document.getElementById("mainGood");
+    const mainUnknown = document.getElementById("mainUnknown");
+    const mainChord = document.getElementById("mainChord");
+    const confidenceText = document.getElementById("confidenceText");
+    const signalMeter = document.getElementById("signalMeter");
+    const toast = document.getElementById("toast");
+    const sheet = document.getElementById("detailSheet");
+    const sheetTitle = document.getElementById("sheetTitle");
+    const sheetDesc = document.getElementById("sheetDesc");
+    const closeSheet = document.getElementById("closeSheet");
+    const themeBtn = document.getElementById("themeBtn");
+    const unknownMode = document.getElementById("unknownMode");
+
+    function render() {
+      toggleBtn.textContent = state.listening ? "停止监听" : "开始监听";
+
+      if (!state.listening) {
+        setStatus("warn", "未开始监听");
+        showUnknown();
+        return;
+      }
+
+      if (state.noisy) {
+        setStatus("bad", "环境噪声较高，建议靠近声源");
+        if (unknownMode.classList.contains("on")) {
+          showUnknown();
+        } else {
+          showChord("C", 0.39, 39);
+        }
+        return;
+      }
+
+      setStatus("ok", "监听中 · 信号良好");
+      showChord("Am", 0.78, 68);
+    }
+
+    function setStatus(type, text) {
+      statusBadge.innerHTML = `<span class="dot ${type}"></span><span>${text}</span>`;
+      statusText.textContent = text;
+    }
+
+    function showChord(chord, score, meter) {
+      state.chord = chord;
+      state.confidence = score;
+      mainGood.style.display = "block";
+      mainUnknown.style.display = "none";
+      mainChord.textContent = chord;
+      confidenceText.textContent = `置信度 ${score.toFixed(2)}`;
+      signalMeter.style.width = `${meter}%`;
+    }
+
+    function showUnknown() {
+      mainGood.style.display = "none";
+      mainUnknown.style.display = "block";
+    }
+
+    function flash(msg) {
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 1300);
+    }
+
+    toggleBtn.addEventListener("click", () => {
+      state.listening = !state.listening;
+      if (!state.listening) state.noisy = false;
+      render();
+      flash(state.listening ? "已切换到监听中" : "已停止监听");
+    });
+
+    noiseBtn.addEventListener("click", () => {
+      if (!state.listening) {
+        flash("请先开始监听");
+        return;
+      }
+      state.noisy = !state.noisy;
+      noiseBtn.textContent = state.noisy ? "恢复正常场景" : "模拟噪声场景";
+      render();
+      flash(state.noisy ? "已切换到噪声场景" : "已恢复正常场景");
+    });
+
+    themeBtn.addEventListener("click", () => {
+      const body = document.body;
+      state.theme = state.theme === "light" ? "dark" : "light";
+      body.setAttribute("data-theme", state.theme);
+      themeBtn.textContent = state.theme === "light" ? "深色" : "浅色";
+    });
+
+    unknownMode.addEventListener("click", () => {
+      unknownMode.classList.toggle("on");
+      render();
+      flash(unknownMode.classList.contains("on")
+        ? "低置信度将显示 Unknown"
+        : "低置信度也显示候选和弦");
+    });
+
+    document.querySelectorAll(".chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        const chord = chip.dataset.chord;
+        const score = Number(chip.dataset.score || "0");
+        sheetTitle.textContent = chord;
+        sheetDesc.textContent = `置信度 ${score.toFixed(2)}。可进入和弦字典查看按法与指型。`;
+        sheet.classList.add("show");
+      });
+    });
+
+    closeSheet.addEventListener("click", () => sheet.classList.remove("show"));
+
+    render();
+  </script>
+</body>
+</html>

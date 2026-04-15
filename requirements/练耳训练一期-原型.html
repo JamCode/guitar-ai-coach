@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>练耳训练一期（A/B/C）— 线框原型</title>
+    <style>
+      :root {
+        --bg: #f5f5f7;
+        --card: #fff;
+        --ink: #111;
+        --muted: #666;
+        --bd: #d9d9de;
+        --ok: #1f7a3f;
+        --bad: #b42318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        line-height: 1.45;
+      }
+      .wrap {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 16px 14px 24px;
+      }
+      .head h1 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .head p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .card {
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px dashed var(--bd);
+        border-radius: 12px;
+        background: var(--card);
+      }
+      .title {
+        margin: 0 0 10px;
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .mode-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .mode {
+        border: 1px solid var(--bd);
+        border-radius: 10px;
+        background: #fff;
+        padding: 10px;
+        text-align: left;
+        cursor: pointer;
+      }
+      .mode.on {
+        border: 2px solid #111;
+      }
+      .mode strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .mode small {
+        color: var(--muted);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .row > * {
+        flex: 1;
+      }
+      .btn {
+        width: 100%;
+        border: 1px solid #111;
+        border-radius: 10px;
+        padding: 11px 12px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        background: #111;
+        color: #fff;
+      }
+      .btn.secondary {
+        background: #fff;
+        color: #111;
+      }
+      .btn.ghost {
+        background: #f8f8f8;
+        color: #111;
+        border-color: var(--bd);
+      }
+      .progress {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .question {
+        margin-bottom: 10px;
+        font-size: 15px;
+      }
+      .audio-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .audio-tip {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .options {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .opt {
+        border: 1px solid var(--bd);
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+        cursor: pointer;
+      }
+      .opt.on {
+        border: 2px solid #111;
+      }
+      .feedback {
+        margin-top: 10px;
+        border-radius: 10px;
+        padding: 9px 10px;
+        font-size: 13px;
+      }
+      .ok {
+        color: var(--ok);
+        background: #effaf3;
+        border: 1px solid #bbe3c8;
+      }
+      .bad {
+        color: var(--bad);
+        background: #fef1f1;
+        border: 1px solid #efc6c6;
+      }
+      .hidden {
+        display: none !important;
+      }
+      ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+      }
+      .link-row {
+        margin-top: 12px;
+        font-size: 13px;
+      }
+      .link-row a {
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <h1>练耳训练一期（A/B/C）</h1>
+        <p>线框原型：先走纯题库与规则，不接入大模型。</p>
+      </header>
+
+      <section id="setup" class="card">
+        <h2 class="title">模式选择</h2>
+        <div class="mode-grid">
+          <button class="mode on" data-mode="A" type="button">
+            <strong>A 单和弦听辨</strong>
+            <small>大三 / 小三 / 属七，4 选 1</small>
+          </button>
+          <button class="mode" data-mode="B" type="button">
+            <strong>B 常见进行听辨</strong>
+            <small>2~4 和弦进行，听后选进行</small>
+          </button>
+          <button class="mode" data-mode="C" type="button">
+            <strong>C 每日 10 题</strong>
+            <small>6 错题 + 2 薄弱项 + 2 保温题</small>
+          </button>
+        </div>
+        <button id="startBtn" class="btn" style="margin-top: 10px">开始训练</button>
+      </section>
+
+      <section id="quiz" class="card hidden">
+        <h2 class="title">答题</h2>
+        <div id="progress" class="progress"></div>
+        <div id="question" class="question"></div>
+        <div class="audio-bar">
+          <button class="btn ghost" id="playBtn" type="button">播放音频</button>
+          <button class="btn ghost" id="slowBtn" type="button">0.8x 重听</button>
+        </div>
+        <div class="audio-tip" id="audioTip">原型占位：此处后续接入题目音频 URL。</div>
+        <div id="options" class="options"></div>
+        <div id="feedback" class="feedback hidden"></div>
+        <div class="row" style="margin-top: 10px">
+          <button id="submitBtn" class="btn" type="button">提交答案</button>
+          <button id="nextBtn" class="btn secondary hidden" type="button">下一题</button>
+        </div>
+        <button id="finishBtn" class="btn secondary" type="button" style="margin-top: 8px">结束并查看结果</button>
+      </section>
+
+      <section id="result" class="card hidden">
+        <h2 class="title">结果与复习建议</h2>
+        <p id="scoreLine" style="margin: 0 0 8px"></p>
+        <p id="adviceLine" style="margin: 0 0 10px; color: var(--muted); font-size: 13px"></p>
+        <strong style="font-size: 14px">错题本（示例）</strong>
+        <ul id="wrongList"></ul>
+        <div class="row" style="margin-top: 10px">
+          <button id="continueBtn" class="btn" type="button">继续训练</button>
+          <button id="retryBtn" class="btn secondary" type="button">只练错题</button>
+        </div>
+        <button id="restartBtn" class="btn ghost" type="button" style="margin-top: 8px">返回模式选择</button>
+      </section>
+
+      <div class="link-row">
+        <a href="./README.md">返回需求目录</a> ·
+        <a href="./chord-quiz-prototype.html">参考旧题库原型</a>
+      </div>
+    </main>
+
+    <script>
+      const BANK = {
+        A: [
+          { q: "听音后判断和弦性质：A?", options: ["大三", "小三", "属七", "maj7"], answer: "小三", explain: "A 小三听感更暗，三度下移。" },
+          { q: "听音后判断和弦性质：D?", options: ["大三", "小三", "属七", "sus4"], answer: "属七", explain: "属七有明显张力与未解决感。" },
+          { q: "听音后判断和弦性质：C?", options: ["大三", "小三", "属七", "m7"], answer: "大三", explain: "大三度更明亮稳定。" }
+        ],
+        B: [
+          { q: "听 4 和弦进行，选择最符合的一项", options: ["I-V-vi-IV", "ii-V-I", "I-IV-V", "vi-IV-I-V"], answer: "I-V-vi-IV", explain: "副歌常见进行，终止感较弱。" },
+          { q: "听 3 和弦进行，选择最符合的一项", options: ["I-vi-IV-V", "ii-V-I", "I-IV-V", "vi-IV-I-V"], answer: "I-IV-V", explain: "功能推进直观，属传统流行骨架。" },
+          { q: "听 2 和弦往返，选择最符合的一项", options: ["I-V", "vi-IV", "ii-V", "I-vi"], answer: "ii-V", explain: "ii 到 V 带明显导向主和弦倾向。" }
+        ],
+        C: [
+          { q: "今日第 1 题：复习错题（属七）", options: ["大三", "小三", "属七", "maj7"], answer: "属七", explain: "优先从近期高错误率开始。" },
+          { q: "今日第 2 题：薄弱维度（进行听辨）", options: ["I-V-vi-IV", "ii-V-I", "I-IV-V", "I-vi-IV-V"], answer: "ii-V-I", explain: "你近期对功能回归判断偏弱。" },
+          { q: "今日第 3 题：保温题", options: ["大三", "小三", "属七", "sus4"], answer: "大三", explain: "保温题用于防止已掌握内容遗忘。" }
+        ]
+      };
+
+      const setupEl = document.getElementById("setup");
+      const quizEl = document.getElementById("quiz");
+      const resultEl = document.getElementById("result");
+      const modes = [...document.querySelectorAll(".mode")];
+
+      const progressEl = document.getElementById("progress");
+      const questionEl = document.getElementById("question");
+      const optionsEl = document.getElementById("options");
+      const feedbackEl = document.getElementById("feedback");
+      const audioTipEl = document.getElementById("audioTip");
+
+      const scoreLineEl = document.getElementById("scoreLine");
+      const adviceLineEl = document.getElementById("adviceLine");
+      const wrongListEl = document.getElementById("wrongList");
+
+      const startBtn = document.getElementById("startBtn");
+      const submitBtn = document.getElementById("submitBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const finishBtn = document.getElementById("finishBtn");
+      const continueBtn = document.getElementById("continueBtn");
+      const retryBtn = document.getElementById("retryBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const playBtn = document.getElementById("playBtn");
+      const slowBtn = document.getElementById("slowBtn");
+
+      let mode = "A";
+      let index = 0;
+      let correct = 0;
+      let selected = null;
+      let wrongs = [];
+      let wrongOnly = false;
+      let queue = [];
+
+      function resetSession() {
+        index = 0;
+        correct = 0;
+        selected = null;
+        wrongs = [];
+        wrongOnly = false;
+        queue = [...BANK[mode]];
+      }
+
+      function renderQuestion() {
+        const item = queue[index];
+        if (!item) {
+          showResult();
+          return;
+        }
+        selected = null;
+        feedbackEl.className = "feedback hidden";
+        feedbackEl.textContent = "";
+        submitBtn.classList.remove("hidden");
+        nextBtn.classList.add("hidden");
+        progressEl.textContent = mode === "C" ? `今日进度 ${Math.min(index + 1, 10)}/10（原型示例）` : `第 ${index + 1} 题 / 共 ${queue.length} 题`;
+        questionEl.textContent = item.q;
+        audioTipEl.textContent = mode === "B" ? "原型占位：后续支持按和弦切片分段重听。" : "原型占位：此处后续接入题目音频 URL。";
+        optionsEl.innerHTML = "";
+        item.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "opt";
+          btn.textContent = opt;
+          btn.addEventListener("click", () => {
+            [...optionsEl.querySelectorAll(".opt")].forEach((x) => x.classList.remove("on"));
+            btn.classList.add("on");
+            selected = opt;
+          });
+          optionsEl.appendChild(btn);
+        });
+      }
+
+      function submit() {
+        if (!selected) {
+          alert("请先选择一个答案。");
+          return;
+        }
+        const item = queue[index];
+        if (selected === item.answer) {
+          correct += 1;
+          feedbackEl.className = "feedback ok";
+          feedbackEl.textContent = `回答正确：${item.explain}`;
+        } else {
+          wrongs.push({ q: item.q, answer: item.answer });
+          feedbackEl.className = "feedback bad";
+          feedbackEl.textContent = `回答错误：正确答案是「${item.answer}」。${item.explain}`;
+        }
+        submitBtn.classList.add("hidden");
+        nextBtn.classList.remove("hidden");
+      }
+
+      function next() {
+        index += 1;
+        renderQuestion();
+      }
+
+      function showResult() {
+        quizEl.classList.add("hidden");
+        resultEl.classList.remove("hidden");
+        const total = queue.length || 1;
+        const percent = Math.round((correct / total) * 100);
+        scoreLineEl.textContent = `本次 ${mode} 模式：答对 ${correct}/${total}（正确率 ${percent}%）`;
+        adviceLineEl.textContent =
+          mode === "A"
+            ? "建议：明天优先复习「属七 vs 大三」对比听辨。"
+            : mode === "B"
+              ? "建议：先做 2 和弦进行，再升级到 4 和弦。"
+              : "建议：明天继续 10 题，先做错题后做保温题。";
+        wrongListEl.innerHTML = "";
+        if (!wrongs.length) {
+          const li = document.createElement("li");
+          li.textContent = "暂无错题，建议切换模式继续练习。";
+          wrongListEl.appendChild(li);
+        } else {
+          wrongs.forEach((w) => {
+            const li = document.createElement("li");
+            li.textContent = `${w.q}（正确：${w.answer}）`;
+            wrongListEl.appendChild(li);
+          });
+        }
+      }
+
+      function enterQuiz() {
+        setupEl.classList.add("hidden");
+        resultEl.classList.add("hidden");
+        quizEl.classList.remove("hidden");
+        renderQuestion();
+      }
+
+      modes.forEach((m) => {
+        m.addEventListener("click", () => {
+          modes.forEach((x) => x.classList.remove("on"));
+          m.classList.add("on");
+          mode = m.dataset.mode;
+        });
+      });
+
+      startBtn.addEventListener("click", () => {
+        resetSession();
+        enterQuiz();
+      });
+      submitBtn.addEventListener("click", submit);
+      nextBtn.addEventListener("click", next);
+      finishBtn.addEventListener("click", showResult);
+
+      continueBtn.addEventListener("click", () => {
+        resetSession();
+        enterQuiz();
+      });
+
+      retryBtn.addEventListener("click", () => {
+        if (!wrongs.length) {
+          alert("当前没有错题。");
+          return;
+        }
+        wrongOnly = true;
+        queue = wrongs.map((w) => ({
+          q: w.q,
+          options: ["大三", "小三", "属七", "I-V-vi-IV", "ii-V-I"].slice(0, 4),
+          answer: w.answer,
+          explain: "错题再练：建议先重听后作答。"
+        }));
+        index = 0;
+        correct = 0;
+        resultEl.classList.add("hidden");
+        quizEl.classList.remove("hidden");
+        renderQuestion();
+      });
+
+      restartBtn.addEventListener("click", () => {
+        resultEl.classList.add("hidden");
+        quizEl.classList.add("hidden");
+        setupEl.classList.remove("hidden");
+      });
+
+      playBtn.addEventListener("click", () => {
+        alert("原型占位：播放题目音频。");
+      });
+      slowBtn.addEventListener("click", () => {
+        alert("原型占位：0.8x 重听。");
+      });
+    </script>
+  </body>
+</html>
