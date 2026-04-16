@@ -7,8 +7,10 @@
 #   - Apple Developer：本机 Xcode 已登录账号，且工程能自动签名；或设置 DEVELOPMENT_TEAM
 #
 # 用法：
-#   export DEVELOPMENT_TEAM=你的10位TeamID   # 若 Xcode 工程未写死 Team，则必填
+#   export DEVELOPMENT_TEAM=你的10位TeamID   # 工程未写死 Team 时必填（也可用 install-device.local.env）
 #   ./install-device.sh
+#
+# 本地配置（推荐）：swift_ios_host/install-device.local.env（已 gitignore），示例见 install-device.local.env.example
 #   ./install-device.sh --device E0846AB6-0894-5A3F-AA3F-3885DB11B978
 #   ./install-device.sh --device "iPhone"   # devicectl 支持设备名称
 #   DEVICE="iPhone" ./install-device.sh
@@ -25,6 +27,15 @@ REPO_ROOT="$(cd "${HOST_DIR}/.." && pwd)"
 PROJECT="${HOST_DIR}/SwiftEarHost.xcodeproj"
 SCHEME="SwiftEarHost"
 BUNDLE_ID="com.jamcode.swift-ear-host"
+
+LOCAL_ENV="${HOST_DIR}/install-device.local.env"
+if [[ -f "${LOCAL_ENV}" ]]; then
+  echo "==> 读取本地配置: ${LOCAL_ENV}"
+  set -a
+  # shellcheck disable=SC1090
+  source "${LOCAL_ENV}"
+  set +a
+fi
 
 CONFIGURATION="Debug"
 DO_PULL=0
@@ -121,8 +132,17 @@ fi
 echo "==> 使用设备: ${DEVICE_REF}"
 
 if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
-  echo "警告: 未设置 DEVELOPMENT_TEAM。若 xcodebuild 报签名错误，请执行:" >&2
-  echo "  export DEVELOPMENT_TEAM=XXXXXXXXXX   # Xcode → Settings → Accounts → Team Id" >&2
+  echo "" >&2
+  echo "错误: SwiftEarHost 工程未在仓库里写死 Development Team，命令行真机构建必须提供 Team ID。" >&2
+  echo "" >&2
+  echo "任选一种方式：" >&2
+  echo "  1) 本次终端：  export DEVELOPMENT_TEAM=你的10位TeamID  && ./install-device.sh" >&2
+  echo "  2) 本地文件：  cp install-device.local.env.example install-device.local.env" >&2
+  echo "                编辑填入 DEVELOPMENT_TEAM 后再执行 ./install-device.sh" >&2
+  echo "" >&2
+  echo "Team ID：Xcode → Settings → Accounts → 选中 Apple ID → 团队一行括号里的 10 位字符；" >&2
+  echo "或在 https://developer.apple.com/account 登录后查看 Membership 详情。" >&2
+  exit 1
 fi
 
 DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostDeviceBuild-${USER}}"

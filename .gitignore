@@ -3,3 +3,4 @@
 deploy/ecs/backend.env
 backend/logs/
 swift_app/.build/
+swift_ios_host/install-device.local.env
