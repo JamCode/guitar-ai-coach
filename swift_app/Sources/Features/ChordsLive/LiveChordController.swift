@@ -125,6 +125,12 @@ public final class LiveChordController: ObservableObject {
         )
     }
 
+    public func clear() {
+        engine.reset()
+        stateMachine.reset()
+        state = .initial()
+    }
+
     public func setMode(_ mode: LiveChordMode) async {
         if state.mode == mode { return }
         state = state.copyWith(mode: mode)

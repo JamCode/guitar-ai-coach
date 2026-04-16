@@ -17,13 +17,9 @@ public struct LiveChordUiState: Equatable {
             mode: .stable,
             status: "未开始监听",
             stableChord: "Unknown",
-            topK: [
-                LiveChordCandidate(label: "Am", score: 0),
-                LiveChordCandidate(label: "F", score: 0),
-                LiveChordCandidate(label: "G", score: 0)
-            ],
+            topK: [],
             confidence: 0,
-            timeline: ["C", "G", "Am", "F"],
+            timeline: [],
             error: nil
         )
     }
