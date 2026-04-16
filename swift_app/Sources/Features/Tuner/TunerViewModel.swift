@@ -1,6 +1,9 @@
 import Foundation
 import Core
 import AVFoundation
+#if os(iOS)
+import AVFAudio
+#endif
 
 @MainActor
 public final class TunerViewModel: ObservableObject {
@@ -42,10 +45,10 @@ public final class TunerViewModel: ObservableObject {
         }
     }
 
-    public func start() {
+    public func start() async {
         do {
             #if os(iOS)
-            try ensureMicrophonePermission()
+            try await ensureMicrophonePermission()
             #endif
             try audio.start()
             try detector.start { [weak self] result in
@@ -91,19 +94,19 @@ public final class TunerViewModel: ObservableObject {
     }
 
     #if os(iOS)
-    private func ensureMicrophonePermission() throws {
-        let session = AVAudioSession.sharedInstance()
-        if session.recordPermission == .granted { return }
-        if session.recordPermission == .denied {
+    /// 使用异步 API，避免在 `MainActor` 上 `semaphore.wait()` 与系统在主线程派发权限回调时互相死锁导致闪退。
+    private func ensureMicrophonePermission() async throws {
+        switch AVAudioApplication.shared.recordPermission {
+        case .granted:
+            return
+        case .denied:
             throw NSError(domain: "Tuner", code: 1001, userInfo: [NSLocalizedDescriptionKey: "需要麦克风权限"])
+        case .undetermined:
+            break
+        @unknown default:
+            break
         }
-        let semaphore = DispatchSemaphore(value: 0)
-        var granted = false
-        session.requestRecordPermission { ok in
-            granted = ok
-            semaphore.signal()
-        }
-        semaphore.wait()
+        let granted = await AVAudioApplication.requestRecordPermission()
         if !granted {
             throw NSError(domain: "Tuner", code: 1002, userInfo: [NSLocalizedDescriptionKey: "需要麦克风权限"])
         }

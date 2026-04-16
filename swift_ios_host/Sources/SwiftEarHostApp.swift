@@ -15,10 +15,13 @@ struct SwiftEarHostApp: App {
         let nav = UINavigationBarAppearance()
         nav.configureWithOpaqueBackground()
         nav.backgroundColor = UIColor(SwiftAppTheme.bg)
-        nav.titleTextAttributes = [.foregroundColor: UIColor(SwiftAppTheme.text)]
-        nav.largeTitleTextAttributes = [.foregroundColor: UIColor(SwiftAppTheme.text)]
+        // 使用系统标签色，避免 SwiftUI 动态 Color 桥接为 UIColor 时在导航栏上下文中解析异常导致标题「看不见」。
+        nav.titleTextAttributes = [.foregroundColor: UIColor.label]
+        nav.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
+        UINavigationBar.appearance().compactAppearance = nav
+        UINavigationBar.appearance().compactScrollEdgeAppearance = nav
 
         let tab = UITabBarAppearance()
         tab.configureWithOpaqueBackground()
@@ -51,9 +54,23 @@ struct SwiftEarHostApp: App {
 private struct RootTabView: View {
     @State private var selectedTab: Int = 0
     @State private var practiceTabMounted: Bool = false
+    
+    /// 自定义 Tab 选择绑定：切到「练习」时在同一事务内先完成挂载，
+    /// 避免先显示占位页再切到真实页面造成导航标题闪动。
+    private var tabSelection: Binding<Int> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                if newValue == 2 {
+                    practiceTabMounted = true
+                }
+                selectedTab = newValue
+            }
+        )
+    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             NavigationStack {
                 ToolsTabView()
             }
@@ -92,11 +109,6 @@ private struct RootTabView: View {
                 Label("我的", systemImage: "person")
             }
             .tag(3)
-        }
-        .onChange(of: selectedTab) { _, newValue in
-            if newValue == 2 {
-                practiceTabMounted = true
-            }
         }
     }
 }
@@ -160,5 +172,6 @@ private struct PlaceholderView: View {
         }
         .padding(24)
         .navigationTitle(title)
+        .appNavigationBarChrome()
     }
 }

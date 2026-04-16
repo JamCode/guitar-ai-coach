@@ -6,11 +6,11 @@ import XCTest
 
 final class ToolsIntegrationTests: XCTestCase {
     @MainActor
-    func testTunerStartStopFlow() {
+    func testTunerStartStopFlow() async {
         let detector = TestPitchDetector()
         let viewModel = TunerViewModel(audio: TestAudioEngine(), detector: detector)
         XCTAssertFalse(viewModel.isListening)
-        viewModel.start()
+        await viewModel.start()
         XCTAssertTrue(viewModel.isListening)
         detector.push(.pitch(frequencyHz: 110, peakCorrelation: 0.8, rms: 0.1))
         let exp = expectation(description: "pitch update")
@@ -18,7 +18,7 @@ final class ToolsIntegrationTests: XCTestCase {
             XCTAssertEqual(viewModel.noteName, "A")
             exp.fulfill()
         }
-        wait(for: [exp], timeout: 1.0)
+        await fulfillment(of: [exp], timeout: 1.0)
         viewModel.stop()
         XCTAssertFalse(viewModel.isListening)
     }

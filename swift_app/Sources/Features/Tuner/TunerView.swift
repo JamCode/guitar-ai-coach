@@ -54,7 +54,11 @@ public struct TunerView: View {
                 .appCard()
 
                 Button(viewModel.isListening ? "停止监听" : "开始监听") {
-                    viewModel.isListening ? viewModel.stop() : viewModel.start()
+                    if viewModel.isListening {
+                        viewModel.stop()
+                    } else {
+                        Task { await viewModel.start() }
+                    }
                 }
                 .appPrimaryButton()
             }

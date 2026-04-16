@@ -44,11 +44,23 @@ public enum SwiftAppTheme {
 }
 
 public extension View {
+    /// 与主题背景对齐的导航栏底，避免仅依赖 `UINavigationBar.appearance()` 时在新系统上标题栏空白/不绘标题的问题。
+    func appNavigationBarChrome() -> some View {
+        #if os(iOS)
+        self
+            .toolbarBackground(SwiftAppTheme.bg, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+        #else
+        self
+        #endif
+    }
+
     func appPageBackground() -> some View {
         self
             .scrollContentBackground(.hidden)
             .background(SwiftAppTheme.bg.ignoresSafeArea())
             .tint(SwiftAppTheme.brand)
+            .appNavigationBarChrome()
     }
 
     func appCard() -> some View {

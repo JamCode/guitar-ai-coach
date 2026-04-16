@@ -78,6 +78,7 @@ public struct ToolsHomeView: View {
                 }
             }
             .navigationTitle("工具")
+            .appNavigationBarChrome()
         }
     }
 

@@ -23,6 +23,7 @@ struct PracticeHomeView: View {
             }
         }
         .navigationTitle("练习")
+        .appNavigationBarChrome()
         .task { await vm.refresh() }
     }
 
