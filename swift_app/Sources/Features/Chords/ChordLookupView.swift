@@ -93,7 +93,7 @@ public struct ChordLookupView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("和弦字典")
+        .navigationTitle("和弦速查")
         .appPageBackground()
         .sheet(item: Binding(
             get: { resultPayload.map(ResultSheetModel.init(payload:)) },

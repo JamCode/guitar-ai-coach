@@ -13,7 +13,7 @@
       </RouterLink>
       <RouterLink class="tab" active-class="tab--active" to="/dictionary">
         <span class="tab-ico" aria-hidden="true">📖</span>
-        <span>和弦字典</span>
+        <span>和弦速查</span>
       </RouterLink>
       <RouterLink class="tab" active-class="tab--active" to="/quiz">
         <span class="tab-ico" aria-hidden="true">🎵</span>

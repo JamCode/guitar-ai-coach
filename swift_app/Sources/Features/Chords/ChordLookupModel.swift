@@ -153,7 +153,7 @@ public enum OfflineChordBuilder {
         return ChordExplainMultiPayload(
             chordSummary: summary,
             voicings: voicings,
-            disclaimer: "本地和弦字典：指法为常见吉他型，因人而异；不构成音以乐理推算为准。"
+            disclaimer: "本地和弦速查：指法为常见吉他型，因人而异；不构成音以乐理推算为准。"
         )
     }
 

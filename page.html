@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>扒歌交互原型 · 低保真</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;display:flex;flex-direction:column;align-items:center;padding:24px 12px 60px;gap:40px}
+h1{font-size:18px;color:#a0a8c0;font-weight:500;letter-spacing:.5px}
+.note{max-width:680px;font-size:13px;color:#7a82a0;line-height:1.7;text-align:center}
+
+.row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start}
+
+.screen{width:300px;flex-shrink:0}
+.screen-title{font-size:12px;color:#6b7394;margin-bottom:8px;text-align:center;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.state-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:8px;margin-left:6px;vertical-align:middle}
+.tag-idle{background:#334;color:#8899bb}
+.tag-listen{background:#1a3a2a;color:#5ae080}
+.tag-pause{background:#3a3520;color:#e0c050}
+.tag-error{background:#3a1a1a;color:#f06060}
+
+.phone{width:300px;border:2px solid #2a2e44;border-radius:20px;overflow:hidden;background:#0d0f18}
+
+.p-header{padding:10px 12px 8px;border-bottom:1px solid #1e2236}
+.p-header-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#6b7394;margin-bottom:6px}
+.mode-pill{font-size:10px;padding:2px 10px;border-radius:10px;border:1px solid #2e3454;color:#8090c0}
+
+.chord-track{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;min-height:36px;align-items:center}
+.chord-track::-webkit-scrollbar{display:none}
+.cc{min-width:40px;height:32px;border-radius:8px;border:1.5px dashed #2e3454;display:flex;align-items:center;justify-content:center;font-size:13px;color:#8090c0;flex-shrink:0}
+.cc.filled{border-style:solid;border-color:#3a4268;background:#1a1e30;color:#c0c8e8}
+.cc.active{border-color:#5a7afe;background:#1e2650;color:#fff;font-weight:700;box-shadow:0 0 0 2px rgba(90,122,254,.25)}
+.cc.empty-placeholder{border:none;color:#3a4060;font-size:11px;min-width:100px}
+
+.p-stage{height:260px;margin:6px 10px;border-radius:12px;background:#080a12;border:1px solid #1a1e30;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+
+.amp-bars{display:flex;gap:3px;align-items:center;height:80px;margin-bottom:12px}
+.amp-bar{width:4px;border-radius:2px;background:#2a3050}
+.amp-bar.live{background:linear-gradient(0deg,#3a5afe 0%,#7c9aff 100%);animation:pulse .6s ease-in-out infinite alternate}
+@keyframes pulse{0%{opacity:.5}100%{opacity:1}}
+
+.big-chord{font-size:52px;font-weight:800;letter-spacing:1px}
+.big-chord.dim{color:#2a3050}
+.big-chord.lit{color:#f0f2ff}
+
+.candidates{display:flex;gap:6px;margin-top:8px}
+.cand{font-size:11px;padding:3px 10px;border-radius:12px;background:#161a28;color:#7a86b0;border:1px solid #242a40}
+.cand.top{background:#1e2650;color:#a0b4ff;border-color:#3a4a80}
+
+.conf-row{font-size:10px;color:#4a5274;margin-top:6px}
+.conf-bar{width:80px;height:3px;border-radius:2px;background:#1a1e30;display:inline-block;vertical-align:middle;margin-left:4px;overflow:hidden}
+.conf-fill{height:100%;border-radius:2px;background:#5a7afe}
+
+.stage-msg{font-size:14px;color:#4a5474;text-align:center;line-height:1.6}
+.stage-msg b{color:#7a8abe;font-weight:600}
+.stage-msg .icon{font-size:36px;display:block;margin-bottom:8px;opacity:.4}
+
+.err-msg{color:#e06060;font-size:13px;text-align:center;line-height:1.6}
+.err-msg .icon{font-size:28px;display:block;margin-bottom:6px}
+.link{color:#5a7afe;font-size:12px;text-decoration:underline;cursor:default}
+
+.p-controls{padding:10px 14px 14px;border-top:1px solid #1a1e30;background:#0b0d16}
+.ctrl-row{display:flex;justify-content:center;align-items:center;gap:14px}
+
+.btn-main{width:52px;height:52px;border-radius:50%;border:none;font-size:18px;display:grid;place-items:center;cursor:default}
+.btn-start{background:#e8ecff;color:#111}
+.btn-pause{background:#e0c850;color:#1a1800}
+.btn-resume{background:#5ae080;color:#0a2010}
+
+.btn-sm{width:32px;height:32px;border-radius:50%;border:1px solid #2a3050;background:#111522;color:#7a86b0;font-size:12px;display:grid;place-items:center}
+.btn-text{font-size:11px;color:#5a6488;border:1px solid #2a3050;border-radius:8px;padding:4px 10px;background:transparent}
+.btn-text.active{color:#7a9afe;border-color:#3a4a80}
+
+.ctrl-sub{display:flex;justify-content:center;gap:8px;margin-top:8px}
+
+.anno{position:absolute;font-size:9px;color:#5a7afe;background:#0d1028;padding:1px 6px;border-radius:4px;border:1px solid #2a3a70;pointer-events:none}
+
+.flow-arrow{color:#3a4060;font-size:28px;align-self:center;flex-shrink:0}
+
+.section{max-width:960px;width:100%}
+.section-title{font-size:14px;color:#8090c0;font-weight:600;margin-bottom:16px;padding-left:4px;border-left:3px solid #3a4a80;padding-left:10px}
+</style>
+</head>
+<body>
+
+<h1>扒歌页面 · 交互原型（低保真）</h1>
+<p class="note">
+  本页展示 5 个关键状态的线框图。布局为三段式：顶部和弦轨道 / 中部主舞台 / 底部控制栏。<br>
+  交互范式为「现场监听」而非「文件播放器」——诚实表达实时识别能力。
+</p>
+
+<!-- ====== 主流程 ====== -->
+<div class="section">
+  <div class="section-title">主流程：Idle → Listening → Paused</div>
+</div>
+
+<div class="row">
+
+  <!-- Screen 1: Idle -->
+  <div class="screen">
+    <div class="screen-title">① 空态 Idle <span class="state-tag tag-idle">idle</span></div>
+    <div class="phone">
+      <div class="p-header">
+        <div class="p-header-row">
+          <span>扒歌 · 实时识别</span>
+          <span class="mode-pill">稳定模式</span>
+        </div>
+        <div class="chord-track">
+          <div class="cc empty-placeholder">识别到的和弦会出现在这里</div>
+        </div>
+      </div>
+      <div class="p-stage">
+        <div class="stage-msg">
+          <span class="icon">🎸</span>
+          <b>播放音乐或弹奏吉他</b><br>点击下方按钮开始识别和弦
+        </div>
+      </div>
+      <div class="p-controls">
+        <div class="ctrl-row">
+          <button class="btn-main btn-start">▶</button>
+        </div>
+        <div class="ctrl-sub">
+          <span class="btn-text active">稳定</span>
+          <span class="btn-text">快速</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">→</div>
+
+  <!-- Screen 2: Listening - Empty -->
+  <div class="screen">
+    <div class="screen-title">② 监听中（等待识别） <span class="state-tag tag-listen">listening</span></div>
+    <div class="phone">
+      <div class="p-header">
+        <div class="p-header-row">
+          <span>扒歌 · 实时识别</span>
+          <span class="mode-pill" style="border-color:#2a5a3a;color:#5ae080">● 监听中</span>
+        </div>
+        <div class="chord-track">
+          <div class="cc empty-placeholder" style="color:#2a5a3a">正在聆听...</div>
+        </div>
+      </div>
+      <div class="p-stage">
+        <div class="amp-bars">
+          <div class="amp-bar live" style="height:18px"></div>
+          <div class="amp-bar live" style="height:30px;animation-delay:.1s"></div>
+          <div class="amp-bar live" style="height:45px;animation-delay:.2s"></div>
+          <div class="amp-bar live" style="height:60px;animation-delay:.05s"></div>
+          <div class="amp-bar live" style="height:70px;animation-delay:.15s"></div>
+          <div class="amp-bar live" style="height:55px;animation-delay:.25s"></div>
+          <div class="amp-bar live" style="height:40px;animation-delay:.3s"></div>
+          <div class="amp-bar live" style="height:25px;animation-delay:.12s"></div>
+          <div class="amp-bar live" style="height:50px;animation-delay:.08s"></div>
+          <div class="amp-bar live" style="height:35px;animation-delay:.2s"></div>
+          <div class="amp-bar live" style="height:22px;animation-delay:.18s"></div>
+        </div>
+        <div class="big-chord dim">---</div>
+        <div class="conf-row">正在分析音频...</div>
+      </div>
+      <div class="p-controls">
+        <div class="ctrl-row">
+          <button class="btn-main btn-pause">⏸</button>
+        </div>
+        <div class="ctrl-sub">
+          <span class="btn-text active">稳定</span>
+          <span class="btn-text">快速</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">→</div>
+
+  <!-- Screen 3: Listening - Active -->
+  <div class="screen">
+    <div class="screen-title">③ 识别中（和弦出现） <span class="state-tag tag-listen">listening</span></div>
+    <div class="phone">
+      <div class="p-header">
+        <div class="p-header-row">
+          <span>扒歌 · 实时识别</span>
+          <span class="mode-pill" style="border-color:#2a5a3a;color:#5ae080">● 监听中</span>
+        </div>
+        <div class="chord-track">
+          <div class="cc filled">Am</div>
+          <div class="cc filled">F</div>
+          <div class="cc filled">C</div>
+          <div class="cc active">G</div>
+        </div>
+      </div>
+      <div class="p-stage">
+        <div class="amp-bars">
+          <div class="amp-bar live" style="height:24px"></div>
+          <div class="amp-bar live" style="height:40px;animation-delay:.1s"></div>
+          <div class="amp-bar live" style="height:55px;animation-delay:.2s"></div>
+          <div class="amp-bar live" style="height:75px;animation-delay:.05s"></div>
+          <div class="amp-bar live" style="height:65px;animation-delay:.15s"></div>
+          <div class="amp-bar live" style="height:80px;animation-delay:.25s"></div>
+          <div class="amp-bar live" style="height:50px;animation-delay:.3s"></div>
+          <div class="amp-bar live" style="height:35px;animation-delay:.12s"></div>
+          <div class="amp-bar live" style="height:60px;animation-delay:.08s"></div>
+          <div class="amp-bar live" style="height:45px;animation-delay:.2s"></div>
+          <div class="amp-bar live" style="height:28px;animation-delay:.18s"></div>
+        </div>
+        <div class="big-chord lit">G</div>
+        <div class="candidates">
+          <span class="cand top">G 0.87</span>
+          <span class="cand">Em 0.42</span>
+          <span class="cand">C 0.28</span>
+        </div>
+        <div class="conf-row">置信度 <span class="conf-bar"><span class="conf-fill" style="width:87%"></span></span> 87%</div>
+      </div>
+      <div class="p-controls">
+        <div class="ctrl-row">
+          <span class="btn-sm">⟲</span>
+          <button class="btn-main btn-pause">⏸</button>
+          <span class="btn-sm" style="visibility:hidden">_</span>
+        </div>
+        <div class="ctrl-sub">
+          <span class="btn-text active">稳定</span>
+          <span class="btn-text">快速</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 分支状态 ====== -->
+<div class="section" style="margin-top:12px">
+  <div class="section-title">分支状态：Paused / 权限错误</div>
+</div>
+
+<div class="row">
+
+  <!-- Screen 4: Paused -->
+  <div class="screen">
+    <div class="screen-title">④ 已暂停 <span class="state-tag tag-pause">paused</span></div>
+    <div class="phone">
+      <div class="p-header">
+        <div class="p-header-row">
+          <span>扒歌 · 实时识别</span>
+          <span class="mode-pill">已暂停</span>
+        </div>
+        <div class="chord-track">
+          <div class="cc filled">Am</div>
+          <div class="cc filled">F</div>
+          <div class="cc filled">C</div>
+          <div class="cc filled">G</div>
+          <div class="cc filled">Am</div>
+          <div class="cc filled">E</div>
+        </div>
+      </div>
+      <div class="p-stage">
+        <div class="amp-bars">
+          <div class="amp-bar" style="height:24px"></div>
+          <div class="amp-bar" style="height:40px"></div>
+          <div class="amp-bar" style="height:55px"></div>
+          <div class="amp-bar" style="height:75px"></div>
+          <div class="amp-bar" style="height:65px"></div>
+          <div class="amp-bar" style="height:80px"></div>
+          <div class="amp-bar" style="height:50px"></div>
+          <div class="amp-bar" style="height:35px"></div>
+          <div class="amp-bar" style="height:60px"></div>
+          <div class="amp-bar" style="height:45px"></div>
+          <div class="amp-bar" style="height:28px"></div>
+        </div>
+        <div class="big-chord" style="color:#8090c0">E</div>
+        <div style="font-size:12px;color:#6b7394;margin-top:6px">已暂停 · 识别到 6 个和弦</div>
+        <div style="margin-top:12px;font-size:11px;color:#4a5474;background:#111528;padding:4px 12px;border-radius:8px;border:1px solid #1e2440">
+          Am → F → C → G → Am → E
+        </div>
+      </div>
+      <div class="p-controls">
+        <div class="ctrl-row">
+          <span class="btn-sm" title="清除">✕</span>
+          <button class="btn-main btn-resume">▶</button>
+          <span class="btn-sm" title="复制">⎘</span>
+        </div>
+        <div class="ctrl-sub">
+          <span class="btn-text active">稳定</span>
+          <span class="btn-text">快速</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 5: Permission Error -->
+  <div class="screen">
+    <div class="screen-title">⑤ 权限错误 <span class="state-tag tag-error">error</span></div>
+    <div class="phone">
+      <div class="p-header">
+        <div class="p-header-row">
+          <span>扒歌 · 实时识别</span>
+          <span class="mode-pill" style="border-color:#5a2020;color:#e06060">权限异常</span>
+        </div>
+        <div class="chord-track">
+          <div class="cc empty-placeholder" style="color:#5a2020">--</div>
+        </div>
+      </div>
+      <div class="p-stage">
+        <div class="err-msg">
+          <span class="icon" style="opacity:1">🎤</span>
+          需要麦克风权限才能识别和弦<br><br>
+          <span class="link">前往系统设置开启 →</span>
+        </div>
+      </div>
+      <div class="p-controls">
+        <div class="ctrl-row">
+          <button class="btn-main btn-start">↻</button>
+        </div>
+        <div class="ctrl-sub" style="color:#5a3030;font-size:11px">点击重试或前往设置</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 交互说明 ====== -->
+<div class="section" style="margin-top:12px;max-width:680px">
+  <div class="section-title">交互要点说明</div>
+  <div style="font-size:12px;color:#7a82a0;line-height:2">
+    <b style="color:#a0b0d0">1. 中部主舞台 — 振幅条替代波形</b><br>
+    &nbsp;&nbsp;实时麦克风输入没有"时间轴"可拖拽。用动态振幅条代替假波形，诚实传达"正在听"。<br><br>
+    <b style="color:#a0b0d0">2. 顶部和弦轨道 — 自动追踪到最新</b><br>
+    &nbsp;&nbsp;每识别到新和弦就追加一个 chip 并自动滚到最右；当前和弦蓝框高亮。<br><br>
+    <b style="color:#a0b0d0">3. 底部控制栏 — 三种按钮状态</b><br>
+    &nbsp;&nbsp;Idle: 白色 ▶ 开始 · Listening: 黄色 ⏸ 暂停 · Paused: 绿色 ▶ 继续<br>
+    &nbsp;&nbsp;暂停后出现「✕ 清除」和「⎘ 复制」两个辅助按钮。<br><br>
+    <b style="color:#a0b0d0">4. 暂停态展示完整进行</b><br>
+    &nbsp;&nbsp;暂停时中部显示识别摘要（和弦数 + 文字进行），方便抄谱或截图。<br><br>
+    <b style="color:#a0b0d0">5. 模式切换保持轻量</b><br>
+    &nbsp;&nbsp;「稳定 / 快速」作为底部胶囊按钮，监听中也可切换（引擎热切换已支持）。
+  </div>
+</div>
+
+</body>
+</html>

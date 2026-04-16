@@ -278,7 +278,7 @@ function stopAllEarPlayback() {
   stopChordPlayback()
 }
 
-/** 与和弦字典一致：无题目调号时用全站「目标调」；B 题用题目 music_key。 */
+/** 与和弦速查一致：无题目调号时用全站「目标调」；B 题用题目 music_key。 */
 function voicingKeyForQuestion(q: EarQuestion): string {
   const mk = q.music_key?.trim()
   if (mk) return normalizeEarKey(mk)

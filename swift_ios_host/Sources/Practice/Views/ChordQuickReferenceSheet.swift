@@ -4,7 +4,7 @@ import Chords
 
 /// 用和弦符号弹出底部指法层（离线构成音 + 指法图）。
 ///
-/// 解析失败时提示用户改去和弦字典；不抛异常（对齐 Flutter 行为）。
+/// 解析失败时提示用户改去和弦速查；不抛异常（对齐 Flutter 行为）。
 struct ChordQuickReferenceSheetHost: ViewModifier {
     @Binding var chordSymbolToPresent: String?
     @State private var payload: ChordExplainMultiPayload?
@@ -20,7 +20,7 @@ struct ChordQuickReferenceSheetHost: ViewModifier {
                     errorText = nil
                 } else {
                     payload = nil
-                    errorText = "暂无法解析「\(sym)」的离线指法，请到「工具」打开和弦字典。"
+                    errorText = "暂无法解析「\(sym)」的离线指法，请到「工具」打开和弦速查。"
                 }
             }
             .alert("提示", isPresented: Binding(get: { errorText != nil }, set: { if !$0 { errorText = nil } })) {

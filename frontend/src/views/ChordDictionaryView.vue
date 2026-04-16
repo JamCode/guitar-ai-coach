@@ -1,11 +1,11 @@
 <!--
-  和弦字典：下拉拼和弦符号 → 变调预览 → 多套指法（/chords/explain-multi）。
+  和弦速查：下拉拼和弦符号 → 变调预览 → 多套指法（/chords/explain-multi）。
   调号、难度与 session 共用。
 -->
 <template>
   <div class="dict-wrap">
     <div class="dict-card">
-      <h1 class="dict-title">和弦字典</h1>
+      <h1 class="dict-title">和弦速查</h1>
       <p class="dict-sub">用下拉选择和弦；调号与「和弦进行」页同步。</p>
       <RouterLink class="dict-quiz-link" to="/quiz">去训练题库，强化按法记忆 →</RouterLink>
 

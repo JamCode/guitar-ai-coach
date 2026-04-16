@@ -44,7 +44,7 @@ public struct ToolsHomeView: View {
                 } label: {
                     toolsRow(
                         title: "吉他指板",
-                        subtitle: "竖向指板 · 音高标注 · 拨弦试听 · 变调夹",
+                        subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
                         systemImage: "square.grid.3x3"
                     )
                 }
@@ -52,7 +52,7 @@ public struct ToolsHomeView: View {
                     ChordLookupView()
                 } label: {
                     toolsRow(
-                        title: "和弦字典",
+                        title: "和弦速查",
                         subtitle: "离线可查构成音与常见把位",
                         systemImage: "pianokeys"
                     )
@@ -61,7 +61,7 @@ public struct ToolsHomeView: View {
                     ChordChartView()
                 } label: {
                     toolsRow(
-                        title: "和弦表",
+                        title: "常用和弦",
                         subtitle: "按和弦类型分类 · 本地指法图速查",
                         systemImage: "tablecells"
                     )
@@ -78,7 +78,11 @@ public struct ToolsHomeView: View {
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.headline)
-                Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
         }
         .padding(.vertical, 4)

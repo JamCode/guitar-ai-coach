@@ -76,7 +76,7 @@ public struct ChordChartView: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("和弦表")
+        .navigationTitle("常用和弦")
         .appPageBackground()
         .sheet(item: $selectedEntry) { entry in
             ScrollView {
