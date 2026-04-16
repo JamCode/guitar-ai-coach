@@ -64,7 +64,7 @@
 		806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrummingPattern.swift; sourceTree = "<group>"; };
 		8E249F8FED69E85EB6CEE605 /* SheetModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetModels.swift; sourceTree = "<group>"; };
 		95326B0E05757D83577B0F63 /* ChordQuickReferenceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordQuickReferenceSheet.swift; sourceTree = "<group>"; };
-		95FB8986AD18C574ADA77797 /* SwiftEarHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SwiftEarHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		95FB8986AD18C574ADA77797 /* SwiftEarHost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftEarHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		99248B2B89EEEF58AC61A45E /* PracticeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeModels.swift; sourceTree = "<group>"; };
 		9CE304DA9DC51C761E12AF3F /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
 		C7BAB7DF709977E2E26FF769 /* swift_app */ = {isa = PBXFileReference; lastKnownFileType = folder; name = swift_app; path = ../swift_app; sourceTree = SOURCE_ROOT; };
@@ -288,8 +288,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 43D286647678C3CDA6C5E5F6 /* Build configuration list for PBXProject "SwiftEarHost" */;
 			developmentRegion = en;
@@ -402,6 +400,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 7R8RS88G2M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
 				INFOPLIST_KEY_CFBundleName = "AI吉他";
@@ -563,6 +562,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 7R8RS88G2M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
 				INFOPLIST_KEY_CFBundleName = "AI吉他";

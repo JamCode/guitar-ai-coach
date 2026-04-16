@@ -60,10 +60,15 @@ private struct RootTabView: View {
         Binding(
             get: { selectedTab },
             set: { newValue in
-                if newValue == 2 {
-                    practiceTabMounted = true
+                // Tab 切换使用无动画事务，减少视觉干扰与注意力跳转。
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    if newValue == 2 {
+                        practiceTabMounted = true
+                    }
+                    selectedTab = newValue
                 }
-                selectedTab = newValue
             }
         )
     }
@@ -108,6 +113,9 @@ private struct RootTabView: View {
                 Label("我的", systemImage: "person")
             }
             .tag(3)
+        }
+        .transaction { transaction in
+            transaction.animation = nil
         }
     }
 }

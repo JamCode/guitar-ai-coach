@@ -12,7 +12,7 @@ public struct ChordChartView: View {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("关于本表").appSectionTitle()
-                    Text("按乐理难度分段：初级开放三和弦为主，中级横按与七和弦，高级色彩与 slash。")
+                    Text("按和弦类型分组：基础三和弦、七和弦、挂留、加音、延伸与变化和弦。")
                         .foregroundStyle(SwiftAppTheme.muted)
                 }
                 .appCard()

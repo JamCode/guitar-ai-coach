@@ -55,6 +55,8 @@ public final class TunerViewModel: ObservableObject {
     public func selectStringForTuning(_ index: Int) async {
         setSelectedString(index)
         guard !isListening else { return }
+        // 先把选中态绘制出来，再启动较重的音频链路，避免首点体感卡顿。
+        await Task.yield()
         await start()
     }
 

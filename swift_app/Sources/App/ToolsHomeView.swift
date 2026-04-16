@@ -62,7 +62,7 @@ public struct ToolsHomeView: View {
                 } label: {
                     toolsRow(
                         title: "和弦表",
-                        subtitle: "初/中/高分段 · 本地指法图速查",
+                        subtitle: "按和弦类型分类 · 本地指法图速查",
                         systemImage: "tablecells"
                     )
                 }
