@@ -10,6 +10,7 @@
 #   ./upload-testflight.sh
 #   ./upload-testflight.sh --pull
 #   ./upload-testflight.sh --archive-only
+#   ./upload-testflight.sh --no-bump-build
 #   ASC_KEY_ID=XXXXX ASC_ISSUER_ID=XXXXX ASC_KEY_PATH=/abs/path/AuthKey_XXXXX.p8 ./upload-testflight.sh
 #
 # 本地配置（推荐）：swift_ios_host/upload-testflight.local.env（已 gitignore）
@@ -40,17 +41,19 @@ fi
 
 DO_PULL=0
 ARCHIVE_ONLY=0
+AUTO_BUMP_BUILD=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pull) DO_PULL=1; shift ;;
     --archive-only) ARCHIVE_ONLY=1; shift ;;
+    --no-bump-build) AUTO_BUMP_BUILD=0; shift ;;
     -h|--help)
       sed -n '1,35p' "$0"
       exit 0
       ;;
     *)
-      echo "未知参数: $1（支持 --pull --archive-only）" >&2
+      echo "未知参数: $1（支持 --pull --archive-only --no-bump-build）" >&2
       exit 1
       ;;
   esac
@@ -107,11 +110,25 @@ mkdir -p "$HOME/.private_keys"
 cp "${ASC_KEY_PATH}" "$HOME/.private_keys/AuthKey_${ASC_KEY_ID}.p8"
 chmod 600 "$HOME/.private_keys/AuthKey_${ASC_KEY_ID}.p8"
 
-echo "==> 读取版本信息（提醒：上传前请确认 Build 号已递增）"
+echo "==> 读取版本信息"
 MARKETING_VERSION="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '/MARKETING_VERSION =/{print $3; exit}')"
 BUILD_NUMBER="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '/CURRENT_PROJECT_VERSION =/{print $3; exit}')"
 echo "    MARKETING_VERSION=${MARKETING_VERSION:-unknown}"
 echo "    CURRENT_PROJECT_VERSION=${BUILD_NUMBER:-unknown}"
+
+ARCHIVE_BUILD_NUMBER="${BUILD_NUMBER:-}"
+if [[ -n "${BUILD_NUMBER_OVERRIDE:-}" ]]; then
+  ARCHIVE_BUILD_NUMBER="${BUILD_NUMBER_OVERRIDE}"
+elif [[ "${AUTO_BUMP_BUILD}" -eq 1 ]]; then
+  # 采用时间戳作为本次归档 Build，确保每次上传均唯一（不改动仓库文件）。
+  ARCHIVE_BUILD_NUMBER="$(date +%y%m%d%H%M)"
+fi
+
+if [[ -z "${ARCHIVE_BUILD_NUMBER}" ]]; then
+  echo "错误: 无法确定 Build 号，请设置 BUILD_NUMBER_OVERRIDE 或在 Xcode 中填写 Build。" >&2
+  exit 1
+fi
+echo "    ARCHIVE_BUILD_NUMBER=${ARCHIVE_BUILD_NUMBER}"
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
 WORKDIR="${WORK_DIR:-/tmp/SwiftEarHostTestFlight-${USER}/${STAMP}}"
@@ -150,6 +167,7 @@ xcodebuild \
   -allowProvisioningUpdates \
   CODE_SIGN_STYLE=Automatic \
   DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM}" \
+  CURRENT_PROJECT_VERSION="${ARCHIVE_BUILD_NUMBER}" \
   archive
 
 echo "==> Export IPA"
