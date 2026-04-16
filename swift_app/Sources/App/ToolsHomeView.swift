@@ -3,7 +3,6 @@ import Tuner
 import Fretboard
 import Chords
 import ChordsLive
-import Theory
 import ChordChart
 import Ear
 
@@ -56,15 +55,6 @@ public struct ToolsHomeView: View {
                         title: "和弦字典",
                         subtitle: "离线可查构成音与常见把位",
                         systemImage: "pianokeys"
-                    )
-                }
-                NavigationLink {
-                    TheoryView()
-                } label: {
-                    toolsRow(
-                        title: "初级乐理",
-                        subtitle: "音程、调式等入门提要",
-                        systemImage: "book"
                     )
                 }
                 NavigationLink {

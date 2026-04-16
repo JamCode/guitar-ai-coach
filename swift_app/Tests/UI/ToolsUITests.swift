@@ -3,7 +3,6 @@ import XCTest
 @testable import Fretboard
 @testable import Chords
 @testable import ChordsLive
-@testable import Theory
 @testable import ChordChart
 @testable import Profile
 @testable import Ear
@@ -14,7 +13,6 @@ final class ToolsUITests: XCTestCase {
         _ = FretboardView()
         _ = ChordLookupView()
         _ = LiveChordView()
-        _ = TheoryView()
         _ = ChordChartView()
         _ = ProfileHomeView()
         _ = HelpFeedbackView()

@@ -15,7 +15,6 @@ let package = Package(
         .library(name: "Fretboard", targets: ["Fretboard"]),
         .library(name: "Chords", targets: ["Chords"]),
         .library(name: "ChordsLive", targets: ["ChordsLive"]),
-        .library(name: "Theory", targets: ["Theory"]),
         .library(name: "ChordChart", targets: ["ChordChart"]),
         .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Ear", targets: ["Ear"])
@@ -29,7 +28,6 @@ let package = Package(
                 "Fretboard",
                 "Chords",
                 "ChordsLive",
-                "Theory",
                 "ChordChart",
                 "Ear"
             ],
@@ -60,11 +58,6 @@ let package = Package(
             path: "Sources/Features/ChordsLive"
         ),
         .target(
-            name: "Theory",
-            dependencies: ["Core"],
-            path: "Sources/Features/Theory"
-        ),
-        .target(
             name: "ChordChart",
             dependencies: ["Core"],
             path: "Sources/Features/ChordChart"
@@ -84,17 +77,17 @@ let package = Package(
         ),
         .testTarget(
             name: "GuitarAICoachUnitTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Profile", "Ear"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear"],
             path: "Tests/Unit"
         ),
         .testTarget(
             name: "GuitarAICoachIntegrationTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Profile", "Ear"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear"],
             path: "Tests/Integration"
         ),
         .testTarget(
             name: "GuitarAICoachUITests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "Theory", "ChordChart", "Profile", "Ear"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear"],
             path: "Tests/UI"
         )
     ]
