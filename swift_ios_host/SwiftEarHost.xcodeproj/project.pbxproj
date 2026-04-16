@@ -20,7 +20,6 @@
 		7A1A7A19018CB5C4774DE4D5 /* RhythmStrummingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C849930EEBA4B913F9D21D21 /* RhythmStrummingView.swift */; };
 		7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */; };
 		7FA26181FC5B3B11E730D464 /* SheetOcrParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD74D9857A33196AB3E3E6AE /* SheetOcrParser.swift */; };
-		85F401EA077A7B0339A02A78 /* Theory in Frameworks */ = {isa = PBXBuildFile; productRef = C9114C609DD92E8E533D0FF7 /* Theory */; };
 		93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E249F8FED69E85EB6CEE605 /* SheetModels.swift */; };
 		9FA03874E2C97FF63F5923C3 /* PracticeSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4498E65917DC2E2FA2DB69 /* PracticeSessionStore.swift */; };
 		A1E418DAEBB1B8A41FB2E81B /* PracticeLocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D163D2D4AC366005CC23C1EF /* PracticeLocalStore.swift */; };
@@ -88,7 +87,6 @@
 				6C61AD5387584DE05CBAEEFC /* Fretboard in Frameworks */,
 				F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */,
 				AC95FA8C2C108EB623BE6679 /* ChordsLive in Frameworks */,
-				85F401EA077A7B0339A02A78 /* Theory in Frameworks */,
 				1C78E5853E20B93F79B3421E /* ChordChart in Frameworks */,
 				EE8F0E2991EB41875CAF9588 /* Profile in Frameworks */,
 				BC053B1E5E74AF884B735DB8 /* Ear in Frameworks */,
@@ -274,7 +272,6 @@
 				680D96401F590C260C21FB94 /* Fretboard */,
 				231960F99C0DA8778FB6E8A8 /* Chords */,
 				B1D1A8040EE477067D835C6D /* ChordsLive */,
-				C9114C609DD92E8E533D0FF7 /* Theory */,
 				BC4B202C5F0E941A20A787C7 /* ChordChart */,
 				21929BB5D4BC54C7C1690129 /* Profile */,
 				EEDC03120E5A07496D4BF215 /* Ear */,
@@ -645,10 +642,6 @@
 		BC4B202C5F0E941A20A787C7 /* ChordChart */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ChordChart;
-		};
-		C9114C609DD92E8E533D0FF7 /* Theory */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Theory;
 		};
 		D68C530C664DD0805DDA1187 /* Tuner */ = {
 			isa = XCSwiftPackageProductDependency;

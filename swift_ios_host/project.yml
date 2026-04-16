@@ -35,8 +35,6 @@ targets:
       - package: GuitarAICoach
         product: ChordsLive
       - package: GuitarAICoach
-        product: Theory
-      - package: GuitarAICoach
         product: ChordChart
       - package: GuitarAICoach
         product: Profile

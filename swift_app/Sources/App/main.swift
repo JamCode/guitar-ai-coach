@@ -4,12 +4,11 @@ import Tuner
 import Fretboard
 import Chords
 import ChordsLive
-import Theory
 import ChordChart
 import Ear
 
 let env = AppEnvironment()
-let tools = ["练耳", "实时和弦建议（Beta）", "调音器", "吉他指板", "和弦字典", "初级乐理", "和弦表"]
+let tools = ["练耳", "实时和弦建议（Beta）", "调音器", "吉他指板", "和弦字典", "和弦表"]
 
 print("GuitarAICoachApp bootstrap OK (\(env.apiBaseURL))")
 print("Tools migrated: \(tools.joined(separator: " / "))")
@@ -19,7 +18,6 @@ _ = LiveChordView()
 _ = TunerView()
 _ = FretboardView()
 _ = ChordLookupView()
-_ = TheoryView()
 _ = ChordChartView()
 let audioSnapshot = AudioRegressionRunner.runQuickCheck()
 print(

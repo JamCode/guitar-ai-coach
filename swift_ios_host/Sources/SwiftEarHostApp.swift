@@ -4,7 +4,6 @@ import Tuner
 import Fretboard
 import Chords
 import ChordsLive
-import Theory
 import ChordChart
 import Profile
 import Core
@@ -122,7 +121,6 @@ private struct ToolsTabView: View {
                     navCard(title: "调音器", subtitle: "麦克风拾音与标准空弦目标", icon: "waveform") { TunerView() }
                     navCard(title: "吉他指板", subtitle: "竖向指板 · 音高标注 · 拨弦试听 · 变调夹", icon: "square.grid.3x3") { FretboardView() }
                     navCard(title: "和弦字典", subtitle: "离线可查构成音与常见把位", icon: "pianokeys") { ChordLookupView() }
-                    navCard(title: "初级乐理", subtitle: "音程、调式等入门提要", icon: "book") { TheoryView() }
                     navCard(title: "和弦表", subtitle: "初/中/高分段 · 本地指法图速查", icon: "tablecells") { ChordChartView() }
                 }
             }

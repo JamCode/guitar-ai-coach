@@ -29,7 +29,6 @@ This directory holds the Swift Package used by the native iOS app (`swift_ios_ho
 - `settings` -> `Sources/Features/Settings`
 - `sheets` -> `Sources/Features/Sheets`
 - `shell` -> `Sources/Features/Shell`
-- `theory` -> `Sources/Features/Theory`
 - `tools` -> `Sources/Features/Tools`
 - `tuner` -> `Sources/Features/Tuner`
 
