@@ -35,6 +35,7 @@ public struct ChordLookupView: View {
                     Text("C 调记谱：\(builtSymbol.isEmpty ? "—" : builtSymbol) · 查看调：\(selectedKey)")
                         .foregroundStyle(SwiftAppTheme.muted)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -42,16 +43,25 @@ public struct ChordLookupView: View {
                     Picker("根音", selection: $root) {
                         ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
                     }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     Picker("和弦性质", selection: $quality) {
                         ForEach(ChordSelectCatalog.qualOptions) { Text($0.label).tag($0.id) }
                     }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     Picker("低音 / 转位", selection: $bass) {
                         ForEach(ChordSelectCatalog.bassOptions) { Text($0.label).tag($0.id) }
                     }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     Picker("目标调（变调预览）", selection: $selectedKey) {
                         ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
                     }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -70,10 +80,13 @@ public struct ChordLookupView: View {
                             resultPayload = nil
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .appPrimaryButton()
                     if let errorText { Text(errorText).foregroundStyle(.red) }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle("和弦字典")
