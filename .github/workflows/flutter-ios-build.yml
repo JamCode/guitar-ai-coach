@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ false }}
     runs-on: macos-14
     timeout-minutes: 45
     defaults:

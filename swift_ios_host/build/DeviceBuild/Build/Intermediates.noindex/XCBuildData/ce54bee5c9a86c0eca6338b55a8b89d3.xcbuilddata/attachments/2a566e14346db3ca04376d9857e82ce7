@@ -1,0 +1,4 @@
+module ChordsLive {
+header "ChordsLive-Swift.h"
+export *
+}

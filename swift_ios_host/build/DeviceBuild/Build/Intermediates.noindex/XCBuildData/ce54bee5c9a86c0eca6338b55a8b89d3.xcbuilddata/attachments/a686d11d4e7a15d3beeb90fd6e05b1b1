@@ -1,0 +1,4 @@
+module Theory {
+header "Theory-Swift.h"
+export *
+}

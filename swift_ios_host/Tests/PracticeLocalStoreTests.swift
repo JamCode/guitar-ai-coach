@@ -1,0 +1,110 @@
+import XCTest
+@testable import SwiftEarHost
+
+final class PracticeLocalStoreTests: XCTestCase {
+    func testDecodeSessions_invalidJson_returnsEmpty() {
+        let sessions = decodeSessions("{not json")
+        XCTAssertEqual(sessions, [])
+    }
+
+    func testDecodeSessions_skipsBrokenItems_keepsValidOnes() {
+        let good: [String: Any] = [
+            "id": "1",
+            "taskId": "scale-walk",
+            "taskName": "音阶爬格子",
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-01T00:01:00Z",
+            "durationSeconds": 60,
+            "completed": true,
+            "difficulty": 3
+        ]
+        let bad: [String: Any] = [
+            "id": "2",
+            "taskId": "scale-walk"
+            // missing required fields
+        ]
+        let rawData = try! JSONSerialization.data(withJSONObject: [bad, good], options: [])
+        let raw = String(data: rawData, encoding: .utf8)!
+
+        let sessions = decodeSessions(raw)
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions.first?.id, "1")
+    }
+
+    func testComputeSummary_todayCounts_completedOnly() async throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let now = ISO8601DateFormatter().date(from: "2026-01-02T12:00:00Z")!
+        let todayEnd = now
+        let yesterdayEnd = calendar.date(byAdding: .day, value: -1, to: now)!
+
+        let sessions: [PracticeSession] = [
+            PracticeSession(
+                id: "a",
+                taskId: "scale-walk",
+                taskName: "音阶爬格子",
+                startedAt: todayEnd.addingTimeInterval(-120),
+                endedAt: todayEnd,
+                durationSeconds: 120,
+                completed: true,
+                difficulty: 3,
+                note: nil,
+                progressionId: nil,
+                musicKey: nil,
+                complexity: nil,
+                rhythmPatternId: nil
+            ),
+            PracticeSession(
+                id: "b",
+                taskId: "scale-walk",
+                taskName: "音阶爬格子",
+                startedAt: todayEnd.addingTimeInterval(-60),
+                endedAt: todayEnd,
+                durationSeconds: 60,
+                completed: false,
+                difficulty: 3,
+                note: nil,
+                progressionId: nil,
+                musicKey: nil,
+                complexity: nil,
+                rhythmPatternId: nil
+            ),
+            PracticeSession(
+                id: "c",
+                taskId: "scale-walk",
+                taskName: "音阶爬格子",
+                startedAt: yesterdayEnd.addingTimeInterval(-60),
+                endedAt: yesterdayEnd,
+                durationSeconds: 60,
+                completed: true,
+                difficulty: 3,
+                note: nil,
+                progressionId: nil,
+                musicKey: nil,
+                complexity: nil,
+                rhythmPatternId: nil
+            ),
+        ]
+
+        XCTAssertEqual(computeTodayMinutes(sessions, now: now), 2) // 120s -> 2min
+        XCTAssertEqual(computeTodaySessions(sessions, now: now), 1)
+    }
+
+    func testComputeStreakDays_countsConsecutiveDays() {
+        let calendar = Calendar(identifier: .gregorian)
+        let now = ISO8601DateFormatter().date(from: "2026-01-03T12:00:00Z")!
+        let day0 = now
+        let day1 = calendar.date(byAdding: .day, value: -1, to: now)!
+        let day2 = calendar.date(byAdding: .day, value: -2, to: now)!
+        let day4 = calendar.date(byAdding: .day, value: -4, to: now)!
+
+        let sessions: [PracticeSession] = [
+            PracticeSession(id: "0", taskId: "x", taskName: "x", startedAt: day0, endedAt: day0, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
+            PracticeSession(id: "1", taskId: "x", taskName: "x", startedAt: day1, endedAt: day1, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
+            PracticeSession(id: "2", taskId: "x", taskName: "x", startedAt: day2, endedAt: day2, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
+            PracticeSession(id: "4", taskId: "x", taskName: "x", startedAt: day4, endedAt: day4, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
+        ]
+
+        XCTAssertEqual(computeStreakDays(sessions, now: now), 3)
+    }
+}
+

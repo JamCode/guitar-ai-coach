@@ -1,0 +1,56 @@
+name: SwiftEarHost
+options:
+  minimumXcodeGenVersion: 2.38.0
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  GuitarAICoach:
+    path: ../swift_app
+targets:
+  SwiftEarHost:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jamcode.swift-ear-host
+        PRODUCT_NAME: SwiftEarHost
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: AI吉他
+        INFOPLIST_KEY_CFBundleName: AI吉他
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: 需要麦克风用于视唱训练与调音识别。
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 需要访问相册以导入曲谱图片。
+        INFOPLIST_KEY_NSCameraUsageDescription: 需要使用相机拍摄曲谱图片。
+        SWIFT_VERSION: 5.10
+    dependencies:
+      - package: GuitarAICoach
+        product: Tuner
+      - package: GuitarAICoach
+        product: Fretboard
+      - package: GuitarAICoach
+        product: Chords
+      - package: GuitarAICoach
+        product: ChordsLive
+      - package: GuitarAICoach
+        product: Theory
+      - package: GuitarAICoach
+        product: ChordChart
+      - package: GuitarAICoach
+        product: Profile
+      - package: GuitarAICoach
+        product: Ear
+
+  SwiftEarHostTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.jamcode.swift-ear-host.tests
+    dependencies:
+      - target: SwiftEarHost
