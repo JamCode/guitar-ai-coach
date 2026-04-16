@@ -28,6 +28,7 @@ jobs:
     name: Archive and upload to TestFlight
     runs-on: macos-latest
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PROJECT_PATH: swift_ios_host/SwiftEarHost.xcodeproj
       SCHEME: SwiftEarHost
       CONFIGURATION: Release
