@@ -40,26 +40,30 @@ public struct ChordLookupView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("选择").appSectionTitle()
-                    Picker("根音", selection: $root) {
-                        ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
+                    chordMenuRow(title: "根音") {
+                        Picker("根音", selection: $root) {
+                            ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Picker("和弦性质", selection: $quality) {
-                        ForEach(ChordSelectCatalog.qualOptions) { Text($0.label).tag($0.id) }
+                    chordMenuRow(title: "和弦性质") {
+                        Picker("和弦性质", selection: $quality) {
+                            ForEach(ChordSelectCatalog.qualOptions) { Text($0.label).tag($0.id) }
+                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Picker("低音 / 转位", selection: $bass) {
-                        ForEach(ChordSelectCatalog.bassOptions) { Text($0.label).tag($0.id) }
+                    chordMenuRow(title: "低音 / 转位") {
+                        Picker("低音 / 转位", selection: $bass) {
+                            ForEach(ChordSelectCatalog.bassOptions) { Text($0.label).tag($0.id) }
+                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Picker("转调后的查看调", selection: $selectedKey) {
-                        ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
+                    chordMenuRow(title: "转调后的查看调") {
+                        Picker("转调后的查看调", selection: $selectedKey) {
+                            ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .appCard()
@@ -96,6 +100,18 @@ public struct ChordLookupView: View {
             set: { _ in resultPayload = nil }
         )) { model in
             ChordResultSheet(payload: model.payload)
+        }
+    }
+
+    /// iOS `.menu` 样式的 Picker 往往只显示当前值，不显式展示 `Picker` 标题；用固定行标题区分「根音」与「转调后查看调」等。
+    @ViewBuilder
+    private func chordMenuRow<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
