@@ -55,7 +55,7 @@ public struct ChordLookupView: View {
                     }
                     .pickerStyle(.menu)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    Picker("目标调（变调预览）", selection: $selectedKey) {
+                    Picker("转调后的查看调", selection: $selectedKey) {
                         ForEach(ChordSelectCatalog.keys, id: \.self) { Text($0).tag($0) }
                     }
                     .pickerStyle(.menu)
