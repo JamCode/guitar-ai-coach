@@ -23,6 +23,18 @@ final class ToolsIntegrationTests: XCTestCase {
         XCTAssertFalse(viewModel.isListening)
     }
 
+    @MainActor
+    func testTunerSelectStringStartsListening() async {
+        let detector = TestPitchDetector()
+        let viewModel = TunerViewModel(audio: TestAudioEngine(), detector: detector)
+        XCTAssertFalse(viewModel.isListening)
+        await viewModel.selectStringForTuning(3)
+        XCTAssertTrue(viewModel.isListening)
+        XCTAssertEqual(viewModel.selectedStringIndex, 3)
+        viewModel.stop()
+        XCTAssertFalse(viewModel.isListening)
+    }
+
     func testChordChartHasSections() {
         XCTAssertFalse(ChordChartData.sections.isEmpty)
     }

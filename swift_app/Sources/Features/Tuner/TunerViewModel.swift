@@ -11,7 +11,7 @@ public final class TunerViewModel: ObservableObject {
     @Published public var frequencyHz: Double?
     @Published public var smoothedHz: Double?
     @Published public var isListening = false
-    @Published public var statusMessage = "点击开始监听"
+    @Published public var statusMessage = "轻点下方弦钮开始调音"
     @Published public var errorText: String?
 
     private let openStringHz = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63]
@@ -43,6 +43,13 @@ public final class TunerViewModel: ObservableObject {
         } catch {
             errorText = "参考音播放失败：\(error.localizedDescription)"
         }
+    }
+
+    /// 点选弦钮：切换目标弦并播放短参考音；若尚未监听麦克风则自动开始监听。
+    public func selectStringForTuning(_ index: Int) async {
+        setSelectedString(index)
+        guard !isListening else { return }
+        await start()
     }
 
     public func start() async {

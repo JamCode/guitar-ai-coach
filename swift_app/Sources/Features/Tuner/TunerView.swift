@@ -45,10 +45,7 @@ public struct TunerView: View {
                     HStack(spacing: 6) {
                         ForEach(0..<6, id: \.self) { i in
                             Button(labels[i]) {
-                                viewModel.setSelectedString(i)
-                                if viewModel.isListening {
-                                    viewModel.updateFrequencySample(viewModel.targetHz)
-                                }
+                                Task { await viewModel.selectStringForTuning(i) }
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(viewModel.selectedStringIndex == i ? SwiftAppTheme.brand : SwiftAppTheme.surfaceSoft)
@@ -60,21 +57,19 @@ public struct TunerView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .appCard()
-
-                Button(viewModel.isListening ? "停止监听" : "开始监听") {
-                    if viewModel.isListening {
-                        viewModel.stop()
-                    } else {
-                        Task { await viewModel.start() }
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .appPrimaryButton()
             }
             .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle("调音器")
         .appPageBackground()
+        .onAppear {
+            if !viewModel.isListening {
+                viewModel.statusMessage = "轻点下方弦钮开始调音"
+            }
+        }
+        .onDisappear {
+            viewModel.stop()
+        }
     }
 }
 
