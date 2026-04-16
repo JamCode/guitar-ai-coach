@@ -59,7 +59,7 @@ let package = Package(
         ),
         .target(
             name: "ChordChart",
-            dependencies: ["Core"],
+            dependencies: ["Core", "Chords"],
             path: "Sources/Features/ChordChart"
         ),
         .target(

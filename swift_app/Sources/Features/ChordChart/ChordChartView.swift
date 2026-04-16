@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Chords
 
 public struct ChordChartView: View {
     @State private var selectedEntry: ChordChartEntry?
@@ -78,17 +79,27 @@ public struct ChordChartView: View {
         .navigationTitle("和弦表")
         .appPageBackground()
         .sheet(item: $selectedEntry) { entry in
-            VStack(alignment: .leading, spacing: 12) {
-                Text(entry.symbol).font(.largeTitle.bold())
-                Text(entry.theory)
-                if let voicing = entry.voicing {
-                    Text(voicing).foregroundStyle(SwiftAppTheme.brand)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(entry.symbol).font(.largeTitle.bold())
+                    Text(entry.theory)
+                    if let voicing = entry.voicing {
+                        Text(voicing).foregroundStyle(SwiftAppTheme.brand)
+                    }
+                    ChordDiagramView(frets: entry.frets)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 240)
+                        .padding(12)
+                        .background(SwiftAppTheme.surfaceSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    Text("指法图（6→1 弦）")
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                    Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
+                        .font(.body.monospaced())
                 }
-                Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
-                    .font(.body.monospaced())
-                Spacer()
+                .padding(20)
             }
-            .padding(20)
         }
     }
 }
