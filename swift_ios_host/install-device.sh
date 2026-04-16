@@ -37,9 +37,9 @@ BUNDLE_ID="com.jamcode.swift-ear-host"
 
 # ========== 仅自用一台机时可写死（省掉 export / install-device.local.env）==========
 # 优先级低于：命令行 --device、环境变量 DEVICE / DEVICE_UDID / DEVELOPMENT_TEAM、install-device.local.env
-# 若要把仓库推远程，建议清空下面两行或勿提交含真实 ID 的改动
-DEFAULT_DEVELOPMENT_TEAM=""
-DEFAULT_DEVICE_ID=""
+# 换手机或换团队后请改下面两行；若推公共仓库建议改回空串或勿提交
+DEFAULT_DEVELOPMENT_TEAM="S7GN5K6W2H"
+DEFAULT_DEVICE_ID="E0846AB6-0894-5A3F-AA3F-3885DB11B978"
 
 LOCAL_ENV="${HOST_DIR}/install-device.local.env"
 if [[ -f "${LOCAL_ENV}" ]]; then
