@@ -1,4 +1,4 @@
-name: Mobile release pipeline (ECS + iOS TestFlight)
+name: Mobile release pipeline (ECS)
 
 on:
   push:
@@ -9,18 +9,9 @@ on:
       - "backend/code/**"
       - "backend/database/flyway/sql/**"
       - "backend/database/flyway/flyway.conf"
-      - "flutter_app/**"
       - ".github/workflows/mobile-release-pipeline.yml"
       - ".github/workflows/ecs-backend-deploy.yml"
-      - ".github/workflows/flutter-ios-testflight.yml"
-      - ".github/workflows/flutter-ios-integration-tests.yml"
   workflow_dispatch:
-    inputs:
-      upload_to_testflight:
-        description: "Whether to upload IPA to TestFlight"
-        required: false
-        default: true
-        type: boolean
 
 permissions:
   contents: read
@@ -35,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
-      flutter: ${{ steps.filter.outputs.flutter }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,10 +38,6 @@ jobs:
               - 'backend/code/**'
               - 'backend/database/flyway/sql/**'
               - 'backend/database/flyway/flyway.conf'
-            flutter:
-              - 'flutter_app/**'
-              - '.github/workflows/flutter-ios-testflight.yml'
-              - '.github/workflows/flutter-ios-integration-tests.yml'
 
   deploy_backend:
     name: Deploy backend to Aliyun ECS
@@ -60,49 +46,22 @@ jobs:
     uses: ./.github/workflows/ecs-backend-deploy.yml
     secrets: inherit
 
-  ios_integration_tests:
-    name: Run iOS integration tests
-    needs:
-      - detect_changes
-      - deploy_backend
-    if: (github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.flutter == 'true') && (needs.deploy_backend.result == 'success' || needs.deploy_backend.result == 'skipped')
-    uses: ./.github/workflows/flutter-ios-integration-tests.yml
-    secrets: inherit
-
-  release_ios:
-    name: Upload iOS build to TestFlight
-    needs:
-      - detect_changes
-      - deploy_backend
-      - ios_integration_tests
-    if: (github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.flutter == 'true') && (needs.deploy_backend.result == 'success' || needs.deploy_backend.result == 'skipped') && (needs.ios_integration_tests.result == 'success' || needs.ios_integration_tests.result == 'skipped')
-    uses: ./.github/workflows/flutter-ios-testflight.yml
-    secrets: inherit
-    with:
-      upload_to_testflight: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_testflight == 'true' || github.event_name != 'workflow_dispatch' }}
-
   publish_summary:
     name: Publish pipeline summary
     runs-on: ubuntu-latest
     needs:
       - detect_changes
       - deploy_backend
-      - ios_integration_tests
-      - release_ios
     if: always()
     steps:
       - name: Write pipeline summary
         run: |
           {
-            echo "## Mobile Release Pipeline"
+            echo "## Mobile Release Pipeline (backend)"
             echo ""
             echo "- Backend deploy result: \`${{ needs.deploy_backend.result }}\`"
-            echo "- iOS integration tests result: \`${{ needs.ios_integration_tests.result }}\`"
-            echo "- iOS release result: \`${{ needs.release_ios.result }}\`"
             echo "- Backend changed in this push: \`${{ needs.detect_changes.outputs.backend }}\`"
-            echo "- Flutter changed in this push: \`${{ needs.detect_changes.outputs.flutter }}\`"
             echo "- Workflow run: [open details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-            echo "- Mobile view: Use GitHub app notifications for this repository."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Optional mobile webhook notification
@@ -110,15 +69,15 @@ jobs:
         env:
           WEBHOOK_URL: ${{ secrets.MOBILE_NOTIFY_WEBHOOK_URL }}
         run: |
-          if [ "${{ needs.deploy_backend.result }}" = "success" ] && [ "${{ needs.release_ios.result }}" = "success" ]; then
+          if [ "${{ needs.deploy_backend.result }}" = "success" ]; then
             STATUS="success"
-          elif [ "${{ needs.deploy_backend.result }}" = "skipped" ] && [ "${{ needs.release_ios.result }}" = "skipped" ]; then
+          elif [ "${{ needs.deploy_backend.result }}" = "skipped" ]; then
             STATUS="skipped"
           else
             STATUS="failed"
           fi
           payload=$(cat <<EOF
-          {"text":"[guitar-ai-coach] mobile release ${STATUS} | backend=${{ needs.deploy_backend.result }} | ios_test=${{ needs.ios_integration_tests.result }} | ios_release=${{ needs.release_ios.result }} | run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+          {"text":"[guitar-ai-coach] backend deploy ${STATUS} | backend=${{ needs.deploy_backend.result }} | run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
           EOF
           )
           curl -sS -X POST -H "Content-Type: application/json" -d "$payload" "$WEBHOOK_URL" >/dev/null
@@ -126,32 +85,19 @@ jobs:
       - name: Enforce gate result
         run: |
           backend_result="${{ needs.deploy_backend.result }}"
-          ios_test_result="${{ needs.ios_integration_tests.result }}"
-          ios_result="${{ needs.release_ios.result }}"
           backend_expected="${{ github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.backend == 'true' }}"
-          ios_expected="${{ github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.flutter == 'true' }}"
 
           if [ "$backend_expected" = "true" ] && [ "$backend_result" != "success" ]; then
             echo "::error::Backend deploy was expected but did not succeed."
             exit 1
           fi
 
-          if [ "$ios_expected" = "true" ] && [ "$ios_result" != "success" ]; then
-            echo "::error::iOS release was expected but did not succeed."
-            exit 1
-          fi
-
-          if [ "$ios_expected" = "true" ] && [ "$ios_test_result" != "success" ]; then
-            echo "::error::iOS integration tests were expected but did not succeed."
-            exit 1
-          fi
-
-          if [ "$backend_expected" = "false" ] && [ "$ios_expected" = "false" ]; then
-            echo "::notice::No backend or flutter release scope detected. Pipeline completed without deployment."
+          if [ "$backend_expected" = "false" ]; then
+            echo "::notice::No backend release scope detected. Pipeline completed without deployment."
             exit 0
           fi
 
-          if [ "$backend_result" = "failure" ] || [ "$ios_test_result" = "failure" ] || [ "$ios_result" = "failure" ]; then
-            echo "::error::Pipeline gate failed. Check backend deploy and iOS release jobs."
+          if [ "$backend_result" = "failure" ]; then
+            echo "::error::Pipeline gate failed. Check backend deploy job."
             exit 1
           fi

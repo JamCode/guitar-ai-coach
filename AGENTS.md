@@ -4,7 +4,7 @@
 
 ### Project overview
 
-Guitar AI Coach (吉他AI教练) — an AI-powered guitar learning platform with a **Vue 3 + Vite web frontend** and a **Python stdlib HTTP backend** (no framework). There is also a Flutter mobile app, but mobile builds require Xcode/iOS Simulator or Android SDK which are not available in Cloud Agent VMs.
+Guitar AI Coach (吉他AI教练) — an AI-powered guitar learning platform with a **Vue 3 + Vite web frontend** and a **Python stdlib HTTP backend** (no framework). Native iOS work lives under `swift_app/` (Swift Package) and `swift_ios_host/` (Xcode); those builds need Xcode and are not runnable in headless Cloud Agent VMs.
 
 ### Services
 
@@ -27,4 +27,4 @@ There is no dedicated ESLint config or Python linter configured in the repo.
 - MySQL-dependent features (quiz, ear training, song chords) return HTTP 503 when `MYSQL_*` env vars are not set — this is expected and non-blocking for core chord features.
 - `DASHSCOPE_API_KEY` is required for AI chord generation/explanation. Without it, the `/chords/generate` and `/chords/explain` endpoints return 500, but `/styles`, `/keys`, `/levels`, `/chords/transpose` all work.
 - The Vite dev server proxying is **not** configured — the frontend calls the backend directly. In production, Nginx handles `/api/` proxying.
-- Flutter app (`flutter_app/`) requires Dart SDK ^3.11.4 and native toolchains; skip in headless Cloud VMs.
+- Swift iOS (`swift_ios_host/` + `swift_app/`) requires Xcode; skip in headless Cloud VMs.

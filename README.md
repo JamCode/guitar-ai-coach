@@ -2,11 +2,10 @@
 
 吉他和弦进行生成与指法说明（前端 Vue + 后端 Python，部署说明见 `deploy/README.md`）。
 
-## 废弃目录说明
+## 移动端说明
 
-- `flutter_app/` 已标记为废弃，当前阶段暂不使用、暂不维护。
-- 新功能与修复默认不再进入 Flutter 端，请优先使用 Web 前端与 Python 后端方案。
-- 若后续恢复移动端开发，会在仓库文档中另行通知并更新状态。
+- 原 `flutter_app/` 目录已从仓库移除；原生 iOS 相关代码在 `swift_app/`（Swift Package）与 `swift_ios_host/`（Xcode 宿主工程）。
+- 新功能与修复请优先使用 Web 前端、Python 后端与上述 Swift 工程。
 
 ## 与 AI 协作开发约定
 

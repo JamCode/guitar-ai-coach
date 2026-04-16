@@ -1,13 +1,13 @@
 ---
 name: release-ops-workflow
-description: 统一处理发布运维任务：Flutter iOS 本机或 GitHub Actions 打包并上传 TestFlight、阿里云 ECS SSH 运维登录约定、Python 后端与 Flyway 部署、环境变量与密钥配置管理、发布前后检查与回滚建议。用户提到“打包”“TestFlight”“GitHub Actions”“CI”“上线”“部署”“ECS”“阿里云”“SSH”“登录服务器”“运维”“配置管理”“环境变量”“发布流程”时启用。
+description: 统一处理发布运维任务：Swift iOS（`swift_ios_host`）本机 Xcode 归档与 TestFlight 上传、阿里云 ECS SSH 运维登录约定、Python 后端与 Flyway 部署、环境变量与密钥配置管理、发布前后检查与回滚建议。用户提到“打包”“TestFlight”“GitHub Actions”“CI”“上线”“部署”“ECS”“阿里云”“SSH”“登录服务器”“运维”“配置管理”“环境变量”“发布流程”时启用。
 ---
 
 # 发布与运维工作流（iOS + ECS + 配置管理）
 
 ## 适用范围
 
-- iOS：`flutter_app` 的本机打包、IPA 产出、上传 TestFlight（本机命令或 CI）。
+- iOS：`swift_ios_host/` 的本机 Xcode 归档、IPA 产出、上传 TestFlight（本机为主；仓库内原 Flutter CI 已移除）。
 - 后端/前端：ECS 上的 Python 后端 + Nginx 静态站点发布。
 - 配置管理：Team/Bundle ID、App Store Connect API Key、后端 `backend.env`、ECS SSH 参数与发布检查项。
 
@@ -84,33 +84,29 @@ description: 统一处理发布运维任务：Flutter iOS 本机或 GitHub Actio
 
 ### A1. 打包前检查
 
-- Bundle ID 与 App Store Connect 一致（当前项目默认：`com.wanghan.guitarhelper`）。
+- Bundle ID 与 App Store Connect 一致（当前 Xcode 目标默认：`com.jamcode.swift-ear-host`；若与 App Store Connect 不一致以线上为准）。
 - Xcode `Signing & Capabilities` 使用正确 Team，自动签名无红字。
-- `pubspec.yaml` 的 build 号递增（`version: x.y.z+build` 的 `build` 必须大于上一次上传值）。
+- **Build**（构建号）每次上传前必须大于 App Store Connect 上已有构建；在 Xcode 目标的 **General → Identity → Build**（或等价 `CURRENT_PROJECT_VERSION`）递增。
 
 ### A1.1 build 号递增规则（强制）
 
 每次准备上传 TestFlight 前，必须先执行以下动作：
 
-1. 打开 `flutter_app/pubspec.yaml`
-2. 将 `version: x.y.z+build` 的 `build` 至少加 1
-3. 保存后再执行 `flutter build ipa`
-
-示例：
-
-- 上一次上传是 `1.0.0+1`
-- 本次至少改为 `1.0.0+2`
+1. 打开 `swift_ios_host/SwiftEarHost.xcodeproj`
+2. 选中宿主 App 目标，将 **Build** 至少加 1（或与团队约定的版本字段一致）
+3. 再执行 **Product → Archive** 并导出 App Store 类型 IPA
 
 若忘记递增，上传阶段会被 App Store Connect 拒绝（构建号重复）。
 
 ### A2. 构建 IPA（本机）
 
-```bash
-cd flutter_app
-flutter pub get
-cd ios && pod install && cd ..
-flutter build ipa --export-options-plist=ios/ExportOptions.plist
-```
+在 Xcode 中打开工程后：
+
+1. `cd swift_ios_host && open SwiftEarHost.xcodeproj`
+2. 选择真机或 `Any iOS Device (arm64)`，**Product → Archive**
+3. Organizer 中选择归档 → **Distribute App** → App Store Connect → 按向导导出或上传
+
+若需命令行归档，请按团队已验证的 `xcodebuild -scheme … -archivePath …` 脚本执行（以本机 Xcode 与 scheme 名为准）。
 
 ### A3. 命令行上传 TestFlight（altool）
 
@@ -118,13 +114,13 @@ flutter build ipa --export-options-plist=ios/ExportOptions.plist
 
 - 本机有 `AuthKey_<KEY_ID>.p8`（当前约定放在 `~/Documents/certs/`）
 - `KEY_ID`、`ISSUER_ID` 已确认
-- IPA 文件存在于 `flutter_app/build/ios/ipa/*.ipa`
+- IPA 文件已由 Xcode Organizer 导出到本机路径（例如 `~/Desktop/…ipa` 或自定义导出目录）
 
 路径约定：
 
 - API key 默认源文件：`~/Documents/certs/AuthKey_<KEY_ID>.p8`
 - altool 读取目录：`~/.private_keys/AuthKey_<KEY_ID>.p8`
-- 禁止将 `.p8` 放在仓库目录（如 `flutter_app/ios/`）或提交 Git
+- 禁止将 `.p8` 放在仓库目录或提交 Git
 
 ```bash
 mkdir -p "$HOME/.private_keys"
@@ -132,7 +128,7 @@ cp "$HOME/Documents/certs/AuthKey_<KEY_ID>.p8" "$HOME/.private_keys/AuthKey_<KEY
 chmod 600 "$HOME/.private_keys/AuthKey_<KEY_ID>.p8"
 
 xcrun altool --upload-app --type ios \
-  -f "/abs/path/to/flutter_app/build/ios/ipa/<your>.ipa" \
+  -f "/abs/path/to/<your>.ipa" \
   --apiKey "<KEY_ID>" \
   --apiIssuer "<ISSUER_ID>"
 ```
@@ -144,30 +140,24 @@ xcrun altool --upload-app --type ios \
 
 ## B. iOS CI 上传 TestFlight（GitHub Actions）
 
-- 工作流文件：`.github/workflows/flutter-ios-testflight.yml`
-- 作用：在 macOS Runner 上导入证书与描述文件 → 生成 App Store 类型 IPA → `xcrun altool` 上传到 App Store Connect（供 TestFlight）。
+- **现状**：随 `flutter_app/` 移除，仓库内原 **Flutter** TestFlight / 集成测试相关 workflow 已删除；当前 **无** 预置的 Swift iOS GitHub Actions 上传流水线。
+- **需要 CI 时**：新建基于 macOS Runner 的 workflow（证书、`xcodebuild archive/export`、`xcrun altool` 或 `notarytool`），并与本仓库 `swift_ios_host` 的 scheme、签名方式对齐。
 
 ### B0. 什么时候会跑（重要）
 
-- **默认不会**在每次 `git push` 时自动打包上传。
-- 工作流 `on` 以 **`workflow_dispatch`** 为主时：**只有**在 GitHub 网页「Actions」里手动 Run，或用 `gh workflow run` 触发，才会执行。
-- 若日后在 YAML 中增加 `push` / `tag` 等触发器，才会在对应事件自动跑；届时必须配套 **build 号自动递增** 或发布分支纪律，否则易因「构建号重复」失败。
+- 在未新增 Swift iOS workflow 前，**不会**由 GitHub Actions 自动产出 IPA。
+- 若日后新增 `workflow_dispatch` 或 `push` 触发的 iOS 工作流，必须配套 **build 号自动递增** 或发布分支纪律，否则易因「构建号重复」失败。
 
 ### B1. 如何触发（本机 CLI）
 
-```bash
-cd /path/to/guitar-ai-coach
-gh workflow run "Flutter iOS TestFlight" --ref <分支名>
-gh run list --workflow "Flutter iOS TestFlight" --limit 3
-```
+若仓库重新加入 iOS 工作流后，再使用 `gh workflow run "<工作流显示名>" --ref <分支名>`；当前以 **A 节本机 Xcode** 为准。
 
-### B2. CI 内大致步骤（便于排错）
+### B2. CI 内大致步骤（便于排错，供将来恢复/新建 workflow 时参考）
 
 1. 从 Secrets 还原 `.p12` 与 `.mobileprovision` 到临时钥匙串与 `~/Library/MobileDevice/Provisioning Profiles`。
-2. 生成 `ios/ExportOptions-ci-appstore.plist`（`method=app-store`、`signingStyle=manual`、Bundle ID → Profile Name）。
-3. `flutter build ios --release --no-codesign`
-4. `xcodebuild archive` + `xcodebuild -exportArchive`（避免在命令行全局强加 `PROVISIONING_PROFILE_SPECIFIER` 到 Pods 子目标）。
-5. `xcrun altool --upload-app`（依赖 `APP_STORE_CONNECT_*` 与 `~/.private_keys/AuthKey_*.p8`）。
+2. 生成或检出 `ExportOptions` plist（`method=app-store`、`signingStyle=manual` 等，与目标一致）。
+3. `xcodebuild archive` + `xcodebuild -exportArchive`（scheme 指向 `swift_ios_host` 宿主 App）。
+4. `xcrun altool --upload-app`（依赖 `APP_STORE_CONNECT_*` 与 `~/.private_keys/AuthKey_*.p8`）。
 
 ### B3. 必备 Secrets（仓库 Settings → Secrets and variables → Actions）
 
@@ -187,23 +177,11 @@ gh run list --workflow "Flutter iOS TestFlight" --limit 3
 
 ### B5. 跑 CI 前检查（与 A1.1 相同）
 
-- 先递增 `flutter_app/pubspec.yaml` 的 `+build`，**commit 并 push** 到将要触发的分支，再 Run workflow；否则上传易被拒。
+- 先递增 Xcode 目标的 **Build**，**commit 并 push** 到将要触发的分支，再 Run workflow；否则上传易被拒。
 
 ### B6. 可选：改为 push 自动上 TestFlight
 
-仅在用户明确要求且接受 Runner 分钟数与失败噪声时改 YAML，例如：
-
-```yaml
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'flutter_app/**'
-      - '.github/workflows/flutter-ios-testflight.yml'
-```
-
-同时需约定：**每次可上传的提交都必须唯一 build 号**（脚本 bump 或发布分支只合并可发布 commit）。
+仅在用户明确要求且接受 Runner 分钟数与失败噪声时新增 YAML，并对 `swift_ios_host/**`（及 workflow 文件本身）配置 `paths` 过滤；同时需约定：**每次可上传的提交都必须唯一 build 号**（脚本 bump 或发布分支只合并可发布 commit）。
 
 ## C. ECS 后端与前端部署
 
@@ -231,8 +209,8 @@ on:
 
 - Bundle ID 是否与 App Store Connect 一致
 - Team ID、证书、Profile 是否匹配
-- build 号是否递增（检查 `flutter_app/pubspec.yaml` 的 `version`；上传前强制 +1）
-- `ios/ExportOptions.plist` 的 `method/teamID/signingStyle` 是否符合目标
+- build 号是否递增（检查 Xcode 目标 **Build**；上传前强制 +1）
+- `ExportOptions.plist`（若使用命令行导出）的 `method/teamID/signingStyle` 是否符合目标
 
 ### D2. 密钥与凭据
 
@@ -271,7 +249,5 @@ on:
 
 ## 参考文件
 
-- iOS 上传记录：`docs/tiaoyinqi/testflight-upload.md`
-- iOS CI（ad-hoc）：`.github/workflows/flutter-ios-build.yml`
-- iOS CI（TestFlight）：`.github/workflows/flutter-ios-testflight.yml`
+- iOS 上传记录（历史路径可能仍写 Flutter，需按 `swift_ios_host` 对照）：`docs/tiaoyinqi/testflight-upload.md`
 - ECS 部署总文档：`deploy/ecs/README.md`

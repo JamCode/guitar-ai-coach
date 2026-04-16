@@ -1,12 +1,12 @@
 # Swift Migration Project Skeleton
 
-This directory is created in parallel with `flutter_app` for Swift migration.
+This directory holds the Swift Package used by the native iOS app (`swift_ios_host/`).
 
 ## Structure
 
 - `Sources/App`: App entry, lifecycle, navigation bootstrap
 - `Sources/Core`: Shared infrastructure (networking, storage, constants, utils)
-- `Sources/Features/*`: Feature modules mapped from `flutter_app/lib/*`
+- `Sources/Features/*`: Feature modules (historically aligned with former Flutter `lib/*` areas)
 - `Resources/Assets`: Static assets (images/icons)
 - `Resources/Audio`: Audio resources (for later migration from Flutter assets)
 - `Tests/Unit`: Unit tests
