@@ -1,6 +1,12 @@
 # guitar_helper
 
-A new Flutter project.
+## Deprecated
+
+`flutter_app/` is deprecated and temporarily out of use.
+
+- Do not add new features in this directory for now.
+- Do not treat this app as an active delivery target.
+- Keep existing code for historical reference only.
 
 ## Getting Started
 

@@ -33,6 +33,7 @@ concurrency:
 
 jobs:
   build-and-upload:
+    if: ${{ false }}
     runs-on: macos-14
     timeout-minutes: 60
     defaults:
