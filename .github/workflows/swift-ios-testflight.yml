@@ -38,7 +38,6 @@ jobs:
       P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
       P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
       PROFILE_BASE64: ${{ secrets.IOS_APPSTORE_PROVISION_PROFILE_BASE64 }}
-      PROFILE_NAME: ${{ secrets.IOS_APPSTORE_PROVISIONING_PROFILE_NAME }}
       KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
       MARKETING_VERSION_INPUT: ${{ github.event.inputs.marketing_version }}
       BUILD_NUMBER_INPUT: ${{ github.event.inputs.build_number }}
@@ -50,7 +49,7 @@ jobs:
       - name: Validate required secrets
         run: |
           missing=0
-          for key in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY P12_BASE64 P12_PASSWORD PROFILE_BASE64 PROFILE_NAME KEYCHAIN_PASSWORD; do
+          for key in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY P12_BASE64 P12_PASSWORD PROFILE_BASE64 KEYCHAIN_PASSWORD; do
             if [ -z "${!key}" ]; then
               echo "::error::Missing required secret: ${key}"
               missing=1
@@ -84,6 +83,7 @@ jobs:
         run: |
           CERT_PATH="$RUNNER_TEMP/dist.p12"
           PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
 
           echo "$P12_BASE64" | base64 --decode > "$CERT_PATH"
           echo "$PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
@@ -102,8 +102,14 @@ jobs:
           security list-keychains -d user -s build.keychain
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
 
+          security cms -D -i "$PROFILE_PATH" > "$PROFILE_PLIST"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$PROFILE_PLIST")
+          PROFILE_NAME_RESOLVED=$(/usr/libexec/PlistBuddy -c "Print :Name" "$PROFILE_PLIST")
+          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
+          echo "PROFILE_NAME_RESOLVED=$PROFILE_NAME_RESOLVED" >> "$GITHUB_ENV"
+
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_NAME}.mobileprovision"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
 
       - name: Archive app
         run: |
@@ -116,6 +122,8 @@ jobs:
             -archivePath "$ARCHIVE_PATH" \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME_RESOLVED" \
             PRODUCT_BUNDLE_IDENTIFIER="${{ steps.build_meta.outputs.bundle_id }}" \
             MARKETING_VERSION="${{ steps.build_meta.outputs.marketing_version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_meta.outputs.build_number }}" \
@@ -141,7 +149,7 @@ jobs:
             <key>provisioningProfiles</key>
             <dict>
               <key>${{ steps.build_meta.outputs.bundle_id }}</key>
-              <string>${PROFILE_NAME}</string>
+              <string>${PROFILE_NAME_RESOLVED}</string>
             </dict>
             <key>stripSwiftSymbols</key>
             <true/>
