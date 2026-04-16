@@ -27,6 +27,7 @@ final class ToolsIntegrationTests: XCTestCase {
     func testTunerSelectStringStartsListening() async {
         let detector = TestPitchDetector()
         let viewModel = TunerViewModel(audio: TestAudioEngine(), detector: detector)
+        XCTAssertNil(viewModel.selectedStringIndex)
         XCTAssertFalse(viewModel.isListening)
         await viewModel.selectStringForTuning(3)
         XCTAssertTrue(viewModel.isListening)

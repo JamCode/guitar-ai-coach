@@ -7,7 +7,8 @@ import AVFAudio
 
 @MainActor
 public final class TunerViewModel: ObservableObject {
-    @Published public var selectedStringIndex = 0
+    /// `nil` 表示尚未选择目标弦（进入调音器时不预选）。
+    @Published public var selectedStringIndex: Int?
     @Published public var frequencyHz: Double?
     @Published public var smoothedHz: Double?
     @Published public var isListening = false
@@ -24,7 +25,10 @@ public final class TunerViewModel: ObservableObject {
         self.detector = detector
     }
 
-    public var targetHz: Double { openStringHz[selectedStringIndex] }
+    public var targetHz: Double? {
+        guard let i = selectedStringIndex, (0...5).contains(i) else { return nil }
+        return openStringHz[i]
+    }
 
     public var noteName: String {
         guard let hz = smoothedHz ?? frequencyHz else { return "--" }
@@ -32,14 +36,16 @@ public final class TunerViewModel: ObservableObject {
     }
 
     public var cents: Double {
-        guard let hz = smoothedHz ?? frequencyHz else { return 0 }
-        return PitchMath.centsBetween(actualHz: hz, targetHz: targetHz)
+        guard let hz = smoothedHz ?? frequencyHz, let target = targetHz else { return 0 }
+        return PitchMath.centsBetween(actualHz: hz, targetHz: target)
     }
 
     public func setSelectedString(_ index: Int) {
-        selectedStringIndex = max(0, min(5, index))
+        let i = max(0, min(5, index))
+        selectedStringIndex = i
+        guard let hz = targetHz else { return }
         do {
-            try audio.playSine(frequencyHz: targetHz, durationSec: 0.20)
+            try audio.playSine(frequencyHz: hz, durationSec: 0.20)
         } catch {
             errorText = "参考音播放失败：\(error.localizedDescription)"
         }

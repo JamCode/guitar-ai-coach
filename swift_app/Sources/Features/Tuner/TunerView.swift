@@ -27,7 +27,7 @@ public struct TunerView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(viewModel.frequencyHz.map { String(format: "%.1f Hz", $0) } ?? "-- Hz")
                                 .foregroundStyle(SwiftAppTheme.text)
-                            Text("目标：第 \(6 - viewModel.selectedStringIndex) 弦 · \(String(format: "%.2f Hz", viewModel.targetHz))")
+                            Text(targetCaption)
                                 .foregroundStyle(SwiftAppTheme.muted)
                             Text(String(format: "%+.0f cent", viewModel.cents))
                                 .foregroundStyle(SwiftAppTheme.brand)
@@ -70,6 +70,13 @@ public struct TunerView: View {
         .onDisappear {
             viewModel.stop()
         }
+    }
+
+    private var targetCaption: String {
+        guard let i = viewModel.selectedStringIndex, let hz = viewModel.targetHz else {
+            return "目标：请先选择弦"
+        }
+        return "目标：第 \(6 - i) 弦 · \(String(format: "%.2f Hz", hz))"
     }
 }
 
