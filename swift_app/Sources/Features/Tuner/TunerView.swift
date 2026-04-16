@@ -41,7 +41,8 @@ public struct TunerView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("选择弦").appSectionTitle()
-                    HStack(spacing: 8) {
+                    // 均分整行，避免卡片拉满后弦钮仍靠左、右侧大块留白
+                    HStack(spacing: 6) {
                         ForEach(0..<6, id: \.self) { i in
                             Button(labels[i]) {
                                 viewModel.setSelectedString(i)
@@ -52,6 +53,8 @@ public struct TunerView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(viewModel.selectedStringIndex == i ? SwiftAppTheme.brand : SwiftAppTheme.surfaceSoft)
                             .foregroundStyle(viewModel.selectedStringIndex == i ? Color.white : SwiftAppTheme.text)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
                         }
                     }
                 }
