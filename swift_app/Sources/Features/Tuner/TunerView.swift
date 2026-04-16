@@ -11,7 +11,10 @@ public struct TunerView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let errorText = viewModel.errorText {
-                    Text(errorText).foregroundStyle(.red).appCard()
+                    Text(errorText)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCard()
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -33,6 +36,7 @@ public struct TunerView: View {
                     MeterBar(cents: viewModel.cents, active: viewModel.frequencyHz != nil)
                         .frame(height: 20)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -51,6 +55,7 @@ public struct TunerView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .appCard()
 
                 Button(viewModel.isListening ? "停止监听" : "开始监听") {
@@ -60,6 +65,7 @@ public struct TunerView: View {
                         Task { await viewModel.start() }
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .appPrimaryButton()
             }
             .padding(SwiftAppTheme.pagePadding)
