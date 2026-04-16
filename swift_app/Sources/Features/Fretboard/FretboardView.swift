@@ -1,5 +1,36 @@
 import SwiftUI
 import Core
+#if os(iOS)
+import UIKit
+#endif
+
+// MARK: - 品格按钮按下反馈
+
+private struct FretboardNoteCellButtonStyle: ButtonStyle {
+    var labelOpacity: Double
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(SwiftAppTheme.text.opacity(labelOpacity))
+            .padding(.horizontal, 4)
+            .padding(.vertical, 7)
+            .frame(width: 56, height: 34)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(configuration.isPressed ? SwiftAppTheme.brandSoft : SwiftAppTheme.surfaceSoft)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(
+                        configuration.isPressed ? SwiftAppTheme.brand.opacity(0.55) : SwiftAppTheme.line,
+                        lineWidth: configuration.isPressed ? 2 : 1
+                    )
+            )
+            .shadow(color: .black.opacity(configuration.isPressed ? 0.02 : 0.07), radius: configuration.isPressed ? 1 : 2, y: configuration.isPressed ? 0 : 1)
+            .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
+            .animation(.spring(response: 0.22, dampingFraction: 0.78), value: configuration.isPressed)
+    }
+}
 
 public struct FretboardView: View {
     @StateObject private var viewModel = FretboardViewModel()
@@ -36,23 +67,19 @@ public struct FretboardView: View {
                                     .foregroundStyle(SwiftAppTheme.muted)
                                 ForEach(stringIndices(), id: \.self) { stringIndex in
                                     let label = viewModel.labelForCell(stringIndex: stringIndex, fret: fret)
+                                    let dimmed = viewModel.naturalOnly && viewModel.isAccidentalCell(stringIndex: stringIndex, fret: fret)
                                     Button {
                                         viewModel.playCell(stringIndex: stringIndex, fret: fret)
+                                        #if os(iOS)
+                                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                        #endif
                                     } label: {
                                         Text(label)
                                             .font(.caption.monospaced())
                                             .minimumScaleFactor(0.65)
                                             .lineLimit(1)
                                     }
-                                    .buttonStyle(.bordered)
-                                    .tint(SwiftAppTheme.surfaceSoft)
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                    .opacity(
-                                        viewModel.naturalOnly && viewModel.isAccidentalCell(stringIndex: stringIndex, fret: fret)
-                                            ? 0.32
-                                            : 1
-                                    )
-                                    .frame(width: 56)
+                                    .buttonStyle(FretboardNoteCellButtonStyle(labelOpacity: dimmed ? 0.32 : 1))
                                 }
                             }
                         }
