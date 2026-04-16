@@ -25,6 +25,13 @@ final class ToolsUITests: XCTestCase {
         _ = IntervalEarView()
         _ = EarMcqSessionView(title: "和弦听辨", bank: "A")
         _ = SightSingingSetupView()
+        _ = SightSingingSessionView(
+            repository: LocalSightSingingRepository(),
+            pitchRange: "mid",
+            includeAccidental: false,
+            questionCount: 10,
+            pitchTracker: DefaultSightSingingPitchTracker()
+        )
     }
 }
 
