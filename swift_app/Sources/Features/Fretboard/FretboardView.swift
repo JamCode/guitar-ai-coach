@@ -35,13 +35,24 @@ public struct FretboardView: View {
                                     .frame(width: 44, alignment: .leading)
                                     .foregroundStyle(SwiftAppTheme.muted)
                                 ForEach(stringIndices(), id: \.self) { stringIndex in
-                                    Button(viewModel.labelForCell(stringIndex: stringIndex, fret: fret) ?? "·") {
+                                    let label = viewModel.labelForCell(stringIndex: stringIndex, fret: fret)
+                                    Button {
                                         viewModel.playCell(stringIndex: stringIndex, fret: fret)
+                                    } label: {
+                                        Text(label)
+                                            .font(.caption.monospaced())
+                                            .minimumScaleFactor(0.65)
+                                            .lineLimit(1)
                                     }
                                     .buttonStyle(.bordered)
                                     .tint(SwiftAppTheme.surfaceSoft)
                                     .foregroundStyle(SwiftAppTheme.text)
-                                    .frame(width: 50)
+                                    .opacity(
+                                        viewModel.naturalOnly && viewModel.isAccidentalCell(stringIndex: stringIndex, fret: fret)
+                                            ? 0.32
+                                            : 1
+                                    )
+                                    .frame(width: 56)
                                 }
                             }
                         }

@@ -7,6 +7,9 @@ final class PitchAndFretboardTests: XCTestCase {
     func testFrequencyToMidi() {
         XCTAssertEqual(PitchMath.frequencyToMidi(440), 69)
         XCTAssertEqual(PitchMath.midiToNoteName(69), "A")
+        XCTAssertEqual(PitchMath.midiToPitchLabel(69), "a4")
+        XCTAssertEqual(PitchMath.midiToPitchLabel(60), "c4")
+        XCTAssertEqual(PitchMath.midiToPitchLabel(61), "c#4")
     }
 
     func testCentsBetween() {
@@ -14,10 +17,11 @@ final class PitchAndFretboardTests: XCTestCase {
         XCTAssertGreaterThan(cents, 0)
     }
 
-    func testFretboardMidiAndNaturalFilter() {
+    func testFretboardMidiAndPitchLabels() {
         XCTAssertEqual(FretboardMath.midiAtFret(stringIndex: 0, fret: 0, capo: 0), 40)
-        XCTAssertEqual(FretboardMath.labelForCell(stringIndex: 0, fret: 1, capo: 0, naturalOnly: false), "F")
-        XCTAssertNil(FretboardMath.labelForCell(stringIndex: 0, fret: 2, capo: 0, naturalOnly: true))
+        XCTAssertEqual(FretboardMath.labelForCell(stringIndex: 0, fret: 0, capo: 0), "e2")
+        XCTAssertEqual(FretboardMath.labelForCell(stringIndex: 0, fret: 1, capo: 0), "f2")
+        XCTAssertEqual(FretboardMath.labelForCell(stringIndex: 0, fret: 2, capo: 0), "f#2")
     }
 
     func testFretboardMidiWithCapoUsesAbsoluteFrets() {

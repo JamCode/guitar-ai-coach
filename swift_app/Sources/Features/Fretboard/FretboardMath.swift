@@ -14,13 +14,9 @@ public enum FretboardMath {
         return open + fret
     }
 
-    public static func labelForCell(stringIndex: Int, fret: Int, capo: Int, naturalOnly: Bool) -> String? {
+    public static func labelForCell(stringIndex: Int, fret: Int, capo: Int) -> String {
         let midi = midiAtFret(stringIndex: stringIndex, fret: fret, capo: capo)
-        let note = PitchMath.midiToNoteName(midi)
-        if naturalOnly && note.contains("#") {
-            return nil
-        }
-        return note
+        return PitchMath.midiToPitchLabel(midi)
     }
 }
 

@@ -45,7 +45,7 @@ public struct ToolsHomeView: View {
                 } label: {
                     toolsRow(
                         title: "吉他指板",
-                        subtitle: "竖向指板 · 音名 · 变调夹",
+                        subtitle: "竖向指板 · 音高标注 · 拨弦试听 · 变调夹",
                         systemImage: "square.grid.3x3"
                     )
                 }

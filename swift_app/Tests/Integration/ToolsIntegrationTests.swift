@@ -48,6 +48,10 @@ private final class TestAudioEngine: AudioEngineServing {
     func playSine(frequencyHz: Double, durationSec: Double) throws {
         quality.markCallback(renderCostMs: 0.1)
     }
+
+    func playPluckedGuitarString(frequencyHz: Double, durationSec: Double) throws {
+        quality.markCallback(renderCostMs: 0.12)
+    }
 }
 
 private final class TestPitchDetector: PitchDetecting {

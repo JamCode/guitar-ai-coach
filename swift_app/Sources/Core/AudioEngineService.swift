@@ -6,6 +6,8 @@ public protocol AudioEngineServing: AnyObject {
     func start() throws
     func stop()
     func playSine(frequencyHz: Double, durationSec: Double) throws
+    /// 拨弦式衰减（Karplus–Strong），用于指板等吉他语境试听。
+    func playPluckedGuitarString(frequencyHz: Double, durationSec: Double) throws
 }
 
 public final class AudioEngineService: AudioEngineServing {
@@ -68,6 +70,55 @@ public final class AudioEngineService: AudioEngineServing {
         let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
         quality.markCallback(renderCostMs: elapsedMs)
 
+        player.scheduleBuffer(buffer, at: nil, options: .interrupts)
+        if !player.isPlaying {
+            player.play()
+        }
+    }
+
+    public func playPluckedGuitarString(frequencyHz: Double, durationSec: Double = 0.48) throws {
+        if !started {
+            try start()
+        }
+        let format = player.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            quality.markUnderrun()
+            return
+        }
+        let sampleRate = format.sampleRate
+        let hz = min(4_200, max(60, frequencyHz))
+        let delayLen = max(8, Int(sampleRate / hz))
+        var ring = [Float](repeating: 0, count: delayLen)
+        for i in 0..<delayLen {
+            ring[i] = Float.random(in: -0.45...0.45)
+        }
+        let totalFrames = AVAudioFrameCount(max(1, Int(sampleRate * durationSec)))
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: totalFrames) else {
+            quality.markUnderrun()
+            return
+        }
+        buffer.frameLength = totalFrames
+        let decay: Float = 0.9965
+        let outputChannels = Int(format.channelCount)
+        let start = DispatchTime.now().uptimeNanoseconds
+        if let channels = buffer.floatChannelData {
+            var pos = 0
+            for frame in 0..<Int(totalFrames) {
+                let i0 = pos
+                let i1 = (pos + 1) % delayLen
+                let out = ring[i0]
+                ring[i0] = 0.5 * (out + ring[i1]) * decay
+                pos = (pos + 1) % delayLen
+                let env = Float(frame) / Float(max(1, Int(sampleRate * 0.002)))
+                let attack = min(1, env)
+                let sample = out * 0.22 * attack
+                for channelIndex in 0..<outputChannels {
+                    channels[channelIndex][frame] = sample
+                }
+            }
+        }
+        let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
+        quality.markCallback(renderCostMs: elapsedMs)
         player.scheduleBuffer(buffer, at: nil, options: .interrupts)
         if !player.isPlaying {
             player.play()

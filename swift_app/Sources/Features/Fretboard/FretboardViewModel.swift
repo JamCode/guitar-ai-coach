@@ -12,13 +12,12 @@ public final class FretboardViewModel: ObservableObject {
         self.tonePlayer = tonePlayer
     }
 
-    public func labelForCell(stringIndex: Int, fret: Int) -> String? {
-        FretboardMath.labelForCell(
-            stringIndex: stringIndex,
-            fret: fret,
-            capo: capo,
-            naturalOnly: naturalOnly
-        )
+    public func labelForCell(stringIndex: Int, fret: Int) -> String {
+        FretboardMath.labelForCell(stringIndex: stringIndex, fret: fret, capo: capo)
+    }
+
+    public func isAccidentalCell(stringIndex: Int, fret: Int) -> Bool {
+        labelForCell(stringIndex: stringIndex, fret: fret).contains("#")
     }
 
     public func playCell(stringIndex: Int, fret: Int) {
