@@ -44,10 +44,12 @@ public enum SwiftAppTheme {
 }
 
 public extension View {
-    /// 与主题背景对齐的导航栏底，避免仅依赖 `UINavigationBar.appearance()` 时在新系统上标题栏空白/不绘标题的问题。
+    /// 与主题背景对齐的导航栏底，并强制内联标题。
+    /// 大标题模式在自定义 `UINavigationBarAppearance` 下常出现标题区域空白（用户看不到标题）。
     func appNavigationBarChrome() -> some View {
         #if os(iOS)
         self
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(SwiftAppTheme.bg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
         #else
