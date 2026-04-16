@@ -121,8 +121,12 @@ private struct ChordResultSheet: View {
                 ForEach(Array(payload.voicings.enumerated()), id: \.offset) { index, item in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(item.labelZh).font(.headline)
+                        ChordDiagramView(frets: item.explain.frets)
+                            .frame(maxWidth: 280)
+                            .frame(height: 200)
                         Text("6→1 弦：\(item.explain.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " ")) · 起算品格：\(item.explain.baseFret)")
                             .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(SwiftAppTheme.muted)
                         Text(item.explain.voicingExplainZh).font(.subheadline)
                         Spacer()
                     }
@@ -133,7 +137,7 @@ private struct ChordResultSheet: View {
             #if os(iOS)
             .tabViewStyle(.page(indexDisplayMode: .automatic))
             #endif
-            .frame(height: 200)
+            .frame(height: 360)
 
             if !payload.disclaimer.isEmpty {
                 Text(payload.disclaimer).font(.footnote).foregroundStyle(SwiftAppTheme.muted)

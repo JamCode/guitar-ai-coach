@@ -12,6 +12,7 @@ final class ToolsUITests: XCTestCase {
         _ = TunerView()
         _ = FretboardView()
         _ = ChordLookupView()
+        _ = ChordDiagramView(frets: [-1, 3, 2, 0, 1, 0])
         _ = LiveChordView()
         _ = ChordChartView()
         _ = ProfileHomeView()
