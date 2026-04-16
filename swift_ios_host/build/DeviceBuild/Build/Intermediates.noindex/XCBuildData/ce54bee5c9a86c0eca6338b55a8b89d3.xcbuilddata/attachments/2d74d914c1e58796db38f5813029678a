@@ -1,0 +1,4 @@
+module Ear {
+header "Ear-Swift.h"
+export *
+}

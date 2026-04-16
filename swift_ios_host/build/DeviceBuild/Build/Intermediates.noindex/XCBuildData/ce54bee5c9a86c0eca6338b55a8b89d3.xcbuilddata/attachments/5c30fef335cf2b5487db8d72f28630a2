@@ -1,0 +1,19 @@
+{
+  "" : {
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/Theory-primary.dia",
+    "emit-module-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/Theory-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/Theory-primary-emit-module.dia",
+    "pch" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/Theory-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/Theory-primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Theory/TheoryView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Theory.build/Objects-normal/arm64/TheoryView~partial.swiftmodule"
+  }
+}

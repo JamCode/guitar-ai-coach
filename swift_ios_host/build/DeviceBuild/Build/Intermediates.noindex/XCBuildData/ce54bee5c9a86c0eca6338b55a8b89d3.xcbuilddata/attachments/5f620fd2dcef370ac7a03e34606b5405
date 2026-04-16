@@ -1,0 +1,4 @@
+module Profile {
+header "Profile-Swift.h"
+export *
+}

@@ -1,0 +1,4 @@
+module Chords {
+header "Chords-Swift.h"
+export *
+}

@@ -1,0 +1,4 @@
+module ChordChart {
+header "ChordChart-Swift.h"
+export *
+}

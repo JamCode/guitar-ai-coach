@@ -1,0 +1,39 @@
+{
+  "" : {
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/Chords-primary.dia",
+    "emit-module-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/Chords-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/Chords-primary-emit-module.dia",
+    "pch" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/Chords-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/Chords-primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Chords/ChordLookupModel.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupModel~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Chords/ChordLookupView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordLookupView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Chords/ChordsService.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Chords.build/Objects-normal/arm64/ChordsService~partial.swiftmodule"
+  }
+}

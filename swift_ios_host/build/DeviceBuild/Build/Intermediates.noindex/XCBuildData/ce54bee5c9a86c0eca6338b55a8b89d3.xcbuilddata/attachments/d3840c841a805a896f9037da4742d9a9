@@ -1,0 +1,209 @@
+{
+  "" : {
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHost-primary.dia",
+    "emit-module-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHost-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHost-primary-emit-module.dia",
+    "pch" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHost-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHost-primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Models/ChordProgressionLibrary.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordProgressionLibrary~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Models/PracticeModels.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeModels~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Models/StrummingPattern.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/StrummingPattern~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Store/PracticeLocalStore.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeLocalStore~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Store/PracticeSessionStore.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeSessionStore~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/ChordPracticeSelectionView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSelectionView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/ChordPracticeSessionView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordPracticeSessionView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/ChordQuickReferenceSheet.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/ChordQuickReferenceSheet~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/FlowLayout.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/FlowLayout~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/PracticeFinishDialog.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeFinishDialog~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/PracticeHomeView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeHomeView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/PracticeTimerSessionView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/PracticeTimerSessionView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Practice/Views/RhythmStrummingView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/RhythmStrummingView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Sheets/Models/SheetModels.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetModels~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Sheets/Services/SheetOCRService.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOCRService~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Sheets/Services/SheetOcrParser.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetOcrParser~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Sheets/Store/SheetLibraryStore.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryStore~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/Sheets/Views/SheetLibraryView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SheetLibraryView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/Sources/SwiftEarHostApp.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/SwiftEarHostApp~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/SwiftEarHost.build/Debug-iphoneos/SwiftEarHost.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

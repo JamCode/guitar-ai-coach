@@ -1,0 +1,39 @@
+{
+  "" : {
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/Profile-primary.dia",
+    "emit-module-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/Profile-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/Profile-primary-emit-module.dia",
+    "pch" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/Profile-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/Profile-primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Profile/AppVersionInfo.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/AppVersionInfo~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Profile/DiagnosticLogStore.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/DiagnosticLogStore~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Profile/ProfileViews.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Profile.build/Objects-normal/arm64/ProfileViews~partial.swiftmodule"
+  }
+}

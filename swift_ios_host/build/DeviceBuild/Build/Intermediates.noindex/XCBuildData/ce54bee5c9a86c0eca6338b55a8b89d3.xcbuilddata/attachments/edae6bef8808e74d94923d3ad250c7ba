@@ -1,0 +1,49 @@
+{
+  "" : {
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/Fretboard-primary.dia",
+    "emit-module-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/Fretboard-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/Fretboard-primary-emit-module.dia",
+    "pch" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/Fretboard-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/Fretboard-primary.swiftdeps"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardMath.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardMath~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardTonePlayer.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardTonePlayer~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardView.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardView~partial.swiftmodule"
+  },
+  "/Users/wanghan/Documents/guitar-ai-coach/swift_app/Sources/Features/Fretboard/FretboardViewModel.swift" : {
+    "const-values" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel.swiftconstvalues",
+    "dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel.d",
+    "diagnostics" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel.dia",
+    "index-unit-output-path" : "/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel.o",
+    "llvm-bc" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel.bc",
+    "object" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel.o",
+    "swift-dependencies" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel.swiftdeps",
+    "swiftmodule" : "/Users/wanghan/Documents/guitar-ai-coach/swift_ios_host/build/DeviceBuild/Build/Intermediates.noindex/GuitarAICoach.build/Debug-iphoneos/Fretboard.build/Objects-normal/arm64/FretboardViewModel~partial.swiftmodule"
+  }
+}

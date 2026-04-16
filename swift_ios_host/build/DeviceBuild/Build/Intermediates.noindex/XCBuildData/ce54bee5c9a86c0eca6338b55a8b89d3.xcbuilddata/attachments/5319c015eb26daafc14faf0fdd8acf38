@@ -1,0 +1,4 @@
+module Fretboard {
+header "Fretboard-Swift.h"
+export *
+}
