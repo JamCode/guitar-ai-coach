@@ -124,6 +124,8 @@ private struct ResultSheetModel: Identifiable {
 private struct ChordResultSheet: View {
     let payload: ChordExplainMultiPayload
     @State private var pageIndex = 0
+    private var totalPages: Int { max(payload.voicings.count, 1) }
+    private var currentPageDisplay: Int { min(max(pageIndex + 1, 1), totalPages) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -154,6 +156,22 @@ private struct ChordResultSheet: View {
             .tabViewStyle(.page(indexDisplayMode: .automatic))
             #endif
             .frame(height: 360)
+
+            if payload.voicings.count > 1 {
+                HStack(spacing: 8) {
+                    Text("把位 \(currentPageDisplay)/\(totalPages) · 左右滑动切换")
+                        .font(.footnote)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                    Spacer()
+                    HStack(spacing: 6) {
+                        ForEach(0..<payload.voicings.count, id: \.self) { idx in
+                            Circle()
+                                .fill(idx == pageIndex ? SwiftAppTheme.brand : SwiftAppTheme.line)
+                                .frame(width: 7, height: 7)
+                        }
+                    }
+                }
+            }
 
             if !payload.disclaimer.isEmpty {
                 Text(payload.disclaimer).font(.footnote).foregroundStyle(SwiftAppTheme.muted)
