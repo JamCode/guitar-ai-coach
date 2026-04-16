@@ -7,10 +7,11 @@
 #   - Apple Developer：本机 Xcode 已登录账号，且工程能自动签名；或设置 DEVELOPMENT_TEAM
 #
 # 用法：
-#   export DEVELOPMENT_TEAM=你的10位TeamID   # 工程未写死 Team 时必填（也可用 install-device.local.env）
+#   在脚本里填 DEFAULT_DEVELOPMENT_TEAM / DEFAULT_DEVICE_ID（仅自用一台机时最省事），或：
+#   export DEVELOPMENT_TEAM=你的10位TeamID
 #   ./install-device.sh
 #
-# 本地配置（推荐）：swift_ios_host/install-device.local.env（已 gitignore），示例见 install-device.local.env.example
+# 也可用：swift_ios_host/install-device.local.env（已 gitignore），示例见 install-device.local.env.example
 #   ./install-device.sh --device E0846AB6-0894-5A3F-AA3F-3885DB11B978
 #   ./install-device.sh --device "iPhone"   # devicectl 支持设备名称
 #   DEVICE="iPhone" ./install-device.sh
@@ -19,6 +20,12 @@
 #   ./install-device.sh --list              # 仅列出可用真机（Core Device）
 #
 # 说明：首次安装可能需在手机上「设置 → 通用 → VPN与设备管理」信任开发者证书。
+#
+# Team ID 在哪里看（10 位字母数字）：
+#   • Xcode → Settings（或 Preferences）→ Accounts → 选中左侧 Apple ID → 右侧 Team 名称后面括号里
+#   • 或浏览器打开 https://developer.apple.com/account → Membership → Team ID
+#
+# 设备 Identifier：终端执行  ./install-device.sh --list  或  xcrun devicectl list devices  看第三列
 
 set -euo pipefail
 
@@ -28,6 +35,12 @@ PROJECT="${HOST_DIR}/SwiftEarHost.xcodeproj"
 SCHEME="SwiftEarHost"
 BUNDLE_ID="com.jamcode.swift-ear-host"
 
+# ========== 仅自用一台机时可写死（省掉 export / install-device.local.env）==========
+# 优先级低于：命令行 --device、环境变量 DEVICE / DEVICE_UDID / DEVELOPMENT_TEAM、install-device.local.env
+# 若要把仓库推远程，建议清空下面两行或勿提交含真实 ID 的改动
+DEFAULT_DEVELOPMENT_TEAM=""
+DEFAULT_DEVICE_ID=""
+
 LOCAL_ENV="${HOST_DIR}/install-device.local.env"
 if [[ -f "${LOCAL_ENV}" ]]; then
   echo "==> 读取本地配置: ${LOCAL_ENV}"
@@ -35,6 +48,10 @@ if [[ -f "${LOCAL_ENV}" ]]; then
   # shellcheck disable=SC1090
   source "${LOCAL_ENV}"
   set +a
+fi
+
+if [[ -z "${DEVELOPMENT_TEAM:-}" && -n "${DEFAULT_DEVELOPMENT_TEAM}" ]]; then
+  DEVELOPMENT_TEAM="${DEFAULT_DEVELOPMENT_TEAM}"
 fi
 
 CONFIGURATION="Debug"
@@ -76,6 +93,10 @@ fi
 
 if [[ -z "${DEVICE_REF}" ]]; then
   DEVICE_REF="${DEVICE:-${DEVICE_UDID:-}}"
+fi
+
+if [[ -z "${DEVICE_REF}" && -n "${DEFAULT_DEVICE_ID}" ]]; then
+  DEVICE_REF="${DEFAULT_DEVICE_ID}"
 fi
 
 if [[ -z "${DEVICE_REF}" ]]; then
@@ -136,12 +157,12 @@ if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
   echo "错误: SwiftEarHost 工程未在仓库里写死 Development Team，命令行真机构建必须提供 Team ID。" >&2
   echo "" >&2
   echo "任选一种方式：" >&2
-  echo "  1) 本次终端：  export DEVELOPMENT_TEAM=你的10位TeamID  && ./install-device.sh" >&2
-  echo "  2) 本地文件：  cp install-device.local.env.example install-device.local.env" >&2
-  echo "                编辑填入 DEVELOPMENT_TEAM 后再执行 ./install-device.sh" >&2
+  echo "  1) 本脚本顶部 DEFAULT_DEVELOPMENT_TEAM='你的10位TeamID'" >&2
+  echo "  2) 本次终端：  export DEVELOPMENT_TEAM=你的10位TeamID  && ./install-device.sh" >&2
+  echo "  3) 本地文件：  cp install-device.local.env.example install-device.local.env 并填写" >&2
   echo "" >&2
-  echo "Team ID：Xcode → Settings → Accounts → 选中 Apple ID → 团队一行括号里的 10 位字符；" >&2
-  echo "或在 https://developer.apple.com/account 登录后查看 Membership 详情。" >&2
+  echo "Team ID：Xcode → Settings → Accounts → Apple ID → Team 名称后括号内 10 位；" >&2
+  echo "或 https://developer.apple.com/account → Membership。" >&2
   exit 1
 fi
 
