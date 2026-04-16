@@ -1,5 +1,4 @@
 import SwiftUI
-import Ear
 import Tuner
 import Fretboard
 import Chords
@@ -64,7 +63,7 @@ private struct RootTabView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    if newValue == 2 {
+                    if newValue == 1 {
                         practiceTabMounted = true
                     }
                     selectedTab = newValue
@@ -84,14 +83,6 @@ private struct RootTabView: View {
             .tag(0)
 
             NavigationStack {
-                EarHomeView()
-            }
-            .tabItem {
-                Label("练耳", systemImage: "ear")
-            }
-            .tag(1)
-
-            NavigationStack {
                 if practiceTabMounted {
                     PracticeHomeView()
                 } else {
@@ -104,7 +95,23 @@ private struct RootTabView: View {
             .tabItem {
                 Label("练习", systemImage: "figure.strengthtraining.traditional")
             }
+            .tag(1)
+
+            NavigationStack {
+                SheetLibraryView()
+            }
+            .tabItem {
+                Label("我的谱", systemImage: "music.note.list")
+            }
             .tag(2)
+
+            NavigationStack {
+                LiveChordView()
+            }
+            .tabItem {
+                Label("扒歌", systemImage: "waveform.path.ecg")
+            }
+            .tag(3)
 
             NavigationStack {
                 ProfileHomeView()
@@ -112,7 +119,7 @@ private struct RootTabView: View {
             .tabItem {
                 Label("我的", systemImage: "person")
             }
-            .tag(3)
+            .tag(4)
         }
         .transaction { transaction in
             transaction.animation = nil
@@ -125,7 +132,6 @@ private struct ToolsTabView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 VStack(spacing: 8) {
-                    navCard(title: "实时和弦建议（Beta）", subtitle: "监听音乐并实时显示主和弦与候选", icon: "waveform.path.ecg") { LiveChordView() }
                     navCard(title: "调音器", subtitle: "麦克风拾音与标准空弦目标", icon: "waveform") { TunerView() }
                     navCard(title: "吉他指板", subtitle: "竖向指板 · 音高标注 · 拨弦试听 · 变调夹", icon: "square.grid.3x3") { FretboardView() }
                     navCard(title: "和弦字典", subtitle: "离线可查构成音与常见把位", icon: "pianokeys") { ChordLookupView() }

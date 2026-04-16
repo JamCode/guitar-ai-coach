@@ -26,7 +26,7 @@ public struct LiveChordView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
         }
-        .navigationTitle("实时和弦建议（Beta）")
+        .navigationTitle("扒歌")
         .appPageBackground()
     }
 

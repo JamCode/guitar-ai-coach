@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Ear
 
 /// 练习模块首页（Swift 版本）：提供任务入口、今日进度与历史记录。
 struct PracticeHomeView: View {
@@ -52,6 +53,27 @@ struct PracticeHomeView: View {
                 Text("今日任务").appSectionTitle()
                     .padding(.top, 6)
                 VStack(spacing: 8) {
+                    NavigationLink {
+                        EarHomeView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("练耳（扒歌）")
+                                    .font(.headline)
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                Text("听辨和弦色彩与走向，服务真实扒歌场景")
+                                    .font(.subheadline)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .appCard()
+
                     ForEach(kDefaultPracticeTasks) { task in
                         NavigationLink {
                             PracticeTaskRouterView(task: task)
@@ -75,28 +97,6 @@ struct PracticeHomeView: View {
                         .appCard()
                     }
                 }
-
-                // 我的谱
-                NavigationLink {
-                    SheetLibraryView()
-                } label: {
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("我的谱")
-                                .font(.headline)
-                                .foregroundStyle(SwiftAppTheme.text)
-                            Text("在曲谱中练习并累计时长与次数")
-                                .font(.subheadline)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(SwiftAppTheme.muted)
-                    }
-                }
-                .buttonStyle(.plain)
-                .appCard()
 
                 // 练习历史
                 HStack {
