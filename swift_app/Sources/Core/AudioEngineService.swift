@@ -40,10 +40,15 @@ public final class AudioEngineService: AudioEngineServing {
         if !started {
             try start()
         }
-        let sampleRate = 44_100.0
+        // 必须与 `AVAudioPlayerNode` 连到 `mainMixerNode` 后的实际 PCM 格式一致，
+        // 否则 `scheduleBuffer` 在常见硬件采样率（如 48kHz）下可能直接崩溃。
+        let format = player.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            quality.markUnderrun()
+            return
+        }
+        let sampleRate = format.sampleRate
         let frameCount = AVAudioFrameCount(max(1, Int(sampleRate * durationSec)))
-        let outputChannels = max(1, engine.outputNode.outputFormat(forBus: 0).channelCount)
-        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: outputChannels)!
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
             quality.markUnderrun()
             return
@@ -51,8 +56,9 @@ public final class AudioEngineService: AudioEngineServing {
         buffer.frameLength = frameCount
         let start = DispatchTime.now().uptimeNanoseconds
         let theta = 2.0 * Double.pi * frequencyHz / sampleRate
+        let outputChannels = Int(format.channelCount)
         if let channels = buffer.floatChannelData {
-            for channelIndex in 0..<Int(outputChannels) {
+            for channelIndex in 0..<outputChannels {
                 let channel = channels[channelIndex]
                 for i in 0..<Int(frameCount) {
                     channel[i] = Float(sin(Double(i) * theta) * 0.20)
