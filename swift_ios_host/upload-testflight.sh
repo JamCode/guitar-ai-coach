@@ -26,6 +26,7 @@ CONFIGURATION="Release"
 
 # 可按需写死（仅自用）。优先级低于环境变量与 local env。
 DEFAULT_DEVELOPMENT_TEAM="7R8RS88G2M"
+DEFAULT_APP_BUNDLE_ID="com.wanghan.guitarhelper"
 DEFAULT_ASC_KEY_ID=""
 DEFAULT_ASC_ISSUER_ID=""
 DEFAULT_ASC_KEY_PATH=""
@@ -76,6 +77,9 @@ fi
 if [[ -z "${ASC_KEY_PATH:-}" && -n "${DEFAULT_ASC_KEY_PATH}" ]]; then
   ASC_KEY_PATH="${DEFAULT_ASC_KEY_PATH}"
 fi
+if [[ -z "${APP_BUNDLE_ID:-}" && -n "${DEFAULT_APP_BUNDLE_ID}" ]]; then
+  APP_BUNDLE_ID="${DEFAULT_APP_BUNDLE_ID}"
+fi
 
 if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
   DETECTED_TEAM="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '/DEVELOPMENT_TEAM =/{print $3; exit}')"
@@ -87,6 +91,17 @@ fi
 if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
   echo "错误: 未设置 DEVELOPMENT_TEAM，无法归档签名。" >&2
   echo "可在 upload-testflight.local.env 里设置，或 export DEVELOPMENT_TEAM=XXXXXXXXXX" >&2
+  exit 1
+fi
+
+if [[ -z "${APP_BUNDLE_ID:-}" ]]; then
+  DETECTED_BUNDLE_ID="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '/PRODUCT_BUNDLE_IDENTIFIER =/{print $3; exit}')"
+  if [[ -n "${DETECTED_BUNDLE_ID}" ]]; then
+    APP_BUNDLE_ID="${DETECTED_BUNDLE_ID}"
+  fi
+fi
+if [[ -z "${APP_BUNDLE_ID:-}" ]]; then
+  echo "错误: 未确定 APP_BUNDLE_ID。请在 upload-testflight.local.env 设置 APP_BUNDLE_ID。" >&2
   exit 1
 fi
 
@@ -113,6 +128,7 @@ chmod 600 "$HOME/.private_keys/AuthKey_${ASC_KEY_ID}.p8"
 echo "==> 读取版本信息"
 MARKETING_VERSION="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '/MARKETING_VERSION =/{print $3; exit}')"
 BUILD_NUMBER="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '/CURRENT_PROJECT_VERSION =/{print $3; exit}')"
+echo "    APP_BUNDLE_ID=${APP_BUNDLE_ID}"
 echo "    MARKETING_VERSION=${MARKETING_VERSION:-unknown}"
 echo "    CURRENT_PROJECT_VERSION=${BUILD_NUMBER:-unknown}"
 
@@ -177,6 +193,7 @@ xcodebuild \
   -allowProvisioningUpdates \
   CODE_SIGN_STYLE=Automatic \
   DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM}" \
+  PRODUCT_BUNDLE_IDENTIFIER="${APP_BUNDLE_ID}" \
   MARKETING_VERSION="${ARCHIVE_MARKETING_VERSION}" \
   CURRENT_PROJECT_VERSION="${ARCHIVE_BUILD_NUMBER}" \
   archive
