@@ -51,6 +51,7 @@ public struct SightSingingSetupView: View {
                 }
                 .buttonStyle(.plain)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle("视唱训练")
@@ -141,6 +142,7 @@ public struct SightSingingSessionView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle("视唱训练")
