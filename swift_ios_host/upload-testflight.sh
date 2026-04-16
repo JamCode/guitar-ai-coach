@@ -116,6 +116,15 @@ BUILD_NUMBER="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configurat
 echo "    MARKETING_VERSION=${MARKETING_VERSION:-unknown}"
 echo "    CURRENT_PROJECT_VERSION=${BUILD_NUMBER:-unknown}"
 
+ARCHIVE_MARKETING_VERSION="${MARKETING_VERSION:-}"
+if [[ -n "${MARKETING_VERSION_OVERRIDE:-}" ]]; then
+  ARCHIVE_MARKETING_VERSION="${MARKETING_VERSION_OVERRIDE}"
+fi
+if [[ -z "${ARCHIVE_MARKETING_VERSION}" ]]; then
+  # 工程未显式配置 MARKETING_VERSION 时兜底，避免导出的 IPA 缺失 CFBundleShortVersionString。
+  ARCHIVE_MARKETING_VERSION="1.0.0"
+fi
+
 ARCHIVE_BUILD_NUMBER="${BUILD_NUMBER:-}"
 if [[ -n "${BUILD_NUMBER_OVERRIDE:-}" ]]; then
   ARCHIVE_BUILD_NUMBER="${BUILD_NUMBER_OVERRIDE}"
@@ -128,6 +137,7 @@ if [[ -z "${ARCHIVE_BUILD_NUMBER}" ]]; then
   echo "错误: 无法确定 Build 号，请设置 BUILD_NUMBER_OVERRIDE 或在 Xcode 中填写 Build。" >&2
   exit 1
 fi
+echo "    ARCHIVE_MARKETING_VERSION=${ARCHIVE_MARKETING_VERSION}"
 echo "    ARCHIVE_BUILD_NUMBER=${ARCHIVE_BUILD_NUMBER}"
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -167,6 +177,7 @@ xcodebuild \
   -allowProvisioningUpdates \
   CODE_SIGN_STYLE=Automatic \
   DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM}" \
+  MARKETING_VERSION="${ARCHIVE_MARKETING_VERSION}" \
   CURRENT_PROJECT_VERSION="${ARCHIVE_BUILD_NUMBER}" \
   archive
 
