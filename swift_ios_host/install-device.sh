@@ -38,7 +38,7 @@ BUNDLE_ID="com.jamcode.swift-ear-host"
 # ========== 仅自用一台机时可写死（省掉 export / install-device.local.env）==========
 # 优先级低于：命令行 --device、环境变量 DEVICE / DEVICE_UDID / DEVELOPMENT_TEAM、install-device.local.env
 # 换手机或换团队后请改下面两行；若推公共仓库建议改回空串或勿提交
-DEFAULT_DEVELOPMENT_TEAM="S7GN5K6W2H"
+DEFAULT_DEVELOPMENT_TEAM="7R8RS88G2M"
 DEFAULT_DEVICE_ID="E0846AB6-0894-5A3F-AA3F-3885DB11B978"
 
 LOCAL_ENV="${HOST_DIR}/install-device.local.env"
@@ -52,6 +52,14 @@ fi
 
 if [[ -z "${DEVELOPMENT_TEAM:-}" && -n "${DEFAULT_DEVELOPMENT_TEAM}" ]]; then
   DEVELOPMENT_TEAM="${DEFAULT_DEVELOPMENT_TEAM}"
+fi
+
+if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
+  # 尝试读取工程当前生效的 Team（来自 Xcode 本地签名设置）
+  DETECTED_TEAM="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration Debug -showBuildSettings 2>/dev/null | awk '/DEVELOPMENT_TEAM =/{print $3; exit}')"
+  if [[ -n "${DETECTED_TEAM}" ]]; then
+    DEVELOPMENT_TEAM="${DETECTED_TEAM}"
+  fi
 fi
 
 CONFIGURATION="Debug"
