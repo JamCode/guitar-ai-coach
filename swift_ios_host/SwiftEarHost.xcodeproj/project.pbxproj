@@ -9,7 +9,9 @@
 /* Begin PBXBuildFile section */
 		1C78E5853E20B93F79B3421E /* ChordChart in Frameworks */ = {isa = PBXBuildFile; productRef = BC4B202C5F0E941A20A787C7 /* ChordChart */; };
 		1D6925B0C7D1C03655046420 /* ChordPracticeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BBE379FBC86AF30F9A09A12 /* ChordPracticeSelectionView.swift */; };
+		1D79CC2FD290C774E1D86265 /* SheetsStoreAndParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB009ADEB470D6167573E47E /* SheetsStoreAndParserTests.swift */; };
 		419BD4626AB180A34C81D97D /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CE304DA9DC51C761E12AF3F /* FlowLayout.swift */; };
+		482F6F903FB7DF1F60DC16A9 /* SheetLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760384F757B9ADBF5C5E2DB7 /* SheetLibraryView.swift */; };
 		493A486B3D6711B60958BDAD /* PracticeLocalStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */; };
 		4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */; };
 		58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */; };
@@ -17,7 +19,9 @@
 		6C61AD5387584DE05CBAEEFC /* Fretboard in Frameworks */ = {isa = PBXBuildFile; productRef = 680D96401F590C260C21FB94 /* Fretboard */; };
 		7A1A7A19018CB5C4774DE4D5 /* RhythmStrummingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C849930EEBA4B913F9D21D21 /* RhythmStrummingView.swift */; };
 		7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */; };
+		7FA26181FC5B3B11E730D464 /* SheetOcrParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD74D9857A33196AB3E3E6AE /* SheetOcrParser.swift */; };
 		85F401EA077A7B0339A02A78 /* Theory in Frameworks */ = {isa = PBXBuildFile; productRef = C9114C609DD92E8E533D0FF7 /* Theory */; };
+		93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E249F8FED69E85EB6CEE605 /* SheetModels.swift */; };
 		9FA03874E2C97FF63F5923C3 /* PracticeSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4498E65917DC2E2FA2DB69 /* PracticeSessionStore.swift */; };
 		A1E418DAEBB1B8A41FB2E81B /* PracticeLocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D163D2D4AC366005CC23C1EF /* PracticeLocalStore.swift */; };
 		A54032D2550FD222A9DA87FD /* ChordProgressionLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3DB2D65570E500966B666B /* ChordProgressionLibrary.swift */; };
@@ -25,12 +29,14 @@
 		AC95FA8C2C108EB623BE6679 /* ChordsLive in Frameworks */ = {isa = PBXBuildFile; productRef = B1D1A8040EE477067D835C6D /* ChordsLive */; };
 		BAAB390B79382E696ABF0074 /* PracticeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99248B2B89EEEF58AC61A45E /* PracticeModels.swift */; };
 		BC053B1E5E74AF884B735DB8 /* Ear in Frameworks */ = {isa = PBXBuildFile; productRef = EEDC03120E5A07496D4BF215 /* Ear */; };
+		C81297C1598B244EE8B65940 /* SheetOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8EDFBDBF5E75CB90D0B630 /* SheetOCRService.swift */; };
 		D201453C3449669F76C49202 /* PracticeFinishDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */; };
 		E69983D149243B7A6D946061 /* Tuner in Frameworks */ = {isa = PBXBuildFile; productRef = D68C530C664DD0805DDA1187 /* Tuner */; };
 		EADF9BF054D46963D836E9AC /* PracticeAcceptanceChecklist.md in Resources */ = {isa = PBXBuildFile; fileRef = F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */; };
 		EE8F0E2991EB41875CAF9588 /* Profile in Frameworks */ = {isa = PBXBuildFile; productRef = 21929BB5D4BC54C7C1690129 /* Profile */; };
 		F8DF882624B2A38F4303EF98 /* ChordQuickReferenceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95326B0E05757D83577B0F63 /* ChordQuickReferenceSheet.swift */; };
 		F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */ = {isa = PBXBuildFile; productRef = 231960F99C0DA8778FB6E8A8 /* Chords */; };
+		F9C3785BA4276FDB2D7476AE /* SheetLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A3A296C60AC0D562ADC713 /* SheetLibraryStore.swift */; };
 		FF25AEF3B37D59AF2314A8E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 119222F862F03CC58F905D72 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -51,20 +57,26 @@
 		4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSessionView.swift; sourceTree = "<group>"; };
 		49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeTimerSessionView.swift; sourceTree = "<group>"; };
 		4A3DB2D65570E500966B666B /* ChordProgressionLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordProgressionLibrary.swift; sourceTree = "<group>"; };
+		4F8EDFBDBF5E75CB90D0B630 /* SheetOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetOCRService.swift; sourceTree = "<group>"; };
 		66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeFinishDialog.swift; sourceTree = "<group>"; };
 		684B33215177617A4AF1AFD7 /* PracticeHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeHomeView.swift; sourceTree = "<group>"; };
 		6BBE379FBC86AF30F9A09A12 /* ChordPracticeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSelectionView.swift; sourceTree = "<group>"; };
+		760384F757B9ADBF5C5E2DB7 /* SheetLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetLibraryView.swift; sourceTree = "<group>"; };
 		806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrummingPattern.swift; sourceTree = "<group>"; };
+		8E249F8FED69E85EB6CEE605 /* SheetModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetModels.swift; sourceTree = "<group>"; };
 		95326B0E05757D83577B0F63 /* ChordQuickReferenceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordQuickReferenceSheet.swift; sourceTree = "<group>"; };
 		95FB8986AD18C574ADA77797 /* SwiftEarHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SwiftEarHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		99248B2B89EEEF58AC61A45E /* PracticeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeModels.swift; sourceTree = "<group>"; };
 		9CE304DA9DC51C761E12AF3F /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
 		C7BAB7DF709977E2E26FF769 /* swift_app */ = {isa = PBXFileReference; lastKnownFileType = folder; name = swift_app; path = ../swift_app; sourceTree = SOURCE_ROOT; };
 		C849930EEBA4B913F9D21D21 /* RhythmStrummingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RhythmStrummingView.swift; sourceTree = "<group>"; };
+		C9A3A296C60AC0D562ADC713 /* SheetLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetLibraryStore.swift; sourceTree = "<group>"; };
 		D163D2D4AC366005CC23C1EF /* PracticeLocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLocalStore.swift; sourceTree = "<group>"; };
 		DD4498E65917DC2E2FA2DB69 /* PracticeSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSessionStore.swift; sourceTree = "<group>"; };
+		DD74D9857A33196AB3E3E6AE /* SheetOcrParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetOcrParser.swift; sourceTree = "<group>"; };
 		E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLocalStoreTests.swift; sourceTree = "<group>"; };
 		F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PracticeAcceptanceChecklist.md; sourceTree = "<group>"; };
+		FB009ADEB470D6167573E47E /* SheetsStoreAndParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetsStoreAndParserTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +103,7 @@
 			children = (
 				F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */,
 				E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */,
+				FB009ADEB470D6167573E47E /* SheetsStoreAndParserTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -137,6 +150,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		5935DA3152749B79E2A5B934 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				C9A3A296C60AC0D562ADC713 /* SheetLibraryStore.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
 		5A1C0E535B745C5E308C0E8F /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -145,6 +166,22 @@
 				806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		82A281551AFE2223304F9D08 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				8E249F8FED69E85EB6CEE605 /* SheetModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		9D35BF715621D53698CD9F2C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				760384F757B9ADBF5C5E2DB7 /* SheetLibraryView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		A6B29DF5C58EDFDDA8643C3A = {
@@ -157,12 +194,24 @@
 			);
 			sourceTree = "<group>";
 		};
+		B541EFF39D54B268F0C153E8 /* Sheets */ = {
+			isa = PBXGroup;
+			children = (
+				82A281551AFE2223304F9D08 /* Models */,
+				FBFBDC47B2605B642D3849D6 /* Services */,
+				5935DA3152749B79E2A5B934 /* Store */,
+				9D35BF715621D53698CD9F2C /* Views */,
+			);
+			path = Sheets;
+			sourceTree = "<group>";
+		};
 		E3B619BA47B7442D39430D3E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
 				119222F862F03CC58F905D72 /* Assets.xcassets */,
 				117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */,
 				4203DCF495DEA7E31C4E9B7D /* Practice */,
+				B541EFF39D54B268F0C153E8 /* Sheets */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -174,6 +223,15 @@
 				DD4498E65917DC2E2FA2DB69 /* PracticeSessionStore.swift */,
 			);
 			path = Store;
+			sourceTree = "<group>";
+		};
+		FBFBDC47B2605B642D3849D6 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				DD74D9857A33196AB3E3E6AE /* SheetOcrParser.swift */,
+				4F8EDFBDBF5E75CB90D0B630 /* SheetOCRService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -284,6 +342,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				493A486B3D6711B60958BDAD /* PracticeLocalStoreTests.swift in Sources */,
+				1D79CC2FD290C774E1D86265 /* SheetsStoreAndParserTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,6 +362,11 @@
 				9FA03874E2C97FF63F5923C3 /* PracticeSessionStore.swift in Sources */,
 				A79B3979F4B96E1C5526E106 /* PracticeTimerSessionView.swift in Sources */,
 				7A1A7A19018CB5C4774DE4D5 /* RhythmStrummingView.swift in Sources */,
+				F9C3785BA4276FDB2D7476AE /* SheetLibraryStore.swift in Sources */,
+				482F6F903FB7DF1F60DC16A9 /* SheetLibraryView.swift in Sources */,
+				93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */,
+				C81297C1598B244EE8B65940 /* SheetOCRService.swift in Sources */,
+				7FA26181FC5B3B11E730D464 /* SheetOcrParser.swift in Sources */,
 				58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */,
 				4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */,
 			);
@@ -344,7 +408,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
 				INFOPLIST_KEY_CFBundleName = "AI吉他";
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要使用相机拍摄曲谱图片。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麦克风用于视唱训练与调音识别。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册以导入曲谱图片。";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -503,7 +569,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
 				INFOPLIST_KEY_CFBundleName = "AI吉他";
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要使用相机拍摄曲谱图片。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麦克风用于视唱训练与调音识别。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册以导入曲谱图片。";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (

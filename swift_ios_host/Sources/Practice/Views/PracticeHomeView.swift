@@ -75,9 +75,9 @@ struct PracticeHomeView: View {
                     }
                 }
 
-                // 我的谱（占位）
+                // 我的谱
                 NavigationLink {
-                    PlaceholderPracticeSheetsView()
+                    SheetLibraryView()
                 } label: {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -227,23 +227,6 @@ private struct PracticeHistoryView: View {
             }
         }
         .navigationTitle("练习历史")
-        .appPageBackground()
-    }
-}
-
-private struct PlaceholderPracticeSheetsView: View {
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "music.note.list")
-                .font(.system(size: 44, weight: .semibold))
-            Text("我的谱")
-                .font(.title2.weight(.semibold))
-            Text("Swift 版本的「曲谱」模块尚未迁移。")
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(24)
-        .navigationTitle("我的谱")
         .appPageBackground()
     }
 }

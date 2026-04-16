@@ -31,6 +31,13 @@ let kDefaultPracticeTasks: [PracticeTask] = [
     ),
 ]
 
+let kSheetPracticeTask = PracticeTask(
+    id: "sheet-practice",
+    name: "谱面跟练",
+    targetMinutes: 10,
+    description: "在我的谱中跟弹与复盘。"
+)
+
 struct PracticeSummary: Equatable {
     let todayMinutes: Int
     let todaySessions: Int
