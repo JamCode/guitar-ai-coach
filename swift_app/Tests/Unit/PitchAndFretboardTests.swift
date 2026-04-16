@@ -20,6 +20,12 @@ final class PitchAndFretboardTests: XCTestCase {
         XCTAssertNil(FretboardMath.labelForCell(stringIndex: 0, fret: 2, capo: 0, naturalOnly: true))
     }
 
+    func testFretboardMidiWithCapoUsesAbsoluteFrets() {
+        XCTAssertEqual(FretboardMath.midiAtFret(stringIndex: 0, fret: 0, capo: 2), 42)
+        XCTAssertEqual(FretboardMath.midiAtFret(stringIndex: 0, fret: 5, capo: 2), 45)
+        XCTAssertEqual(FretboardMath.midiAtFret(stringIndex: 5, fret: 0, capo: 0), 64)
+    }
+
     func testChordSymbolBuild() {
         XCTAssertEqual(ChordSymbolBuilder.build(root: "C", qualityId: "maj7", bassId: ""), "Cmaj7")
         XCTAssertEqual(ChordSymbolBuilder.build(root: "D", qualityId: "m", bassId: "5"), "Dm/5")
