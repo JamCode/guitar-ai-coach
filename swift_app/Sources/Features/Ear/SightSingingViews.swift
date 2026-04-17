@@ -63,13 +63,17 @@ public struct SightSingingSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: SightSingingSessionViewModel
     @State private var showResult = false
+    private let onSessionComplete: ((SightSingingResult) -> Void)?
+    private let autoDismissOnComplete: Bool
 
     public init(
         repository: SightSingingRepository,
         pitchRange: String,
         includeAccidental: Bool,
         questionCount: Int,
-        pitchTracker: SightSingingPitchTracking
+        pitchTracker: SightSingingPitchTracking,
+        onSessionComplete: ((SightSingingResult) -> Void)? = nil,
+        autoDismissOnComplete: Bool = true
     ) {
         _viewModel = StateObject(
             wrappedValue: SightSingingSessionViewModel(
@@ -80,6 +84,8 @@ public struct SightSingingSessionView: View {
                 questionCount: questionCount
             )
         )
+        self.onSessionComplete = onSessionComplete
+        self.autoDismissOnComplete = autoDismissOnComplete
     }
 
     public var body: some View {
@@ -153,7 +159,14 @@ public struct SightSingingSessionView: View {
             }
         }
         .alert("本轮完成", isPresented: $showResult) {
-            Button("确定") { dismiss() }
+            Button("确定") {
+                if let result = viewModel.finalResult {
+                    onSessionComplete?(result)
+                }
+                if autoDismissOnComplete {
+                    dismiss()
+                }
+            }
         } message: {
             Text(viewModel.resultText ?? "训练完成")
         }
