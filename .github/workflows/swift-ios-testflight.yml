@@ -26,7 +26,8 @@ concurrency:
 jobs:
   upload_testflight:
     name: Archive and upload to TestFlight
-    runs-on: macos-latest
+    # macos-26 镜像含 Xcode 26.4（与本机默认 Xcode.app 对齐）；勿用 macos-latest 以免落到旧镜像仍默认 Xcode 16 + iOS 18 SDK。
+    runs-on: macos-26
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PROJECT_PATH: swift_ios_host/SwiftEarHost.xcodeproj
@@ -46,6 +47,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select Xcode 26.4 (match local)
+        run: |
+          # 路径与版本见: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md
+          DEV="/Applications/Xcode_26.4.app/Contents/Developer"
+          if [[ ! -d "$DEV" ]]; then
+            echo "::error::未找到 Xcode 26.4: ${DEV}。请确认 jobs.runs-on 为 macos-26，或按 runner-images 更新 Xcode 路径。"
+            ls /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
+          fi
+          sudo xcode-select -s "$DEV"
+          echo "DEVELOPER_DIR=${DEV}" >> "$GITHUB_ENV"
+          xcodebuild -version
 
       - name: Validate required secrets
         run: |
@@ -209,6 +223,7 @@ jobs:
           {
             echo "## Swift iOS TestFlight Upload"
             echo ""
+            echo "- Xcode: \`$(xcodebuild -version | tr '\n' ' ')\`"
             echo "- Bundle ID: \`${{ steps.build_meta.outputs.bundle_id }}\`"
             echo "- Marketing Version: \`${{ steps.build_meta.outputs.marketing_version }}\`"
             echo "- Build Number: \`${{ steps.build_meta.outputs.build_number }}\`"
