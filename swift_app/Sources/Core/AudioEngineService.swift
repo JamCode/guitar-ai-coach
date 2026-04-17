@@ -34,6 +34,49 @@ public protocol AudioEngineServing: AnyObject {
     ) throws
 }
 
+enum GuitarPlaybackHumanizer {
+    static func velocity(base: UInt8, midi: Int, noteIndex: Int? = nil, totalNotes: Int? = nil) -> UInt8 {
+        let baseValue = max(1, min(127, Int(base)))
+        let pitchBias = if midi <= 47 {
+            5
+        } else if midi <= 59 {
+            2
+        } else {
+            0
+        }
+        let edgeBias: Int = if let noteIndex, let totalNotes, totalNotes > 1 {
+            noteIndex == 0 ? 3 : (noteIndex == totalNotes - 1 ? 1 : 0)
+        } else {
+            0
+        }
+        let cyclicOffset = ((midi * 17) + (noteIndex ?? 0) * 13) % 5 - 2
+        return UInt8(max(1, min(127, baseValue + pitchBias + edgeBias + cyclicOffset)))
+    }
+
+    static func gate(base: Double, midi: Int, noteIndex: Int? = nil, totalNotes: Int? = nil) -> Double {
+        let baseValue = max(0.08, base)
+        let pitchBias = if midi <= 47 {
+            0.24
+        } else if midi <= 59 {
+            0.14
+        } else {
+            0.07
+        }
+        let strumBias: Double = if let noteIndex, let totalNotes, totalNotes > 1 {
+            Double(max(0, totalNotes - 1 - noteIndex)) * 0.018
+        } else {
+            0
+        }
+        let cyclicOffset = Double(((midi * 19) + (noteIndex ?? 0) * 7) % 4) * 0.012
+        return min(2.6, baseValue + pitchBias + strumBias + cyclicOffset)
+    }
+
+    static func microDelay(noteIndex: Int, totalNotes: Int) -> Double {
+        guard totalNotes > 1 else { return 0 }
+        return Double((noteIndex * 5 + totalNotes) % 3) * 0.0015
+    }
+}
+
 public final class AudioEngineService: AudioEngineServing {
     public let quality: AudioQualityBaseline
     private let engine = AVAudioEngine()
@@ -42,6 +85,9 @@ public final class AudioEngineService: AudioEngineServing {
     private let pluckVoices: [AVAudioPlayerNode]
     private var nextPluckVoice = 0
     private let sampler = AVAudioUnitSampler()
+    private let guitarMixer = AVAudioMixerNode()
+    private let guitarEQ = AVAudioUnitEQ(numberOfBands: 3)
+    private let guitarReverb = AVAudioUnitReverb()
     private var sampledGuitarLoaded = false
     private let samplerQueue = DispatchQueue(label: "guitar-ai-coach.audio.sampler-gate", qos: .userInitiated)
     private var started = false
@@ -54,11 +100,18 @@ public final class AudioEngineService: AudioEngineServing {
             engine.attach(voice)
         }
         engine.attach(sampler)
+        engine.attach(guitarMixer)
+        engine.attach(guitarEQ)
+        engine.attach(guitarReverb)
         engine.connect(player, to: engine.mainMixerNode, format: nil)
         for voice in pluckVoices {
-            engine.connect(voice, to: engine.mainMixerNode, format: nil)
+            engine.connect(voice, to: guitarMixer, format: nil)
         }
-        engine.connect(sampler, to: engine.mainMixerNode, format: nil)
+        engine.connect(sampler, to: guitarMixer, format: nil)
+        engine.connect(guitarMixer, to: guitarEQ, format: nil)
+        engine.connect(guitarEQ, to: guitarReverb, format: nil)
+        engine.connect(guitarReverb, to: engine.mainMixerNode, format: nil)
+        configureGuitarToneChain()
     }
 
     public func start() throws {
@@ -82,6 +135,34 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
     public var isSampledGuitarAvailable: Bool { sampledGuitarLoaded }
+
+    private func configureGuitarToneChain() {
+        guitarMixer.outputVolume = 0.92
+
+        let lowMidCut = guitarEQ.bands[0]
+        lowMidCut.filterType = .parametric
+        lowMidCut.frequency = 240
+        lowMidCut.bandwidth = 0.8
+        lowMidCut.gain = -3.0
+        lowMidCut.bypass = false
+
+        let presenceBoost = guitarEQ.bands[1]
+        presenceBoost.filterType = .parametric
+        presenceBoost.frequency = 3_200
+        presenceBoost.bandwidth = 0.7
+        presenceBoost.gain = 2.2
+        presenceBoost.bypass = false
+
+        let airShelf = guitarEQ.bands[2]
+        airShelf.filterType = .highShelf
+        airShelf.frequency = 7_200
+        airShelf.bandwidth = 0.6
+        airShelf.gain = 1.6
+        airShelf.bypass = false
+
+        guitarReverb.loadFactoryPreset(.mediumRoom)
+        guitarReverb.wetDryMix = 11
+    }
 
     private func loadSampledGuitarIfNeeded() {
         guard !sampledGuitarLoaded else { return }
@@ -122,10 +203,14 @@ public final class AudioEngineService: AudioEngineServing {
             return
         }
         let clampedMidi = UInt8(max(0, min(127, midi)))
-        let clampedVelocity = max(1, min(127, velocity))
+        let shapedVelocity = GuitarPlaybackHumanizer.velocity(base: velocity, midi: midi)
+        let gate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi)
         let start = DispatchTime.now().uptimeNanoseconds
-        sampler.startNote(clampedMidi, withVelocity: clampedVelocity, onChannel: 0)
-        let gate = max(0.05, gateDurationSec)
+        samplerQueue.sync { [weak self] in
+            guard let self else { return }
+            self.sampler.stopNote(clampedMidi, onChannel: 0)
+            self.sampler.startNote(clampedMidi, withVelocity: shapedVelocity, onChannel: 0)
+        }
         samplerQueue.asyncAfter(deadline: .now() + gate) { [weak self] in
             self?.sampler.stopNote(clampedMidi, onChannel: 0)
         }
@@ -145,39 +230,31 @@ public final class AudioEngineService: AudioEngineServing {
         let notes = midis.filter { $0 >= 0 && $0 <= 127 }
         guard !notes.isEmpty else { return }
         let start = DispatchTime.now().uptimeNanoseconds
-        let clampedVelocity = UInt8(max(1, min(127, Int(velocity))))
-        let gate = max(0.08, gateDurationSec)
         let stagger = max(0, stringStaggerSec)
 
         guard sampledGuitarLoaded else {
             for midi in notes {
                 let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
-                try? playPluckedGuitarString(frequencyHz: frequency, durationSec: max(0.95, gate + 0.55))
+                let shapedGate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi)
+                try? playPluckedGuitarString(frequencyHz: frequency, durationSec: max(0.95, shapedGate + 0.35))
             }
             let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
             quality.markCallback(renderCostMs: elapsedMs)
             return
         }
 
-        samplerQueue.sync { [weak self] in
-            guard let self else { return }
-            for n in 0...127 {
-                self.sampler.stopNote(UInt8(n), onChannel: 0)
-            }
-        }
-
         for (i, midi) in notes.enumerated() {
-            let delay = Double(i) * stagger
+            let delay = Double(i) * stagger + GuitarPlaybackHumanizer.microDelay(noteIndex: i, totalNotes: notes.count)
             let note = UInt8(midi)
+            let shapedVelocity = GuitarPlaybackHumanizer.velocity(base: velocity, midi: midi, noteIndex: i, totalNotes: notes.count)
+            let shapedGate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi, noteIndex: i, totalNotes: notes.count)
             samplerQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
-                self?.sampler.startNote(note, withVelocity: clampedVelocity, onChannel: 0)
+                guard let self else { return }
+                self.sampler.stopNote(note, onChannel: 0)
+                self.sampler.startNote(note, withVelocity: shapedVelocity, onChannel: 0)
             }
-        }
-        let noteOffDelay = gate + Double(max(0, notes.count - 1)) * stagger
-        samplerQueue.asyncAfter(deadline: .now() + noteOffDelay) { [weak self] in
-            guard let self else { return }
-            for midi in notes {
-                self.sampler.stopNote(UInt8(clamping: midi), onChannel: 0)
+            samplerQueue.asyncAfter(deadline: .now() + delay + shapedGate) { [weak self] in
+                self?.sampler.stopNote(note, onChannel: 0)
             }
         }
         let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000

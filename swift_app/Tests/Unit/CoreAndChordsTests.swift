@@ -37,5 +37,21 @@ final class CoreAndChordsTests: XCTestCase {
         let midis = GuitarStandardTuning.midisFromChordFretsSixToOne(c)
         XCTAssertEqual(midis, [48, 52, 55, 60, 64])
     }
+
+    func testGuitarPlaybackHumanizerShapesBassMoreThanTreble() {
+        let bassVelocity = GuitarPlaybackHumanizer.velocity(base: 88, midi: 40, noteIndex: 0, totalNotes: 5)
+        let trebleVelocity = GuitarPlaybackHumanizer.velocity(base: 88, midi: 67, noteIndex: 4, totalNotes: 5)
+        XCTAssertGreaterThan(bassVelocity, trebleVelocity)
+
+        let bassGate = GuitarPlaybackHumanizer.gate(base: 1.35, midi: 40, noteIndex: 0, totalNotes: 5)
+        let trebleGate = GuitarPlaybackHumanizer.gate(base: 1.35, midi: 67, noteIndex: 4, totalNotes: 5)
+        XCTAssertGreaterThan(bassGate, trebleGate)
+    }
+
+    func testGuitarPlaybackHumanizerMicroDelayStaysSubtle() {
+        let delays = (0..<5).map { GuitarPlaybackHumanizer.microDelay(noteIndex: $0, totalNotes: 5) }
+        XCTAssertTrue(delays.allSatisfy { $0 >= 0 && $0 <= 0.003 })
+        XCTAssertTrue(Set(delays).count > 1)
+    }
 }
 
