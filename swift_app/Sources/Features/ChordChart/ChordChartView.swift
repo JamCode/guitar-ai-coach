@@ -7,7 +7,6 @@ private final class ChordChartAudioHolder: ObservableObject {
 }
 
 public struct ChordChartView: View {
-    @State private var selectedEntry: ChordChartEntry?
     @State private var expandedSections: Set<String> = [ChordChartData.sections.first?.id ?? ""]
     @StateObject private var chartAudio = ChordChartAudioHolder()
 
@@ -18,7 +17,7 @@ public struct ChordChartView: View {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("关于本表").appSectionTitle()
-                    Text("按和弦类型分组：基础三和弦、七和弦、挂留、加音、延伸与变化和弦。点按右侧指法图试听（先分解后柱式）。")
+                    Text("按和弦类型分组：基础三和弦、七和弦、挂留、加音、延伸与变化和弦。点按和弦卡片试听（先分解后柱式）。")
                         .foregroundStyle(SwiftAppTheme.muted)
                 }
                 .appCard()
@@ -36,10 +35,10 @@ public struct ChordChartView: View {
                         ) {
                             VStack(spacing: 8) {
                                 ForEach(section.entries) { entry in
-                                    HStack(alignment: .top, spacing: 10) {
-                                        Button {
-                                            selectedEntry = entry
-                                        } label: {
+                                    Button {
+                                        chartAudio.tonePlayer.playChordFrets(entry.frets)
+                                    } label: {
+                                        HStack(alignment: .top, spacing: 10) {
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(entry.symbol)
                                                     .font(.headline)
@@ -61,15 +60,18 @@ public struct ChordChartView: View {
                                             .padding(.vertical, 6)
                                             .padding(.horizontal, 10)
                                             .contentShape(Rectangle())
-                                        }
-                                        .buttonStyle(.plain)
 
-                                        chordDiagramTapToPlay(entry: entry, compact: true)
+                                            chordDiagramCard(entry: entry)
+                                        }
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(SwiftAppTheme.surfaceSoft)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                     }
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(SwiftAppTheme.surfaceSoft)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("\(entry.symbol) 和弦")
+                                    .accessibilityHint("点按试听，先分解琶音再柱式和弦")
                                 }
                             }
                             .padding(.top, 10)
@@ -93,57 +95,18 @@ public struct ChordChartView: View {
         .onAppear {
             chartAudio.tonePlayer.prepare()
         }
-        .sheet(item: $selectedEntry) { entry in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text(entry.symbol).font(.largeTitle.bold())
-                    Text(entry.theory)
-                    if let voicing = entry.voicing {
-                        Text(voicing).foregroundStyle(SwiftAppTheme.brand)
-                    }
-                    chordDiagramTapToPlay(entry: entry, compact: false)
-                    Text("点按指法图试听：先分解（低音→高音），再柱式和弦。")
-                        .font(.caption)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                    Text("指法图（6→1 弦）")
-                        .font(.caption)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                    Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
-                        .font(.body.monospaced())
-                }
-                .padding(20)
-            }
-        }
     }
 
-    @ViewBuilder
-    private func chordDiagramTapToPlay(entry: ChordChartEntry, compact: Bool) -> some View {
-        let diagram = ChordDiagramView(frets: entry.frets)
-            .frame(width: compact ? 76 : nil, height: compact ? 98 : 240)
-            .frame(maxWidth: compact ? nil : .infinity)
-            .padding(compact ? 6 : 12)
+    private func chordDiagramCard(entry: ChordChartEntry) -> some View {
+        ChordDiagramView(frets: entry.frets)
+            .frame(width: 76, height: 98)
+            .padding(6)
             .background(SwiftAppTheme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: compact ? 10 : 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: compact ? 10 : 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
             )
-            .contentShape(RoundedRectangle(cornerRadius: compact ? 10 : 14, style: .continuous))
-            .onTapGesture {
-                chartAudio.tonePlayer.playChordFrets(entry.frets)
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("指法图 \(entry.symbol)，点按试听和弦")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityHint("先依次播放各弦再同时播放柱式和弦")
-
-        if compact {
-            diagram
-        } else {
-            diagram
-                .padding(12)
-                .background(SwiftAppTheme.surfaceSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
+            .accessibilityHidden(true)
     }
 }
