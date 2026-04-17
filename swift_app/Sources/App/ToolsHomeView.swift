@@ -59,6 +59,15 @@ public struct ToolsHomeView: View {
                     )
                 }
                 NavigationLink {
+                    ScaleTrainingPracticeView()
+                } label: {
+                    toolsRow(
+                        title: "音阶训练",
+                        subtitle: "大调/小调/五声·Mi/Sol/La 指型·自动出题",
+                        systemImage: "music.note.list"
+                    )
+                }
+                NavigationLink {
                     ChordLookupView()
                 } label: {
                     toolsRow(

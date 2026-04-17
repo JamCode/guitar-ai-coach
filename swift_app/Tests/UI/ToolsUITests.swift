@@ -23,6 +23,7 @@ final class ToolsUITests: XCTestCase {
         _ = DiagnosticLogsView()
         _ = EarHomeView()
         _ = TraditionalCrawlPracticeView()
+        _ = ScaleTrainingPracticeView()
         _ = IntervalEarView()
         _ = EarMcqSessionView(title: "和弦听辨", bank: "A")
         _ = SightSingingSetupView()
