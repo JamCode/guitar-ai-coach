@@ -24,11 +24,9 @@ struct PracticeLandingView: View {
                 content
             }
         }
-        .background(Color.white.ignoresSafeArea())
+        .background(SwiftAppTheme.bg.ignoresSafeArea())
         .navigationTitle("练习")
         .appNavigationBarChrome()
-        .toolbarBackground(Color.white, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
@@ -83,7 +81,7 @@ struct PracticeLandingView: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .practiceWhitePageBackground()
+        .practiceScrollPageBackground()
         .refreshable { await vm.refresh() }
     }
 
@@ -206,11 +204,11 @@ struct PracticeHomeView: View {
 }
 
 private extension View {
-    /// 练习首页专用：纯白页面底（与工具页浅灰底区分），同时保持列表滚动背景一致。
-    func practiceWhitePageBackground() -> some View {
+    /// 练习首页滚动区：与全站 `SwiftAppTheme.bg` 一致，随系统亮/暗色变化（不再强制纯白）。
+    func practiceScrollPageBackground() -> some View {
         self
             .scrollContentBackground(.hidden)
-            .background(Color.white.ignoresSafeArea())
+            .background(SwiftAppTheme.bg.ignoresSafeArea())
             .tint(SwiftAppTheme.brand)
     }
 }
