@@ -4,10 +4,27 @@ import XCTest
 final class EarCoreTests: XCTestCase {
     func testIntervalGeneratorBuildsFourChoicesAndAscendingPair() {
         var rng = SystemRandomNumberGenerator()
-        let q = IntervalQuestionGenerator.next(using: &rng)
+        let q = IntervalQuestionGenerator.next(difficulty: .高级, using: &rng)
         XCTAssertEqual(q.choices.count, 4)
-        XCTAssertGreaterThan(q.highMidi, q.lowMidi)
+        XCTAssertEqual(q.difficulty, .高级)
+        XCTAssertGreaterThanOrEqual(q.highMidi, q.lowMidi)
+        XCTAssertEqual(q.highMidi - q.lowMidi, q.answer.semitones)
         XCTAssertTrue(q.choices.contains(where: { $0.semitones == q.answer.semitones }))
+    }
+
+    func testIntervalBeginnerPresetExcludesTritone() {
+        let p = IntervalQuestionGenerator.preset(for: .初级)
+        XCTAssertFalse(p.poolSemitones.contains(6))
+    }
+
+    func testIntervalIntermediatePresetExcludesTritone() {
+        let p = IntervalQuestionGenerator.preset(for: .中级)
+        XCTAssertFalse(p.poolSemitones.contains(6))
+    }
+
+    func testIntervalAdvancedPresetIncludesTritone() {
+        let p = IntervalQuestionGenerator.preset(for: .高级)
+        XCTAssertTrue(p.poolSemitones.contains(6))
     }
 
     func testSightSingingScoreReturnsZeroWhenNoSamples() {
