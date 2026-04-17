@@ -1,9 +1,14 @@
 /**
  * 音程识别：基于 12 平均律的参数化出题（无题库）。
- * 每次根据允许的半音集合、MIDI 音域与乐理近邻规则生成一题。
+ * 默认入口为「初 / 中 / 高」难度，由内部映射音程池与音域；亦可使用完整参数接口做扩展。
  */
 
 export type TritoneLabelMode = 'aug4' | 'dim5'
+
+/** 对外难度：内部算法映射音程集合、MIDI 范围与三全音展示策略 */
+export type IntervalEarDifficulty = '初级' | '中级' | '高级'
+
+export type AntiAbsolutePitch = { previousLowerMidi: number; minSemitoneDelta: number }
 
 export type IntervalEarQuestionParams = {
   /** 本题允许出现的半音跨度（含正确答案与干扰项），元素为 0..12 的整数且互异，长度至少 4 */
@@ -19,7 +24,13 @@ export type IntervalEarQuestionParams = {
   /** 返回 [0,1) 的伪随机数；可注入 seed RNG 以便测试 */
   random: () => number
   /** 减轻「凭绝对音高猜题」：若提供，则尽量使本题的 lower 与上一题相差至少若干半音 */
-  antiAbsolutePitch?: { previousLowerMidi: number; minSemitoneDelta: number }
+  antiAbsolutePitch?: AntiAbsolutePitch
+}
+
+export type IntervalEarQuestionByDifficultyParams = {
+  difficulty: IntervalEarDifficulty
+  random: () => number
+  antiAbsolutePitch?: AntiAbsolutePitch
 }
 
 export type IntervalEarOption = {
@@ -38,6 +49,53 @@ export type IntervalEarQuestion = {
   options: IntervalEarOption[]
   /** options 中正确答案的下标 */
   correctIndex: number
+  /** 使用 `generateIntervalEarQuestionByDifficulty` 时带回传，便于埋点与 UI */
+  difficulty?: IntervalEarDifficulty
+}
+
+/** 各难度设计意图（供界面说明文案使用） */
+export const INTERVAL_EAR_DIFFICULTY_HELP: Record<IntervalEarDifficulty, string> = {
+  初级:
+    '协和与「框架」音程为主：纯一度/大二度/大三度/纯四度/纯五度/纯八度；不包含小二度与三全音；低音集中在舒适音区。',
+  中级:
+    '在初级基础上加入小二度及大小三、六、七度，仍不包含三全音，避免与纯四五混淆尚未巩固时叠加最难项；音区略宽。',
+  高级:
+    '含三全音（增四/减五）在内的全部 0..12 半音简单音程；音区更宽，更依赖相对音高而非绝对音高记忆。',
+}
+
+type DifficultyPresetCore = {
+  allowedSimpleSemitones: readonly number[]
+  lowerMidiMin: number
+  lowerMidiMax: number
+  upperMidiMax: number
+  tritoneLabel: TritoneLabelMode
+}
+
+const DIFFICULTY_PRESETS: Record<IntervalEarDifficulty, DifficultyPresetCore> = {
+  /** 稳定协和 + 大二度色彩；不含 1、6；音区居中偏小 */
+  初级: {
+    allowedSimpleSemitones: [0, 2, 4, 5, 7, 12],
+    lowerMidiMin: 60,
+    lowerMidiMax: 67,
+    upperMidiMax: 79,
+    tritoneLabel: 'aug4',
+  },
+  /** 全简单音程除三全音外；强调大小音程体系而暂缓三全音 */
+  中级: {
+    allowedSimpleSemitones: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12],
+    lowerMidiMin: 55,
+    lowerMidiMax: 72,
+    upperMidiMax: 84,
+    tritoneLabel: 'aug4',
+  },
+  /** 完整半音级；含三全音；音区更宽 */
+  高级: {
+    allowedSimpleSemitones: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    lowerMidiMin: 48,
+    lowerMidiMax: 76,
+    upperMidiMax: 96,
+    tritoneLabel: 'aug4',
+  },
 }
 
 const MAJOR_MINOR_PAIRS: ReadonlyArray<readonly [number, number]> = [
@@ -143,7 +201,7 @@ function pickLowerMidi(
   lowerMidiMax: number,
   upperMidiMax: number,
   random: () => number,
-  anti?: IntervalEarQuestionParams['antiAbsolutePitch'],
+  anti?: AntiAbsolutePitch,
 ): number {
   const hi = Math.min(lowerMidiMax, upperMidiMax - d)
   if (hi < lowerMidiMin) {
@@ -172,10 +230,37 @@ export function createDeterministicRng(seed: number): () => number {
   }
 }
 
+/** 查看某难度对应的内部乐理预设（音程池 + 音域），便于联调与文档 */
+export function resolveIntervalEarDifficultyPreset(difficulty: IntervalEarDifficulty): Readonly<DifficultyPresetCore> {
+  return DIFFICULTY_PRESETS[difficulty]
+}
+
+/**
+ * 推荐默认入口：仅传「初级 / 中级 / 高级」，内部展开为音程池与 MIDI 边界后再出题。
+ */
+export function generateIntervalEarQuestionByDifficulty(
+  params: IntervalEarQuestionByDifficultyParams,
+): IntervalEarQuestion {
+  const core = DIFFICULTY_PRESETS[params.difficulty]
+  return generateIntervalEarQuestion({
+    allowedSimpleSemitones: core.allowedSimpleSemitones,
+    lowerMidiMin: core.lowerMidiMin,
+    lowerMidiMax: core.lowerMidiMax,
+    upperMidiMax: core.upperMidiMax,
+    tritoneLabel: core.tritoneLabel,
+    random: params.random,
+    antiAbsolutePitch: params.antiAbsolutePitch,
+    difficulty: params.difficulty,
+  })
+}
+
 /**
  * 生成一题：先按乐理相关度挑选目标音程与三个干扰项，再随机低音与选项顺序。
+ * 需要完全自定义音程池或音域时使用；常规产品路径请用 `generateIntervalEarQuestionByDifficulty`。
  */
-export function generateIntervalEarQuestion(params: IntervalEarQuestionParams): IntervalEarQuestion {
+export function generateIntervalEarQuestion(
+  params: IntervalEarQuestionParams & { difficulty?: IntervalEarDifficulty },
+): IntervalEarQuestion {
   const pool = assertPool(params.allowedSimpleSemitones)
   const rnd = params.random
   const upperMax = params.upperMidiMax ?? 127
@@ -221,13 +306,17 @@ export function generateIntervalEarQuestion(params: IntervalEarQuestionParams): 
   )
   const upperMidi = lowerMidi + correctSemitones
 
-  return {
+  const base: IntervalEarQuestion = {
     lowerMidi,
     upperMidi,
     simpleSemitones: correctSemitones,
     options,
     correctIndex,
   }
+  if (params.difficulty !== undefined) {
+    base.difficulty = params.difficulty
+  }
+  return base
 }
 
 export function intervalMetaForSemitone(d: number, tritoneLabel: TritoneLabelMode): { id: string; labelZh: string } {
