@@ -5,6 +5,7 @@ import Chords
 import ChordsLive
 import ChordChart
 import Ear
+import Practice
 
 public struct ToolsHomeView: View {
     public init() {}
@@ -46,6 +47,15 @@ public struct ToolsHomeView: View {
                         title: "吉他指板",
                         subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
                         systemImage: "square.grid.3x3"
+                    )
+                }
+                NavigationLink {
+                    TraditionalCrawlPracticeView()
+                } label: {
+                    toolsRow(
+                        title: "爬格子",
+                        subtitle: "传统四指一格·推荐步骤与节拍建议",
+                        systemImage: "hand.raised.fingers.spread"
                     )
                 }
                 NavigationLink {
