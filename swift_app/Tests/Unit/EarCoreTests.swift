@@ -22,6 +22,27 @@ final class EarCoreTests: XCTestCase {
         XCTAssertFalse(p.poolSemitones.contains(6))
     }
 
+    func testChordMcqBeginnerAnswersAreMajorOrMinorOnly() {
+        var rng = SystemRandomNumberGenerator()
+        for _ in 0 ..< 24 {
+            let q = EarChordMcqGenerator.makeQuestion(difficulty: .初级, using: &rng)
+            XCTAssertEqual(q.questionType, "single_chord_quality")
+            XCTAssertEqual(q.options.count, 4)
+            let keys = Set(q.options.map(\.key))
+            XCTAssertEqual(keys.count, 4)
+            guard let qual = EarChordQuality(targetQualityToken: q.targetQuality ?? "") else {
+                XCTFail("unknown target_quality \(q.targetQuality ?? "")")
+                continue
+            }
+            XCTAssertTrue([.major, .minor].contains(qual), "unexpected answer \(qual)")
+        }
+    }
+
+    func testChordMcqAdvancedUsesFiveQualitiesInPool() {
+        let p = EarChordMcqGenerator.preset(for: .高级)
+        XCTAssertEqual(p.optionQualities.count, 5)
+    }
+
     func testIntervalAdvancedPresetIncludesTritone() {
         let p = IntervalQuestionGenerator.preset(for: .高级)
         XCTAssertTrue(p.poolSemitones.contains(6))

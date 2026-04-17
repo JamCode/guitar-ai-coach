@@ -3,6 +3,11 @@ import Foundation
 public struct EarMcqOption: Decodable, Hashable, Sendable {
     public let key: String
     public let label: String
+
+    public init(key: String, label: String) {
+        self.key = key
+        self.label = label
+    }
 }
 
 public struct EarBankItem: Decodable, Hashable, Sendable, Identifiable {
@@ -30,6 +35,33 @@ public struct EarBankItem: Decodable, Hashable, Sendable, Identifiable {
         case musicKey = "music_key"
         case progressionRoman = "progression_roman"
         case hintZh = "hint_zh"
+    }
+
+    /// 程序化构造（和弦听辨等），不依赖 `ear_seed` 条目。
+    public init(
+        id: String,
+        mode: String,
+        questionType: String,
+        promptZh: String,
+        options: [EarMcqOption],
+        correctOptionKey: String,
+        root: String?,
+        targetQuality: String?,
+        musicKey: String? = nil,
+        progressionRoman: String? = nil,
+        hintZh: String? = nil
+    ) {
+        self.id = id
+        self.mode = mode
+        self.questionType = questionType
+        self.promptZh = promptZh
+        self.options = options
+        self.correctOptionKey = correctOptionKey
+        self.root = root
+        self.targetQuality = targetQuality
+        self.musicKey = musicKey
+        self.progressionRoman = progressionRoman
+        self.hintZh = hintZh
     }
 }
 
