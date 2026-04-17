@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		130405B9938C20700331201D /* TodayRecommendationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECEFC296F96FEFDB9F5197B3 /* TodayRecommendationPlanner.swift */; };
+		1A2B3C4D5E6F708192A3B4C5 /* RecommendationHistoryMerging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5E4D3C2B1A0987654321AB /* RecommendationHistoryMerging.swift */; };
 		1C78E5853E20B93F79B3421E /* Profile in Frameworks */ = {isa = PBXBuildFile; productRef = 21929BB5D4BC54C7C1690129 /* Profile */; };
 		1D6925B0C7D1C03655046420 /* ChordPracticeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BBE379FBC86AF30F9A09A12 /* ChordPracticeSelectionView.swift */; };
 		1D79CC2FD290C774E1D86265 /* SheetsStoreAndParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB009ADEB470D6167573E47E /* SheetsStoreAndParserTests.swift */; };
@@ -38,6 +39,7 @@
 		E69983D149243B7A6D946061 /* Tuner in Frameworks */ = {isa = PBXBuildFile; productRef = D68C530C664DD0805DDA1187 /* Tuner */; };
 		EADF9BF054D46963D836E9AC /* PracticeAcceptanceChecklist.md in Resources */ = {isa = PBXBuildFile; fileRef = F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */; };
 		EE8F0E2991EB41875CAF9588 /* Ear in Frameworks */ = {isa = PBXBuildFile; productRef = EEDC03120E5A07496D4BF215 /* Ear */; };
+		C0FFEEBABECAFED00DEAD01 /* Practice in Frameworks */ = {isa = PBXBuildFile; productRef = C0FFEEBABECAFED00DEAD02 /* Practice */; };
 		F8DF882624B2A38F4303EF98 /* ChordQuickReferenceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95326B0E05757D83577B0F63 /* ChordQuickReferenceSheet.swift */; };
 		F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */ = {isa = PBXBuildFile; productRef = 231960F99C0DA8778FB6E8A8 /* Chords */; };
 		F9C3785BA4276FDB2D7476AE /* SheetLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A3A296C60AC0D562ADC713 /* SheetLibraryStore.swift */; };
@@ -64,6 +66,7 @@
 		4F8EDFBDBF5E75CB90D0B630 /* SheetOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetOCRService.swift; sourceTree = "<group>"; };
 		66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeFinishDialog.swift; sourceTree = "<group>"; };
 		6BBE379FBC86AF30F9A09A12 /* ChordPracticeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSelectionView.swift; sourceTree = "<group>"; };
+		6F5E4D3C2B1A0987654321AB /* RecommendationHistoryMerging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationHistoryMerging.swift; sourceTree = "<group>"; };
 		760384F757B9ADBF5C5E2DB7 /* SheetLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetLibraryView.swift; sourceTree = "<group>"; };
 		7A0944BA0BAA6C603F2C127D /* RecommendationHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationHistoryStore.swift; sourceTree = "<group>"; };
 		806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrummingPattern.swift; sourceTree = "<group>"; };
@@ -100,6 +103,7 @@
 				85F401EA077A7B0339A02A78 /* ChordChart in Frameworks */,
 				1C78E5853E20B93F79B3421E /* Profile in Frameworks */,
 				EE8F0E2991EB41875CAF9588 /* Ear in Frameworks */,
+				C0FFEEBABECAFED00DEAD01 /* Practice in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,6 +177,7 @@
 			children = (
 				4A3DB2D65570E500966B666B /* ChordProgressionLibrary.swift */,
 				99248B2B89EEEF58AC61A45E /* PracticeModels.swift */,
+				6F5E4D3C2B1A0987654321AB /* RecommendationHistoryMerging.swift */,
 				806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */,
 				DEAA48FC7903A0CA365BBE2E /* TodayRecommendationModels.swift */,
 			);
@@ -290,6 +295,7 @@
 				BC4B202C5F0E941A20A787C7 /* ChordChart */,
 				21929BB5D4BC54C7C1690129 /* Profile */,
 				EEDC03120E5A07496D4BF215 /* Ear */,
+				C0FFEEBABECAFED00DEAD02 /* Practice */,
 			);
 			productName = SwiftEarHost;
 			productReference = 95FB8986AD18C574ADA77797 /* SwiftEarHost.app */;
@@ -372,6 +378,7 @@
 				38E65678808AB3C07924C8F9 /* PracticeLandingView.swift in Sources */,
 				A1E418DAEBB1B8A41FB2E81B /* PracticeLocalStore.swift in Sources */,
 				BAAB390B79382E696ABF0074 /* PracticeModels.swift in Sources */,
+				1A2B3C4D5E6F708192A3B4C5 /* RecommendationHistoryMerging.swift in Sources */,
 				9FA03874E2C97FF63F5923C3 /* PracticeSessionStore.swift in Sources */,
 				A79B3979F4B96E1C5526E106 /* PracticeTimerSessionView.swift in Sources */,
 				682303963F7DBBEA6CBE3F4A /* RecommendationHistoryStore.swift in Sources */,
@@ -670,6 +677,10 @@
 		EEDC03120E5A07496D4BF215 /* Ear */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Ear;
+		};
+		C0FFEEBABECAFED00DEAD02 /* Practice */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Practice;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -4,12 +4,20 @@ import Core
 
 struct TodayRecommendationListView: View {
     let sessions: [PracticeSession]
+    let referenceDate: Date
+    let initialIndex: Int
     private let historyStore: any RecommendationHistoryStore = UserDefaultsRecommendationHistoryStore()
 
     @State private var loading = true
     @State private var errorText: String?
     @State private var items: [TodayRecommendationItem] = []
     @State private var currentIndex: Int = 0
+
+    init(sessions: [PracticeSession], referenceDate: Date = Date(), initialIndex: Int = 0) {
+        self.sessions = sessions
+        self.referenceDate = referenceDate
+        self.initialIndex = max(0, initialIndex)
+    }
 
     var body: some View {
         Group {
@@ -28,7 +36,7 @@ struct TodayRecommendationListView: View {
                 recommendationFlow
             }
         }
-        .navigationTitle(items.isEmpty ? "今日推荐" : "今日推荐 \(currentIndex + 1)/\(items.count)")
+        .navigationTitle(items.isEmpty ? "今日训练" : "今日训练 \(currentIndex + 1)/\(items.count)")
         .appPageBackground()
         .task { await loadRecommendations() }
     }
@@ -198,36 +206,12 @@ struct TodayRecommendationListView: View {
     private func loadRecommendations() async {
         loading = true
         errorText = nil
-        let history = await historyStore.loadRecent(now: Date(), days: 7)
-        let merged = mergeLegacyPracticeRecords(history)
-        var planner = TodayRecommendationPlanner()
+        let history = await historyStore.loadRecent(now: referenceDate, days: 7)
+        let merged = RecommendationHistoryMerging.mergeLegacyPracticeRecords(stored: history, sessions: sessions)
+        var planner = TodayRecommendationPlanner(referenceDate: referenceDate)
         items = await planner.buildRecommendations(historyRecords: merged)
-        currentIndex = 0
+        currentIndex = min(max(0, initialIndex), max(0, items.count - 1))
         loading = false
-    }
-
-    private func mergeLegacyPracticeRecords(_ stored: [RecommendationHistoryRecord]) -> [RecommendationHistoryRecord] {
-        let legacy = sessions.compactMap { session -> RecommendationHistoryRecord? in
-            let module: RecommendationModuleType
-            switch session.taskId {
-            case "chord-switch":
-                module = .chordSwitch
-            case "scale-walk":
-                module = .scaleTraining
-            case "traditional-crawl":
-                module = .traditionalCrawl
-            default:
-                return nil
-            }
-            return RecommendationHistoryRecord(
-                module: module,
-                completed: session.completed,
-                successRate: session.completed ? 1 : 0,
-                durationSeconds: session.durationSeconds,
-                occurredAt: session.endedAt
-            )
-        }
-        return stored + legacy
     }
 
     @MainActor

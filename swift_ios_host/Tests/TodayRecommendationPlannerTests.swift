@@ -2,11 +2,11 @@ import XCTest
 @testable import SwiftEarHost
 
 final class TodayRecommendationPlannerTests: XCTestCase {
-    func testBuildRecommendations_returnsSixUniqueModules() async {
+    func testBuildRecommendations_returnsThreeUniqueModules() async {
         var planner = TodayRecommendationPlanner(referenceDate: fixedNow)
         let items = await planner.buildRecommendations(historyRecords: [])
-        XCTAssertEqual(items.count, 6)
-        XCTAssertEqual(Set(items.map(\.module)).count, 6)
+        XCTAssertEqual(items.count, 3)
+        XCTAssertEqual(Set(items.map(\.module)).count, 3)
     }
 
     func testBuildRecommendations_defaultsToBeginnerWhenSamplesInsufficient() async {

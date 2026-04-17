@@ -32,11 +32,11 @@ enum RecommendationModuleType: String, CaseIterable, Identifiable, Codable {
 
     var icon: String {
         switch self {
-        case .intervalEar: return "play.circle"
+        case .intervalEar: return "ear"
         case .chordEar: return "pianokeys"
         case .sightSinging: return "mic"
-        case .chordSwitch: return "arrow.triangle.2.circlepath"
-        case .scaleTraining: return "music.note"
+        case .chordSwitch: return "guitars"
+        case .scaleTraining: return "music.note.list"
         case .traditionalCrawl: return "figure.walk"
         }
     }

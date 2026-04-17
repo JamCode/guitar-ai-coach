@@ -11,8 +11,9 @@ struct TodayRecommendationPlanner {
     }
 
     mutating func buildRecommendations(historyRecords: [RecommendationHistoryRecord]) async -> [TodayRecommendationItem] {
+        let modules = pickTodayModules(historyRecords: historyRecords)
         var items: [TodayRecommendationItem] = []
-        for module in RecommendationModuleType.allCases {
+        for module in modules {
             let difficulty = decideDifficulty(for: module, records: historyRecords)
             let reason = reasonText(for: module, difficulty: difficulty, records: historyRecords)
             let payload = await makePayload(for: module, difficulty: difficulty)
@@ -28,6 +29,61 @@ struct TodayRecommendationPlanner {
             )
         }
         return items
+    }
+
+    private func pickTodayModules(historyRecords: [RecommendationHistoryRecord]) -> [RecommendationModuleType] {
+        let all = RecommendationModuleType.allCases
+        let scored = all.map { module -> (RecommendationModuleType, Double) in
+            (module, modulePriorityScore(module: module, records: historyRecords))
+        }
+        .sorted { lhs, rhs in
+            if lhs.1 != rhs.1 { return lhs.1 > rhs.1 }
+            return lhs.0.rawValue < rhs.0.rawValue
+        }
+
+        let top = Array(scored.prefix(3).map(\.0))
+        guard top.count == 3 else { return top }
+
+        // 同一天内稳定打散：避免永远固定顺序，同时保证可复现（同一天同一套历史 -> 同一顺序）。
+        var tieBreaker = SeededGenerator(seed: daySeed(for: referenceDate))
+        return top.shuffled(using: &tieBreaker)
+    }
+
+    private func daySeed(for date: Date) -> UInt64 {
+        let day = calendar.startOfDay(for: date)
+        let comps = calendar.dateComponents([.year, .month, .day], from: day)
+        let y = UInt64(max(0, comps.year ?? 0))
+        let m = UInt64(max(0, comps.month ?? 0))
+        let d = UInt64(max(0, comps.day ?? 0))
+        return (y &* 1_000_000) &+ (m &* 1_000) &+ d
+    }
+
+    private func modulePriorityScore(module: RecommendationModuleType, records: [RecommendationHistoryRecord]) -> Double {
+        let recent = recentRecords(for: module, records: records)
+        let completionRate = recent.isEmpty ? 0 : Double(recent.filter(\.completed).count) / Double(recent.count)
+        let avgSuccess = recent.isEmpty ? 0 : recent.map(\.successRate).reduce(0, +) / Double(recent.count)
+
+        let inactive = Double(inactiveDays(for: module, records: records))
+        let inactivityBoost = min(40, inactive * 3)
+
+        let completionPenalty = completionRate * 18
+        let successPenalty = avgSuccess * 12
+
+        var score = 50 + inactivityBoost - completionPenalty - successPenalty
+
+        // 轻量偏好：让首页更容易出现「听感 + 手型」组合（可被历史数据覆盖）。
+        switch module {
+        case .intervalEar, .chordSwitch:
+            score += 6
+        default:
+            break
+        }
+
+        if consecutiveIncomplete(records: recent, count: 2) {
+            score += 8
+        }
+
+        return score
     }
 
     private func decideDifficulty(for module: RecommendationModuleType, records: [RecommendationHistoryRecord]) -> RecommendationDifficultyLevel {
@@ -202,5 +258,22 @@ struct TodayRecommendationPlanner {
         case let .traditionalCrawl(exercise):
             return "\(difficulty.rawValue) · 起始 \(exercise.startFret) 品 · \(exercise.rounds) 轮 · \(exercise.bpm) BPM"
         }
+    }
+}
+
+/// 轻量可复现随机源：用于「同一天内」稳定打散推荐顺序。
+private struct SeededGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        self.state = seed == 0 ? 0x9E37_79B9_7F4A_7C15 : seed
+    }
+
+    mutating func next() -> UInt64 {
+        // xorshift64*
+        state ^= state >> 12
+        state ^= state << 25
+        state ^= state >> 27
+        return state &* 0x2545_F491_4F6C_DD1D
     }
 }
