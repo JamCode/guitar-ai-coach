@@ -38,25 +38,8 @@ struct PracticeLandingView: View {
     }
 
     private var content: some View {
-        let dailyGoalMinutes = 20
-        let progress = min(1.0, max(0.0, Double(vm.summary.todayMinutes) / Double(dailyGoalMinutes)))
-
-        return ScrollView {
+        ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("今日目标：\(dailyGoalMinutes) 分钟")
-                        .font(.headline)
-                        .foregroundStyle(SwiftAppTheme.text)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("已完成：\(vm.summary.todayMinutes) 分钟").foregroundStyle(SwiftAppTheme.text)
-                        Text("已练习：\(vm.summary.todaySessions) 次").foregroundStyle(SwiftAppTheme.text)
-                        Text("连续打卡：\(vm.summary.streakDays) 天").foregroundStyle(SwiftAppTheme.text)
-                    }
-                    ProgressView(value: progress)
-                        .tint(SwiftAppTheme.brand)
-                }
-                .appCard()
-
                 Text("选择训练方向")
                     .appSectionTitle()
                     .padding(.top, 6)
@@ -75,39 +58,6 @@ struct PracticeLandingView: View {
                     icon: "music.note"
                 ) {
                     GuitarPracticeHubScreen()
-                }
-
-                HStack {
-                    Text("最近训练").appSectionTitle()
-                    Spacer()
-                    NavigationLink("查看训练日历") {
-                        PracticeCalendarScreen(sessions: vm.sessions)
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(SwiftAppTheme.brand)
-                }
-                .padding(.top, 6)
-
-                if let latest = vm.latestSession {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(latest.taskName)
-                                .font(.headline)
-                                .foregroundStyle(SwiftAppTheme.text)
-                            Spacer()
-                            Text("难度 \(latest.difficulty)/5")
-                                .font(.subheadline)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                        }
-                        Text(PracticeSessionDisplay.subtitle(latest))
-                            .font(.subheadline)
-                            .foregroundStyle(SwiftAppTheme.muted)
-                    }
-                    .appCard()
-                } else {
-                    Text("还没有练习记录，先开始第一次练习吧。")
-                        .foregroundStyle(SwiftAppTheme.muted)
-                        .appCard()
                 }
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -344,7 +294,6 @@ private struct PracticeLinkCard<Destination: View>: View {
 private final class PracticeLandingViewModel: ObservableObject {
     @Published var loading: Bool = true
     @Published var loadError: String?
-    @Published var summary: PracticeSummary = .init(todayMinutes: 0, todaySessions: 0, streakDays: 0)
     @Published var sessions: [PracticeSession] = []
 
     private let store: PracticeSessionStore
@@ -353,21 +302,14 @@ private final class PracticeLandingViewModel: ObservableObject {
         self.store = store
     }
 
-    var latestSession: PracticeSession? { sessions.first }
-
     func refresh() async {
         loading = true
         loadError = nil
         do {
-            async let summary = store.loadSummary(now: nil)
-            async let sessions = store.loadSessions()
-            let (s, list) = try await (summary, sessions)
-            self.summary = s
-            self.sessions = list
+            sessions = try await store.loadSessions()
             loading = false
         } catch {
             loadError = "读取本地练习记录失败：\(error)"
-            summary = .init(todayMinutes: 0, todaySessions: 0, streakDays: 0)
             sessions = []
             loading = false
         }
@@ -375,14 +317,6 @@ private final class PracticeLandingViewModel: ObservableObject {
 }
 
 private enum PracticeSessionDisplay {
-    static func subtitle(_ session: PracticeSession) -> String {
-        let timePart = "\(formatDate(session.endedAt)) · \(formatDuration(session.durationSeconds))"
-        if let id = session.rhythmPatternId, let name = strummingPatternNameForId(id) {
-            return "\(name) · \(timePart)"
-        }
-        return timePart
-    }
-
     static func duration(_ seconds: Int) -> String {
         formatDuration(seconds)
     }
@@ -400,14 +334,6 @@ private enum PracticeSessionDisplay {
         let m = String(format: "%02d", s / 60)
         let r = String(format: "%02d", s % 60)
         return "\(m):\(r)"
-    }
-
-    private static func formatDate(_ date: Date) -> String {
-        let cal = Calendar(identifier: .gregorian)
-        let comps = cal.dateComponents([.month, .day], from: date)
-        let month = String(format: "%02d", comps.month ?? 0)
-        let day = String(format: "%02d", comps.day ?? 0)
-        return "\(month)/\(day)"
     }
 }
 
