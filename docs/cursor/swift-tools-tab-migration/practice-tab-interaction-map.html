@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>练习 Tab · 页面与导航关系图</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a222c;
+      --text: #e8eef4;
+      --muted: #8b9aab;
+      --brand: #3d9cf5;
+      --line: #2a3544;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      padding: 24px 20px 48px;
+    }
+    h1 { font-size: 1.45rem; font-weight: 650; margin: 0 0 8px; }
+    .sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 28px; max-width: 720px; }
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 16px 28px;
+      padding: 14px 18px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 0.88rem;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+    .legend i {
+      display: inline-block; width: 28px; height: 0;
+      border-top: 2px solid var(--brand);
+      vertical-align: middle;
+    }
+    .legend i.dashed { border-top-style: dashed; opacity: 0.85; }
+    .legend i.dotted { border-top-style: dotted; opacity: 0.7; }
+    section { margin-bottom: 36px; }
+    h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 12px; color: var(--text); }
+    .mermaid {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 8px 8px;
+      overflow-x: auto;
+    }
+    .screens {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .screen {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px 16px;
+    }
+    .screen h3 { margin: 0 0 6px; font-size: 0.98rem; font-weight: 600; }
+    .screen .file { font-size: 0.75rem; color: var(--brand); word-break: break-all; margin-bottom: 10px; }
+    .screen ul { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.86rem; }
+    .screen li { margin-bottom: 6px; }
+    .screen strong { color: var(--text); font-weight: 550; }
+    code { font-size: 0.8em; background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; }
+    footer { color: var(--muted); font-size: 0.82rem; margin-top: 32px; }
+    a { color: var(--brand); }
+  </style>
+</head>
+<body>
+  <h1>练习 Tab：页面与点击去向</h1>
+  <p class="sub">
+    依据 <code>swift_ios_host</code> 中「练习」Tab（<code>PracticeHomeView</code> / <code>PracticeLandingView.swift</code>）与
+    <code>swift_app</code> 包内视唱练耳视图梳理。下图箭头表示用户操作后的界面跳转：实线为导航栈 push，虚线为 Sheet，点线为系统 Alert。
+    首次进入练习 Tab 时先显示占位页，切换一次后即挂载真实首页（见 <code>SwiftEarHostApp.swift</code>）。
+  </p>
+
+  <div class="legend">
+    <span><i></i> 实线：导航栈 push（NavigationLink）</span>
+    <span><i class="dashed"></i> 虚线：Sheet 弹出层或 Alert（图中统一用虚线表示非 push 交互）</span>
+  </div>
+
+  <section>
+    <h2>总览流程图（Mermaid）</h2>
+    <div class="mermaid">
+flowchart TB
+  subgraph practiceTab ["练习 Tab · NavigationStack"]
+    PL["占位页\nPlaceholderView"]
+    PH["练习首页\nPracticeLandingView"]
+  end
+
+  CAL["训练日历\nPracticeCalendarScreen"]
+
+  EAR["视唱练耳 Hub\nEarPracticeHubScreen"]
+  INT["音程识别\nIntervalEarView"]
+  MCQA["和弦听辨\nEarMcqSessionView A"]
+  MCQB["和弦进行\nEarMcqSessionView B"]
+  SSU["视唱训练设置\nSightSingingSetupView"]
+  SSS["视唱训练会话\nSightSingingSessionView"]
+
+  GTR["练琴 Hub\nGuitarPracticeHubScreen"]
+  CHS["和弦切换配置\nChordPracticeSelectionView"]
+  PCK["选择和弦进行 Sheet\nChordProgressionPickerSheet"]
+  CHX["和弦练习会话\nChordPracticeSessionView"]
+  REF["指法速查 Sheet\nChordResultSheet"]
+  RHY["节奏扫弦\nRhythmStrummingView"]
+  SCL["音阶爬格子计时\nPracticeTimerSessionView"]
+  FIN["保存练习 Sheet\nPracticeFinishDialog"]
+
+  A_INT["Alert 本轮完成"]
+  A_MCQ["Alert 本轮完成"]
+  A_SS["Alert 训练完成"]
+  A_RHY_H["Alert 图示说明"]
+  A_LEAVE["Alert 离开练习"]
+  A_NEED["Alert 先开始再结束"]
+  A_SAVE["Alert 记录已保存"]
+  A_ERR["Alert 和弦解析失败"]
+
+  PL -->|首次选中练习 Tab| PH
+  PH -->|toolbar 日历| CAL
+  PH -->|卡片 视唱练耳| EAR
+  PH -->|卡片 练琴| GTR
+
+  EAR --> INT
+  EAR --> MCQA
+  EAR --> MCQB
+  EAR --> SSU
+  SSU -->|开始训练| SSS
+
+  INT -.->|确定| A_INT
+  MCQA -.->|确定| A_MCQ
+  MCQB -.->|确定| A_MCQ
+  SSS -.->|确定| A_SS
+
+  GTR --> CHS
+  GTR --> RHY
+  GTR --> SCL
+
+  CHS -.->|点 和弦进行| PCK
+  CHS -->|开始练习| CHX
+  CHX -.->|点和弦名| REF
+  CHX -.->|结束| FIN
+  CHX -.->|返回| A_LEAVE
+  CHX -.->|未计时点结束| A_NEED
+  CHX -.->|保存成功| A_SAVE
+  REF -.->|解析失败| A_ERR
+
+  RHY -.->|toolbar 问号| A_RHY_H
+  RHY -.->|完成练习| FIN
+  RHY -.->|返回| A_LEAVE
+
+  SCL -.->|结束| FIN
+  SCL -.->|返回| A_LEAVE
+  SCL -.->|未计时点结束| A_NEED
+  SCL -.->|保存成功| A_SAVE
+    </div>
+  </section>
+
+  <section>
+    <h2>各页交互要点（与上图对应）</h2>
+    <div class="screens">
+      <div class="screen">
+        <h3>练习首页</h3>
+        <div class="file">PracticeLandingView.swift · PracticeLandingView</div>
+        <ul>
+          <li><strong>下拉</strong>：刷新本地练习记录</li>
+          <li><strong>训练日历</strong> → 训练日历页</li>
+          <li><strong>视唱练耳</strong> → 视唱练耳 Hub</li>
+          <li><strong>练琴</strong> → 练琴 Hub</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>训练日历</h3>
+        <div class="file">PracticeLandingView.swift · PracticeCalendarScreen</div>
+        <ul>
+          <li>图形化 DatePicker、当日记录列表（无二级页）</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>视唱练耳 Hub</h3>
+        <div class="file">PracticeLandingView.swift · EarPracticeHubScreen</div>
+        <ul>
+          <li>四个卡片分别进入音程 / 和弦听辨 / 和弦进行 / 视唱设置</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>音程识别</h3>
+        <div class="file">swift_app · IntervalEarView.swift</div>
+        <ul>
+          <li>题内：播放、四选一、提交、下一题 / 查看结果</li>
+          <li><strong>Alert「本轮完成」· 确定</strong> → 弹出栈回到 Hub</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>和弦听辨 / 和弦进行</h3>
+        <div class="file">swift_app · EarMcqSessionView.swift</div>
+        <ul>
+          <li>标题分别为传入的 title（和弦听辨 / 和弦进行）</li>
+          <li><strong>Alert「本轮完成」· 确定</strong> → 回到 Hub</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>视唱训练 · 设置</h3>
+        <div class="file">swift_app · SightSingingViews.swift · SightSingingSetupView</div>
+        <ul>
+          <li><strong>开始训练</strong> → 视唱训练会话</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>视唱训练 · 会话</h3>
+        <div class="file">swift_app · SightSingingSessionView</div>
+        <ul>
+          <li>判定、下一题 / 查看结果 → <strong>Alert 训练完成</strong> → 确定回到 Hub</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>练琴 Hub</h3>
+        <div class="file">PracticeLandingView.swift · GuitarPracticeHubScreen</div>
+        <ul>
+          <li>内置三项：和弦切换、节奏扫弦、音阶爬格子（<code>kDefaultPracticeTasks</code>）</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>和弦切换 · 配置</h3>
+        <div class="file">ChordPracticeSelectionView.swift</div>
+        <ul>
+          <li><strong>和弦进行 行</strong> → Sheet 选择和弦进行</li>
+          <li><strong>开始练习</strong> → 和弦练习会话（底部主按钮）</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>选择和弦进行 · Sheet</h3>
+        <div class="file">ChordPracticeSelectionView.swift · ChordProgressionPickerSheet</div>
+        <ul>
+          <li>点列表项选中并关闭 Sheet；<strong>关闭</strong>取消</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>和弦切换 · 练习会话</h3>
+        <div class="file">ChordPracticeSessionView.swift</div>
+        <ul>
+          <li><strong>点和弦名</strong> → 指法速查 Sheet（多把位 TabView）</li>
+          <li>开始 / 暂停 / 结束 → 结束打开保存 Sheet</li>
+          <li><strong>返回 chevron</strong> → 离开确认 Alert</li>
+          <li>保存成功 → <strong>记录已保存</strong> → 返回 → 回到配置页</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>节奏扫弦</h3>
+        <div class="file">RhythmStrummingView.swift</div>
+        <ul>
+          <li><strong>完成练习</strong> → 保存练习 Sheet</li>
+          <li><strong>toolbar ?</strong> → 图示说明 Alert</li>
+          <li><strong>返回</strong> → 离开确认（文案与和弦略有不同）</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>音阶爬格子 · 计时</h3>
+        <div class="file">PracticeTimerSessionView.swift</div>
+        <ul>
+          <li>开始 / 暂停 / 结束 → 保存 Sheet（与和弦会话同类对话框）</li>
+          <li>返回 → 离开确认；需先计时再结束，否则「先开始练习再结束」</li>
+        </ul>
+      </div>
+      <div class="screen">
+        <h3>保存练习 · Sheet</h3>
+        <div class="file">PracticeFinishDialog.swift</div>
+        <ul>
+          <li>取消关闭 Sheet；保存记录 → 写本地后关闭并触发后续 Alert（依父视图逻辑）</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    本地查看：用浏览器打开本文件。若 Mermaid 未渲染，请检查网络（需加载 CDN）或改用支持 Mermaid 的 Markdown 预览器打开同目录下内容。
+    源码入口：<code>swift_ios_host/Sources/SwiftEarHostApp.swift</code>（Tab 1）、<code>swift_ios_host/Sources/Practice/Views/PracticeLandingView.swift</code>。
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "loose",
+      flowchart: { curve: "basis", padding: 10, nodeSpacing: 24, rankSpacing: 32 }
+    });
+  </script>
+</body>
+</html>
