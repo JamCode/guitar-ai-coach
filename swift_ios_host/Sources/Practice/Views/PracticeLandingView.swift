@@ -1,8 +1,9 @@
 import SwiftUI
 import Core
 import Ear
+import Practice
 
-/// 练习模块首页：首屏仅保留「视唱练耳 / 练琴」两条主路径。
+/// 练习模块首页：突出「今日训练」题单，并保留专项快速入口。
 struct PracticeLandingView: View {
     @StateObject private var vm = PracticeLandingViewModel()
 
@@ -23,15 +24,20 @@ struct PracticeLandingView: View {
                 content
             }
         }
+        .background(Color.white.ignoresSafeArea())
         .navigationTitle("练习")
         .appNavigationBarChrome()
+        .toolbarBackground(Color.white, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
                     PracticeCalendarScreen(sessions: vm.sessions)
                 } label: {
-                    Label("训练日历", systemImage: "calendar")
+                    Image(systemName: "calendar")
+                        .foregroundStyle(SwiftAppTheme.text)
                 }
+                .accessibilityLabel("训练日历")
             }
         }
         .task { await vm.refresh() }
@@ -39,57 +45,153 @@ struct PracticeLandingView: View {
 
     private var content: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("选择训练方向")
+            VStack(alignment: .leading, spacing: 14) {
+                todayTrainingCard
+
+                Text("快速开始")
                     .appSectionTitle()
-                    .padding(.top, 6)
 
-                landingEntryCard(
-                    title: "视唱练耳",
-                    subtitle: "音程、和弦听辨、和弦进行、视唱训练",
-                    icon: "ear"
-                ) {
-                    EarPracticeHubScreen()
+                HStack(spacing: 10) {
+                    quickStartCard(
+                        title: "视唱练耳",
+                        subtitle: "初级"
+                    ) {
+                        EarPracticeHubScreen()
+                    }
+                    quickStartCard(
+                        title: "练琴",
+                        subtitle: "初级"
+                    ) {
+                        GuitarPracticeHubScreen()
+                    }
                 }
 
-                landingEntryCard(
-                    title: "练琴",
-                    subtitle: "和弦切换、节奏扫弦、音阶爬格子",
-                    icon: "music.note"
-                ) {
-                    GuitarPracticeHubScreen()
+                NavigationLink {
+                    PracticeTrainingCatalogView()
+                } label: {
+                    HStack {
+                        Text("全部训练项目")
+                            .font(.subheadline)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                    }
                 }
+                .buttonStyle(.plain)
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .appPageBackground()
+        .practiceWhitePageBackground()
         .refreshable { await vm.refresh() }
     }
 
-    private func landingEntryCard<Destination: View>(
+    private var todayTrainingCard: some View {
+        let outerRadius: CGFloat = 20
+        let innerRadius: CGFloat = 16
+
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("今日推荐训练")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(SwiftAppTheme.text)
+
+            if vm.recommendationItems.isEmpty {
+                Text("暂无推荐，点击开始训练后将自动生成。")
+                    .font(.subheadline)
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(SwiftAppTheme.surfaceSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: innerRadius, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: innerRadius, style: .continuous)
+                            .stroke(SwiftAppTheme.line, lineWidth: 1)
+                    )
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(vm.recommendationItems.enumerated()), id: \.element.id) { index, item in
+                        HStack(spacing: 12) {
+                            Image(systemName: item.module.icon)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(SwiftAppTheme.brand)
+                                .frame(width: 26, alignment: .center)
+
+                            Text(item.module.title)
+                                .font(.headline)
+                                .foregroundStyle(SwiftAppTheme.text)
+                                .lineLimit(1)
+
+                            Spacer(minLength: 8)
+                        }
+                        .padding(.vertical, 14)
+                        .padding(.horizontal, 12)
+                        .allowsHitTesting(false)
+
+                        if index < vm.recommendationItems.count - 1 {
+                            Divider()
+                                .overlay(SwiftAppTheme.line)
+                                .padding(.leading, 50) // 对齐图标列，避免分割线顶到左边缘
+                        }
+                    }
+                }
+                .background(SwiftAppTheme.surfaceSoft)
+                .clipShape(RoundedRectangle(cornerRadius: innerRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: innerRadius, style: .continuous)
+                        .stroke(SwiftAppTheme.line, lineWidth: 1)
+                )
+            }
+
+            NavigationLink {
+                TodayRecommendationListView(
+                    sessions: vm.sessions,
+                    referenceDate: vm.recommendationDay,
+                    initialIndex: 0
+                )
+            } label: {
+                Text("开始训练")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(SwiftAppTheme.brand)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .background(SwiftAppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: outerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: outerRadius, style: .continuous)
+                .stroke(SwiftAppTheme.line, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
+    }
+
+    private func quickStartCard<Destination: View>(
         title: String,
         subtitle: String,
-        icon: String,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
         NavigationLink(destination: destination()) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
+            VStack(alignment: .leading, spacing: 6) {
+                Image(systemName: title == "练琴" ? "guitars" : "music.quarternote.3")
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(SwiftAppTheme.brand)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundStyle(SwiftAppTheme.text)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(SwiftAppTheme.text)
+                    .lineLimit(1)
+
+                Text(subtitle)
+                    .font(.subheadline)
                     .foregroundStyle(SwiftAppTheme.muted)
+                    .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .appCard()
         }
         .buttonStyle(.plain)
@@ -100,6 +202,16 @@ struct PracticeLandingView: View {
 struct PracticeHomeView: View {
     var body: some View {
         PracticeLandingView()
+    }
+}
+
+private extension View {
+    /// 练习首页专用：纯白页面底（与工具页浅灰底区分），同时保持列表滚动背景一致。
+    func practiceWhitePageBackground() -> some View {
+        self
+            .scrollContentBackground(.hidden)
+            .background(Color.white.ignoresSafeArea())
+            .tint(SwiftAppTheme.brand)
     }
 }
 
@@ -181,6 +293,29 @@ private struct GuitarPracticeHubScreen: View {
             .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle("练琴")
+        .appPageBackground()
+    }
+}
+
+private struct PracticeTrainingCatalogView: View {
+    var body: some View {
+        List {
+            Section("视唱练耳") {
+                NavigationLink("音程识别") { IntervalEarView() }
+                NavigationLink("和弦听辨") { EarMcqSessionView(title: "和弦听辨", bank: "A", totalQuestions: 10) }
+                NavigationLink("和弦进行") { EarMcqSessionView(title: "和弦进行", bank: "B", totalQuestions: 10) }
+                NavigationLink("视唱训练") { SightSingingSetupView() }
+            }
+
+            Section("练琴") {
+                ForEach(kDefaultPracticeTasks) { task in
+                    NavigationLink(task.name) {
+                        PracticeTaskRouterScreen(task: task)
+                    }
+                }
+            }
+        }
+        .navigationTitle("全部训练项目")
         .appPageBackground()
     }
 }
@@ -295,22 +430,40 @@ private final class PracticeLandingViewModel: ObservableObject {
     @Published var loading: Bool = true
     @Published var loadError: String?
     @Published var sessions: [PracticeSession] = []
+    @Published var recommendationItems: [TodayRecommendationItem] = []
+    @Published var recommendationDay: Date = Calendar(identifier: .gregorian).startOfDay(for: Date())
 
     private let store: PracticeSessionStore
+    private let historyStore: any RecommendationHistoryStore
 
-    init(store: PracticeSessionStore = PracticeLocalStore()) {
+    init(
+        store: PracticeSessionStore = PracticeLocalStore(),
+        historyStore: any RecommendationHistoryStore = UserDefaultsRecommendationHistoryStore()
+    ) {
         self.store = store
+        self.historyStore = historyStore
     }
 
     func refresh() async {
         loading = true
         loadError = nil
         do {
-            sessions = try await store.loadSessions()
+            let loadedSessions = try await store.loadSessions()
+            let calendar = Calendar(identifier: .gregorian)
+            let day = calendar.startOfDay(for: Date())
+            recommendationDay = day
+
+            let history = await historyStore.loadRecent(now: day, days: 7)
+            let merged = RecommendationHistoryMerging.mergeLegacyPracticeRecords(stored: history, sessions: loadedSessions)
+            var planner = TodayRecommendationPlanner(referenceDate: day)
+
+            sessions = loadedSessions
+            recommendationItems = await planner.buildRecommendations(historyRecords: merged)
             loading = false
         } catch {
             loadError = "读取本地练习记录失败：\(error)"
             sessions = []
+            recommendationItems = []
             loading = false
         }
     }

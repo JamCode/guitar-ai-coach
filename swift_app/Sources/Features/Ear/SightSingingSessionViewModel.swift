@@ -40,6 +40,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var currentHz: Double?
     @Published public private(set) var lastScore: SightSingingScore?
     @Published public private(set) var resultText: String?
+    @Published public private(set) var finalResult: SightSingingResult?
 
     private let repository: SightSingingRepository
     private let pitchTracker: SightSingingPitchTracking
@@ -132,6 +133,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 return false
             }
             let result = try await repository.fetchResult(sessionId: sid)
+            finalResult = result
             resultText = "共 \(result.total) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
             return true
         } catch {
