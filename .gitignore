@@ -3,5 +3,7 @@
 deploy/ecs/backend.env
 backend/logs/
 swift_app/.build/
+# Xcode / SwiftPM per-user data (scheme order, breakpoints, etc.)
+swift_app/.swiftpm/xcode/xcuserdata/
 swift_ios_host/install-device.local.env
 swift_ios_host/upload-testflight.local.env
