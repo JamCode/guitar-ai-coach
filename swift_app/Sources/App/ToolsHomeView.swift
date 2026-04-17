@@ -1,9 +1,7 @@
 import SwiftUI
 import Tuner
 import Fretboard
-import Chords
 import ChordsLive
-import ChordChart
 import Ear
 
 public struct ToolsHomeView: View {
@@ -46,24 +44,6 @@ public struct ToolsHomeView: View {
                         title: "吉他指板",
                         subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
                         systemImage: "square.grid.3x3"
-                    )
-                }
-                NavigationLink {
-                    ChordLookupView()
-                } label: {
-                    toolsRow(
-                        title: "和弦速查",
-                        subtitle: "离线可查构成音与常见把位",
-                        systemImage: "pianokeys"
-                    )
-                }
-                NavigationLink {
-                    ChordChartView()
-                } label: {
-                    toolsRow(
-                        title: "常用和弦",
-                        subtitle: "按和弦类型分类 · 本地指法图速查",
-                        systemImage: "tablecells"
                     )
                 }
             }
