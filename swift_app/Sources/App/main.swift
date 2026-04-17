@@ -8,7 +8,7 @@ import ChordChart
 import Ear
 
 let env = AppEnvironment()
-let tools = ["练耳", "实时和弦建议（Beta）", "调音器", "吉他指板", "和弦速查", "常用和弦"]
+let tools = ["练耳", "实时和弦建议（Beta）", "调音器", "吉他指板"]
 
 print("GuitarAICoachApp bootstrap OK (\(env.apiBaseURL))")
 print("Tools migrated: \(tools.joined(separator: " / "))")
