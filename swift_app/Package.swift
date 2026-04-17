@@ -37,7 +37,12 @@ let package = Package(
         ),
         .target(
             name: "Core",
-            path: "Sources/Core"
+            path: "Sources/Core",
+            resources: [
+                .copy("Resources/SteelStringGuitar.sf2"),
+                .copy("Resources/SteelStringGuitar.LICENSE.txt"),
+                .copy("Resources/SteelStringGuitar.README.txt")
+            ]
         ),
         .target(
             name: "Tuner",

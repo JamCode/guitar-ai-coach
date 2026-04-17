@@ -31,5 +31,11 @@ final class CoreAndChordsTests: XCTestCase {
         XCTAssertEqual(cfg.startFret, 5)
         XCTAssertEqual(cfg.endFret, 8)
     }
+
+    func testGuitarStandardTuningMidisFromOpenCChord() {
+        let c = [-1, 3, 2, 0, 1, 0]
+        let midis = GuitarStandardTuning.midisFromChordFretsSixToOne(c)
+        XCTAssertEqual(midis, [48, 52, 55, 60, 64])
+    }
 }
 

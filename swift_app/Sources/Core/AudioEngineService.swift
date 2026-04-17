@@ -1,25 +1,64 @@
 import Foundation
 import AVFoundation
 
+/// 采样音色资源入口，便于测试与上层复用。
+public enum GuitarSoundBank {
+    /// 钢弦原声吉他 SF2（FreePats FSS Steel-String Acoustic Guitar，**Best quality** 全量采样版，约 25 MB）。
+    public static var steelStringSF2URL: URL? {
+        Bundle.module.url(forResource: "SteelStringGuitar", withExtension: "sf2")
+    }
+}
+
 public protocol AudioEngineServing: AnyObject {
     var quality: AudioQualityBaseline { get }
     func start() throws
     func stop()
     func playSine(frequencyHz: Double, durationSec: Double) throws
-    /// 拨弦式衰减（Karplus–Strong），用于指板等吉他语境试听。
+    /// 拨弦式衰减（Karplus–Strong），作为采样不可用时的降级实现。
     func playPluckedGuitarString(frequencyHz: Double, durationSec: Double) throws
+    /// 采样吉他回放，优先走内置 SF2 + `AVAudioUnitSampler`。
+    ///
+    /// - Parameters:
+    ///   - midi: 标准 MIDI 音高（如 A4 = 69）。
+    ///   - velocity: 力度（1..127），影响采样包里 velocity layer 的触发。
+    ///   - gateDurationSec: 从按下到松开的时长；松开后由 SF2 本身的 release envelope 提供自然尾音。
+    func playSampledGuitarNote(midi: Int, velocity: UInt8, gateDurationSec: Double) throws
+    /// 当前是否已成功加载采样音色（用于上层决定是否需要 fallback）。
+    var isSampledGuitarAvailable: Bool { get }
+    /// 同时或略带扫弦感地播放一组 MIDI（和弦），使用与单音相同的 SF2 采样。
+    func playSampledGuitarChord(
+        midis: [Int],
+        velocity: UInt8,
+        gateDurationSec: Double,
+        stringStaggerSec: Double
+    ) throws
 }
 
 public final class AudioEngineService: AudioEngineServing {
     public let quality: AudioQualityBaseline
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
+    /// 多路拨弦节点：轮询调度，避免单节点 `.interrupts` 把尚未自然衰减的上一个音粗暴截断。
+    private let pluckVoices: [AVAudioPlayerNode]
+    private var nextPluckVoice = 0
+    private let sampler = AVAudioUnitSampler()
+    private var sampledGuitarLoaded = false
+    private let samplerQueue = DispatchQueue(label: "guitar-ai-coach.audio.sampler-gate", qos: .userInitiated)
     private var started = false
 
     public init(quality: AudioQualityBaseline = AudioQualityBaseline()) {
         self.quality = quality
+        self.pluckVoices = (0..<4).map { _ in AVAudioPlayerNode() }
         engine.attach(player)
+        for voice in pluckVoices {
+            engine.attach(voice)
+        }
+        engine.attach(sampler)
         engine.connect(player, to: engine.mainMixerNode, format: nil)
+        for voice in pluckVoices {
+            engine.connect(voice, to: engine.mainMixerNode, format: nil)
+        }
+        engine.connect(sampler, to: engine.mainMixerNode, format: nil)
     }
 
     public func start() throws {
@@ -28,14 +67,121 @@ public final class AudioEngineService: AudioEngineServing {
         try engine.start()
         started = true
         quality.markStart()
+        loadSampledGuitarIfNeeded()
     }
 
     public func stop() {
         guard started else { return }
         player.stop()
+        for voice in pluckVoices {
+            voice.stop()
+        }
         engine.stop()
         started = false
         quality.markStop()
+    }
+
+    public var isSampledGuitarAvailable: Bool { sampledGuitarLoaded }
+
+    private func loadSampledGuitarIfNeeded() {
+        guard !sampledGuitarLoaded else { return }
+        guard let url = GuitarSoundBank.steelStringSF2URL else {
+            sampledGuitarLoaded = false
+            return
+        }
+        // SF2 非 GM 包常用 melodic bank MSB = 0x79, LSB = 0, program = 0。
+        let melodicBankMSB: UInt8 = 0x79
+        let bankLSB: UInt8 = 0x00
+        do {
+            try sampler.loadSoundBankInstrument(
+                at: url,
+                program: 0,
+                bankMSB: melodicBankMSB,
+                bankLSB: bankLSB
+            )
+            // 稍抬一点主观响度，采样包本身偏安静；`volume` 在当前平台未被弃用。
+            sampler.volume = 1.6
+            sampledGuitarLoaded = true
+        } catch {
+            sampledGuitarLoaded = false
+        }
+    }
+
+    public func playSampledGuitarNote(
+        midi: Int,
+        velocity: UInt8 = 100,
+        gateDurationSec: Double = 1.2
+    ) throws {
+        if !started {
+            try start()
+        }
+        guard sampledGuitarLoaded else {
+            // 降级到算法拨弦，保证始终有声。
+            let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
+            try playPluckedGuitarString(frequencyHz: frequency, durationSec: max(0.9, gateDurationSec + 0.6))
+            return
+        }
+        let clampedMidi = UInt8(max(0, min(127, midi)))
+        let clampedVelocity = max(1, min(127, velocity))
+        let start = DispatchTime.now().uptimeNanoseconds
+        sampler.startNote(clampedMidi, withVelocity: clampedVelocity, onChannel: 0)
+        let gate = max(0.05, gateDurationSec)
+        samplerQueue.asyncAfter(deadline: .now() + gate) { [weak self] in
+            self?.sampler.stopNote(clampedMidi, onChannel: 0)
+        }
+        let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
+        quality.markCallback(renderCostMs: elapsedMs)
+    }
+
+    public func playSampledGuitarChord(
+        midis: [Int],
+        velocity: UInt8 = 88,
+        gateDurationSec: Double = 1.35,
+        stringStaggerSec: Double = 0.014
+    ) throws {
+        if !started {
+            try start()
+        }
+        let notes = midis.filter { $0 >= 0 && $0 <= 127 }
+        guard !notes.isEmpty else { return }
+        let start = DispatchTime.now().uptimeNanoseconds
+        let clampedVelocity = UInt8(max(1, min(127, Int(velocity))))
+        let gate = max(0.08, gateDurationSec)
+        let stagger = max(0, stringStaggerSec)
+
+        guard sampledGuitarLoaded else {
+            for midi in notes {
+                let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
+                try? playPluckedGuitarString(frequencyHz: frequency, durationSec: max(0.95, gate + 0.55))
+            }
+            let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
+            quality.markCallback(renderCostMs: elapsedMs)
+            return
+        }
+
+        samplerQueue.sync { [weak self] in
+            guard let self else { return }
+            for n in 0...127 {
+                self.sampler.stopNote(UInt8(n), onChannel: 0)
+            }
+        }
+
+        for (i, midi) in notes.enumerated() {
+            let delay = Double(i) * stagger
+            let note = UInt8(midi)
+            samplerQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.sampler.startNote(note, withVelocity: clampedVelocity, onChannel: 0)
+            }
+        }
+        let noteOffDelay = gate + Double(max(0, notes.count - 1)) * stagger
+        samplerQueue.asyncAfter(deadline: .now() + noteOffDelay) { [weak self] in
+            guard let self else { return }
+            for midi in notes {
+                self.sampler.stopNote(UInt8(clamping: midi), onChannel: 0)
+            }
+        }
+        let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
+        quality.markCallback(renderCostMs: elapsedMs)
     }
 
     public func playSine(frequencyHz: Double, durationSec: Double = 0.25) throws {
@@ -76,29 +222,41 @@ public final class AudioEngineService: AudioEngineServing {
         }
     }
 
-    public func playPluckedGuitarString(frequencyHz: Double, durationSec: Double = 0.48) throws {
+    public func playPluckedGuitarString(frequencyHz: Double, durationSec: Double = 1.75) throws {
         if !started {
             try start()
         }
-        let format = player.outputFormat(forBus: 0)
+        let voice = pluckVoices[nextPluckVoice % pluckVoices.count]
+        nextPluckVoice += 1
+        let format = voice.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
             quality.markUnderrun()
             return
         }
         let sampleRate = format.sampleRate
         let hz = min(4_200, max(60, frequencyHz))
-        let delayLen = max(8, Int(sampleRate / hz))
+        let delayLen = max(8, Int(sampleRate / hz + 0.5))
         var ring = [Float](repeating: 0, count: delayLen)
+        var prevNoise: Float = 0
         for i in 0..<delayLen {
-            ring[i] = Float.random(in: -0.45...0.45)
+            let r = Float.random(in: -0.32...0.32)
+            let smoothed = 0.62 * r + 0.38 * prevNoise
+            prevNoise = r
+            ring[i] = smoothed
         }
-        let totalFrames = AVAudioFrameCount(max(1, Int(sampleRate * durationSec)))
+        let totalFrames = AVAudioFrameCount(max(1, Int(sampleRate * max(0.35, durationSec))))
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: totalFrames) else {
             quality.markUnderrun()
             return
         }
         buffer.frameLength = totalFrames
-        let decay: Float = 0.9965
+        // 低音弦衰减更慢、高音略收紧，整体更接近钢弦吉他体感。
+        let spanHz = max(1.0, 420.0 - 65.0)
+        let normT = Float((min(420.0, max(65.0, hz)) - 65.0) / spanHz)
+        let decay = 0.99812 - normT * 0.00168
+        let attackFrames = max(1, Int(sampleRate * 0.0052))
+        let fadeOutFrames = min(Int(totalFrames) - 1, Int(sampleRate * 0.42))
+        let fadeOutStart = max(0, Int(totalFrames) - fadeOutFrames)
         let outputChannels = Int(format.channelCount)
         let start = DispatchTime.now().uptimeNanoseconds
         if let channels = buffer.floatChannelData {
@@ -109,9 +267,17 @@ public final class AudioEngineService: AudioEngineServing {
                 let out = ring[i0]
                 ring[i0] = 0.5 * (out + ring[i1]) * decay
                 pos = (pos + 1) % delayLen
-                let env = Float(frame) / Float(max(1, Int(sampleRate * 0.002)))
-                let attack = min(1, env)
-                let sample = out * 0.22 * attack
+                let attack: Float = if frame < attackFrames {
+                    Float(0.5 * (1.0 - cos(Double.pi * Double(frame) / Double(attackFrames))))
+                } else {
+                    1.0
+                }
+                var sample = out * 0.17 * attack
+                if frame >= fadeOutStart, fadeOutFrames > 1 {
+                    let t = Float(frame - fadeOutStart) / Float(fadeOutFrames - 1)
+                    let tail = Float(0.5 * (1.0 + cos(Double.pi * Double(t))))
+                    sample *= tail
+                }
                 for channelIndex in 0..<outputChannels {
                     channels[channelIndex][frame] = sample
                 }
@@ -119,9 +285,9 @@ public final class AudioEngineService: AudioEngineServing {
         }
         let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
         quality.markCallback(renderCostMs: elapsedMs)
-        player.scheduleBuffer(buffer, at: nil, options: .interrupts)
-        if !player.isPlaying {
-            player.play()
+        voice.scheduleBuffer(buffer, at: nil, options: .interrupts)
+        if !voice.isPlaying {
+            voice.play()
         }
     }
 
