@@ -4,7 +4,7 @@ import Chords
 
 public struct ChordChartView: View {
     @State private var selectedEntry: ChordChartEntry?
-    @State private var expandedSections: Set<String> = [ChordChartData.sections.first?.id ?? ""]
+    @State private var expandedSections: Set<String> = []
 
     public init() {}
 
