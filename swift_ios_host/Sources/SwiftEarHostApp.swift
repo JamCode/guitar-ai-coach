@@ -131,53 +131,43 @@ private struct ToolsTabView: View {
     /// 比全站 `pagePadding` 略紧，减少工具宫格外圈留白。
     private let gridEdgePadding: CGFloat = 12
     private let gridGap: CGFloat = 8
+    private let cardAspectRatio: CGFloat = 0.92
 
     var body: some View {
-        GeometryReader { proxy in
-            let pad = gridEdgePadding
-            let availW = max(0, proxy.size.width - pad * 2)
-            let availH = max(0, proxy.size.height - pad * 2)
-            let cellW = max(0, (availW - gridGap) / 2)
-            let cellH = max(0, (availH - gridGap) / 2)
-
+        let pad = gridEdgePadding
+        VStack(spacing: 0) {
             VStack(spacing: gridGap) {
                 HStack(spacing: gridGap) {
                     gridTile(
                         title: "调音器",
                         subtitle: "麦克风拾音与标准空弦目标",
-                        icon: "waveform",
-                        width: cellW,
-                        height: cellH
+                        icon: "waveform"
                     ) { TunerView() }
                     gridTile(
                         title: "吉他指板",
                         subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
-                        icon: "square.grid.3x3",
-                        width: cellW,
-                        height: cellH
+                        icon: "square.grid.3x3"
                     ) { FretboardView() }
                 }
+
                 HStack(spacing: gridGap) {
                     gridTile(
                         title: "和弦速查",
                         subtitle: "离线可查构成音与常见把位",
-                        icon: "pianokeys",
-                        width: cellW,
-                        height: cellH
+                        icon: "pianokeys"
                     ) { ChordLookupView() }
                     gridTile(
                         title: "常用和弦",
                         subtitle: "初/中/高分段·本地指法图速查",
-                        icon: "tablecells",
-                        width: cellW,
-                        height: cellH
+                        icon: "tablecells"
                     ) { ChordChartView() }
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding(pad)
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(pad)
         .navigationTitle("工具")
         .appPageBackground()
     }
@@ -186,12 +176,10 @@ private struct ToolsTabView: View {
         title: String,
         subtitle: String,
         icon: String,
-        width: CGFloat,
-        height: CGFloat,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
         NavigationLink {
-            ToolDetailContainer { destination() }
+            TabBarHiddenContainer { destination() }
         } label: {
             VStack(alignment: .center, spacing: 10) {
                 Image(systemName: icon)
@@ -222,26 +210,8 @@ private struct ToolsTabView: View {
             )
         }
         .buttonStyle(.plain)
-        .frame(width: width, height: height)
-    }
-}
-
-/// 工具子页容器：用 `.toolbar(.hidden, for: .tabBar)` 真正隐藏底部 TabBar，
-/// 并通过 `@State` 在 onAppear/onDisappear 时切换，让显示/隐藏跟随导航转场触发动画，
-/// 减轻返回工具宫格时 TabBar 直接「顶出来」的突兀感。
-private struct ToolDetailContainer<Content: View>: View {
-    @ViewBuilder var content: () -> Content
-    @State private var hideTabBar = false
-
-    var body: some View {
-        content()
-            .toolbar(hideTabBar ? .hidden : .automatic, for: .tabBar)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 0.28)) { hideTabBar = true }
-            }
-            .onDisappear {
-                withAnimation(.easeInOut(duration: 0.28)) { hideTabBar = false }
-            }
+        .frame(maxWidth: .infinity)
+        .aspectRatio(cardAspectRatio, contentMode: .fit)
     }
 }
 

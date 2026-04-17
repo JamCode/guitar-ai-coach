@@ -83,8 +83,10 @@ struct SheetLibraryView: View {
             Text(vm.toast ?? "")
         }
         .navigationDestination(item: $vm.selectedEntry) { entry in
-            SheetDetailView(entry: entry, store: vm.store) {
-                Task { await vm.reload() }
+            TabBarHiddenContainer {
+                SheetDetailView(entry: entry, store: vm.store) {
+                    Task { await vm.reload() }
+                }
             }
         }
     }
