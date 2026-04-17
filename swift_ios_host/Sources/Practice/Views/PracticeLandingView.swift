@@ -16,7 +16,7 @@ struct PracticeLandingView: View {
                     Text(error)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(SwiftAppTheme.text)
-                    Button("重试") { Task { await vm.refresh() } }
+                    Button("重试") { Task { await vm.refresh(blockingUI: true) } }
                         .appPrimaryButton()
                 }
                 .padding(24)
@@ -24,11 +24,9 @@ struct PracticeLandingView: View {
                 content
             }
         }
-        .background(Color.white.ignoresSafeArea())
+        .background(SwiftAppTheme.bg.ignoresSafeArea())
         .navigationTitle("练习")
         .appNavigationBarChrome()
-        .toolbarBackground(Color.white, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
@@ -83,8 +81,8 @@ struct PracticeLandingView: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .practiceWhitePageBackground()
-        .refreshable { await vm.refresh() }
+        .practiceScrollPageBackground()
+        .refreshable { await vm.refresh(blockingUI: false) }
     }
 
     private var todayTrainingCard: some View {
@@ -206,11 +204,11 @@ struct PracticeHomeView: View {
 }
 
 private extension View {
-    /// 练习首页专用：纯白页面底（与工具页浅灰底区分），同时保持列表滚动背景一致。
-    func practiceWhitePageBackground() -> some View {
+    /// 练习首页滚动区：与全站 `SwiftAppTheme.bg` 一致，随系统亮/暗色变化（不再强制纯白）。
+    func practiceScrollPageBackground() -> some View {
         self
             .scrollContentBackground(.hidden)
-            .background(Color.white.ignoresSafeArea())
+            .background(SwiftAppTheme.bg.ignoresSafeArea())
             .tint(SwiftAppTheme.brand)
     }
 }
@@ -433,6 +431,9 @@ private final class PracticeLandingViewModel: ObservableObject {
     @Published var recommendationItems: [TodayRecommendationItem] = []
     @Published var recommendationDay: Date = Calendar(identifier: .gregorian).startOfDay(for: Date())
 
+    /// 已成功加载过至少一次；再次进入 Tab 时 `.task` 会重跑，但不应再全屏 `ProgressView` 闪一下。
+    private var hasShownInitialContent = false
+
     private let store: PracticeSessionStore
     private let historyStore: any RecommendationHistoryStore
 
@@ -444,8 +445,12 @@ private final class PracticeLandingViewModel: ObservableObject {
         self.historyStore = historyStore
     }
 
-    func refresh() async {
-        loading = true
+    /// - Parameter blockingUI: `nil` 表示「仅首次（或上次失败后）」显示全屏加载；`false` 用于下拉刷新；`true` 用于用户点「重试」。
+    func refresh(blockingUI: Bool? = nil) async {
+        let shouldShowBlockingLoader = blockingUI ?? !hasShownInitialContent
+        if shouldShowBlockingLoader {
+            loading = true
+        }
         loadError = nil
         do {
             let loadedSessions = try await store.loadSessions()
@@ -459,8 +464,10 @@ private final class PracticeLandingViewModel: ObservableObject {
 
             sessions = loadedSessions
             recommendationItems = await planner.buildRecommendations(historyRecords: merged)
+            hasShownInitialContent = true
             loading = false
         } catch {
+            hasShownInitialContent = false
             loadError = "读取本地练习记录失败：\(error)"
             sessions = []
             recommendationItems = []
