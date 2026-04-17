@@ -6,8 +6,10 @@ public struct IntervalEarView: View {
     @StateObject private var viewModel: IntervalEarSessionViewModel
     @State private var showSummary = false
 
-    public init(totalQuestions: Int = 5) {
-        _viewModel = StateObject(wrappedValue: IntervalEarSessionViewModel(totalQuestions: totalQuestions))
+    public init(totalQuestions: Int = 5, difficulty: IntervalEarDifficulty = .初级) {
+        _viewModel = StateObject(
+            wrappedValue: IntervalEarSessionViewModel(totalQuestions: totalQuestions, difficulty: difficulty)
+        )
     }
 
     public var body: some View {

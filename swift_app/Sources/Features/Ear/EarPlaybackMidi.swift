@@ -10,6 +10,10 @@ enum EarPlaybackMidi {
             intervals = [0, 3, 7]
         case "dominant7", "7", "dom7":
             intervals = [0, 4, 7, 10]
+        case "major7", "maj7", "m7maj", "delta":
+            intervals = [0, 4, 7, 11]
+        case "minor7", "min7", "m7":
+            intervals = [0, 3, 7, 10]
         default:
             intervals = [0, 4, 7]
         }
@@ -47,7 +51,8 @@ enum EarPlaybackMidi {
     }
 
     private static func noteToMidi(_ note: String, octave: Int) -> Int {
-        let normalized = note.uppercased()
+        let normalized = note.trimmingCharacters(in: .whitespaces)
+            .uppercased()
             .replacingOccurrences(of: "DB", with: "C#")
             .replacingOccurrences(of: "EB", with: "D#")
             .replacingOccurrences(of: "GB", with: "F#")
@@ -56,16 +61,16 @@ enum EarPlaybackMidi {
         let idx: Int
         switch normalized {
         case "C": idx = 0
-        case "C#": idx = 1
+        case "C#", "DB": idx = 1
         case "D": idx = 2
-        case "D#": idx = 3
+        case "D#", "EB": idx = 3
         case "E": idx = 4
         case "F": idx = 5
-        case "F#": idx = 6
+        case "F#", "GB": idx = 6
         case "G": idx = 7
-        case "G#": idx = 8
+        case "G#", "AB": idx = 8
         case "A": idx = 9
-        case "A#": idx = 10
+        case "A#", "BB": idx = 10
         case "B": idx = 11
         default: idx = 0
         }

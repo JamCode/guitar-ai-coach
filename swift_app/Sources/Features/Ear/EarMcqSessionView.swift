@@ -6,12 +6,18 @@ public struct EarMcqSessionView: View {
     @StateObject private var viewModel: EarMcqSessionViewModel
     @State private var showSummary = false
 
-    public init(title: String, bank: String, totalQuestions: Int = 10) {
+    public init(
+        title: String,
+        bank: String,
+        totalQuestions: Int = 10,
+        chordDifficulty: EarChordMcqDifficulty = .初级
+    ) {
         _viewModel = StateObject(
             wrappedValue: EarMcqSessionViewModel(
                 title: title,
                 bank: bank,
-                totalQuestions: totalQuestions
+                totalQuestions: totalQuestions,
+                chordDifficulty: chordDifficulty
             )
         )
     }

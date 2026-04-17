@@ -16,20 +16,25 @@ public final class EarMcqSessionViewModel: ObservableObject {
     public let title: String
     public let bank: String
     public let totalQuestions: Int
+    /// 仅 `bank == "A"`（和弦听辨）时使用：程序化出题难度。
+    public let chordDifficulty: EarChordMcqDifficulty
 
     private let loader: EarSeedLoader
     private let player: EarChordPlaying
+    private var chordRng = SystemRandomNumberGenerator()
 
     public init(
         title: String,
         bank: String,
         totalQuestions: Int = 10,
+        chordDifficulty: EarChordMcqDifficulty = .初级,
         loader: EarSeedLoader = .shared,
         player: EarChordPlaying = EarChordPlayer()
     ) {
         self.title = title
         self.bank = bank
         self.totalQuestions = max(1, totalQuestions)
+        self.chordDifficulty = chordDifficulty
         self.loader = loader
         self.player = player
     }
@@ -37,6 +42,21 @@ public final class EarMcqSessionViewModel: ObservableObject {
     public func bootstrap() async {
         loading = true
         loadError = nil
+        if bank == "A" {
+            session = EarChordMcqGenerator.buildSession(
+                count: totalQuestions,
+                difficulty: chordDifficulty,
+                using: &chordRng
+            )
+            question = session.first
+            pageIndex = 0
+            correctCount = 0
+            selectedChoiceIndex = nil
+            revealed = false
+            finished = false
+            loading = false
+            return
+        }
         do {
             let doc = try await loader.load()
             let pool = bank == "B" ? doc.bankB : doc.bankA

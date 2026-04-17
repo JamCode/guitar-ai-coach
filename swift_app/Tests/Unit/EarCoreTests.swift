@@ -4,10 +4,48 @@ import XCTest
 final class EarCoreTests: XCTestCase {
     func testIntervalGeneratorBuildsFourChoicesAndAscendingPair() {
         var rng = SystemRandomNumberGenerator()
-        let q = IntervalQuestionGenerator.next(using: &rng)
+        let q = IntervalQuestionGenerator.next(difficulty: .高级, using: &rng)
         XCTAssertEqual(q.choices.count, 4)
-        XCTAssertGreaterThan(q.highMidi, q.lowMidi)
+        XCTAssertEqual(q.difficulty, .高级)
+        XCTAssertGreaterThanOrEqual(q.highMidi, q.lowMidi)
+        XCTAssertEqual(q.highMidi - q.lowMidi, q.answer.semitones)
         XCTAssertTrue(q.choices.contains(where: { $0.semitones == q.answer.semitones }))
+    }
+
+    func testIntervalBeginnerPresetExcludesTritone() {
+        let p = IntervalQuestionGenerator.preset(for: .初级)
+        XCTAssertFalse(p.poolSemitones.contains(6))
+    }
+
+    func testIntervalIntermediatePresetExcludesTritone() {
+        let p = IntervalQuestionGenerator.preset(for: .中级)
+        XCTAssertFalse(p.poolSemitones.contains(6))
+    }
+
+    func testChordMcqBeginnerAnswersAreMajorOrMinorOnly() {
+        var rng = SystemRandomNumberGenerator()
+        for _ in 0 ..< 24 {
+            let q = EarChordMcqGenerator.makeQuestion(difficulty: .初级, using: &rng)
+            XCTAssertEqual(q.questionType, "single_chord_quality")
+            XCTAssertEqual(q.options.count, 4)
+            let keys = Set(q.options.map(\.key))
+            XCTAssertEqual(keys.count, 4)
+            guard let qual = EarChordQuality(targetQualityToken: q.targetQuality ?? "") else {
+                XCTFail("unknown target_quality \(q.targetQuality ?? "")")
+                continue
+            }
+            XCTAssertTrue([.major, .minor].contains(qual), "unexpected answer \(qual)")
+        }
+    }
+
+    func testChordMcqAdvancedUsesFiveQualitiesInPool() {
+        let p = EarChordMcqGenerator.preset(for: .高级)
+        XCTAssertEqual(p.optionQualities.count, 5)
+    }
+
+    func testIntervalAdvancedPresetIncludesTritone() {
+        let p = IntervalQuestionGenerator.preset(for: .高级)
+        XCTAssertTrue(p.poolSemitones.contains(6))
     }
 
     func testSightSingingScoreReturnsZeroWhenNoSamples() {
