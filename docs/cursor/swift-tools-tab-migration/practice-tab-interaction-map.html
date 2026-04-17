@@ -50,22 +50,253 @@
       padding: 16px 8px 8px;
       overflow-x: auto;
     }
-    .screens {
+    .page-gallery { display: flex; flex-direction: column; gap: 28px; }
+    .page-row {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 14px;
-    }
-    .screen {
+      grid-template-columns: 204px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px 16px 16px;
+      border-radius: 14px;
+      padding: 18px 20px 20px;
     }
-    .screen h3 { margin: 0 0 6px; font-size: 0.98rem; font-weight: 600; }
-    .screen .file { font-size: 0.75rem; color: var(--brand); word-break: break-all; margin-bottom: 10px; }
-    .screen ul { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.86rem; }
-    .screen li { margin-bottom: 6px; }
-    .screen strong { color: var(--text); font-weight: 550; }
+    @media (max-width: 720px) {
+      .page-row { grid-template-columns: 1fr; justify-items: center; }
+    }
+    .page-row h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 600; }
+    .page-row .file { font-size: 0.75rem; color: var(--brand); word-break: break-all; margin-bottom: 10px; }
+    .page-row ul { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.86rem; }
+    .page-row li { margin-bottom: 6px; }
+    .page-row strong { color: var(--text); font-weight: 550; }
+    .page-row .note { font-size: 0.78rem; color: var(--muted); margin-top: 10px; font-style: italic; }
+
+    /* —— 手机线框（低保真 UI 示意） —— */
+    .phone {
+      width: 198px;
+      height: 380px;
+      border-radius: 26px;
+      border: 2px solid #2e3a4a;
+      background: linear-gradient(180deg, #151c26 0%, #0f131a 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+      flex-shrink: 0;
+      font-size: 9px;
+      line-height: 1.25;
+    }
+    .phone .pm-status {
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5a6a7d;
+      font-size: 7px;
+      letter-spacing: 0.04em;
+    }
+    .phone .pm-nav {
+      min-height: 34px;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .phone .pm-nav .t {
+      flex: 1;
+      text-align: center;
+      font-weight: 650;
+      font-size: 10px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .phone .pm-nav .ic {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      background: rgba(61,156,245,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand);
+      font-size: 9px;
+      flex-shrink: 0;
+    }
+    .phone .pm-body {
+      flex: 1;
+      overflow: hidden;
+      padding: 8px 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .phone .pm-scroll {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .phone .pm-sec {
+      font-size: 8px;
+      font-weight: 650;
+      color: #a8b8cc;
+      margin: 2px 0 0 2px;
+    }
+    .phone .pm-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 7px 8px;
+    }
+    .phone .pm-card .h { font-weight: 650; font-size: 9px; color: var(--text); margin-bottom: 3px; }
+    .phone .pm-card .s { font-size: 8px; color: #7d8fa3; }
+    .phone .pm-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 8px;
+    }
+    .phone .pm-row:last-child { border-bottom: 0; }
+    .phone .pm-pill {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(61,156,245,0.2);
+      color: var(--brand);
+      font-weight: 600;
+      font-size: 8px;
+    }
+    .phone .pm-btn {
+      text-align: center;
+      padding: 7px 6px;
+      border-radius: 10px;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 650;
+      font-size: 9px;
+    }
+    .phone .pm-btn.outline {
+      background: transparent;
+      border: 1px solid rgba(61,156,245,0.45);
+      color: var(--brand);
+    }
+    .phone .pm-btn.ghost {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+    }
+    .phone .pm-seg {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .phone .pm-seg span {
+      flex: 1;
+      text-align: center;
+      padding: 5px 2px;
+      font-size: 7px;
+      background: rgba(0,0,0,0.2);
+      color: #8a9cad;
+    }
+    .phone .pm-seg span.on { background: rgba(61,156,245,0.25); color: var(--brand); font-weight: 650; }
+    .phone .pm-grid8 {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 2px;
+      margin-top: 4px;
+    }
+    .phone .pm-grid8 .gb {
+      text-align: center;
+      font-size: 6px;
+      color: #6a7a8e;
+    }
+    .phone .pm-grid8 .gc {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      background: rgba(61,156,245,0.35);
+      border: 1px solid rgba(61,156,245,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .phone .pm-grid8 .gc.off { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #5a6a7d; font-weight: 500; }
+    .phone .pm-timer {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin: 8px 0;
+    }
+    .phone .pm-huge {
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      color: var(--text);
+      margin: 6px 0;
+    }
+    .phone .pm-sheet-bar {
+      height: 4px;
+      width: 36px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.15);
+      margin: 4px auto 6px;
+    }
+    .phone .pm-alert {
+      margin-top: auto;
+      align-self: center;
+      width: 88%;
+      background: #2a323e;
+      border-radius: 12px;
+      padding: 10px 10px 8px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .phone .pm-alert .t2 { font-size: 9px; font-weight: 650; margin-bottom: 4px; }
+    .phone .pm-alert .m { font-size: 7px; color: #9aacbf; margin-bottom: 8px; }
+    .phone .pm-alert .bx { display: flex; border-top: 1px solid rgba(255,255,255,0.1); margin: 0 -10px -8px; }
+    .phone .pm-alert .bx div { flex: 1; padding: 8px; font-size: 9px; color: var(--brand); font-weight: 600; }
+    .phone.phone--alertdemo { position: relative; }
+    .phone.phone--alertdemo .pm-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.42);
+      z-index: 5;
+      border-radius: 24px;
+      pointer-events: none;
+    }
+    .phone.phone--alertdemo .pm-alert-layer {
+      position: absolute;
+      z-index: 6;
+      left: 0;
+      right: 0;
+      bottom: 16px;
+      width: 86%;
+      margin: 0 auto;
+    }
+    .phone.phone--tall { height: 400px; }
+    .phone .pm-spinner {
+      width: 22px;
+      height: 22px;
+      border: 2px solid rgba(61,156,245,0.25);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      margin: 40px auto;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     code { font-size: 0.8em; background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; }
     footer { color: var(--muted); font-size: 0.82rem; margin-top: 32px; }
     a { color: var(--brand); }
@@ -75,7 +306,8 @@
   <h1>练习 Tab：页面与点击去向</h1>
   <p class="sub">
     依据 <code>swift_ios_host</code> 中「练习」Tab（<code>PracticeHomeView</code> / <code>PracticeLandingView.swift</code>）与
-    <code>swift_app</code> 包内视唱练耳视图梳理。下图箭头表示用户操作后的界面跳转：实线为导航栈 push，虚线为 Sheet，点线为系统 Alert。
+    <code>swift_app</code> 包内视唱练耳视图梳理。流程图中实线为导航栈 push，虚线为 Sheet 或 Alert。
+    下方「UI 线框」为浏览器内绘制的<strong>低保真示意</strong>（非截图），用于对齐信息结构与主要控件位置。
     首次进入练习 Tab 时先显示占位页，切换一次后即挂载真实首页（见 <code>SwiftEarHostApp.swift</code>）。
   </p>
 
@@ -161,123 +393,437 @@ flowchart TB
   </section>
 
   <section>
-    <h2>各页交互要点（与上图对应）</h2>
-    <div class="screens">
-      <div class="screen">
-        <h3>练习首页</h3>
-        <div class="file">PracticeLandingView.swift · PracticeLandingView</div>
-        <ul>
-          <li><strong>下拉</strong>：刷新本地练习记录</li>
-          <li><strong>训练日历</strong> → 训练日历页</li>
-          <li><strong>视唱练耳</strong> → 视唱练耳 Hub</li>
-          <li><strong>练琴</strong> → 练琴 Hub</li>
-        </ul>
+    <h2>各页 UI 线框 + 交互要点</h2>
+    <p style="margin:-8px 0 18px;color:var(--muted);font-size:0.9rem;max-width:720px;">左侧为界面结构示意，右侧为操作去向；与上方 Mermaid 总览一致。</p>
+    <div class="page-gallery">
+
+      <div class="page-row">
+        <div class="phone">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic"> </span><span class="t">练习</span><span class="ic"> </span></div>
+          <div class="pm-body" style="justify-content:center;align-items:center;text-align:center;padding:16px;">
+            <div style="font-size:22px;margin-bottom:8px;">🔧</div>
+            <div style="font-size:8px;color:#8a9cad;line-height:1.4;">首次进入该 Tab 后才会加载练习数据。</div>
+          </div>
+        </div>
+        <div>
+          <h3>占位页（练习 Tab 未挂载数据前）</h3>
+          <div class="file">SwiftEarHostApp.swift · PlaceholderView</div>
+          <ul>
+            <li>用户<strong>第一次点选「练习」Tab</strong> 后，同一次切换内挂载真实首页，占位可能仅闪一下。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>训练日历</h3>
-        <div class="file">PracticeLandingView.swift · PracticeCalendarScreen</div>
-        <ul>
-          <li>图形化 DatePicker、当日记录列表（无二级页）</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic"> </span><span class="t">练习</span><span class="ic">▦</span></div>
+          <div class="pm-body"><div class="pm-spinner"></div><div style="text-align:center;font-size:8px;color:#7d8fa3;">加载中</div></div>
+        </div>
+        <div>
+          <h3>练习首页 · 加载态</h3>
+          <div class="file">PracticeLandingView · vm.loading</div>
+          <ul>
+            <li><code>.task</code> 拉取本地会话列表时居中 <code>ProgressView</code>。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>视唱练耳 Hub</h3>
-        <div class="file">PracticeLandingView.swift · EarPracticeHubScreen</div>
-        <ul>
-          <li>四个卡片分别进入音程 / 和弦听辨 / 和弦进行 / 视唱设置</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic"> </span><span class="t">练习</span><span class="ic"> </span></div>
+          <div class="pm-body" style="justify-content:center;gap:10px;">
+            <div class="pm-card" style="text-align:center;"><div class="s">读取本地练习记录失败…</div></div>
+            <div class="pm-btn">重试</div>
+          </div>
+        </div>
+        <div>
+          <h3>练习首页 · 错误态</h3>
+          <div class="file">PracticeLandingView · loadError</div>
+          <ul>
+            <li><strong>重试</strong> 再次 <code>refresh()</code>。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>音程识别</h3>
-        <div class="file">swift_app · IntervalEarView.swift</div>
-        <ul>
-          <li>题内：播放、四选一、提交、下一题 / 查看结果</li>
-          <li><strong>Alert「本轮完成」· 确定</strong> → 弹出栈回到 Hub</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic"> </span><span class="t">练习</span><span class="ic" title="日历">▦</span></div>
+          <div class="pm-body">
+            <div class="pm-sec">选择训练方向</div>
+            <div class="pm-card"><div class="h">视唱练耳</div><div class="s">音程、和弦听辨…</div></div>
+            <div class="pm-card"><div class="h">练琴</div><div class="s">和弦切换、节奏扫弦…</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>练习首页 · 成功态</h3>
+          <div class="file">PracticeLandingView.swift</div>
+          <ul>
+            <li><strong>下拉</strong>：刷新会话列表。</li>
+            <li><strong>toolbar 日历图标</strong> → 训练日历。</li>
+            <li><strong>视唱练耳</strong> / <strong>练琴</strong> 卡片 → 对应 Hub。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>和弦听辨 / 和弦进行</h3>
-        <div class="file">swift_app · EarMcqSessionView.swift</div>
-        <ul>
-          <li>标题分别为传入的 title（和弦听辨 / 和弦进行）</li>
-          <li><strong>Alert「本轮完成」· 确定</strong> → 回到 Hub</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">训练日历</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="s" style="text-align:center;padding:8px;">［图形化 DatePicker］</div></div>
+            <div class="pm-card"><div class="s">本月有 N 天完成了训练</div></div>
+            <div class="pm-sec">当天记录</div>
+            <div class="pm-card"><div class="h">和弦切换</div><div class="s">14:32 · 难度 3/5</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>训练日历</h3>
+          <div class="file">PracticeLandingView · PracticeCalendarScreen</div>
+          <ul>
+            <li>选日期、看当日会话卡片；无下级页面。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>视唱训练 · 设置</h3>
-        <div class="file">swift_app · SightSingingViews.swift · SightSingingSetupView</div>
-        <ul>
-          <li><strong>开始训练</strong> → 视唱训练会话</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">视唱练耳</span><span class="ic"> </span></div>
+          <div class="pm-body">
+            <div class="pm-card"><div class="h">音程识别</div><div class="s">两音上行、四选一</div></div>
+            <div class="pm-card"><div class="h">和弦听辨</div><div class="s">大三/小三/属七…</div></div>
+            <div class="pm-card"><div class="h">和弦进行</div><div class="s">常见流行进行…</div></div>
+            <div class="pm-card"><div class="h">视唱训练</div><div class="s">单音视唱…</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>视唱练耳 Hub</h3>
+          <div class="file">PracticeLandingView · EarPracticeHubScreen</div>
+          <ul>
+            <li>四张 <code>PracticeLinkCard</code> → 四个子功能页。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>视唱训练 · 会话</h3>
-        <div class="file">swift_app · SightSingingSessionView</div>
-        <ul>
-          <li>判定、下一题 / 查看结果 → <strong>Alert 训练完成</strong> → 确定回到 Hub</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">音程识别</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="s">音程 · 第 2 / 5 题</div><div style="height:4px;background:rgba(61,156,245,0.35);border-radius:2px;margin-top:4px;width:40%;"></div></div>
+            <div class="pm-card"><div class="h">说明</div><div class="s">听两个音，选择音程…</div></div>
+            <div class="pm-card">
+              <div class="h">四选一</div>
+              <div class="pm-row"><span>纯四度</span><span style="color:var(--brand);">✓</span></div>
+              <div class="pm-row"><span>大三度</span></div>
+            </div>
+            <div class="pm-btn">提交答案</div>
+          </div>
+        </div>
+        <div>
+          <h3>音程识别</h3>
+          <div class="file">IntervalEarView.swift</div>
+          <ul>
+            <li>播放 / 再听一遍、选项、提交、下一题。</li>
+            <li>完成后 <strong>Alert「本轮完成」</strong> → 确定 → 回到视唱练耳 Hub。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>练琴 Hub</h3>
-        <div class="file">PracticeLandingView.swift · GuitarPracticeHubScreen</div>
-        <ul>
-          <li>内置三项：和弦切换、节奏扫弦、音阶爬格子（<code>kDefaultPracticeTasks</code>）</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">和弦听辨</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="s">第 3 / 10 题</div></div>
+            <div class="pm-card"><div class="h">题目</div><div class="s">（题干占位）</div><div style="margin-top:6px;display:flex;gap:4px;"><div class="pm-btn" style="flex:1;padding:5px;">播放</div><div class="pm-btn outline" style="flex:1;padding:5px;">再听</div></div></div>
+            <div class="pm-card"><div class="h">四选一</div><div class="pm-row"><span>Am</span></div><div class="pm-row"><span>C</span></div></div>
+            <div class="pm-btn">提交答案</div>
+          </div>
+        </div>
+        <div>
+          <h3>和弦听辨（MCQ）</h3>
+          <div class="file">EarMcqSessionView · bank A</div>
+          <ul>
+            <li>与「和弦进行」共用组件，标题与题库不同。</li>
+            <li><strong>Alert「本轮完成」</strong> → 确定 → Hub。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>和弦切换 · 配置</h3>
-        <div class="file">ChordPracticeSelectionView.swift</div>
-        <ul>
-          <li><strong>和弦进行 行</strong> → Sheet 选择和弦进行</li>
-          <li><strong>开始练习</strong> → 和弦练习会话（底部主按钮）</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">和弦进行</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="s">第 1 / 10 题</div></div>
+            <div class="pm-card"><div class="h">题目</div><div class="s">（题干占位）</div></div>
+            <div class="pm-card"><div class="h">四选一</div><div class="pm-row"><span>Ⅰ–Ⅴ–Ⅵ–Ⅳ</span></div></div>
+            <div class="pm-btn">提交答案</div>
+          </div>
+        </div>
+        <div>
+          <h3>和弦进行（MCQ）</h3>
+          <div class="file">EarMcqSessionView · bank B</div>
+          <ul>
+            <li>交互与和弦听辨相同。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>选择和弦进行 · Sheet</h3>
-        <div class="file">ChordPracticeSelectionView.swift · ChordProgressionPickerSheet</div>
-        <ul>
-          <li>点列表项选中并关闭 Sheet；<strong>关闭</strong>取消</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">视唱训练</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card">
+              <div class="h">音域</div>
+              <div class="pm-seg"><span>低</span><span class="on">中</span><span>宽</span></div>
+              <div class="pm-row" style="margin-top:6px;"><span>包含升降号</span><span>○━●</span></div>
+              <div class="s" style="margin-top:4px;">题量：10 题</div>
+              <div style="height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;"><div style="width:40%;height:100%;background:var(--brand);border-radius:2px;"></div></div>
+            </div>
+            <div class="pm-card"><div class="h">开始训练</div><div class="s" style="text-align:right;">›</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>视唱训练 · 设置</h3>
+          <div class="file">SightSingingViews.swift · SightSingingSetupView</div>
+          <ul>
+            <li><strong>开始训练</strong> → 视唱训练会话。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>和弦切换 · 练习会话</h3>
-        <div class="file">ChordPracticeSessionView.swift</div>
-        <ul>
-          <li><strong>点和弦名</strong> → 指法速查 Sheet（多把位 TabView）</li>
-          <li>开始 / 暂停 / 结束 → 结束打开保存 Sheet</li>
-          <li><strong>返回 chevron</strong> → 离开确认 Alert</li>
-          <li>保存成功 → <strong>记录已保存</strong> → 返回 → 回到配置页</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">视唱训练</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="s">第 4 / 10 题</div></div>
+            <div class="pm-card"><div class="h">目标音</div><div class="pm-huge" style="font-size:20px;">E4</div><div class="s">当前检测：--</div></div>
+            <div class="pm-btn">开始判定（2秒）</div>
+          </div>
+        </div>
+        <div>
+          <h3>视唱训练 · 会话</h3>
+          <div class="file">SightSingingSessionView</div>
+          <ul>
+            <li>麦克风判定、结果、下一题 / 查看结果。</li>
+            <li><strong>Alert 训练完成</strong> → 确定 → Hub。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>节奏扫弦</h3>
-        <div class="file">RhythmStrummingView.swift</div>
-        <ul>
-          <li><strong>完成练习</strong> → 保存练习 Sheet</li>
-          <li><strong>toolbar ?</strong> → 图示说明 Alert</li>
-          <li><strong>返回</strong> → 离开确认（文案与和弦略有不同）</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">练琴</span><span class="ic"> </span></div>
+          <div class="pm-body">
+            <div class="pm-card"><div class="h">和弦切换</div><div class="s">5 分钟 · 多种进行…</div></div>
+            <div class="pm-card"><div class="h">节奏扫弦</div><div class="s">10 分钟 · 4/4…</div></div>
+            <div class="pm-card"><div class="h">音阶爬格子</div><div class="s">5 分钟 · 力度均匀…</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>练琴 Hub</h3>
+          <div class="file">GuitarPracticeHubScreen</div>
+          <ul>
+            <li>三项内置任务 → <code>PracticeTaskRouterScreen</code>。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>音阶爬格子 · 计时</h3>
-        <div class="file">PracticeTimerSessionView.swift</div>
-        <ul>
-          <li>开始 / 暂停 / 结束 → 保存 Sheet（与和弦会话同类对话框）</li>
-          <li>返回 → 离开确认；需先计时再结束，否则「先开始练习再结束」</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">和弦切换练习</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="h">预览</div><div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;"><span class="pm-pill">C</span><span class="pm-pill">G</span><span class="pm-pill">Am</span><span class="pm-pill">F</span></div></div>
+            <div class="pm-card"><div class="s">调性 ▾ C</div></div>
+            <div class="pm-card"><div class="pm-seg"><span class="on">基础</span><span>进阶</span></div></div>
+            <div class="pm-card"><div class="h">和弦进行</div><div class="s">1564 流行… ›</div></div>
+          </div>
+          <div style="padding:6px 8px 8px;border-top:1px solid rgba(255,255,255,0.06);"><div class="pm-btn">▶ 开始练习</div></div>
+        </div>
+        <div>
+          <h3>和弦切换 · 配置</h3>
+          <div class="file">ChordPracticeSelectionView.swift</div>
+          <ul>
+            <li><strong>和弦进行</strong> 行 → Sheet 列表。</li>
+            <li>底部 <strong>开始练习</strong> → 练习会话。</li>
+          </ul>
+        </div>
       </div>
-      <div class="screen">
-        <h3>保存练习 · Sheet</h3>
-        <div class="file">PracticeFinishDialog.swift</div>
-        <ul>
-          <li>取消关闭 Sheet；保存记录 → 写本地后关闭并触发后续 Alert（依父视图逻辑）</li>
-        </ul>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-sheet-bar"></div>
+          <div class="pm-nav" style="border:0;"><span class="t" style="font-size:9px;">选择和弦进行</span><span class="ic" style="font-size:8px;background:transparent;color:#9aacbf;">关闭</span></div>
+          <div class="pm-body" style="padding-top:0;">
+            <div style="font-size:7px;color:#6a7a8e;margin-bottom:4px;">🔍 搜索…</div>
+            <div class="pm-card" style="padding:4px 6px;"><div class="s" style="font-weight:650;color:#fff;">流行 · 1564</div><div class="s">Ⅰ–Ⅴ–Ⅵ–Ⅳ</div></div>
+            <div class="pm-card" style="padding:4px 6px;"><div class="s">抒情 · …</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>选择和弦进行 · Sheet</h3>
+          <div class="file">ChordProgressionPickerSheet</div>
+          <ul>
+            <li>点行选中并关闭；<strong>关闭</strong> 仅 dismiss。</li>
+          </ul>
+        </div>
       </div>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t" style="font-size:8px;">1564 · C 调</span><span class="ic"> </span></div>
+          <div class="pm-body">
+            <div class="pm-card" style="flex:1;">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                <span class="pm-pill" style="text-decoration:underline;">C</span><span class="pm-pill" style="text-decoration:underline;">G</span><span class="pm-pill">Am</span><span class="pm-pill">F</span>
+              </div>
+              <div class="s" style="text-align:center;margin-top:6px;">点击和弦名查看指法</div>
+            </div>
+            <div class="pm-timer" style="margin:4px 0;">05:23</div>
+            <div style="display:flex;gap:4px;justify-content:center;">
+              <div class="pm-btn" style="flex:1;">开始</div>
+              <div class="pm-btn ghost" style="flex:1;">结束</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3>和弦切换 · 练习会话</h3>
+          <div class="file">ChordPracticeSessionView.swift</div>
+          <ul>
+            <li><strong>点和弦名</strong> → 指法 Sheet。</li>
+            <li><strong>结束</strong>（已计时）→ 保存 Sheet。</li>
+            <li><strong>‹</strong> → 离开确认 Alert。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-sheet-bar"></div>
+          <div class="pm-nav" style="border:0;"><span class="t">C</span><span class="ic"> </span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="s">构成音：C · E · G</div></div>
+            <div class="pm-card"><div class="s">［把位 1 / N · 横滑切换］</div><div style="margin-top:6px;height:40px;background:rgba(0,0,0,0.25);border-radius:6px;"></div></div>
+          </div>
+        </div>
+        <div>
+          <h3>指法速查 · Sheet</h3>
+          <div class="file">ChordQuickReferenceSheet.swift · ChordResultSheet</div>
+          <ul>
+            <li>多把位 <code>TabView</code>；解析失败时走 Alert 提示去工具「和弦速查」。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">节奏扫弦</span><span class="ic">?</span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="s">稳定 4/4 节拍…</div></div>
+            <div class="pm-card"><div class="h">当前节奏 ▾</div><div class="s">下上下上 · 常用型</div></div>
+            <div class="pm-card">
+              <div class="s" style="margin-bottom:2px;">一小节（八分网格）</div>
+              <div class="pm-grid8"><span class="gb">1</span><span class="gb">&</span><span class="gb">2</span><span class="gb">&</span><span class="gb">3</span><span class="gb">&</span><span class="gb">4</span><span class="gb">&</span></div>
+              <div class="pm-grid8" style="margin-top:2px;">
+                <span class="gc">D</span><span class="gc off">—</span><span class="gc">D</span><span class="gc off">—</span><span class="gc">U</span><span class="gc off">—</span><span class="gc">U</span><span class="gc off">—</span>
+              </div>
+            </div>
+            <div class="pm-btn">完成练习</div>
+          </div>
+        </div>
+        <div>
+          <h3>节奏扫弦</h3>
+          <div class="file">RhythmStrummingView.swift</div>
+          <ul>
+            <li><strong>完成练习</strong> → 保存 Sheet。</li>
+            <li><strong>?</strong> → 图示说明 Alert。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">音阶爬格子</span><span class="ic"> </span></div>
+          <div class="pm-body" style="justify-content:center;">
+            <div class="pm-card"><div class="s">保持力度均匀，减少杂音。</div></div>
+            <div class="pm-timer">00:00</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
+              <div class="pm-btn" style="min-width:52px;">开始</div>
+              <div class="pm-btn outline" style="min-width:52px;">暂停</div>
+              <div class="pm-btn ghost" style="min-width:52px;">结束</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3>音阶爬格子 · 计时</h3>
+          <div class="file">PracticeTimerSessionView.swift</div>
+          <ul>
+            <li>开始 / 暂停 / 结束 → 保存 Sheet；未计时点结束有提示 Alert。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="page-row">
+        <div class="phone phone--tall">
+          <div class="pm-sheet-bar"></div>
+          <div class="pm-nav" style="border:0;"><span style="font-size:8px;color:#9aacbf;">取消</span><span class="t" style="font-size:9px;">本次练习完成</span><span style="font-size:8px;color:var(--brand);font-weight:650;">保存</span></div>
+          <div class="pm-scroll">
+            <div class="pm-card"><div class="pm-row"><span>完成目标</span><span>○━●</span></div></div>
+            <div class="pm-card"><div class="s">主观难度：3</div><div style="height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;"><div style="width:50%;height:100%;background:var(--brand);border-radius:2px;"></div></div></div>
+            <div class="pm-card"><div class="s">备注（可选）</div><div style="height:28px;background:rgba(0,0,0,0.2);border-radius:6px;margin-top:4px;"></div></div>
+          </div>
+        </div>
+        <div>
+          <h3>保存练习 · Sheet</h3>
+          <div class="file">PracticeFinishDialog.swift</div>
+          <ul>
+            <li>和弦会话 / 节奏扫弦 / 音阶爬格子共用该表单样式（标题文案略有不同）。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="page-row">
+        <div class="phone phone--alertdemo">
+          <div class="pm-status">⋯</div>
+          <div class="pm-nav"><span class="ic">‹</span><span class="t">音程识别</span><span class="ic"> </span></div>
+          <div class="pm-body">
+            <div class="pm-scroll" style="opacity:0.45;"><div class="pm-card"><div class="s">题目区…</div></div></div>
+          </div>
+          <div class="pm-overlay" aria-hidden="true"></div>
+          <div class="pm-alert pm-alert-layer">
+            <div class="t2">本轮完成</div>
+            <div class="m">得分摘要…</div>
+            <div class="bx"><div>确定</div></div>
+          </div>
+        </div>
+        <div>
+          <h3>Alert 示意（以「本轮完成」为例）</h3>
+          <div class="file">IntervalEarView / EarMcqSessionView 等</div>
+          <ul>
+            <li>另有：<strong>离开练习</strong>、<strong>先开始再结束</strong>、<strong>记录已保存</strong>、<strong>图示说明</strong>、<strong>和弦解析失败</strong> 等，结构类似（标题 + 文案 + 按钮）。</li>
+          </ul>
+        </div>
+      </div>
+
     </div>
   </section>
 
   <footer>
-    本地查看：用浏览器打开本文件。若 Mermaid 未渲染，请检查网络（需加载 CDN）或改用支持 Mermaid 的 Markdown 预览器打开同目录下内容。
+    本地查看：用浏览器打开本文件。UI 线框为 HTML/CSS 绘制，与真机像素级布局可能不一致，以工程代码为准。
+    若 Mermaid 未渲染，请检查网络（需加载 jsDelivr CDN）。
     源码入口：<code>swift_ios_host/Sources/SwiftEarHostApp.swift</code>（Tab 1）、<code>swift_ios_host/Sources/Practice/Views/PracticeLandingView.swift</code>。
   </footer>
 
