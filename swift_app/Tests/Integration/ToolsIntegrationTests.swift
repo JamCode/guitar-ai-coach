@@ -54,6 +54,7 @@ final class ToolsIntegrationTests: XCTestCase {
 
 private final class TestAudioEngine: AudioEngineServing {
     let quality = AudioQualityBaseline()
+    var isSampledGuitarAvailable: Bool = false
     func start() throws { quality.markStart() }
     func stop() { quality.markStop() }
     func playSine(frequencyHz: Double, durationSec: Double) throws {
@@ -62,6 +63,19 @@ private final class TestAudioEngine: AudioEngineServing {
 
     func playPluckedGuitarString(frequencyHz: Double, durationSec: Double) throws {
         quality.markCallback(renderCostMs: 0.12)
+    }
+
+    func playSampledGuitarNote(midi: Int, velocity: UInt8, gateDurationSec: Double) throws {
+        quality.markCallback(renderCostMs: 0.1)
+    }
+
+    func playSampledGuitarChord(
+        midis: [Int],
+        velocity: UInt8,
+        gateDurationSec: Double,
+        stringStaggerSec: Double
+    ) throws {
+        quality.markCallback(renderCostMs: 0.15)
     }
 }
 

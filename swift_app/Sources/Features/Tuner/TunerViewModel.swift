@@ -44,8 +44,14 @@ public final class TunerViewModel: ObservableObject {
         let i = max(0, min(5, index))
         selectedStringIndex = i
         guard let hz = targetHz else { return }
+        let midi = GuitarStandardTuning.openStringMidis[i]
         do {
-            try audio.playSine(frequencyHz: hz, durationSec: 0.20)
+            try audio.start()
+            if audio.isSampledGuitarAvailable {
+                try audio.playSampledGuitarNote(midi: midi, velocity: 98, gateDurationSec: 1.28)
+            } else {
+                try audio.playSine(frequencyHz: hz, durationSec: 0.22)
+            }
         } catch {
             errorText = "参考音播放失败：\(error.localizedDescription)"
         }

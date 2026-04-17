@@ -1,8 +1,78 @@
 import SwiftUI
 import Core
 
+private struct TunerScrollContentWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// 调音器「状态」卡片内层：与运行时同一套排版，便于对最坏文案做 `sizeThatFits`。
+private struct TunerStatusCardBody: View {
+    let helper: String
+    let title: String
+    let titleColor: Color
+    let detail: String
+    let targetCaption: String
+    let rotationText: String?
+    let cents: Double
+    let meterActive: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("状态").appSectionTitle()
+            Text(helper)
+                .foregroundStyle(SwiftAppTheme.muted)
+                .lineLimit(2)
+                .minimumScaleFactor(0.9)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(alignment: .top, spacing: 16) {
+                Text(title)
+                    .font(.system(size: 42, weight: .bold))
+                    .foregroundStyle(titleColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .frame(width: 148, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(detail)
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.88)
+                    Text(targetCaption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                    Text(String(format: "%+.0f cent", cents))
+                        .foregroundStyle(SwiftAppTheme.brand)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if let rotationText, !rotationText.isEmpty {
+                Text(rotationText)
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .lineLimit(5)
+                    .minimumScaleFactor(0.92)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+
+            MeterBar(cents: cents, active: meterActive)
+                .frame(height: 20)
+        }
+    }
+}
+
 public struct TunerView: View {
     @StateObject private var viewModel = TunerViewModel()
+    /// 由最坏文案在**当前内容宽度**下 `sizeThatFits` 得到的高度；随横向宽度变化可再增大，不缩小。
+    @State private var statusCardMeasuredHeight: CGFloat = 0
+
     private let strings: [TuningStringInfo] = [
         .init(number: 6, hint: "最粗弦"),
         .init(number: 5, hint: "次粗弦"),
@@ -24,36 +94,24 @@ public struct TunerView: View {
                         .appCard()
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("状态").appSectionTitle()
-                    Text(tuningGuidance.helper).foregroundStyle(SwiftAppTheme.muted)
-                    HStack(alignment: .lastTextBaseline, spacing: 16) {
-                        Text(tuningGuidance.title)
-                            .font(.system(size: 42, weight: .bold))
-                            .foregroundStyle(tuningGuidance.color)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(tuningGuidance.detail)
-                                .foregroundStyle(SwiftAppTheme.text)
-                            Text(targetCaption)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                            Text(String(format: "%+.0f cent", viewModel.cents))
-                                .foregroundStyle(SwiftAppTheme.brand)
-                        }
-                    }
-                    if let rotationHintText {
-                        Text(rotationHintText)
-                            .font(.caption)
-                            .foregroundStyle(SwiftAppTheme.muted)
-                    }
-                    MeterBar(cents: viewModel.cents, active: viewModel.frequencyHz != nil)
-                        .frame(height: 20)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                TunerStatusCardBody(
+                    helper: tuningGuidance.helper,
+                    title: tuningGuidance.title,
+                    titleColor: tuningGuidance.color,
+                    detail: tuningGuidance.detail,
+                    targetCaption: targetCaption,
+                    rotationText: rotationHintText,
+                    cents: viewModel.cents,
+                    meterActive: viewModel.frequencyHz != nil
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: statusCardEffectiveHeight, alignment: .topLeading)
+                .clipped()
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("选择弦").appSectionTitle()
-                    Text("按琴头旋钮位置选择：先轻拨一根弦，再点对应旋钮位置")
+                    Text("按琴头旋钮位置选择：点弦钮会播放该弦标准参考音；再轻拨同一根弦，对照表头指针调准。")
                         .font(.caption)
                         .foregroundStyle(SwiftAppTheme.muted)
                     HStack {
@@ -82,6 +140,14 @@ public struct TunerView: View {
                 .appCard()
             }
             .padding(SwiftAppTheme.pagePadding)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: TunerScrollContentWidthKey.self, value: geo.size.width)
+                }
+            )
+            .onPreferenceChange(TunerScrollContentWidthKey.self) { width in
+                recomputeStatusCardHeight(scrollContentWidth: width)
+            }
         }
         .navigationTitle("调音器")
         .appPageBackground()
@@ -92,6 +158,28 @@ public struct TunerView: View {
         }
         .onDisappear {
             viewModel.stop()
+        }
+    }
+
+    /// 宽度 preference 未到前用占位；有估算值后取 max(地板, 估算)，且高度只增不减（避免裁切后无法再放大）。
+    private var statusCardEffectiveHeight: CGFloat {
+        let floor: CGFloat = 268
+        let placeholder: CGFloat = 300
+        if statusCardMeasuredHeight > 0 {
+            return max(floor, statusCardMeasuredHeight)
+        }
+        return placeholder
+    }
+
+    private func recomputeStatusCardHeight(scrollContentWidth: CGFloat) {
+        guard scrollContentWidth > 40 else { return }
+        // `GeometryReader` 附在已加 `pagePadding` 的 VStack 上：先得到内容列宽，再扣 `appCard` 内边距。
+        let contentColumnWidth = max(0, scrollContentWidth - SwiftAppTheme.pagePadding * 2)
+        let innerWidth = max(80, contentColumnWidth - 14 * 2)
+        let h = TunerStatusCardLayoutMetrics.estimatedWorstCaseHeight(contentInnerWidth: innerWidth)
+        let merged = max(statusCardMeasuredHeight, h)
+        if abs(merged - statusCardMeasuredHeight) > 0.5 {
+            statusCardMeasuredHeight = merged
         }
     }
 
@@ -215,4 +303,3 @@ private struct TuningStringInfo {
     let number: Int
     let hint: String
 }
-

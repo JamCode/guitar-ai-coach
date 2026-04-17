@@ -43,6 +43,16 @@ final class PitchAndFretboardTests: XCTestCase {
         XCTAssertEqual(payload?.voicings.count, 2)
     }
 
+    func testSteelStringGuitarSoundBankIsBundled() {
+        let url = GuitarSoundBank.steelStringSF2URL
+        XCTAssertNotNil(url, "采样吉他 SF2 资源未正确打包到 Core 模块")
+        if let url {
+            let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
+            let size = (attrs?[.size] as? NSNumber)?.intValue ?? 0
+            XCTAssertGreaterThan(size, 1_000_000, "SF2 体积异常：\(size) bytes")
+        }
+    }
+
     func testAudioQualityBaselineSnapshot() {
         let baseline = AudioQualityBaseline()
         baseline.markStart()
