@@ -25,74 +25,44 @@ struct PracticeLandingView: View {
         }
         .navigationTitle("练习")
         .appNavigationBarChrome()
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    PracticeCalendarScreen(sessions: vm.sessions)
-                } label: {
-                    Label("训练日历", systemImage: "calendar")
-                }
-            }
-        }
         .task { await vm.refresh() }
     }
 
     private var content: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("选择训练方向")
+            VStack(alignment: .leading, spacing: 10) {
+                Text("开始今日训练")
                     .appSectionTitle()
                     .padding(.top, 6)
 
-                landingEntryCard(
-                    title: "视唱练耳",
-                    subtitle: "音程、和弦听辨、和弦进行、视唱训练",
-                    icon: "ear"
-                ) {
-                    EarPracticeHubScreen()
+                NavigationLink {
+                    TodayRecommendationListView(sessions: vm.sessions)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles.rectangle.stack")
+                            .foregroundStyle(SwiftAppTheme.brand)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("今日推荐")
+                                .font(.headline)
+                                .foregroundStyle(SwiftAppTheme.text)
+                            Text("基于本地训练记录，自动生成 6 个题目/练习")
+                                .font(.subheadline)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                    }
+                    .appCard()
                 }
-
-                landingEntryCard(
-                    title: "练琴",
-                    subtitle: "和弦切换、节奏扫弦、音阶爬格子",
-                    icon: "music.note"
-                ) {
-                    GuitarPracticeHubScreen()
-                }
+                .buttonStyle(.plain)
             }
             .padding(SwiftAppTheme.pagePadding)
         }
         .appPageBackground()
         .refreshable { await vm.refresh() }
-    }
-
-    private func landingEntryCard<Destination: View>(
-        title: String,
-        subtitle: String,
-        icon: String,
-        @ViewBuilder destination: @escaping () -> Destination
-    ) -> some View {
-        NavigationLink(destination: destination()) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .foregroundStyle(SwiftAppTheme.brand)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundStyle(SwiftAppTheme.text)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(SwiftAppTheme.muted)
-            }
-            .appCard()
-        }
-        .buttonStyle(.plain)
     }
 }
 

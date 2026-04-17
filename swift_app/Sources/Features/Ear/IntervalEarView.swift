@@ -5,11 +5,20 @@ public struct IntervalEarView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: IntervalEarSessionViewModel
     @State private var showSummary = false
+    private let onSessionComplete: ((Int, Int) -> Void)?
+    private let autoDismissOnComplete: Bool
 
-    public init(totalQuestions: Int = 5, difficulty: IntervalEarDifficulty = .初级) {
+    public init(
+        totalQuestions: Int = 5,
+        difficulty: IntervalEarDifficulty = .初级,
+        onSessionComplete: ((Int, Int) -> Void)? = nil,
+        autoDismissOnComplete: Bool = true
+    ) {
         _viewModel = StateObject(
             wrappedValue: IntervalEarSessionViewModel(totalQuestions: totalQuestions, difficulty: difficulty)
         )
+        self.onSessionComplete = onSessionComplete
+        self.autoDismissOnComplete = autoDismissOnComplete
     }
 
     public var body: some View {
@@ -101,7 +110,12 @@ public struct IntervalEarView: View {
         .navigationTitle("音程识别")
         .appPageBackground()
         .alert("本轮完成", isPresented: $showSummary) {
-            Button("确定") { dismiss() }
+            Button("确定") {
+                onSessionComplete?(viewModel.correctCount, viewModel.totalQuestions)
+                if autoDismissOnComplete {
+                    dismiss()
+                }
+            }
         } message: {
             Text(viewModel.summaryText)
         }

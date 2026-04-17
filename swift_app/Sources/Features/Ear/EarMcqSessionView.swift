@@ -5,12 +5,16 @@ public struct EarMcqSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: EarMcqSessionViewModel
     @State private var showSummary = false
+    private let onSessionComplete: ((Int, Int) -> Void)?
+    private let autoDismissOnComplete: Bool
 
     public init(
         title: String,
         bank: String,
         totalQuestions: Int = 10,
-        chordDifficulty: EarChordMcqDifficulty = .初级
+        chordDifficulty: EarChordMcqDifficulty = .初级,
+        onSessionComplete: ((Int, Int) -> Void)? = nil,
+        autoDismissOnComplete: Bool = true
     ) {
         _viewModel = StateObject(
             wrappedValue: EarMcqSessionViewModel(
@@ -20,6 +24,8 @@ public struct EarMcqSessionView: View {
                 chordDifficulty: chordDifficulty
             )
         )
+        self.onSessionComplete = onSessionComplete
+        self.autoDismissOnComplete = autoDismissOnComplete
     }
 
     public var body: some View {
@@ -127,7 +133,12 @@ public struct EarMcqSessionView: View {
             }
         }
         .alert("本轮完成", isPresented: $showSummary) {
-            Button("确定") { dismiss() }
+            Button("确定") {
+                onSessionComplete?(viewModel.correctCount, max(1, viewModel.session.count))
+                if autoDismissOnComplete {
+                    dismiss()
+                }
+            }
         } message: {
             Text(viewModel.summaryText)
         }
