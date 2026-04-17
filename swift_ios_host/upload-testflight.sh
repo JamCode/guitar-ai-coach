@@ -95,7 +95,7 @@ if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
 fi
 
 if [[ -z "${APP_BUNDLE_ID:-}" ]]; then
-  DETECTED_BUNDLE_ID="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '/PRODUCT_BUNDLE_IDENTIFIER =/{print $3; exit}')"
+  DETECTED_BUNDLE_ID="$(xcodebuild -project "${PROJECT}" -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -showBuildSettings 2>/dev/null | awk '$1 == "PRODUCT_BUNDLE_IDENTIFIER" {print $3; exit}')"
   if [[ -n "${DETECTED_BUNDLE_ID}" ]]; then
     APP_BUNDLE_ID="${DETECTED_BUNDLE_ID}"
   fi

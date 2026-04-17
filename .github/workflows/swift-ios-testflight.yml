@@ -94,7 +94,7 @@ jobs:
                 -scheme "${SCHEME}" \
                 -configuration "${CONFIGURATION}" \
                 -showBuildSettings 2>/dev/null \
-                | awk '/PRODUCT_BUNDLE_IDENTIFIER =/{print $3; exit}' \
+                | awk '$1 == "PRODUCT_BUNDLE_IDENTIFIER" {print $3; exit}' \
                 | tr -d '"'
             )"
           fi
