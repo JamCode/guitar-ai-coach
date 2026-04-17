@@ -398,4 +398,73 @@ function resetAll() {
   .row { grid-template-columns: 1fr; }
   .keys { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+@media (prefers-color-scheme: dark) {
+  .single-note {
+    --sn-text-primary: #d8dce6;
+    --sn-text-secondary: rgba(216, 220, 230, 0.88);
+    --sn-text-muted: rgba(216, 220, 230, 0.72);
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(15, 15, 18, 0.96);
+    color: #d8dce6;
+  }
+  .field select {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    color: #d8dce6;
+  }
+  .check,
+  .field span {
+    color: rgba(216, 220, 230, 0.86);
+  }
+  .key-btn {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #d8dce6;
+  }
+  .key-btn.selected {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .slot {
+    border-color: rgba(255, 255, 255, 0.22);
+    color: rgba(216, 220, 230, 0.72);
+  }
+  .slot.active {
+    border-color: #ffffff;
+    color: #d8dce6;
+  }
+  .btn-primary {
+    border-color: #ffffff;
+    background: #ffffff;
+    color: #0b0b0f;
+  }
+  .btn-secondary {
+    border-color: rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.08);
+    color: #d8dce6;
+  }
+  .result-title,
+  .result-line,
+  .progress {
+    color: rgba(216, 220, 230, 0.92);
+  }
+  .muted {
+    color: rgba(216, 220, 230, 0.78);
+  }
+  .ok {
+    color: #8fe7b0;
+  }
+  .err {
+    color: #ff8a80;
+  }
+  .wrong-box {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(216, 220, 230, 0.92);
+  }
+  .ear-section-h {
+    color: rgba(216, 220, 230, 0.8);
+  }
+}
 </style>

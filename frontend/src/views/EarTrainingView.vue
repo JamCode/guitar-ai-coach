@@ -611,6 +611,7 @@ onUnmounted(() => {
   padding: 24px 16px calc(24px + 56px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
   color: var(--ear-text-primary);
+  background: var(--bg);
 }
 .ear-card { width: 560px; max-width: 100%; }
 .ear-hero {
@@ -689,4 +690,92 @@ onUnmounted(() => {
 .box { margin-top: 10px; border: 1px solid #e5e5e5; border-radius: 10px; background: #fafafa; padding: 10px; color: var(--ear-text-primary); }
 .box h3 { margin: 0 0 8px; font-size: 13px; color: var(--ear-text-primary); }
 .box ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--ear-text-primary); }
+
+@media (prefers-color-scheme: dark) {
+  .ear-wrap {
+    --ear-text-primary: #d8dce6;
+    --ear-text-secondary: rgba(216, 220, 230, 0.88);
+    --ear-text-muted: rgba(216, 220, 230, 0.72);
+    color: var(--ear-text-primary);
+  }
+  .ear-hero {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: linear-gradient(180deg, rgba(28, 28, 34, 0.98) 0%, rgba(15, 15, 18, 0.98) 100%);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+  .ear-title {
+    color: #d8dce6;
+  }
+  .track-tab {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(216, 220, 230, 0.86);
+  }
+  .track-tab.active {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(15, 15, 18, 0.96);
+    color: #d8dce6;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  }
+  .ear-section {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(15, 15, 18, 0.96);
+  }
+  .ear-section-h {
+    color: rgba(216, 220, 230, 0.8);
+  }
+  .mode-item {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .mode-item.active {
+    border-color: #ffffff;
+  }
+  .mode-item strong {
+    color: #d8dce6;
+  }
+  .mode-item span {
+    color: rgba(216, 220, 230, 0.78);
+  }
+  .btn-primary {
+    border-color: #ffffff;
+    background: #ffffff;
+    color: #0b0b0f;
+  }
+  .btn-secondary {
+    border-color: rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.08);
+    color: #d8dce6;
+  }
+  .option {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #d8dce6;
+  }
+  .option.selected {
+    border-color: #ffffff;
+  }
+  .option.correct {
+    border-color: #62c489;
+    background: rgba(98, 196, 137, 0.2);
+  }
+  .option.wrong {
+    border-color: #ff8a80;
+    background: rgba(255, 138, 128, 0.16);
+  }
+  .ok {
+    color: #8fe7b0;
+  }
+  .err {
+    color: #ff8a80;
+  }
+  .box {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .box h3,
+  .box ul {
+    color: rgba(216, 220, 230, 0.92);
+  }
+}
 </style>
