@@ -141,6 +141,9 @@ fi
 
 echo "目标分支: ${target_branch}"
 echo "将在此 worktree 执行合并: ${merge_base}"
+if [[ -n "$(git -C "$merge_base" status --porcelain 2>/dev/null || true)" ]]; then
+  echo "警告: 目标 worktree 存在未提交修改；git merge 可能失败，请先提交或 stash。" >&2
+fi
 echo ""
 
 for i in "${!sources[@]}"; do
