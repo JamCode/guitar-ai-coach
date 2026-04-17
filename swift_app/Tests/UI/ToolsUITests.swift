@@ -6,6 +6,7 @@ import XCTest
 @testable import ChordChart
 @testable import Profile
 @testable import Ear
+@testable import Practice
 
 final class ToolsUITests: XCTestCase {
     func testViewsCanBeConstructed() {
@@ -21,6 +22,9 @@ final class ToolsUITests: XCTestCase {
         _ = AccountSecurityView()
         _ = DiagnosticLogsView()
         _ = EarHomeView()
+        _ = TraditionalCrawlPracticeView()
+        _ = ScaleTrainingPracticeView()
+        _ = ChordSwitchTrainingPracticeView()
         _ = IntervalEarView()
         _ = EarMcqSessionView(title: "和弦听辨", bank: "A")
         _ = SightSingingSetupView()
