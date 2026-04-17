@@ -133,48 +133,38 @@ private struct ToolsTabView: View {
     private let gridGap: CGFloat = 8
 
     var body: some View {
-        GeometryReader { proxy in
-            let pad = gridEdgePadding
-            let availW = max(0, proxy.size.width - pad * 2)
-            let cellW = max(0, (availW - gridGap) / 2)
-
-            VStack(spacing: gridGap) {
-                HStack(spacing: gridGap) {
-                    gridTile(
-                        title: "调音器",
-                        subtitle: "麦克风拾音与标准空弦目标",
-                        icon: "waveform",
-                        width: cellW
-                    ) { TunerView() }
-                    gridTile(
-                        title: "吉他指板",
-                        subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
-                        icon: "square.grid.3x3",
-                        width: cellW
-                    ) { FretboardView() }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                HStack(spacing: gridGap) {
-                    gridTile(
-                        title: "和弦速查",
-                        subtitle: "离线可查构成音与常见把位",
-                        icon: "pianokeys",
-                        width: cellW
-                    ) { ChordLookupView() }
-                    gridTile(
-                        title: "常用和弦",
-                        subtitle: "初/中/高分段·本地指法图速查",
-                        icon: "tablecells",
-                        width: cellW
-                    ) { ChordChartView() }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        let pad = gridEdgePadding
+        VStack(spacing: gridGap) {
+            HStack(spacing: gridGap) {
+                gridTile(
+                    title: "调音器",
+                    subtitle: "麦克风拾音与标准空弦目标",
+                    icon: "waveform"
+                ) { TunerView() }
+                gridTile(
+                    title: "吉他指板",
+                    subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
+                    icon: "square.grid.3x3"
+                ) { FretboardView() }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding(pad)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            HStack(spacing: gridGap) {
+                gridTile(
+                    title: "和弦速查",
+                    subtitle: "离线可查构成音与常见把位",
+                    icon: "pianokeys"
+                ) { ChordLookupView() }
+                gridTile(
+                    title: "常用和弦",
+                    subtitle: "初/中/高分段·本地指法图速查",
+                    icon: "tablecells"
+                ) { ChordChartView() }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .padding(pad)
         .navigationTitle("工具")
         .appPageBackground()
     }
@@ -183,7 +173,6 @@ private struct ToolsTabView: View {
         title: String,
         subtitle: String,
         icon: String,
-        width: CGFloat,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
         NavigationLink {
@@ -218,8 +207,7 @@ private struct ToolsTabView: View {
             )
         }
         .buttonStyle(.plain)
-        .frame(width: width)
-        .frame(maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
