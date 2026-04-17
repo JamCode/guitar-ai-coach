@@ -131,39 +131,42 @@ private struct ToolsTabView: View {
     /// 比全站 `pagePadding` 略紧，减少工具宫格外圈留白。
     private let gridEdgePadding: CGFloat = 12
     private let gridGap: CGFloat = 8
+    private let cardAspectRatio: CGFloat = 0.92
 
     var body: some View {
         let pad = gridEdgePadding
-        VStack(spacing: gridGap) {
-            HStack(spacing: gridGap) {
-                gridTile(
-                    title: "调音器",
-                    subtitle: "麦克风拾音与标准空弦目标",
-                    icon: "waveform"
-                ) { TunerView() }
-                gridTile(
-                    title: "吉他指板",
-                    subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
-                    icon: "square.grid.3x3"
-                ) { FretboardView() }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 0) {
+            VStack(spacing: gridGap) {
+                HStack(spacing: gridGap) {
+                    gridTile(
+                        title: "调音器",
+                        subtitle: "麦克风拾音与标准空弦目标",
+                        icon: "waveform"
+                    ) { TunerView() }
+                    gridTile(
+                        title: "吉他指板",
+                        subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
+                        icon: "square.grid.3x3"
+                    ) { FretboardView() }
+                }
 
-            HStack(spacing: gridGap) {
-                gridTile(
-                    title: "和弦速查",
-                    subtitle: "离线可查构成音与常见把位",
-                    icon: "pianokeys"
-                ) { ChordLookupView() }
-                gridTile(
-                    title: "常用和弦",
-                    subtitle: "初/中/高分段·本地指法图速查",
-                    icon: "tablecells"
-                ) { ChordChartView() }
+                HStack(spacing: gridGap) {
+                    gridTile(
+                        title: "和弦速查",
+                        subtitle: "离线可查构成音与常见把位",
+                        icon: "pianokeys"
+                    ) { ChordLookupView() }
+                    gridTile(
+                        title: "常用和弦",
+                        subtitle: "初/中/高分段·本地指法图速查",
+                        icon: "tablecells"
+                    ) { ChordChartView() }
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(pad)
         .navigationTitle("工具")
         .appPageBackground()
@@ -207,7 +210,8 @@ private struct ToolsTabView: View {
             )
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(cardAspectRatio, contentMode: .fit)
     }
 }
 
