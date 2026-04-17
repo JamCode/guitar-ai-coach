@@ -147,8 +147,10 @@ jobs:
 
       - name: Archive app
         run: |
-          # 与「本机先带签名归档再导出」更接近：避免未签名 xcarchive 在含 SPM 时导出重签与本地 automatic 路径不一致，
-          # 进而出现 Connect 有记录但 TestFlight 客户端不展示等难排查差异。
+          # CI 不在归档阶段注入手动签名参数：xcodebuild 命令行设置会下发到所有 target，
+          # 包含的 SPM 库 target 不支持 provisioning profile，会报
+          # "... does not support provisioning profiles, but provisioning profile ... has been manually specified"。
+          # 改由导出阶段按 ExportOptions 做 App Store 分发签名，和历次成功 run 的做法一致。
           ARCHIVE_PATH="$RUNNER_TEMP/SwiftEarHost.xcarchive"
           xcodebuild \
             -project "$PROJECT_PATH" \
@@ -156,10 +158,8 @@ jobs:
             -configuration "$CONFIGURATION" \
             -destination "generic/platform=iOS" \
             -archivePath "$ARCHIVE_PATH" \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM="${TEAM_ID}" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="${PROFILE_NAME_RESOLVED}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             PRODUCT_BUNDLE_IDENTIFIER="${{ steps.build_meta.outputs.bundle_id }}" \
             MARKETING_VERSION="${{ steps.build_meta.outputs.marketing_version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_meta.outputs.build_number }}" \
