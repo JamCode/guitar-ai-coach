@@ -68,6 +68,15 @@ public struct ToolsHomeView: View {
                     )
                 }
                 NavigationLink {
+                    ChordSwitchTrainingPracticeView()
+                } label: {
+                    toolsRow(
+                        title: "和弦切换",
+                        subtitle: "开放/横按·分组节奏·BPM 自动组卷",
+                        systemImage: "guitars"
+                    )
+                }
+                NavigationLink {
                     ChordLookupView()
                 } label: {
                     toolsRow(
