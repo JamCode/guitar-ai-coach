@@ -14,7 +14,7 @@ HOST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${HOST_DIR}/.." && pwd)"
 PROJECT="${HOST_DIR}/SwiftEarHost.xcodeproj"
 SCHEME="SwiftEarHost"
-BUNDLE_ID="com.jamcode.swift-ear-host"
+BUNDLE_ID="com.wanghan.guitarhelper"
 
 # 默认：此前会话中使用的「iPhone 16 Flutter」；可改成本机 `xcrun simctl list devices available` 里的 UDID
 DEFAULT_SIMULATOR_UDID="${SIMULATOR_UDID:-F877F638-03AC-4C4B-ADDF-5631C27FEB05}"

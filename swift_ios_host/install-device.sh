@@ -33,7 +33,7 @@ HOST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${HOST_DIR}/.." && pwd)"
 PROJECT="${HOST_DIR}/SwiftEarHost.xcodeproj"
 SCHEME="SwiftEarHost"
-BUNDLE_ID="com.jamcode.swift-ear-host"
+BUNDLE_ID="com.wanghan.guitarhelper"
 
 # ========== 仅自用一台机时可写死（省掉 export / install-device.local.env）==========
 # 优先级低于：命令行 --device、环境变量 DEVICE / DEVICE_UDID / DEVELOPMENT_TEAM、install-device.local.env

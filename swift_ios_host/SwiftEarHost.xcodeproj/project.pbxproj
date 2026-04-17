@@ -388,7 +388,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.jamcode.swift-ear-host.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.wanghan.guitarhelper.tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftEarHost.app/SwiftEarHost";
@@ -416,7 +416,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.jamcode.swift-ear-host";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.wanghan.guitarhelper";
 				PRODUCT_NAME = SwiftEarHost;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.1;
@@ -434,7 +434,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.jamcode.swift-ear-host.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.wanghan.guitarhelper.tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftEarHost.app/SwiftEarHost";
@@ -581,7 +581,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.jamcode.swift-ear-host";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.wanghan.guitarhelper";
 				PRODUCT_NAME = SwiftEarHost;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.1;
