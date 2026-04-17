@@ -87,16 +87,18 @@ struct ChordPracticeSelectionView: View {
         }
         .safeAreaInset(edge: .bottom) {
             NavigationLink {
-                ChordPracticeSessionView(
-                    task: task,
-                    store: store,
-                    config: ChordPracticeConfig(
-                        progression: selectedProgression,
-                        key: selectedKey,
-                        complexity: selectedComplexity,
-                        resolvedChords: resolvedChords
+                TabBarHiddenContainer {
+                    ChordPracticeSessionView(
+                        task: task,
+                        store: store,
+                        config: ChordPracticeConfig(
+                            progression: selectedProgression,
+                            key: selectedKey,
+                            complexity: selectedComplexity,
+                            resolvedChords: resolvedChords
+                        )
                     )
-                )
+                }
             } label: {
                 Label("开始练习", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)

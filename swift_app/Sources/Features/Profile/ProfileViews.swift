@@ -35,7 +35,7 @@ public struct ProfileHomeView: View {
         subtitle: String?,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
-        NavigationLink(destination: destination()) {
+        NavigationLink(destination: TabBarHiddenContainer { destination() }) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .frame(width: 24)
@@ -90,7 +90,7 @@ public struct HelpFeedbackView: View {
         subtitle: String,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
-        NavigationLink(destination: destination()) {
+        NavigationLink(destination: TabBarHiddenContainer { destination() }) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .frame(width: 24)

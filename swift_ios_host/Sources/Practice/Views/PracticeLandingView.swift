@@ -32,7 +32,9 @@ struct PracticeLandingView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
-                    PracticeCalendarScreen(sessions: vm.sessions)
+                    TabBarHiddenContainer {
+                        PracticeCalendarScreen(sessions: vm.sessions)
+                    }
                 } label: {
                     Image(systemName: "calendar")
                         .foregroundStyle(SwiftAppTheme.text)
@@ -67,7 +69,9 @@ struct PracticeLandingView: View {
                 }
 
                 NavigationLink {
-                    PracticeTrainingCatalogView()
+                    TabBarHiddenContainer {
+                        PracticeTrainingCatalogView()
+                    }
                 } label: {
                     HStack {
                         Text("全部训练项目")
@@ -144,11 +148,13 @@ struct PracticeLandingView: View {
             }
 
             NavigationLink {
-                TodayRecommendationListView(
-                    sessions: vm.sessions,
-                    referenceDate: vm.recommendationDay,
-                    initialIndex: 0
-                )
+                TabBarHiddenContainer {
+                    TodayRecommendationListView(
+                        sessions: vm.sessions,
+                        referenceDate: vm.recommendationDay,
+                        initialIndex: 0
+                    )
+                }
             } label: {
                 Text("开始训练")
                     .font(.headline.weight(.semibold))
@@ -175,7 +181,7 @@ struct PracticeLandingView: View {
         subtitle: String,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
-        NavigationLink(destination: destination()) {
+        NavigationLink(destination: TabBarHiddenContainer { destination() }) {
             VStack(alignment: .leading, spacing: 6) {
                 Image(systemName: title == "练琴" ? "guitars" : "music.quarternote.3")
                     .font(.system(size: 18, weight: .semibold))
@@ -269,7 +275,9 @@ private struct GuitarPracticeHubScreen: View {
 
                 ForEach(kDefaultPracticeTasks) { task in
                     NavigationLink {
-                        PracticeTaskRouterScreen(task: task)
+                        TabBarHiddenContainer {
+                            PracticeTaskRouterScreen(task: task)
+                        }
                     } label: {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -301,16 +309,22 @@ private struct PracticeTrainingCatalogView: View {
     var body: some View {
         List {
             Section("视唱练耳") {
-                NavigationLink("音程识别") { IntervalEarView() }
-                NavigationLink("和弦听辨") { EarMcqSessionView(title: "和弦听辨", bank: "A", totalQuestions: 10) }
-                NavigationLink("和弦进行") { EarMcqSessionView(title: "和弦进行", bank: "B", totalQuestions: 10) }
-                NavigationLink("视唱训练") { SightSingingSetupView() }
+                NavigationLink("音程识别") { TabBarHiddenContainer { IntervalEarView() } }
+                NavigationLink("和弦听辨") {
+                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦听辨", bank: "A", totalQuestions: 10) }
+                }
+                NavigationLink("和弦进行") {
+                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B", totalQuestions: 10) }
+                }
+                NavigationLink("视唱训练") { TabBarHiddenContainer { SightSingingSetupView() } }
             }
 
             Section("练琴") {
                 ForEach(kDefaultPracticeTasks) { task in
                     NavigationLink(task.name) {
-                        PracticeTaskRouterScreen(task: task)
+                        TabBarHiddenContainer {
+                            PracticeTaskRouterScreen(task: task)
+                        }
                     }
                 }
             }
@@ -401,7 +415,7 @@ private struct PracticeLinkCard<Destination: View>: View {
     @ViewBuilder let destination: () -> Destination
 
     var body: some View {
-        NavigationLink(destination: destination()) {
+        NavigationLink(destination: TabBarHiddenContainer { destination() }) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .foregroundStyle(SwiftAppTheme.brand)

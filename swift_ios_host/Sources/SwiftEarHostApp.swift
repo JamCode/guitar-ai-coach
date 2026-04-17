@@ -191,7 +191,7 @@ private struct ToolsTabView: View {
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
         NavigationLink {
-            ToolDetailContainer { destination() }
+            TabBarHiddenContainer { destination() }
         } label: {
             VStack(alignment: .center, spacing: 10) {
                 Image(systemName: icon)
@@ -223,25 +223,6 @@ private struct ToolsTabView: View {
         }
         .buttonStyle(.plain)
         .frame(width: width, height: height)
-    }
-}
-
-/// 工具子页容器：用 `.toolbar(.hidden, for: .tabBar)` 真正隐藏底部 TabBar，
-/// 并通过 `@State` 在 onAppear/onDisappear 时切换，让显示/隐藏跟随导航转场触发动画，
-/// 减轻返回工具宫格时 TabBar 直接「顶出来」的突兀感。
-private struct ToolDetailContainer<Content: View>: View {
-    @ViewBuilder var content: () -> Content
-    @State private var hideTabBar = false
-
-    var body: some View {
-        content()
-            .toolbar(hideTabBar ? .hidden : .automatic, for: .tabBar)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 0.28)) { hideTabBar = true }
-            }
-            .onDisappear {
-                withAnimation(.easeInOut(duration: 0.28)) { hideTabBar = false }
-            }
     }
 }
 
