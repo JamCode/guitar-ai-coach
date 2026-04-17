@@ -34,24 +34,37 @@ public struct ChordChartView: View {
                                     Button {
                                         selectedEntry = entry
                                     } label: {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(entry.symbol)
-                                                .font(.headline)
-                                                .foregroundStyle(SwiftAppTheme.text)
-                                            Text(entry.theory)
-                                                .font(.subheadline)
-                                                .foregroundStyle(SwiftAppTheme.muted)
-                                                .lineLimit(2)
-                                            if let voicing = entry.voicing, !voicing.isEmpty {
-                                                Text(voicing)
-                                                    .font(.caption)
-                                                    .foregroundStyle(SwiftAppTheme.brand)
+                                        HStack(alignment: .top, spacing: 10) {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(entry.symbol)
+                                                    .font(.headline)
+                                                    .foregroundStyle(SwiftAppTheme.text)
+                                                Text(entry.theory)
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(SwiftAppTheme.muted)
+                                                    .lineLimit(2)
+                                                if let voicing = entry.voicing, !voicing.isEmpty {
+                                                    Text(voicing)
+                                                        .font(.caption)
+                                                        .foregroundStyle(SwiftAppTheme.brand)
+                                                }
+                                                Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
+                                                    .font(.caption.monospaced())
+                                                    .foregroundStyle(SwiftAppTheme.muted)
                                             }
-                                            Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
-                                                .font(.caption.monospaced())
-                                                .foregroundStyle(SwiftAppTheme.muted)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                                            ChordDiagramView(frets: entry.frets)
+                                                .frame(width: 76, height: 98)
+                                                .padding(6)
+                                                .background(SwiftAppTheme.surface)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                        .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
+                                                )
+                                                .accessibilityHidden(true)
                                         }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(.vertical, 6)
                                         .padding(.horizontal, 10)
                                         .background(SwiftAppTheme.surfaceSoft)

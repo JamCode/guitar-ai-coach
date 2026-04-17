@@ -3,6 +3,7 @@ import XCTest
 @testable import Tuner
 @testable import Fretboard
 @testable import ChordChart
+@testable import Chords
 
 final class ToolsIntegrationTests: XCTestCase {
     @MainActor
@@ -38,6 +39,16 @@ final class ToolsIntegrationTests: XCTestCase {
 
     func testChordChartHasSections() {
         XCTAssertFalse(ChordChartData.sections.isEmpty)
+    }
+
+    func testChordChartEveryEntryHasDrawableSixStringDiagram() {
+        for section in ChordChartData.sections {
+            for entry in section.entries {
+                XCTAssertEqual(entry.frets.count, 6, entry.symbol)
+                let cfg = ChordDiagramLayout.config(for: entry.frets)
+                XCTAssertGreaterThanOrEqual(cfg.endFret, cfg.startFret, entry.symbol)
+            }
+        }
     }
 }
 
