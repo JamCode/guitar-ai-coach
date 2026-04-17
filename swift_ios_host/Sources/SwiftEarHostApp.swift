@@ -136,9 +136,7 @@ private struct ToolsTabView: View {
         GeometryReader { proxy in
             let pad = gridEdgePadding
             let availW = max(0, proxy.size.width - pad * 2)
-            let availH = max(0, proxy.size.height - pad * 2)
             let cellW = max(0, (availW - gridGap) / 2)
-            let cellH = max(0, (availH - gridGap) / 2)
 
             VStack(spacing: gridGap) {
                 HStack(spacing: gridGap) {
@@ -146,33 +144,32 @@ private struct ToolsTabView: View {
                         title: "调音器",
                         subtitle: "麦克风拾音与标准空弦目标",
                         icon: "waveform",
-                        width: cellW,
-                        height: cellH
+                        width: cellW
                     ) { TunerView() }
                     gridTile(
                         title: "吉他指板",
                         subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
                         icon: "square.grid.3x3",
-                        width: cellW,
-                        height: cellH
+                        width: cellW
                     ) { FretboardView() }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
                 HStack(spacing: gridGap) {
                     gridTile(
                         title: "和弦速查",
                         subtitle: "离线可查构成音与常见把位",
                         icon: "pianokeys",
-                        width: cellW,
-                        height: cellH
+                        width: cellW
                     ) { ChordLookupView() }
                     gridTile(
                         title: "常用和弦",
                         subtitle: "初/中/高分段·本地指法图速查",
                         icon: "tablecells",
-                        width: cellW,
-                        height: cellH
+                        width: cellW
                     ) { ChordChartView() }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .padding(pad)
@@ -187,7 +184,6 @@ private struct ToolsTabView: View {
         subtitle: String,
         icon: String,
         width: CGFloat,
-        height: CGFloat,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
         NavigationLink {
@@ -222,7 +218,8 @@ private struct ToolsTabView: View {
             )
         }
         .buttonStyle(.plain)
-        .frame(width: width, height: height)
+        .frame(width: width)
+        .frame(maxHeight: .infinity)
     }
 }
 
