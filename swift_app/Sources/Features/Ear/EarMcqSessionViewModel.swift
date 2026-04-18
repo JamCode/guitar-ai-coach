@@ -24,6 +24,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
 
     /// 仅 `bank == "A"`（和弦听辨）时使用：程序化出题难度。
     public let chordDifficulty: EarChordMcqDifficulty
+    /// 仅 `bank == "B"`（和弦进行）时使用：程序化出题难度。
+    public let progressionDifficulty: EarProgressionMcqDifficulty
 
     private let loader: EarSeedLoader
     private let player: EarChordPlaying
@@ -38,6 +40,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
         bank: String,
         maxQuestions: Int? = nil,
         chordDifficulty: EarChordMcqDifficulty = .初级,
+        progressionDifficulty: EarProgressionMcqDifficulty = .初级,
         loader: EarSeedLoader = .shared,
         player: EarChordPlaying = EarChordPlayer(),
         historyStore: any EarMcqHistoryStoring = EarMcqFileHistoryStore.shared
@@ -46,6 +49,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
         self.bank = bank
         self.maxQuestions = maxQuestions.map { max(1, $0) }
         self.chordDifficulty = chordDifficulty
+        self.progressionDifficulty = progressionDifficulty
         self.loader = loader
         self.player = player
         self.historyStore = historyStore
@@ -72,9 +76,9 @@ public final class EarMcqSessionViewModel: ObservableObject {
     public func bootstrap() async {
         loading = true
         loadError = nil
-        bankBSourcePool = []
-        bankBDealingQueue = []
         if bank == "A" {
+            bankBSourcePool = []
+            bankBDealingQueue = []
             if let cap = maxQuestions {
                 session = EarChordMcqGenerator.buildSession(
                     count: cap,
@@ -99,9 +103,36 @@ public final class EarMcqSessionViewModel: ObservableObject {
             loading = false
             return
         }
+        if bank == "B" {
+            bankBSourcePool = []
+            bankBDealingQueue = []
+            if let cap = maxQuestions {
+                session = (0 ..< cap).map { _ in
+                    EarProgressionProceduralGenerator.makeQuestion(
+                        difficulty: progressionDifficulty,
+                        using: &chordRng
+                    )
+                }
+                question = session.first
+            } else {
+                session = []
+                question = EarProgressionProceduralGenerator.makeQuestion(
+                    difficulty: progressionDifficulty,
+                    using: &chordRng
+                )
+            }
+            pageIndex = 0
+            correctCount = 0
+            answeredCount = 0
+            selectedChoiceIndex = nil
+            revealed = false
+            finished = false
+            loading = false
+            return
+        }
         do {
             let doc = try await loader.load()
-            let pool = bank == "B" ? doc.bankB : doc.bankA
+            let pool = doc.bankA
             if pool.isEmpty {
                 loadError = "题库为空（bank \(bank)）"
                 loading = false
@@ -211,10 +242,10 @@ public final class EarMcqSessionViewModel: ObservableObject {
             pageIndex += 1
             selectedChoiceIndex = nil
             revealed = false
-            if bankBDealingQueue.isEmpty {
-                bankBDealingQueue = bankBSourcePool.shuffled()
-            }
-            question = bankBDealingQueue.isEmpty ? nil : bankBDealingQueue.removeFirst()
+            question = EarProgressionProceduralGenerator.makeQuestion(
+                difficulty: progressionDifficulty,
+                using: &chordRng
+            )
             return
         }
         if pageIndex >= session.count - 1 {
