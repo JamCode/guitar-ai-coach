@@ -54,11 +54,7 @@ public struct EarMcqSessionView: View {
                         if let hint = q.hintZh, !hint.isEmpty {
                             Text(hint).foregroundStyle(SwiftAppTheme.muted)
                         }
-                        Text(
-                            Self.usesVoicingPlaybackCaption(for: q)
-                                ? "试听与「常用和弦」一致：先分解琶音（低音→高音），再柱式和弦；钢弦 SF2 采样。"
-                                : "使用吉他采样合成，与预录音色可能略有差异。"
-                        )
+                        Text(Self.playbackCaption(for: q, bank: viewModel.bank))
                             .font(.caption)
                             .foregroundStyle(SwiftAppTheme.muted)
                         Text(viewModel.sessionStatsLine)
@@ -139,24 +135,7 @@ public struct EarMcqSessionView: View {
                                         .clipped()
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                            } else if let seq = EarProgressionPlayback.playbackFretsSequence(for: q),
-                                      !seq.isEmpty,
-                                      q.questionType == "progression_recognition" || viewModel.bank == "B" {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("本段和声指法（与试听顺序一致，左→右）")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(SwiftAppTheme.muted)
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 10) {
-                                            ForEach(0 ..< seq.count, id: \.self) { idx in
-                                                ChordDiagramView(frets: seq[idx])
-                                                    .frame(maxWidth: 132, maxHeight: 108)
-                                                    .clipped()
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
+                            } else if !Self.isChordProgression(question: q, bank: viewModel.bank) {
                                 let strip = q.playbackChromaticStripMidis
                                 let highlights = q.playbackHighlightMidiSet
                                 if !strip.isEmpty {
@@ -245,11 +224,18 @@ public struct EarMcqSessionView: View {
         "\(PitchMath.midiToNoteName(midi))\(midi / 12 - 1)"
     }
 
-    private static func usesVoicingPlaybackCaption(for q: EarBankItem) -> Bool {
-        if q.questionType == "progression_recognition" || q.mode == "B" {
-            return EarProgressionPlayback.playbackFretsSequence(for: q) != nil
+    private static func isChordProgression(question q: EarBankItem, bank: String) -> Bool {
+        bank == "B" || q.questionType == "progression_recognition"
+    }
+
+    private static func playbackCaption(for q: EarBankItem, bank: String) -> String {
+        if bank == "A" {
+            return "试听与「常用和弦」一致：先分解琶音（低音→高音），再柱式和弦；钢弦 SF2 采样。"
         }
-        return q.mode == "A"
+        if isChordProgression(question: q, bank: bank) {
+            return "试听按进行顺序逐和弦播放柱式；音色与「和弦速查」同源（钢弦 SF2）。"
+        }
+        return "使用吉他采样合成，与预录音色可能略有差异。"
     }
 
     private static func chordDifficultyBadge(_ d: EarChordMcqDifficulty) -> some View {
