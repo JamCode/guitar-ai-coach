@@ -111,7 +111,8 @@ public struct EarMcqSessionView: View {
                                 .contentShape(rowShape)
                             }
                             .buttonStyle(.borderless)
-                            .disabled(viewModel.revealed)
+                            .disabled(viewModel.revealed || !viewModel.hasCompletedInitialAudition)
+                            .opacity(viewModel.hasCompletedInitialAudition || viewModel.revealed ? 1 : 0.45)
                             .padding(.vertical, 6)
                             .padding(.horizontal, 10)
                             .background(

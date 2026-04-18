@@ -15,6 +15,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
     @Published public private(set) var playError: String?
     /// 整段和弦（或进行）播放结束前为 `true`，用于禁用「播放」。
     @Published public private(set) var isPlaybackInProgress = false
+    /// 当前题是否已至少成功完整试听一次；未满足前不可选答案。
+    @Published public private(set) var hasCompletedInitialAudition = false
 
     public let title: String
     public let bank: String
@@ -87,14 +89,14 @@ public final class EarMcqSessionViewModel: ObservableObject {
                     difficulty: chordDifficulty,
                     using: &chordRng
                 )
-                question = session.first
+                installQuestion(session.first)
             } else {
                 session = []
-                question = EarChordMcqGenerator.makeQuestion(
+                installQuestion(EarChordMcqGenerator.makeQuestion(
                     difficulty: chordDifficulty,
                     avoid: nil,
                     using: &chordRng
-                )
+                ))
             }
             pageIndex = 0
             correctCount = 0
@@ -124,7 +126,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
                     built.append(q)
                 }
                 session = built
-                question = session.first
+                installQuestion(session.first)
             } else {
                 session = []
                 let q = Self.makeDistinctBankBQuestion(
@@ -132,7 +134,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
                     avoidSignatures: lastBankBSignature.map { Set([$0]) } ?? [],
                     using: &chordRng
                 )
-                question = q
+                installQuestion(q)
                 lastBankBSignature = Self.bankBSignature(q)
             }
             pageIndex = 0
@@ -156,12 +158,12 @@ public final class EarMcqSessionViewModel: ObservableObject {
             if maxQuestions == nil {
                 session = []
                 bankBDealingQueue = bankBSourcePool.shuffled()
-                question = bankBDealingQueue.isEmpty ? nil : bankBDealingQueue.removeFirst()
+                installQuestion(bankBDealingQueue.isEmpty ? nil : bankBDealingQueue.removeFirst())
             } else {
                 bankBDealingQueue = []
                 let cap = max(1, maxQuestions ?? 10)
                 session = Array(pool.shuffled().prefix(min(cap, pool.count)))
-                question = session.first
+                installQuestion(session.first)
             }
             pageIndex = 0
             correctCount = 0
@@ -194,6 +196,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
                 try await player.playChordMidis(EarPlaybackMidi.forSingleChord(q))
             }
             playError = nil
+            hasCompletedInitialAudition = true
         } catch {
             playError = "播放失败：\(error.localizedDescription)"
         }
@@ -206,6 +209,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
     }
 
     public func selectChoice(_ index: Int) {
+        guard hasCompletedInitialAudition else { return }
         guard !revealed, let q = question, q.options.indices.contains(index) else { return }
         selectedChoiceIndex = index
         submit()
@@ -245,11 +249,11 @@ public final class EarMcqSessionViewModel: ObservableObject {
             pageIndex += 1
             selectedChoiceIndex = nil
             revealed = false
-            question = EarChordMcqGenerator.makeQuestion(
+            installQuestion(EarChordMcqGenerator.makeQuestion(
                 difficulty: chordDifficulty,
                 avoid: avoid,
                 using: &chordRng
-            )
+            ))
             return
         }
         if bank == "B", maxQuestions == nil {
@@ -262,7 +266,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
                 avoidSignatures: avoid,
                 using: &chordRng
             )
-            question = q
+            installQuestion(q)
             lastBankBSignature = Self.bankBSignature(q)
             return
         }
@@ -271,7 +275,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
             return
         }
         pageIndex += 1
-        question = session[pageIndex]
+        installQuestion(session[pageIndex])
         selectedChoiceIndex = nil
         revealed = false
     }
@@ -298,6 +302,11 @@ public final class EarMcqSessionViewModel: ObservableObject {
     private static func bankBSignature(_ q: EarBankItem) -> String {
         let labels = q.options.map(\.label).sorted().joined(separator: "|")
         return "\(q.musicKey ?? "")|\(q.progressionRoman ?? "")|\(labels)"
+    }
+
+    private func installQuestion(_ newQuestion: EarBankItem?) {
+        question = newQuestion
+        hasCompletedInitialAudition = false
     }
 
     private static func makeDistinctBankBQuestion(
