@@ -1,21 +1,19 @@
 import SwiftUI
 import PhotosUI
 import Core
-import Chords
 import UIKit
 
 struct SheetLibraryView: View {
-    @StateObject private var vm = SheetLibraryViewModel()
+    @ObservedObject var vm: SheetLibraryViewModel
     @State private var pickerItems: [PhotosPickerItem] = []
-    /// `PhotosPicker` 放在 `Menu` 里在部分系统版本上点击无效；用 `isPresented` 方式在菜单外弹出系统相册。
+    /// `PhotosPicker` 用 `isPresented` 在工具栏按钮外弹出系统相册，避免嵌在 `Menu` 内时部分系统点击无效。
     @State private var showingPhotoLibrary = false
     @State private var showingDraft = false
-    @State private var showingCamera = false
     @State private var draftImageData: [Data] = []
 
     var body: some View {
         Group {
-            if vm.loading {
+            if vm.loading, !vm.hasLoadedOnce {
                 ProgressView()
             } else if let error = vm.error {
                 VStack(spacing: 12) {
@@ -23,7 +21,7 @@ struct SheetLibraryView: View {
                     Button("重试") { Task { await vm.reload() } }.appPrimaryButton()
                 }
             } else if vm.entries.isEmpty {
-                Text("暂无谱子。点击右上角 +：拍照或相册多选；起名后保存到本地。")
+                Text("暂无谱子。点击右上角 + 从相册多选；起名后保存到本地。")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .padding()
@@ -34,23 +32,12 @@ struct SheetLibraryView: View {
         .navigationTitle("我的谱")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        // 等 `Menu` 收起后再 presentation，避免与菜单动画冲突导致相册不出现。
-                        DispatchQueue.main.async {
-                            showingPhotoLibrary = true
-                        }
-                    } label: {
-                        Label("从相册添加", systemImage: "photo.on.rectangle")
-                    }
-                    Button {
-                        showingCamera = true
-                    } label: {
-                        Label("拍照添加", systemImage: "camera")
-                    }
+                Button {
+                    showingPhotoLibrary = true
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("从相册添加")
             }
         }
         .photosPicker(
@@ -76,14 +63,6 @@ struct SheetLibraryView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingCamera) {
-            MultiCaptureSheet { capturedData in
-                showingCamera = false
-                guard !capturedData.isEmpty else { return }
-                draftImageData = capturedData
-                showingDraft = true
-            }
-        }
         .appPageBackground()
         .refreshable { await vm.reload() }
         .alert("提示", isPresented: Binding(get: { vm.toast != nil }, set: { _ in vm.toast = nil })) {
@@ -93,9 +72,7 @@ struct SheetLibraryView: View {
         }
         .navigationDestination(item: $vm.selectedEntry) { entry in
             TabBarHiddenContainer {
-                SheetDetailView(entry: entry, store: vm.store) {
-                    Task { await vm.reload() }
-                }
+                SheetDetailView(entry: entry, store: vm.store)
             }
         }
     }
@@ -158,6 +135,8 @@ struct SheetLibraryView: View {
 
 @MainActor
 final class SheetLibraryViewModel: ObservableObject {
+    /// 仅在从未成功拉取过列表时配合 `loading` 显示全屏 Progress，避免切 Tab 反复 `reload` 造成闪屏。
+    @Published private(set) var hasLoadedOnce = false
     @Published var loading = true
     @Published var entries: [SheetEntry] = []
     @Published var error: String?
@@ -167,10 +146,13 @@ final class SheetLibraryViewModel: ObservableObject {
     let store = SheetLibraryStore()
 
     func reload() async {
-        loading = true
+        if !hasLoadedOnce {
+            loading = true
+        }
         error = nil
         entries = await store.loadAll()
         loading = false
+        hasLoadedOnce = true
     }
 
     func saveDraft(name: String, imagesData: [Data]) async {
@@ -182,7 +164,6 @@ final class SheetLibraryViewModel: ObservableObject {
             }
             _ = try await store.importSheetPages(sources: urls, displayName: name)
             await cleanup(urls)
-            toast = "已保存到「我的谱」"
             await reload()
         } catch {
             toast = "保存失败：\(error.localizedDescription)"
@@ -271,107 +252,16 @@ private struct SheetDraftView: View {
     }
 }
 
-private struct MultiCaptureSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var images: [Data] = []
-    let onDone: ([Data]) -> Void
-    @State private var showingCamera = false
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 12) {
-                if images.isEmpty {
-                    Text("还未拍照，点击下方按钮开始拍摄。").foregroundStyle(SwiftAppTheme.muted)
-                } else {
-                    ScrollView(.horizontal) {
-                        HStack {
-                            ForEach(Array(images.enumerated()), id: \.offset) { idx, data in
-                                if let img = UIImage(data: data) {
-                                    Image(uiImage: img)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 90, height: 120)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                        .overlay(alignment: .topTrailing) {
-                                            Button {
-                                                images.remove(at: idx)
-                                            } label: {
-                                                Image(systemName: "xmark.circle.fill")
-                                            }
-                                            .buttonStyle(.plain)
-                                            .padding(4)
-                                        }
-                                }
-                            }
-                        }
-                    }
-                }
-                Button("继续拍摄") { showingCamera = true }
-                    .appPrimaryButton()
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("连续拍摄")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
-                        onDone(images)
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingCamera) {
-            CameraCaptureView { data in
-                if let data { images.append(data) }
-                showingCamera = false
-            }
-        }
-    }
-}
-
-private struct CameraCaptureView: UIViewControllerRepresentable {
-    let onPick: (Data?) -> Void
-
-    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = .camera
-        picker.cameraCaptureMode = .photo
-        return picker
-    }
-
-    func updateUIViewController(_: UIImagePickerController, context _: Context) {}
-
-    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let onPick: (Data?) -> Void
-        init(onPick: @escaping (Data?) -> Void) { self.onPick = onPick }
-        func imagePickerControllerDidCancel(_: UIImagePickerController) { onPick(nil) }
-        func imagePickerController(
-            _: UIImagePickerController,
-            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
-        ) {
-            let image = info[.originalImage] as? UIImage
-            let data = image?.jpegData(compressionQuality: 0.9)
-            onPick(data)
-        }
-    }
-}
-
 private struct SheetDetailView: View {
     let entry: SheetEntry
     let store: SheetLibraryStore
-    let onUpdated: () -> Void
     @State private var files: [URL] = []
-    @State private var parsed: SheetParsedData?
+    /// 预解码，避免切换沉浸/布局时反复 `UIImage(contentsOfFile:)` 造成掉帧。
+    @State private var pageImages: [UIImage?] = []
     @State private var loading = true
-    @State private var showingReview = false
-    @State private var showingTranspose = false
     @State private var startedAt = Date()
-    @State private var toast: String?
+    /// 轻点谱面进入全屏阅读（隐藏导航栏、铺满可视区域）；再点一次恢复。
+    @State private var immersiveReading = false
     private let practiceStore = PracticeLocalStore()
 
     var body: some View {
@@ -381,37 +271,34 @@ private struct SheetDetailView: View {
             } else if files.isEmpty {
                 Text("未找到谱面图片").foregroundStyle(SwiftAppTheme.muted)
             } else {
-                TabView {
-                    ForEach(Array(files.enumerated()), id: \.offset) { idx, url in
-                        VStack(spacing: 8) {
-                            if let img = UIImage(contentsOfFile: url.path) {
-                                Image(uiImage: img)
-                                    .resizable()
-                                    .scaledToFit()
-                            } else {
-                                RoundedRectangle(cornerRadius: 8).fill(SwiftAppTheme.surface)
+                GeometryReader { geo in
+                    let size = geo.size
+                    ZStack {
+                        Color.black
+                            .opacity(immersiveReading ? 1 : 0)
+                            .allowsHitTesting(false)
+                        TabView {
+                            ForEach(Array(pageImages.enumerated()), id: \.offset) { idx, image in
+                                sheetPage(image: image, pageIndex: idx + 1, containerSize: size)
                             }
-                            Text("第 \(idx + 1) 页").font(.caption).foregroundStyle(SwiftAppTheme.muted)
                         }
-                        .padding()
+                        .tabViewStyle(.page(indexDisplayMode: .automatic))
+                        /// 避免 TabView 与导航栏高度变化叠加「双重插值」导致掉帧。
+                        .animation(nil, value: immersiveReading)
                     }
+                    .frame(width: size.width, height: size.height)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationTitle(entry.displayName)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button("识别校对") { Task { await runOCR() } }
-                Button("变调预览") { showingTranspose = true }
-                    .disabled(parsed == nil)
-            }
-        }
+        .toolbar(immersiveReading ? .hidden : .automatic, for: .navigationBar)
         .task {
             startedAt = Date()
             await load()
         }
         .onDisappear {
+            immersiveReading = false
             Task {
                 let endedAt = Date()
                 let seconds = Int(endedAt.timeIntervalSince(startedAt))
@@ -432,157 +319,47 @@ private struct SheetDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingReview) {
-            SheetOCRReviewView(initial: parsed) { updated in
-                Task {
-                    do {
-                        try await store.saveParsed(updated)
-                        parsed = updated
-                        onUpdated()
-                    } catch {
-                        toast = "保存识别结果失败：\(error.localizedDescription)"
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingTranspose) {
-            if let parsed {
-                SheetTransposePreviewView(parsed: parsed)
-            }
-        }
-        .alert("提示", isPresented: Binding(get: { toast != nil }, set: { _ in toast = nil })) {
-            Button("确定", role: .cancel) { toast = nil }
-        } message: {
-            Text(toast ?? "")
-        }
     }
 
     private func load() async {
         loading = true
-        files = (try? await store.resolveStoredFiles(entry)) ?? []
-        parsed = await store.loadParsed(sheetId: entry.id)
+        let urls = (try? await store.resolveStoredFiles(entry)) ?? []
+        files = urls
+        pageImages = urls.map { UIImage(contentsOfFile: $0.path) }
         loading = false
     }
 
-    private func runOCR() async {
-        if parsed != nil {
-            showingReview = true
-            return
-        }
-        let ocr = SheetOCRService()
-        let segments = await ocr.recognizeSheetSegments(pageURLs: files)
-        parsed = SheetParsedData(
-            sheetId: entry.id,
-            parseStatus: .draft,
-            originalKey: "C",
-            segments: segments,
-            updatedAtMs: Int(Date().timeIntervalSince1970 * 1000)
-        )
-        showingReview = true
-    }
-}
+    private static let immersiveSpring = Animation.spring(response: 0.32, dampingFraction: 0.94)
 
-private struct SheetOCRReviewView: View {
-    let initial: SheetParsedData?
-    let onSave: (SheetParsedData) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var originalKey = "C"
-    @State private var chordsText = ""
-    @State private var melodyText = ""
-    @State private var lyricsText = ""
-
-    private let allKeys = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Picker("原调", selection: $originalKey) {
-                    ForEach(allKeys, id: \.self) { Text($0) }
-                }
-                section("和弦（每行一段）", text: $chordsText)
-                section("旋律（每行一段）", text: $melodyText)
-                section("歌词（每行一段）", text: $lyricsText)
-            }
-            .navigationTitle("识别结果校对")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        guard let initial else { return }
-                        let result = buildParsed(initial.sheetId)
-                        onSave(result)
-                        dismiss()
-                    }
-                }
-            }
-            .onAppear {
-                guard let initial else { return }
-                originalKey = initial.originalKey
-                chordsText = initial.segments.map { $0.chords.joined(separator: " ") }.joined(separator: "\n")
-                melodyText = initial.segments.map { $0.melody }.joined(separator: "\n")
-                lyricsText = initial.segments.map { $0.lyrics }.joined(separator: "\n")
+    @ViewBuilder
+    private func sheetPage(image: UIImage?, pageIndex: Int, containerSize: CGSize) -> some View {
+        ZStack {
+            if let img = image {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: containerSize.width, height: containerSize.height)
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(SwiftAppTheme.surface)
+                    .padding(24)
             }
         }
-    }
-
-    private func section(_ title: String, text: Binding<String>) -> some View {
-        Section(title) {
-            TextEditor(text: text)
-                .frame(minHeight: 120)
-        }
-    }
-
-    private func buildParsed(_ sheetId: String) -> SheetParsedData {
-        let chordLines = splitLines(chordsText)
-        let melodyLines = splitLines(melodyText)
-        let lyricLines = splitLines(lyricsText)
-        let maxCount = max(chordLines.count, max(melodyLines.count, lyricLines.count))
-        var segments: [SheetSegment] = []
-        for idx in 0..<maxCount {
-            let line = idx < chordLines.count ? chordLines[idx] : ""
-            segments.append(
-                SheetSegment(
-                    chords: line.split(whereSeparator: \.isWhitespace).map(String.init),
-                    melody: idx < melodyLines.count ? melodyLines[idx] : "",
-                    lyrics: idx < lyricLines.count ? lyricLines[idx] : ""
-                )
-            )
-        }
-        return SheetParsedData(
-            sheetId: sheetId,
-            parseStatus: .ready,
-            originalKey: originalKey,
-            segments: segments,
-            updatedAtMs: Int(Date().timeIntervalSince1970 * 1000)
-        )
-    }
-
-    private func splitLines(_ text: String) -> [String] {
-        text.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
-    }
-}
-
-private struct SheetTransposePreviewView: View {
-    let parsed: SheetParsedData
-    @State private var targetKey = "C"
-    private let allKeys = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Picker("目标调", selection: $targetKey) {
-                    ForEach(allKeys, id: \.self) { Text($0) }
-                }
-                Section("和弦预览") {
-                    ForEach(Array(parsed.segments.enumerated()), id: \.offset) { _, seg in
-                        let line = seg.chords.map {
-                            ChordTransposeLocal.transposeChordSymbol($0, from: parsed.originalKey, to: targetKey)
-                        }.joined(separator: " ")
-                        Text(line.isEmpty ? "（无和弦）" : line)
-                    }
-                }
+        .frame(width: containerSize.width, height: containerSize.height)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(Self.immersiveSpring) {
+                immersiveReading.toggle()
             }
-            .navigationTitle("一键变调预览")
+        }
+        .accessibilityHint("轻点以显示或隐藏标题栏")
+        .overlay(alignment: .bottom) {
+            Text("第 \(pageIndex) 页 · 共 \(pageImages.count) 页")
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
+                .padding(.bottom, 6)
+                .opacity(immersiveReading ? 0 : 1)
+                .allowsHitTesting(!immersiveReading)
         }
     }
 }
