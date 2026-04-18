@@ -5,6 +5,8 @@ private struct SightSingingPitchGraphView: View {
     let user: [SightSingingPitchGraphPoint]
     let targetLow: [SightSingingPitchGraphPoint]
     let targetHigh: [SightSingingPitchGraphPoint]
+    /// When false, only the first target pitch is meaningful (single-note mimic).
+    let showsTwoTargetPitches: Bool
 
     private let yRange: ClosedRange<Double> = -50 ... 50
 
@@ -73,7 +75,9 @@ private struct SightSingingPitchGraphView: View {
                 }
 
                 strokeSeries(targetLow, color: SwiftAppTheme.muted.opacity(0.85), lineWidth: 2)
-                strokeSeries(targetHigh, color: SwiftAppTheme.muted.opacity(0.55), lineWidth: 2)
+                if showsTwoTargetPitches {
+                    strokeSeries(targetHigh, color: SwiftAppTheme.muted.opacity(0.55), lineWidth: 2)
+                }
                 strokeSeries(user, color: SwiftAppTheme.brand, lineWidth: 3)
             }
             .frame(height: 210)
@@ -81,8 +85,12 @@ private struct SightSingingPitchGraphView: View {
 
             HStack(spacing: 12) {
                 legendDot(color: SwiftAppTheme.brand, text: "你唱的音高")
-                legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标低音")
-                legendDot(color: SwiftAppTheme.muted.opacity(0.55), text: "目标高音")
+                if showsTwoTargetPitches {
+                    legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标第 1 个音")
+                    legendDot(color: SwiftAppTheme.muted.opacity(0.55), text: "目标第 2 个音")
+                } else {
+                    legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标音（0¢ 参考线）")
+                }
             }
             .font(.caption)
             .foregroundStyle(SwiftAppTheme.muted)
@@ -212,6 +220,7 @@ public struct SightSingingSessionView: View {
                 } else if let error = viewModel.errorText {
                     Text(error).foregroundStyle(.red).appCard()
                 } else if let q = viewModel.question {
+                    let isIntervalQuestion = q.targetNotes.count >= 2
                     let segments = max(1, q.targetNotes.count)
                     let evaluateSeconds = segments * 2
                     let infinite = q.totalQuestions <= 0
@@ -219,13 +228,14 @@ public struct SightSingingSessionView: View {
                     SightSingingPitchGraphView(
                         user: viewModel.userPitchGraph,
                         targetLow: viewModel.targetLowGraph,
-                        targetHigh: viewModel.targetHighGraph
+                        targetHigh: viewModel.targetHighGraph,
+                        showsTwoTargetPitches: isIntervalQuestion
                     )
                     .appCard()
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(q.targetNotes.count >= 2 ? "目标音程（上行）" : "目标音").appSectionTitle()
-                        if q.targetNotes.count >= 2 {
+                        Text(isIntervalQuestion ? "目标音程（上行）" : "目标音").appSectionTitle()
+                        if isIntervalQuestion {
                             HStack(alignment: .firstTextBaseline, spacing: 10) {
                                 Text(q.targetNotes[0])
                                     .font(.system(size: 40, weight: .bold))
