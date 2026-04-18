@@ -59,6 +59,9 @@ public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var resultText: String?
     @Published public private(set) var finalResult: SightSingingResult?
 
+    /// Whether the user has completed at least one graded attempt in this session (`submitAnswer` succeeded).
+    @Published public private(set) var hasGradedAnyQuestion = false
+
     @Published public private(set) var userPitchGraph: [SightSingingPitchGraphPoint] = []
     @Published public private(set) var targetLowGraph: [SightSingingPitchGraphPoint] = []
     @Published public private(set) var targetHighGraph: [SightSingingPitchGraphPoint] = []
@@ -129,6 +132,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
             question = start.question
             loading = false
             errorText = nil
+            hasGradedAnyQuestion = false
 
             resetGraphsForNewQuestion()
             startPitchMonitoringIfNeeded()
@@ -176,6 +180,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 durationMs: evalMs * targets.count
             )
             lastScore = score
+            hasGradedAnyQuestion = true
             evaluating = false
         } catch {
             evaluating = false
@@ -254,6 +259,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
             monitoringTask = nil
             previewGraphTask?.cancel()
             previewGraphTask = nil
+            sessionId = nil
             return true
         } catch {
             errorText = error.localizedDescription
@@ -268,11 +274,24 @@ public final class SightSingingSessionViewModel: ObservableObject {
             finalResult = result
             resultText = "训练结束：共判定 \(result.answered) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
             cancelActiveWork(stopPitchTracker: true)
+            sessionId = nil
             return true
         } catch {
             errorText = error.localizedDescription
             return false
         }
+    }
+
+    /// Ends the local repository session without presenting UI (used when leaving the screen early).
+    public func discardSessionSilently() async {
+        guard let sid = sessionId else { return }
+        if finalResult != nil { return }
+        do {
+            _ = try await repository.endSession(sessionId: sid)
+        } catch {
+            // Best-effort cleanup; leaving should not surface noisy errors.
+        }
+        sessionId = nil
     }
 
     /// Cancel background sampling + any in-flight preview graph recording.

@@ -179,7 +179,7 @@ public struct SightSingingSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: SightSingingSessionViewModel
     @State private var showResult = false
-    @State private var showEndConfirm = false
+    @State private var showLeaveConfirm = false
     private let onSessionComplete: ((SightSingingResult) -> Void)?
     private let autoDismissOnComplete: Bool
 
@@ -315,18 +315,24 @@ public struct SightSingingSessionView: View {
         }
         .navigationTitle("视唱训练")
         .appPageBackground()
+        #if os(iOS)
+        .navigationBarBackButtonHidden(true)
+        #endif
         .toolbar {
             #if os(iOS)
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("结束") {
-                    showEndConfirm = true
-                }
-                .disabled(viewModel.loading || viewModel.evaluating)
-            }
-            #else
-            ToolbarItem(placement: .primaryAction) {
-                Button("结束") {
-                    showEndConfirm = true
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    if viewModel.hasGradedAnyQuestion {
+                        showLeaveConfirm = true
+                    } else {
+                        Task {
+                            await viewModel.discardSessionSilently()
+                            dismiss()
+                        }
+                    }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
                 }
                 .disabled(viewModel.loading || viewModel.evaluating)
             }
@@ -340,8 +346,11 @@ public struct SightSingingSessionView: View {
         .onDisappear {
             // Leaving the screen should not keep mic sampling / preview graph tasks alive.
             viewModel.cancelActiveWork(stopPitchTracker: !viewModel.loading)
+            Task {
+                await viewModel.discardSessionSilently()
+            }
         }
-        .confirmationDialog("结束训练？", isPresented: $showEndConfirm, titleVisibility: .visible) {
+        .confirmationDialog("离开视唱训练？", isPresented: $showLeaveConfirm, titleVisibility: .visible) {
             Button("结束并查看统计", role: .destructive) {
                 Task {
                     if await viewModel.endTraining() {
@@ -349,9 +358,14 @@ public struct SightSingingSessionView: View {
                     }
                 }
             }
-            Button("取消", role: .cancel) {}
+            Button("直接退出", role: .cancel) {
+                Task {
+                    await viewModel.discardSessionSilently()
+                    dismiss()
+                }
+            }
         } message: {
-            Text("点右上角「结束」会统计本轮已判定题目；不限题量时不会自动收尾。")
+            Text("本轮若已产生判定记录，可选择统计后退出；不限题量时不会自动收尾。")
         }
         .alert("本轮完成", isPresented: $showResult) {
             Button("确定") {
