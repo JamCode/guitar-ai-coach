@@ -101,6 +101,58 @@ ssh -i "$ECS_KEY" -o StrictHostKeyChecking=accept-new "${ECS_USER}@${ECS_HOST}" 
 
 ---
 
+## HTTPS（Let's Encrypt）
+
+仓库内 **`deploy/ecs/nginx/guitar-server.conf`** 已按 **Certbot 默认证书路径**（`/etc/letsencrypt/live/wanghanai.xyz/`）写好 **443** 与 **80→HTTPS 跳转**（**80 上仍保留** `/.well-known/acme-challenge/`，便于签发与续期）。
+
+**顺序（不要颠倒）**：当前线上若是「仅 HTTP、可访问 ACME 路径」的旧配置，先在 ECS 上 **申请证书**，再 **rsync 本文件并 reload**。若尚未有证书就 rsync 含 `ssl_certificate` 的新配置，`nginx -t` 会因找不到证书文件而失败。
+
+1. **安全组**：在阿里云 ECS 安全组中为公网入方向放行 **TCP 443**（80 已有则保持）。
+
+2. **在 ECS 上安装 Certbot**（择一，按系统调整；需 `sudo`）：
+
+   ```bash
+   # Alibaba Cloud Linux 3 / CentOS Stream 等（dnf）
+   sudo dnf install -y certbot
+
+   # 或 CentOS 7：先启用 EPEL 再安装 certbot（以官方文档为准）
+   # sudo yum install -y epel-release && sudo yum install -y certbot
+   ```
+
+3. **用 Webroot 申请证书**（与 Nginx 中 `root` 一致；把邮箱改成你的）：
+
+   ```bash
+   sudo certbot certonly --webroot \
+     -w /home/wanghan/guitar-ai-coach/site \
+     -d wanghanai.xyz -d www.wanghanai.xyz \
+     --email you@example.com --agree-tos --non-interactive
+   ```
+
+4. **同步站点配置并重载 Nginx**（在本机仓库根目录，已设置 `ECS_*` 环境变量时）：
+
+   ```bash
+   rsync -avz -e "ssh -i $ECS_KEY -o StrictHostKeyChecking=accept-new" \
+     deploy/ecs/nginx/guitar-server.conf "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/deploy/ecs/nginx/guitar-server.conf"
+   ssh -i "$ECS_KEY" -o StrictHostKeyChecking=accept-new "${ECS_USER}@${ECS_HOST}" \
+     "sudo nginx -t && sudo systemctl reload nginx"
+   ```
+
+5. **续期成功后重载 Nginx**（发行版自带的 `certbot renew` 定时任务通常**不会** reload nginx；在 ECS 上执行一次即可）：
+
+   ```bash
+   sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh <<'EOF'
+#!/bin/sh
+systemctl reload nginx
+EOF
+   sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+   ```
+
+   可用 `sudo certbot renew --dry-run` 自检续期；通过后下次自动续期会执行上述 hook。
+
+验证：浏览器访问 `https://wanghanai.xyz/` ，或用 `curl -I https://wanghanai.xyz/` 应返回 **200** 且证书链完整。
+
+---
+
 ## 部署后端
 
 ### 1. 同步 Python 代码
