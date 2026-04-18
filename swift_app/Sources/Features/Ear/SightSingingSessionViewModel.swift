@@ -12,15 +12,22 @@ public final class DefaultSightSingingPitchTracker: SightSingingPitchTracking {
     private let detector: PitchDetecting
     private(set) public var currentHz: Double?
 
-    public init(detector: PitchDetecting = TunerPitchDetector()) {
+    public init(detector: PitchDetecting = TunerPitchDetector(config: .sightSinging)) {
         self.detector = detector
     }
 
     public func start() throws {
         try detector.start { [weak self] frame in
             guard let self else { return }
-            if case let .pitch(frequencyHz, _, _) = frame {
-                self.currentHz = frequencyHz
+            switch frame {
+            case let .pitch(frequencyHz, _, _):
+                Task { @MainActor [weak self] in
+                    self?.currentHz = frequencyHz
+                }
+            case .silent, .rejected:
+                Task { @MainActor [weak self] in
+                    self?.currentHz = nil
+                }
             }
         }
     }
@@ -30,58 +37,187 @@ public final class DefaultSightSingingPitchTracker: SightSingingPitchTracking {
     }
 }
 
+public struct SightSingingPitchGraphPoint: Sendable, Identifiable {
+    public let id: UUID
+    /// Seconds since the current rolling window started.
+    public let t: Double
+    /// Signed cents on the graph Y axis.
+    /// - User series: cents relative to the nearest target note among `SightSingingQuestion.targetNotes`.
+    /// - Target series: expected cents offset within the same reference frame (usually 0, or +interval during preview).
+    public let cents: Double
+
+    public init(id: UUID = UUID(), t: Double, cents: Double) {
+        self.id = id
+        self.t = t
+        self.cents = cents
+    }
+}
+
 @MainActor
 public final class SightSingingSessionViewModel: ObservableObject {
-    @Published public private(set) var loading = true
+    @Published public private(set) var loading = false
     @Published public private(set) var errorText: String?
     @Published public private(set) var question: SightSingingQuestion?
     @Published public private(set) var sessionId: String?
     @Published public private(set) var evaluating = false
+    @Published public private(set) var previewing = false
     @Published public private(set) var currentHz: Double?
     @Published public private(set) var lastScore: SightSingingScore?
     @Published public private(set) var resultText: String?
     @Published public private(set) var finalResult: SightSingingResult?
 
+    /// Whether the user has completed at least one graded attempt in this session (`submitAnswer` succeeded).
+    @Published public private(set) var hasGradedAnyQuestion = false
+
+    @Published public private(set) var userPitchGraph: [SightSingingPitchGraphPoint] = []
+    @Published public private(set) var targetLowGraph: [SightSingingPitchGraphPoint] = []
+    @Published public private(set) var targetHighGraph: [SightSingingPitchGraphPoint] = []
+
+    /// 最近一次拾音相对参考目标的**有符号**音分偏差（用于实时 HUD）；无有效基频时为 `nil`。
+    @Published public private(set) var livePitchCents: Double?
+    /// 判定进行中、且为音程题时，曲线与 `livePitchCents` 相对应当前采样的那一个目标音。
+    @Published public private(set) var activeEvaluatingTargetIndex: Int?
+
     private let repository: SightSingingRepository
     private let pitchTracker: SightSingingPitchTracking
-    private let pitchRange: String
-    private let includeAccidental: Bool
-    private let questionCount: Int
+    private let intervalPreview: IntervalTonePlaying?
+    private var pitchRange: String
+    private var includeAccidental: Bool
+    private var questionCount: Int
+    private var exerciseKind: SightSingingExerciseKind
 
     private let sampleStepMs = 120
     private let warmupMs = 800
     private let evalMs = 2000
 
+    private let graphTickMs = 33
+    private let graphWindowSeconds: Double = 6
+
+    private var graphWindowStart: Date?
+    // These tasks are cancelled from `deinit`; keep them `nonisolated(unsafe)` so teardown doesn't require MainActor.
+    nonisolated(unsafe) private var monitoringTask: Task<Void, Never>?
+    nonisolated(unsafe) private var previewGraphTask: Task<Void, Never>?
+
+    // Keep aligned with `IntervalTonePlayer` (preview / sampled gates).
+    private let sampledGateSec: Double = 1.1
+    private let silenceAfterFirstGateSec: Double = 0.28
+    private let releaseTailAfterSecondGateSec: Double = 0.22
+    private let previewGateSec: Double = 0.52
+    private let previewTailSec: Double = 0.18
+
     public init(
         repository: SightSingingRepository,
         pitchTracker: SightSingingPitchTracking,
+        intervalPreview: IntervalTonePlaying? = IntervalTonePlayer(),
         pitchRange: String,
         includeAccidental: Bool,
-        questionCount: Int
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
     ) {
         self.repository = repository
         self.pitchTracker = pitchTracker
+        self.intervalPreview = intervalPreview
         self.pitchRange = pitchRange
         self.includeAccidental = includeAccidental
         self.questionCount = questionCount
+        self.exerciseKind = exerciseKind
+    }
+
+    public func applySessionConfig(
+        pitchRange: String,
+        includeAccidental: Bool,
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
+    ) {
+        self.pitchRange = pitchRange
+        self.includeAccidental = includeAccidental
+        self.questionCount = questionCount
+        self.exerciseKind = exerciseKind
+
+        // Reset UI/session state before (re)bootstrapping.
+        loading = false
+        errorText = nil
+        sessionId = nil
+        question = nil
+        evaluating = false
+        previewing = false
+        currentHz = nil
+        lastScore = nil
+        resultText = nil
+        finalResult = nil
+        hasGradedAnyQuestion = false
+        userPitchGraph = []
+        targetLowGraph = []
+        targetHighGraph = []
+        livePitchCents = nil
+        activeEvaluatingTargetIndex = nil
+        graphWindowStart = nil
+    }
+
+    public func currentPreferences() -> SightSingingStoredPreferences {
+        SightSingingStoredPreferences(
+            pitchRange: pitchRange,
+            includeAccidental: includeAccidental,
+            questionCount: questionCount,
+            exerciseKind: exerciseKind
+        )
+    }
+
+    /// 写入本地偏好；若已有会话则更新仓库出题参数，**下一题**起生效。
+    public func persistAndApplyPreferences(_ preferences: SightSingingStoredPreferences) async {
+        pitchRange = preferences.pitchRange
+        includeAccidental = preferences.includeAccidental
+        questionCount = preferences.questionCount
+        exerciseKind = preferences.exerciseKind
+        SightSingingPreferencesStore.save(preferences)
+
+        guard let sid = sessionId else { return }
+        do {
+            try await repository.updateSessionGenerationParameters(
+                sessionId: sid,
+                pitchRange: preferences.pitchRange,
+                includeAccidental: preferences.includeAccidental,
+                questionCount: preferences.questionCount,
+                exerciseKind: preferences.exerciseKind
+            )
+        } catch {
+            errorText = error.localizedDescription
+        }
+    }
+
+    public func bootstrapIfNeeded() async {
+        guard sessionId == nil else { return }
+        await bootstrap()
     }
 
     deinit {
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        previewGraphTask?.cancel()
+        previewGraphTask = nil
         pitchTracker.stop()
     }
 
     public func bootstrap() async {
+        loading = true
+        errorText = nil
         do {
+            try await MicrophoneRecordingPermission.ensureGranted()
             try pitchTracker.start()
             let start = try await repository.startSession(
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
-                questionCount: questionCount
+                questionCount: questionCount,
+                exerciseKind: exerciseKind
             )
             sessionId = start.sessionId
             question = start.question
             loading = false
             errorText = nil
+            hasGradedAnyQuestion = false
+
+            resetGraphsForNewQuestion()
+            startPitchMonitoringIfNeeded()
         } catch {
             loading = false
             errorText = error.localizedDescription
@@ -92,21 +228,32 @@ public final class SightSingingSessionViewModel: ObservableObject {
         guard !evaluating, let q = question, let sid = sessionId else { return }
         evaluating = true
         lastScore = nil
-        let target = q.targetNotes.first ?? "C4"
-        let targetMidi = noteNameToMidi(target)
-        var elapsed = 0
+        defer { activeEvaluatingTargetIndex = nil }
+        let targets = q.targetNotes.isEmpty ? ["C4"] : q.targetNotes
         var absCents: [Double] = []
-        while elapsed < warmupMs + evalMs {
-            try? await Task.sleep(nanoseconds: UInt64(sampleStepMs) * 1_000_000)
-            elapsed += sampleStepMs
-            currentHz = pitchTracker.currentHz
-            if elapsed > warmupMs, let hz = currentHz {
-                let cents = abs(Double(PitchMath.frequencyToMidi(hz) - targetMidi) * 100)
-                absCents.append(cents)
+        var detectedNotes: [String] = []
+
+        for (idx, target) in targets.enumerated() {
+            activeEvaluatingTargetIndex = idx
+            let targetMidi = Double(noteNameToMidi(target))
+            var elapsed = 0
+            while elapsed < warmupMs + evalMs {
+                try? await Task.sleep(nanoseconds: UInt64(sampleStepMs) * 1_000_000)
+                elapsed += sampleStepMs
+                currentHz = pitchTracker.currentHz
+                if elapsed > warmupMs, let hz = currentHz {
+                    let midi = Double(PitchMath.frequencyToMidi(hz))
+                    let cents = abs((midi - targetMidi) * 100.0)
+                    absCents.append(cents)
+                }
+            }
+            if let hz = currentHz {
+                detectedNotes.append(PitchMath.midiToNoteName(PitchMath.frequencyToMidi(hz)))
             }
         }
+
         let score = computeSightSingingScore(absCentsSamples: absCents, sampleStepMs: sampleStepMs)
-        let detected = currentHz.map { [PitchMath.midiToNoteName(PitchMath.frequencyToMidi($0))] } ?? []
+        let detected = detectedNotes
         do {
             try await repository.submitAnswer(
                 sessionId: sid,
@@ -114,14 +261,66 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 answers: detected,
                 avgCentsAbs: score.avgCentsAbs,
                 stableHitMs: score.stableHitMs,
-                durationMs: evalMs
+                durationMs: evalMs * targets.count
             )
             lastScore = score
+            hasGradedAnyQuestion = true
             evaluating = false
         } catch {
             evaluating = false
             errorText = error.localizedDescription
         }
+    }
+
+    public func playPreview() async {
+        guard !previewing, !evaluating, let q = question else { return }
+        previewing = true
+        defer { previewing = false }
+
+        previewGraphTask?.cancel()
+
+        do {
+            if q.targetNotes.count >= 2 {
+                guard let player = intervalPreview else { return }
+                let lows = q.targetNotes
+                let lowMidi = noteNameToMidi(lows[0])
+                let highMidi = noteNameToMidi(lows[1])
+                let intervalCents = Double(highMidi - lowMidi) * 100.0
+                startTargetGraphRecording(
+                    lowSegments: [
+                        .init(duration: sampledGateSec, cents: 0),
+                        .init(duration: silenceAfterFirstGateSec + sampledGateSec + releaseTailAfterSecondGateSec, cents: .nan)
+                    ],
+                    highSegments: [
+                        .init(duration: sampledGateSec, cents: .nan),
+                        .init(duration: silenceAfterFirstGateSec, cents: .nan),
+                        .init(duration: sampledGateSec, cents: intervalCents),
+                        .init(duration: releaseTailAfterSecondGateSec, cents: .nan)
+                    ]
+                )
+                let graphTask = Task { await self.previewGraphTask?.value }
+                try await player.playAscendingPair(lowMidi: lowMidi, highMidi: highMidi)
+                await graphTask.value
+            } else {
+                guard let player = intervalPreview else { return }
+                let midi = noteNameToMidi(q.targetNotes.first ?? "C4")
+                startTargetGraphRecording(
+                    lowSegments: [
+                        .init(duration: previewGateSec + previewTailSec, cents: 0)
+                    ],
+                    highSegments: []
+                )
+                let graphTask = Task { await self.previewGraphTask?.value }
+                try await player.playSinglePreview(midi: midi)
+                await graphTask.value
+            }
+        } catch {
+            // 试听失败不应阻塞训练主流程。
+            errorText = error.localizedDescription
+        }
+
+        previewGraphTask?.cancel()
+        previewGraphTask = nil
     }
 
     public func nextOrFinish() async -> Bool {
@@ -130,15 +329,227 @@ public final class SightSingingSessionViewModel: ObservableObject {
             if let next = try await repository.nextQuestion(sessionId: sid) {
                 question = next
                 lastScore = nil
+                resetGraphsForNewQuestion()
                 return false
             }
+
+            // 有限题：题库耗尽 -> 拉取结果。
             let result = try await repository.fetchResult(sessionId: sid)
             finalResult = result
-            resultText = "共 \(result.total) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
+            resultText = "本轮完成：共判定 \(result.answered) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
+            monitoringTask?.cancel()
+            monitoringTask = nil
+            previewGraphTask?.cancel()
+            previewGraphTask = nil
+            sessionId = nil
             return true
         } catch {
             errorText = error.localizedDescription
             return false
+        }
+    }
+
+    public func endTraining() async -> Bool {
+        guard let sid = sessionId else { return false }
+        do {
+            let result = try await repository.endSession(sessionId: sid)
+            finalResult = result
+            resultText = "训练结束：共判定 \(result.answered) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
+            cancelActiveWork(stopPitchTracker: true)
+            sessionId = nil
+            return true
+        } catch {
+            errorText = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Ends the local repository session without presenting UI (used when leaving the screen early).
+    public func discardSessionSilently() async {
+        guard let sid = sessionId else { return }
+        if finalResult != nil { return }
+        do {
+            _ = try await repository.endSession(sessionId: sid)
+        } catch {
+            // Best-effort cleanup; leaving should not surface noisy errors.
+        }
+        sessionId = nil
+    }
+
+    /// Cancel background sampling + any in-flight preview graph recording.
+    ///
+    /// Note: `IntervalTonePlaying` playback itself can't be hard-stopped without a richer player API,
+    /// but cancelling graph tasks prevents UI-driven work from continuing off-screen after navigation.
+    public func cancelActiveWork(stopPitchTracker: Bool) {
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        previewGraphTask?.cancel()
+        previewGraphTask = nil
+        evaluating = false
+        previewing = false
+        if stopPitchTracker {
+            pitchTracker.stop()
+        }
+    }
+
+    private func startPitchMonitoringIfNeeded() {
+        monitoringTask?.cancel()
+        monitoringTask = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(graphTickMs) * 1_000_000)
+                await MainActor.run {
+                    self.appendLiveUserSampleIfPossible()
+                }
+            }
+        }
+    }
+
+    private func resetGraphsForNewQuestion() {
+        graphWindowStart = Date()
+        userPitchGraph = []
+        targetLowGraph = []
+        targetHighGraph = []
+        livePitchCents = nil
+    }
+
+    private func windowStartOrNow() -> Date {
+        if let graphWindowStart {
+            return graphWindowStart
+        }
+        let now = Date()
+        graphWindowStart = now
+        return now
+    }
+
+    /// 复制并裁掉滚动窗外旧点；整段赋值给 `@Published` 数组以触发 SwiftUI 刷新（原地 `append` 可能不刷新）。
+    private func prunedGraph(points: [SightSingingPitchGraphPoint], now: Date) -> [SightSingingPitchGraphPoint] {
+        var pts = points
+        let start = windowStartOrNow()
+        let minT = now.timeIntervalSince(start) - graphWindowSeconds
+        pts.removeAll { $0.t < minT }
+        return pts
+    }
+
+    private func graphReferenceTargets(for q: SightSingingQuestion) -> [String] {
+        if evaluating, q.targetNotes.count >= 2, let idx = activeEvaluatingTargetIndex, idx >= 0, idx < q.targetNotes.count {
+            return [q.targetNotes[idx]]
+        }
+        return q.targetNotes
+    }
+
+    private func appendLiveUserSampleIfPossible() {
+        guard let q = question else { return }
+        let now = Date()
+        let start = windowStartOrNow()
+
+        appendTargetBaselines(q: q, now: now)
+
+        var user = prunedGraph(points: userPitchGraph, now: now)
+        guard let hz = currentHz else {
+            userPitchGraph = user
+            livePitchCents = nil
+            return
+        }
+        let midi = Double(PitchMath.frequencyToMidi(hz))
+        let refs = graphReferenceTargets(for: q)
+        let (nearest, _) = nearestTargetMidi(for: midi, targets: refs)
+        let cents = (midi - nearest) * 100.0
+        let t = now.timeIntervalSince(start)
+        user.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+        userPitchGraph = user
+        livePitchCents = cents
+    }
+
+    private func appendTargetBaselines(q: SightSingingQuestion, now: Date) {
+        let start = windowStartOrNow()
+        let t = now.timeIntervalSince(start)
+
+        var lowG = prunedGraph(points: targetLowGraph, now: now)
+        lowG.append(SightSingingPitchGraphPoint(t: t, cents: 0))
+        targetLowGraph = lowG
+
+        guard q.targetNotes.count >= 2 else {
+            targetHighGraph = prunedGraph(points: targetHighGraph, now: now)
+            return
+        }
+
+        let low = Double(noteNameToMidi(q.targetNotes[0]))
+        let high = Double(noteNameToMidi(q.targetNotes[1]))
+        let intervalCents = (high - low) * 100.0
+
+        var highG = prunedGraph(points: targetHighGraph, now: now)
+        highG.append(SightSingingPitchGraphPoint(t: t, cents: intervalCents))
+        targetHighGraph = highG
+    }
+
+    private func nearestTargetMidi(for midi: Double, targets: [String]) -> (Double, Int) {
+        let mids = targets.map { Double(noteNameToMidi($0)) }
+        guard let first = mids.first else { return (midi, 60) }
+        var best = first
+        var bestDist = abs(midi - first)
+        for m in mids.dropFirst() {
+            let d = abs(midi - m)
+            if d < bestDist {
+                best = m
+                bestDist = d
+            }
+        }
+        return (best, Int(best.rounded()))
+    }
+
+    private struct TargetGraphSegment {
+        var duration: Double
+        /// Use `.nan` to represent silence (no target energy / blank gap).
+        var cents: Double
+    }
+
+    private func startTargetGraphRecording(lowSegments: [TargetGraphSegment], highSegments: [TargetGraphSegment]) {
+        previewGraphTask?.cancel()
+        previewGraphTask = Task { [weak self] in
+            guard let self else { return }
+
+            await self.runTargetSegments(lowSegments, update: { cents in
+                let now = Date()
+                let start = self.windowStartOrNow()
+                let t = now.timeIntervalSince(start)
+                var low = self.prunedGraph(points: self.targetLowGraph, now: now)
+                if !cents.isNaN {
+                    low.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+                }
+                self.targetLowGraph = low
+            })
+
+            await self.runTargetSegments(highSegments, update: { cents in
+                let now = Date()
+                let start = self.windowStartOrNow()
+                let t = now.timeIntervalSince(start)
+                var high = self.prunedGraph(points: self.targetHighGraph, now: now)
+                if !cents.isNaN {
+                    high.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+                }
+                self.targetHighGraph = high
+            })
+        }
+    }
+
+    private func runTargetSegments(
+        _ segments: [TargetGraphSegment],
+        update: @escaping @MainActor (Double) -> Void
+    ) async {
+        for seg in segments {
+            if seg.duration <= 0 { continue }
+            if seg.cents.isNaN {
+                try? await Task.sleep(nanoseconds: UInt64(seg.duration * 1_000_000_000))
+                continue
+            }
+            let end = Date().addingTimeInterval(seg.duration)
+            while Date() < end, !Task.isCancelled {
+                await MainActor.run {
+                    update(seg.cents)
+                }
+                try? await Task.sleep(nanoseconds: UInt64(graphTickMs) * 1_000_000)
+            }
         }
     }
 

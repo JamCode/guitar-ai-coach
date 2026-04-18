@@ -5,8 +5,21 @@ public protocol SightSingingRepository: Sendable {
     func startSession(
         pitchRange: String,
         includeAccidental: Bool,
-        questionCount: Int
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
     ) async throws -> SightSingingSessionStart
+
+    /// 更新已存在会话的出题参数；从**下一题**起按新参数随机出题（当前题不变）。
+    func updateSessionGenerationParameters(
+        sessionId: String,
+        pitchRange: String,
+        includeAccidental: Bool,
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
+    ) async throws
+
+    /// 结束无限题会话并返回统计结果（有限题会话也可调用；重复调用会抛 `sessionNotFound`）。
+    func endSession(sessionId: String) async throws -> SightSingingResult
 
     func submitAnswer(
         sessionId: String,
@@ -37,15 +50,16 @@ public enum SightSingingRepositoryError: Error, LocalizedError {
 
 public actor LocalSightSingingRepository: SightSingingRepository {
     private final class LocalSession: @unchecked Sendable {
-        let config: SightSingingConfig
-        let questionNotes: [String]
-        var currentIndex = 0
+        var config: SightSingingConfig
+        var activeQuestionId: String
+        var activeQuestionIndex: Int
         var answered = 0
         var correct = 0
 
-        init(config: SightSingingConfig, questionNotes: [String]) {
+        init(config: SightSingingConfig, firstQuestionId: String, firstQuestionIndex: Int) {
             self.config = config
-            self.questionNotes = questionNotes
+            self.activeQuestionId = firstQuestionId
+            self.activeQuestionIndex = firstQuestionIndex
         }
     }
 
@@ -57,24 +71,55 @@ public actor LocalSightSingingRepository: SightSingingRepository {
     public func startSession(
         pitchRange: String,
         includeAccidental: Bool,
-        questionCount: Int
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
     ) async throws -> SightSingingSessionStart {
         let range = noteRange(for: pitchRange)
         let config = SightSingingConfig(
             minNote: range.minNote,
             maxNote: range.maxNote,
             questionCount: questionCount,
-            includeAccidental: includeAccidental
+            includeAccidental: includeAccidental,
+            exerciseKind: exerciseKind
         )
-        let notes = buildQuestionNotes(config: config)
         let sessionId = UUID().uuidString.lowercased()
-        let session = LocalSession(config: config, questionNotes: notes)
+        let firstTargets = makeRandomTargets(config: config)
+        let session = LocalSession(config: config, firstQuestionId: "q-1", firstQuestionIndex: 1)
         sessions[sessionId] = session
         return SightSingingSessionStart(
             sessionId: sessionId,
             config: config,
-            question: question(for: session, index: 0)
+            question: SightSingingQuestion(
+                id: session.activeQuestionId,
+                index: session.activeQuestionIndex,
+                totalQuestions: isInfinite(config) ? 0 : config.questionCount,
+                targetNotes: firstTargets
+            )
         )
+    }
+
+    public func updateSessionGenerationParameters(
+        sessionId: String,
+        pitchRange: String,
+        includeAccidental: Bool,
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
+    ) async throws {
+        guard let session = sessions[sessionId] else {
+            throw SightSingingRepositoryError.sessionNotFound
+        }
+        let range = noteRange(for: pitchRange)
+        session.config = SightSingingConfig(
+            minNote: range.minNote,
+            maxNote: range.maxNote,
+            questionCount: questionCount,
+            includeAccidental: includeAccidental,
+            exerciseKind: exerciseKind
+        )
+    }
+
+    public func endSession(sessionId: String) async throws -> SightSingingResult {
+        try await fetchResult(sessionId: sessionId)
     }
 
     public func submitAnswer(
@@ -88,7 +133,7 @@ public actor LocalSightSingingRepository: SightSingingRepository {
         guard let session = sessions[sessionId] else {
             throw SightSingingRepositoryError.sessionNotFound
         }
-        if questionId != "q-\(session.currentIndex + 1)" {
+        if questionId != session.activeQuestionId {
             throw SightSingingRepositoryError.questionOutOfDate
         }
         let isCorrect = avgCentsAbs <= 30 && stableHitMs >= 700
@@ -102,34 +147,65 @@ public actor LocalSightSingingRepository: SightSingingRepository {
         guard let session = sessions[sessionId] else {
             throw SightSingingRepositoryError.sessionNotFound
         }
-        session.currentIndex += 1
-        guard session.currentIndex < session.questionNotes.count else {
+
+        if isInfinite(session.config) {
+            session.activeQuestionIndex += 1
+            session.activeQuestionId = "q-\(session.activeQuestionIndex)"
+            let targets = makeRandomTargets(config: session.config)
+            return SightSingingQuestion(
+                id: session.activeQuestionId,
+                index: session.activeQuestionIndex,
+                totalQuestions: 0,
+                targetNotes: targets
+            )
+        }
+
+        // 有限题：最后一题之后结束。
+        guard session.activeQuestionIndex < session.config.questionCount else {
             return nil
         }
-        return question(for: session, index: session.currentIndex)
+
+        session.activeQuestionIndex += 1
+        session.activeQuestionId = "q-\(session.activeQuestionIndex)"
+        let targets = makeRandomTargets(config: session.config)
+        return SightSingingQuestion(
+            id: session.activeQuestionId,
+            index: session.activeQuestionIndex,
+            totalQuestions: session.config.questionCount,
+            targetNotes: targets
+        )
     }
 
     public func fetchResult(sessionId: String) async throws -> SightSingingResult {
         guard let session = sessions.removeValue(forKey: sessionId) else {
             throw SightSingingRepositoryError.sessionNotFound
         }
-        let total = session.questionNotes.count
-        let answered = min(total, max(0, session.answered))
+        let answered = max(0, session.answered)
         let correct = min(answered, max(0, session.correct))
+        let total = isInfinite(session.config) ? answered : session.config.questionCount
         let accuracy = answered == 0 ? 0 : Double(correct) / Double(answered)
         return SightSingingResult(answered: answered, correct: correct, total: total, accuracy: accuracy)
     }
 
-    private func question(for session: LocalSession, index: Int) -> SightSingingQuestion {
-        SightSingingQuestion(
-            id: "q-\(index + 1)",
-            index: index + 1,
-            totalQuestions: session.questionNotes.count,
-            targetNotes: [session.questionNotes[index]]
-        )
+    private func isInfinite(_ config: SightSingingConfig) -> Bool {
+        config.questionCount <= 0
     }
 
-    private func buildQuestionNotes(config: SightSingingConfig) -> [String] {
+    private func makeRandomTargets(config: SightSingingConfig) -> [String] {
+        switch config.exerciseKind {
+        case .singleNoteMimic:
+            return [pickSingleRandomNote(config: config)]
+        case .intervalMimic:
+            return pickIntervalRandomPair(config: config)
+        case .mixedRandomMimic:
+            if Bool.random(using: &rng) {
+                return [pickSingleRandomNote(config: config)]
+            }
+            return pickIntervalRandomPair(config: config)
+        }
+    }
+
+    private func buildSingleQuestionNotes(config: SightSingingConfig) -> [String] {
         let minMidi = noteNameToMidi(config.minNote)
         let maxMidi = noteNameToMidi(config.maxNote)
         let lo = min(minMidi, maxMidi)
@@ -143,9 +219,48 @@ public actor LocalSightSingingRepository: SightSingingRepository {
             candidates.append(note)
         }
         guard !candidates.isEmpty else {
-            return Array(repeating: "C4", count: config.questionCount)
+            return Array(repeating: "C4", count: max(1, config.questionCount))
         }
-        return (0..<config.questionCount).map { _ in candidates.randomElement(using: &rng) ?? "C4" }
+        return (0..<max(1, config.questionCount)).map { _ in candidates.randomElement(using: &rng) ?? "C4" }
+    }
+
+    private func pickSingleRandomNote(config: SightSingingConfig) -> String {
+        buildSingleQuestionNotes(config: config).first ?? "C4"
+    }
+
+    private func pickIntervalRandomPair(config: SightSingingConfig) -> [String] {
+        let minMidi = noteNameToMidi(config.minNote)
+        let maxMidi = noteNameToMidi(config.maxNote)
+        let lo = min(minMidi, maxMidi)
+        let hi = max(minMidi, maxMidi)
+        var candidates: [String] = []
+        for midi in lo...hi {
+            let note = midiToNoteName(midi)
+            if !config.includeAccidental && note.contains("#") {
+                continue
+            }
+            candidates.append(note)
+        }
+        guard candidates.count >= 2 else {
+            return ["C4", "D4"]
+        }
+
+        // 随机上行两音（不允许完全同 MIDI）。
+        for _ in 0..<48 {
+            let aName = candidates.randomElement(using: &rng) ?? "C4"
+            let bName = candidates.randomElement(using: &rng) ?? "D4"
+            let a = noteNameToMidi(aName)
+            let b = noteNameToMidi(bName)
+            if a == b { continue }
+            let lowMidi = min(a, b)
+            let highMidi = max(a, b)
+            return [midiToNoteName(lowMidi), midiToNoteName(highMidi)]
+        }
+        // 兜底：选一个相邻半音对，保证可判定。
+        let base = noteNameToMidi(candidates.randomElement(using: &rng) ?? "C4")
+        let low = max(lo, min(base, hi - 1))
+        let high = min(hi, low + 1)
+        return [midiToNoteName(low), midiToNoteName(high)]
     }
 
     private func noteRange(for pitchRange: String) -> (minNote: String, maxNote: String) {

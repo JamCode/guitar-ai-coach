@@ -20,7 +20,7 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
     private static let previewGateSec = 0.52
     private static let previewTailSec = 0.18
 
-    public init(audio: AudioEngineServing = AudioEngineService()) {
+    public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
     }
 

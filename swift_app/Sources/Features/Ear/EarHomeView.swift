@@ -28,9 +28,13 @@ public struct EarHomeView: View {
                     ) { EarMcqSessionView(title: "和弦进行", bank: "B") }
                     navCard(
                         title: "视唱训练",
-                        subtitle: "单音视唱 · 可选音域 · 麦克风实时判定",
+                        subtitle: "立刻出题 · 右上角齿轮调音域/模式 · 设置自动保存",
                         systemImage: "mic"
-                    ) { SightSingingSetupView() }
+                    ) {
+                        TabBarHiddenContainer {
+                            SightSingingSessionView(intervalPreview: IntervalTonePlayer())
+                        }
+                    }
                 }
             }
             .padding(SwiftAppTheme.pagePadding)

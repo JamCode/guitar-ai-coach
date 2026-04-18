@@ -1,10 +1,67 @@
 import Foundation
 
+public enum SightSingingExerciseKind: String, Sendable, CaseIterable, Identifiable, Codable {
+    /// 模唱单音：每题 1 个目标音高。
+    case singleNoteMimic = "single_note_mimic"
+    /// 模唱音程：每题 2 个目标音高（上行，低音 → 高音）。
+    case intervalMimic = "interval_mimic"
+    /// 单音与音程混合：按随机算法在两种题型间出题（仍遵守音域与升降号设置）。
+    case mixedRandomMimic = "mixed_random_mimic"
+
+    public var id: String { rawValue }
+
+    public var titleZh: String {
+        switch self {
+        case .singleNoteMimic:
+            return "模唱单音"
+        case .intervalMimic:
+            return "模唱音程"
+        case .mixedRandomMimic:
+            return "单音 + 音程（随机）"
+        }
+    }
+}
+
+/// 视唱训练出题偏好（持久化）。
+public struct SightSingingStoredPreferences: Codable, Equatable, Sendable {
+    public var pitchRange: String
+    public var includeAccidental: Bool
+    public var questionCount: Int
+    public var exerciseKind: SightSingingExerciseKind
+
+    public static let defaultPreferences = SightSingingStoredPreferences(
+        pitchRange: "mid",
+        includeAccidental: false,
+        questionCount: 0,
+        exerciseKind: .singleNoteMimic
+    )
+}
+
+public enum SightSingingPreferencesStore {
+    private static let userDefaultsKey = "ear.sightSinging.preferences.v1"
+
+    public static func load() -> SightSingingStoredPreferences {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
+            return .defaultPreferences
+        }
+        if let decoded = try? JSONDecoder().decode(SightSingingStoredPreferences.self, from: data) {
+            return decoded
+        }
+        return .defaultPreferences
+    }
+
+    public static func save(_ preferences: SightSingingStoredPreferences) {
+        guard let data = try? JSONEncoder().encode(preferences) else { return }
+        UserDefaults.standard.set(data, forKey: userDefaultsKey)
+    }
+}
+
 public struct SightSingingConfig: Sendable {
     public let minNote: String
     public let maxNote: String
     public let questionCount: Int
     public let includeAccidental: Bool
+    public let exerciseKind: SightSingingExerciseKind
 }
 
 public struct SightSingingQuestion: Sendable, Identifiable {

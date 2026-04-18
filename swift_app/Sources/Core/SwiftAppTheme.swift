@@ -91,7 +91,8 @@ public extension View {
     func appSecondaryButton() -> some View {
         self
             .buttonStyle(.bordered)
-            .tint(SwiftAppTheme.muted)
+            // Use brand tint so secondary actions read as "available" (muted tint reads disabled on light backgrounds).
+            .tint(SwiftAppTheme.brand)
     }
 }
 

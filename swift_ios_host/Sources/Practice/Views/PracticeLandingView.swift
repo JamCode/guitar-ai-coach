@@ -246,10 +246,10 @@ private struct EarPracticeHubScreen: View {
                 }
                 PracticeLinkCard(
                     title: "视唱训练",
-                    subtitle: "单音视唱 · 可选音域 · 麦克风实时判定",
+                    subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
                     icon: "mic"
                 ) {
-                    SightSingingSetupView()
+                    SightSingingSessionView()
                 }
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -314,7 +314,11 @@ private struct PracticeTrainingCatalogView: View {
                 NavigationLink("和弦进行") {
                     TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B") }
                 }
-                NavigationLink("视唱训练") { TabBarHiddenContainer { SightSingingSetupView() } }
+                NavigationLink("视唱训练") {
+                    TabBarHiddenContainer {
+                        SightSingingSessionView()
+                    }
+                }
             }
 
             Section("练琴") {

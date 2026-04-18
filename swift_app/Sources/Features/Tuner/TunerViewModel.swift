@@ -1,9 +1,6 @@
 import Foundation
 import Core
 import AVFoundation
-#if os(iOS)
-import AVFAudio
-#endif
 
 @MainActor
 public final class TunerViewModel: ObservableObject {
@@ -20,7 +17,7 @@ public final class TunerViewModel: ObservableObject {
     private let detector: PitchDetecting
     private let emaAlpha = 0.18
 
-    public init(audio: AudioEngineServing = AudioEngineService(), detector: PitchDetecting = TunerPitchDetector()) {
+    public init(audio: AudioEngineServing = AudioEngineService.shared, detector: PitchDetecting = TunerPitchDetector()) {
         self.audio = audio
         self.detector = detector
     }
@@ -68,9 +65,7 @@ public final class TunerViewModel: ObservableObject {
 
     public func start() async {
         do {
-            #if os(iOS)
-            try await ensureMicrophonePermission()
-            #endif
+            try await MicrophoneRecordingPermission.ensureGranted()
             try audio.start()
             try detector.start { [weak self] result in
                 guard let self else { return }
@@ -114,24 +109,5 @@ public final class TunerViewModel: ObservableObject {
         }
     }
 
-    #if os(iOS)
-    /// 使用异步 API，避免在 `MainActor` 上 `semaphore.wait()` 与系统在主线程派发权限回调时互相死锁导致闪退。
-    private func ensureMicrophonePermission() async throws {
-        switch AVAudioApplication.shared.recordPermission {
-        case .granted:
-            return
-        case .denied:
-            throw NSError(domain: "Tuner", code: 1001, userInfo: [NSLocalizedDescriptionKey: "需要麦克风权限"])
-        case .undetermined:
-            break
-        @unknown default:
-            break
-        }
-        let granted = await AVAudioApplication.requestRecordPermission()
-        if !granted {
-            throw NSError(domain: "Tuner", code: 1002, userInfo: [NSLocalizedDescriptionKey: "需要麦克风权限"])
-        }
-    }
-    #endif
 }
 

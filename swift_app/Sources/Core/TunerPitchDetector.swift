@@ -43,12 +43,15 @@ public final class TunerPitchDetector: PitchDetecting {
     private let windowSamples = 8192
     private let hopSamples = 4096
     private let config: PitchDetectorConfig
+    /// 实际输入采样率（与 `config.sampleRate` 可能不一致）；基频换算必须用此值。
+    private var analysisSampleRate: Double = 44_100
     private let queue = DispatchQueue(label: "tuner.pitch.detector")
     private var callback: ((PitchFrameResult) -> Void)?
     private var isRunning = false
 
     public init(config: PitchDetectorConfig = PitchDetectorConfig()) {
         self.config = config
+        self.analysisSampleRate = config.sampleRate
     }
 
     public func start(callback: @escaping (PitchFrameResult) -> Void) throws {
@@ -58,6 +61,7 @@ public final class TunerPitchDetector: PitchDetecting {
 
         let input = engine.inputNode
         let format = input.inputFormat(forBus: 0)
+        analysisSampleRate = max(8_000, format.sampleRate)
         input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             self?.process(buffer: buffer)
@@ -75,6 +79,7 @@ public final class TunerPitchDetector: PitchDetecting {
         accumulator.removeAll(keepingCapacity: true)
         callback = nil
         isRunning = false
+        analysisSampleRate = config.sampleRate
     }
 
     private func process(buffer: AVAudioPCMBuffer) {
@@ -108,8 +113,9 @@ public final class TunerPitchDetector: PitchDetecting {
         let rms = sqrt(energy / Double(length))
         if rms < config.minRms { return .silent(reason: "音量过低") }
 
-        let minLag = max(2, Int(config.sampleRate / config.maxFrequency))
-        let maxLag = min(length / 2 - 1, Int(ceil(config.sampleRate / config.minFrequency)))
+        let sr = analysisSampleRate
+        let minLag = max(2, Int(sr / config.maxFrequency))
+        let maxLag = min(length / 2 - 1, Int(ceil(sr / config.minFrequency)))
         if minLag >= maxLag { return .rejected(reason: "滞后范围无效") }
 
         var bestCorr = -Double.greatestFiniteMagnitude
@@ -133,7 +139,7 @@ public final class TunerPitchDetector: PitchDetecting {
         }
 
         let refinedLag = parabolicRefineLag(x: x, energy: energy, peakLag: bestLag, minLag: minLag, maxLag: maxLag)
-        let hz = config.sampleRate / refinedLag
+        let hz = sr / refinedLag
         if hz < config.minFrequency || hz > config.maxFrequency { return .rejected(reason: "频率越界") }
         return .pitch(frequencyHz: hz, peakCorrelation: bestCorr, rms: rms)
     }
@@ -167,5 +173,17 @@ public final class TunerPitchDetector: PitchDetecting {
         try session.setActive(true)
         #endif
     }
+}
+
+public extension PitchDetectorConfig {
+    /// 人声视唱：默认 `maxFrequency` 420Hz 无法覆盖 B4 以上；略降 RMS/相关峰门槛以适应手机麦。
+    static let sightSinging = PitchDetectorConfig(
+        sampleRate: 44_100,
+        minRms: 0.007,
+        minFrequency: 60,
+        maxFrequency: 1_300,
+        minPeakCorrelation: 0.26,
+        minPeakToMedianRatio: 1.18
+    )
 }
 

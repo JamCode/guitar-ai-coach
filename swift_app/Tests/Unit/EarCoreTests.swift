@@ -1,4 +1,5 @@
 import XCTest
+import Core
 @testable import Ear
 
 private actor MockIntervalEarHistoryStore: IntervalEarHistoryStoring {
@@ -232,5 +233,107 @@ final class EarCoreTests: XCTestCase {
         XCTAssertNotNil(q.musicKey)
         XCTAssertNotNil(q.progressionRoman)
         XCTAssertEqual(EarPlaybackMidi.romanNumeralSegmentCount(q.progressionRoman!), 4)
+    }
+
+    func testSightSingingIntervalQuestionsAreAscendingPairs() async throws {
+        let repo = LocalSightSingingRepository()
+        let start = try await repo.startSession(
+            pitchRange: "mid",
+            includeAccidental: false,
+            questionCount: 12,
+            exerciseKind: .intervalMimic
+        )
+
+        func midi12(_ name: String) -> Int {
+            let upper = name.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            let regex = try! NSRegularExpression(pattern: "^([A-G])(#?)(\\d)$")
+            let range = NSRange(location: 0, length: upper.utf16.count)
+            let m = regex.firstMatch(in: upper, range: range)!
+            let r1 = Range(m.range(at: 1), in: upper)!
+            let r2 = Range(m.range(at: 2), in: upper)!
+            let r3 = Range(m.range(at: 3), in: upper)!
+            let noteName = String(upper[r1]) + String(upper[r2])
+            let octave = Int(upper[r3])!
+            let idx = PitchMath.noteNames.firstIndex(of: noteName)!
+            return (octave + 1) * 12 + idx
+        }
+
+        var q: SightSingingQuestion? = start.question
+        var seen = 0
+        while let current = q {
+            XCTAssertEqual(current.targetNotes.count, 2)
+            XCTAssertFalse(current.targetNotes[0].contains("#"))
+            XCTAssertFalse(current.targetNotes[1].contains("#"))
+            let low = midi12(current.targetNotes[0])
+            let high = midi12(current.targetNotes[1])
+            XCTAssertLessThan(low, high)
+
+            seen += 1
+            q = try await repo.nextQuestion(sessionId: start.sessionId)
+        }
+        XCTAssertEqual(seen, 12)
+    }
+
+    func testSightSingingMixedModeQuestionsAreSingleOrInterval() async throws {
+        let repo = LocalSightSingingRepository()
+        let start = try await repo.startSession(
+            pitchRange: "mid",
+            includeAccidental: false,
+            questionCount: 0,
+            exerciseKind: .mixedRandomMimic
+        )
+        var q: SightSingingQuestion? = start.question
+        var seen = 0
+        while seen < 24 {
+            guard let current = q else {
+                XCTFail("expected question")
+                return
+            }
+            XCTAssertTrue(current.targetNotes.count == 1 || current.targetNotes.count == 2)
+            if current.targetNotes.count == 2 {
+                let low = noteNameToMidiForTest(current.targetNotes[0])
+                let high = noteNameToMidiForTest(current.targetNotes[1])
+                XCTAssertLessThan(low, high)
+            }
+            seen += 1
+            q = try await repo.nextQuestion(sessionId: start.sessionId)
+        }
+        XCTAssertEqual(seen, 24)
+    }
+
+    func testSightSingingUpdateGenerationParametersAffectsNextQuestion() async throws {
+        let repo = LocalSightSingingRepository()
+        let start = try await repo.startSession(
+            pitchRange: "mid",
+            includeAccidental: false,
+            questionCount: 0,
+            exerciseKind: .intervalMimic
+        )
+        XCTAssertEqual(start.question?.targetNotes.count, 2)
+
+        try await repo.updateSessionGenerationParameters(
+            sessionId: start.sessionId,
+            pitchRange: "mid",
+            includeAccidental: false,
+            questionCount: 0,
+            exerciseKind: .singleNoteMimic
+        )
+
+        let next = try await repo.nextQuestion(sessionId: start.sessionId)
+        XCTAssertEqual(next?.targetNotes.count, 1)
+    }
+
+    private func noteNameToMidiForTest(_ note: String) -> Int {
+        let upper = note.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let regex = try! NSRegularExpression(pattern: "^([A-G])(#?)(\\d)$")
+        let range = NSRange(location: 0, length: upper.utf16.count)
+        let m = regex.firstMatch(in: upper, range: range)!
+        let r1 = Range(m.range(at: 1), in: upper)!
+        let r2 = Range(m.range(at: 2), in: upper)!
+        let r3 = Range(m.range(at: 3), in: upper)!
+        let noteName = String(upper[r1]) + String(upper[r2])
+        let octave = Int(upper[r3])!
+        let idx = PitchMath.noteNames.firstIndex(of: noteName)!
+        return (octave + 1) * 12 + idx
     }
 }

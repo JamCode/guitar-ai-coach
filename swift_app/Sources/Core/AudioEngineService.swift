@@ -78,6 +78,13 @@ enum GuitarPlaybackHumanizer {
 }
 
 public final class AudioEngineService: AudioEngineServing {
+    /// Shared output engine for sampled guitar playback.
+    ///
+    /// Multiple feature modules historically defaulted to `AudioEngineService()` independently.
+    /// That can create several `AVAudioEngine` graphs + independent `AVAudioUnitSampler` instances,
+    /// which is heavier and can make "ghost" / delayed playback harder to reason about during navigation.
+    public static let shared = AudioEngineService()
+
     public let quality: AudioQualityBaseline
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
