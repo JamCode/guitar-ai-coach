@@ -25,6 +25,8 @@ public final class EarChordPlayer: EarChordPlaying {
     private static let chordAudibleTailSec = 0.32
     /// Humanizer 单音 gate 上限约 2.6s，留足余量避免截断。
     private static let chordWaitHeadroomSec = 2.75
+    /// 和弦进行中逐和弦柱式：释音等待较短，下一和弦更紧凑（仍略长于 gate 以免叠音刺耳）。
+    private static let progressionChordReleaseWaitSec = 0.68
 
     public init(audio: AudioEngineServing = AudioEngineService()) {
         self.audio = audio
@@ -36,20 +38,29 @@ public final class EarChordPlayer: EarChordPlaying {
         try await voicing.playChordFretsAwaitable(frets)
     }
 
-    private static let progressionChordGapNs: UInt64 = 240_000_000
+    /// 和弦与和弦之间的额外空隙（进行内、MIDI 逐和弦 fallback 共用）。
+    private static let progressionBetweenChordGapNs: UInt64 = 70_000_000
 
     public func playProgressionFromFretsSixToOne(_ sequence: [[Int]]) async throws {
         for (i, frets) in sequence.enumerated() {
             guard frets.count == 6 else { continue }
             let midis = GuitarStandardTuning.midisFromChordFretsSixToOne(frets)
-            try await playChordMidis(midis)
+            try await playChordBlockSF2(midis: midis, releaseTailSec: Self.progressionChordReleaseWaitSec)
             if i < sequence.count - 1 {
-                try await Task.sleep(nanoseconds: Self.progressionChordGapNs)
+                try await Task.sleep(nanoseconds: Self.progressionBetweenChordGapNs)
             }
         }
     }
 
     public func playChordMidis(_ midis: [Int]) async throws {
+        try await playChordBlockSF2(
+            midis: midis,
+            releaseTailSec: Self.chordWaitHeadroomSec + Self.chordAudibleTailSec
+        )
+    }
+
+    /// 播放一帧柱式 SF2；`releaseTailSec` 为扫弦跨度之后的等待（进行内用短尾，单和弦用长尾）。
+    private func playChordBlockSF2(midis: [Int], releaseTailSec: Double) async throws {
         try audio.start()
         let notes = Self.sortedUniqueMidis(midis)
         guard !notes.isEmpty else { return }
@@ -60,14 +71,16 @@ public final class EarChordPlayer: EarChordPlaying {
             stringStaggerSec: Self.chordStaggerSec
         )
         let staggerSpan = Double(max(0, notes.count - 1)) * Self.chordStaggerSec
-        let waitSec = staggerSpan + Self.chordWaitHeadroomSec + Self.chordAudibleTailSec
+        let waitSec = staggerSpan + releaseTailSec
         try await Task.sleep(nanoseconds: UInt64(waitSec * 1_000_000_000))
     }
 
     public func playChordSequence(_ sequence: [[Int]]) async throws {
-        for chord in sequence {
-            try await playChordMidis(chord)
-            try await Task.sleep(nanoseconds: 150_000_000)
+        for (i, chord) in sequence.enumerated() {
+            try await playChordBlockSF2(midis: chord, releaseTailSec: Self.progressionChordReleaseWaitSec)
+            if i < sequence.count - 1 {
+                try await Task.sleep(nanoseconds: Self.progressionBetweenChordGapNs)
+            }
         }
     }
 
