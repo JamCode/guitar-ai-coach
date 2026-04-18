@@ -124,17 +124,19 @@ public struct EarMcqSessionView: View {
                         if viewModel.revealed, let picked = viewModel.selectedChoiceIndex {
                             let ok = q.options[picked].key == q.correctOptionKey
                             let answer = q.options.first(where: { $0.key == q.correctOptionKey })?.label ?? "--"
-                            Text(ok ? "回答正确：\(answer)" : "回答错误：正确答案是 \(answer)")
+                            let mark = Self.chordMarkText(for: q)
+                            Text(Self.feedbackLine(ok: ok, answerLabel: answer, chordMark: mark))
                                 .foregroundStyle(ok ? SwiftAppTheme.dynamic(.green, .green) : .red)
                         }
                         if viewModel.revealed {
                             if viewModel.bank == "A", let frets = q.playbackFretsSixToOne, frets.count == 6 {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("本题指法（与试听相同，6→1 弦）")
+                                    Text("本题指法（与试听相同）")
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(SwiftAppTheme.muted)
                                     ChordDiagramView(frets: frets)
-                                        .frame(maxWidth: 260)
+                                        .frame(maxWidth: 184, maxHeight: 142)
+                                        .clipped()
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                             } else {
@@ -245,5 +247,38 @@ public struct EarMcqSessionView: View {
         }
         if isPicked { return SwiftAppTheme.brand }
         return SwiftAppTheme.line
+    }
+
+    /// 如 `Dm`、`G7`，与出题 `target_quality` + 根音一致。
+    private static func chordMarkText(for q: EarBankItem) -> String? {
+        guard let root = q.root, !root.isEmpty else { return nil }
+        let qualityId = qualityIdForChordMark(q.targetQuality)
+        let sym = ChordSymbolBuilder.build(root: root, qualityId: qualityId, bassId: "")
+        return sym.isEmpty ? nil : sym
+    }
+
+    private static func qualityIdForChordMark(_ token: String?) -> String {
+        guard let raw = token?.lowercased(), !raw.isEmpty else { return "" }
+        switch raw {
+        case "major", "maj": return ""
+        case "minor", "min", "m": return "m"
+        case "dominant7", "7", "dom7": return "7"
+        case "major7", "maj7", "m7maj", "delta": return "maj7"
+        case "minor7", "min7", "m7": return "m7"
+        default: return ""
+        }
+    }
+
+    private static func feedbackLine(ok: Bool, answerLabel: String, chordMark: String?) -> String {
+        let suffix: String
+        if let m = chordMark, !m.isEmpty {
+            suffix = "（\(m)）"
+        } else {
+            suffix = ""
+        }
+        if ok {
+            return "回答正确：\(answerLabel)\(suffix)"
+        }
+        return "回答错误：正确答案是 \(answerLabel)\(suffix)"
     }
 }
