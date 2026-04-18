@@ -12,15 +12,22 @@ public final class DefaultSightSingingPitchTracker: SightSingingPitchTracking {
     private let detector: PitchDetecting
     private(set) public var currentHz: Double?
 
-    public init(detector: PitchDetecting = TunerPitchDetector()) {
+    public init(detector: PitchDetecting = TunerPitchDetector(config: .sightSinging)) {
         self.detector = detector
     }
 
     public func start() throws {
         try detector.start { [weak self] frame in
             guard let self else { return }
-            if case let .pitch(frequencyHz, _, _) = frame {
-                self.currentHz = frequencyHz
+            switch frame {
+            case let .pitch(frequencyHz, _, _):
+                Task { @MainActor [weak self] in
+                    self?.currentHz = frequencyHz
+                }
+            case .silent, .rejected:
+                Task { @MainActor [weak self] in
+                    self?.currentHz = nil
+                }
             }
         }
     }
@@ -195,6 +202,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         loading = true
         errorText = nil
         do {
+            try await MicrophoneRecordingPermission.ensureGranted()
             try pitchTracker.start()
             let start = try await repository.startSession(
                 pitchRange: pitchRange,
