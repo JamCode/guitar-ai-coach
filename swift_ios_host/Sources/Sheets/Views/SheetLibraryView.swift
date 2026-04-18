@@ -253,6 +253,8 @@ private struct SheetDetailView: View {
     @State private var files: [URL] = []
     @State private var loading = true
     @State private var startedAt = Date()
+    /// 轻点谱面进入全屏阅读（隐藏导航栏、铺满可视区域）；再点一次恢复。
+    @State private var immersiveReading = false
     private let practiceStore = PracticeLocalStore()
 
     var body: some View {
@@ -262,30 +264,30 @@ private struct SheetDetailView: View {
             } else if files.isEmpty {
                 Text("未找到谱面图片").foregroundStyle(SwiftAppTheme.muted)
             } else {
-                TabView {
-                    ForEach(Array(files.enumerated()), id: \.offset) { idx, url in
-                        VStack(spacing: 8) {
-                            if let img = UIImage(contentsOfFile: url.path) {
-                                Image(uiImage: img)
-                                    .resizable()
-                                    .scaledToFit()
-                            } else {
-                                RoundedRectangle(cornerRadius: 8).fill(SwiftAppTheme.surface)
-                            }
-                            Text("第 \(idx + 1) 页").font(.caption).foregroundStyle(SwiftAppTheme.muted)
-                        }
-                        .padding()
+                ZStack {
+                    if immersiveReading {
+                        Color.black.ignoresSafeArea()
                     }
+                    TabView {
+                        ForEach(Array(files.enumerated()), id: \.offset) { idx, url in
+                            sheetPage(url: url, pageIndex: idx + 1)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .automatic))
                 }
-                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(edges: immersiveReading ? .vertical : [])
             }
         }
         .navigationTitle(entry.displayName)
+        .toolbar(immersiveReading ? .hidden : .automatic, for: .navigationBar)
+        .animation(.easeInOut(duration: 0.2), value: immersiveReading)
         .task {
             startedAt = Date()
             await load()
         }
         .onDisappear {
+            immersiveReading = false
             Task {
                 let endedAt = Date()
                 let seconds = Int(endedAt.timeIntervalSince(startedAt))
@@ -312,5 +314,37 @@ private struct SheetDetailView: View {
         loading = true
         files = (try? await store.resolveStoredFiles(entry)) ?? []
         loading = false
+    }
+
+    @ViewBuilder
+    private func sheetPage(url: URL, pageIndex: Int) -> some View {
+        GeometryReader { proxy in
+            ZStack {
+                if let img = UIImage(contentsOfFile: url.path) {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(SwiftAppTheme.surface)
+                        .padding(24)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                immersiveReading.toggle()
+            }
+            .accessibilityHint("轻点以显示或隐藏标题栏")
+            .overlay(alignment: .bottom) {
+                if !immersiveReading {
+                    Text("第 \(pageIndex) 页 · 共 \(files.count) 页")
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .padding(.bottom, 6)
+                }
+            }
+        }
     }
 }
