@@ -160,7 +160,6 @@ public struct SightSingingSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: SightSingingSessionViewModel
     @State private var showResult = false
-    @State private var showLeaveConfirm = false
     @State private var showSettings = false
     @State private var settingsDraft = SightSingingStoredPreferences.defaultPreferences
 
@@ -328,13 +327,9 @@ public struct SightSingingSessionView: View {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-                    if viewModel.hasGradedAnyQuestion {
-                        showLeaveConfirm = true
-                    } else {
-                        Task {
-                            await viewModel.discardSessionSilently()
-                            dismiss()
-                        }
+                    Task {
+                        await viewModel.discardSessionSilently()
+                        dismiss()
                     }
                 } label: {
                     Image(systemName: "chevron.left")
@@ -355,13 +350,9 @@ public struct SightSingingSessionView: View {
             #else
             ToolbarItem(placement: .cancellationAction) {
                 Button {
-                    if viewModel.hasGradedAnyQuestion {
-                        showLeaveConfirm = true
-                    } else {
-                        Task {
-                            await viewModel.discardSessionSilently()
-                            dismiss()
-                        }
+                    Task {
+                        await viewModel.discardSessionSilently()
+                        dismiss()
                     }
                 } label: {
                     Image(systemName: "chevron.left")
@@ -438,23 +429,6 @@ public struct SightSingingSessionView: View {
             Task {
                 await viewModel.discardSessionSilently()
             }
-        }
-        .confirmationDialog("离开视唱训练？", isPresented: $showLeaveConfirm, titleVisibility: .visible) {
-            Button("结束并查看统计", role: .destructive) {
-                Task {
-                    if await viewModel.endTraining() {
-                        showResult = true
-                    }
-                }
-            }
-            Button("直接退出", role: .cancel) {
-                Task {
-                    await viewModel.discardSessionSilently()
-                    dismiss()
-                }
-            }
-        } message: {
-            Text("本轮若已产生判定记录，可选择统计后退出；不限题量时不会自动收尾。")
         }
         .alert("本轮完成", isPresented: $showResult) {
             Button("确定") {
