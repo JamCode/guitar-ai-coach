@@ -66,6 +66,11 @@ public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var targetLowGraph: [SightSingingPitchGraphPoint] = []
     @Published public private(set) var targetHighGraph: [SightSingingPitchGraphPoint] = []
 
+    /// 最近一次拾音相对参考目标的**有符号**音分偏差（用于实时 HUD）；无有效基频时为 `nil`。
+    @Published public private(set) var livePitchCents: Double?
+    /// 判定进行中、且为音程题时，曲线与 `livePitchCents` 相对应当前采样的那一个目标音。
+    @Published public private(set) var activeEvaluatingTargetIndex: Int?
+
     private let repository: SightSingingRepository
     private let pitchTracker: SightSingingPitchTracking
     private let intervalPreview: IntervalTonePlaying?
@@ -137,6 +142,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
         userPitchGraph = []
         targetLowGraph = []
         targetHighGraph = []
+        livePitchCents = nil
+        activeEvaluatingTargetIndex = nil
         graphWindowStart = nil
     }
 
@@ -213,11 +220,13 @@ public final class SightSingingSessionViewModel: ObservableObject {
         guard !evaluating, let q = question, let sid = sessionId else { return }
         evaluating = true
         lastScore = nil
+        defer { activeEvaluatingTargetIndex = nil }
         let targets = q.targetNotes.isEmpty ? ["C4"] : q.targetNotes
         var absCents: [Double] = []
         var detectedNotes: [String] = []
 
-        for target in targets {
+        for (idx, target) in targets.enumerated() {
+            activeEvaluatingTargetIndex = idx
             let targetMidi = Double(noteNameToMidi(target))
             var elapsed = 0
             while elapsed < warmupMs + evalMs {
@@ -393,6 +402,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         userPitchGraph = []
         targetLowGraph = []
         targetHighGraph = []
+        livePitchCents = nil
     }
 
     private func windowStartOrNow() -> Date {
@@ -404,10 +414,20 @@ public final class SightSingingSessionViewModel: ObservableObject {
         return now
     }
 
-    private func prune(points: inout [SightSingingPitchGraphPoint], now: Date) {
+    /// 复制并裁掉滚动窗外旧点；整段赋值给 `@Published` 数组以触发 SwiftUI 刷新（原地 `append` 可能不刷新）。
+    private func prunedGraph(points: [SightSingingPitchGraphPoint], now: Date) -> [SightSingingPitchGraphPoint] {
+        var pts = points
         let start = windowStartOrNow()
         let minT = now.timeIntervalSince(start) - graphWindowSeconds
-        points.removeAll { $0.t < minT }
+        pts.removeAll { $0.t < minT }
+        return pts
+    }
+
+    private func graphReferenceTargets(for q: SightSingingQuestion) -> [String] {
+        if evaluating, q.targetNotes.count >= 2, let idx = activeEvaluatingTargetIndex, idx >= 0, idx < q.targetNotes.count {
+            return [q.targetNotes[idx]]
+        }
+        return q.targetNotes
     }
 
     private func appendLiveUserSampleIfPossible() {
@@ -417,26 +437,32 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
         appendTargetBaselines(q: q, now: now)
 
-        guard let hz = currentHz else { return }
+        var user = prunedGraph(points: userPitchGraph, now: now)
+        guard let hz = currentHz else {
+            userPitchGraph = user
+            livePitchCents = nil
+            return
+        }
         let midi = Double(PitchMath.frequencyToMidi(hz))
-
-        let (nearest, _) = nearestTargetMidi(for: midi, targets: q.targetNotes)
+        let refs = graphReferenceTargets(for: q)
+        let (nearest, _) = nearestTargetMidi(for: midi, targets: refs)
         let cents = (midi - nearest) * 100.0
-
-        prune(points: &userPitchGraph, now: now)
         let t = now.timeIntervalSince(start)
-        userPitchGraph.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+        user.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+        userPitchGraph = user
+        livePitchCents = cents
     }
 
     private func appendTargetBaselines(q: SightSingingQuestion, now: Date) {
         let start = windowStartOrNow()
         let t = now.timeIntervalSince(start)
 
-        prune(points: &targetLowGraph, now: now)
-        targetLowGraph.append(SightSingingPitchGraphPoint(t: t, cents: 0))
+        var lowG = prunedGraph(points: targetLowGraph, now: now)
+        lowG.append(SightSingingPitchGraphPoint(t: t, cents: 0))
+        targetLowGraph = lowG
 
         guard q.targetNotes.count >= 2 else {
-            prune(points: &targetHighGraph, now: now)
+            targetHighGraph = prunedGraph(points: targetHighGraph, now: now)
             return
         }
 
@@ -444,8 +470,9 @@ public final class SightSingingSessionViewModel: ObservableObject {
         let high = Double(noteNameToMidi(q.targetNotes[1]))
         let intervalCents = (high - low) * 100.0
 
-        prune(points: &targetHighGraph, now: now)
-        targetHighGraph.append(SightSingingPitchGraphPoint(t: t, cents: intervalCents))
+        var highG = prunedGraph(points: targetHighGraph, now: now)
+        highG.append(SightSingingPitchGraphPoint(t: t, cents: intervalCents))
+        targetHighGraph = highG
     }
 
     private func nearestTargetMidi(for midi: Double, targets: [String]) -> (Double, Int) {
@@ -478,18 +505,22 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 let now = Date()
                 let start = self.windowStartOrNow()
                 let t = now.timeIntervalSince(start)
-                self.prune(points: &self.targetLowGraph, now: now)
-                if cents.isNaN { return }
-                self.targetLowGraph.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+                var low = self.prunedGraph(points: self.targetLowGraph, now: now)
+                if !cents.isNaN {
+                    low.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+                }
+                self.targetLowGraph = low
             })
 
             await self.runTargetSegments(highSegments, update: { cents in
                 let now = Date()
                 let start = self.windowStartOrNow()
                 let t = now.timeIntervalSince(start)
-                self.prune(points: &self.targetHighGraph, now: now)
-                if cents.isNaN { return }
-                self.targetHighGraph.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+                var high = self.prunedGraph(points: self.targetHighGraph, now: now)
+                if !cents.isNaN {
+                    high.append(SightSingingPitchGraphPoint(t: t, cents: cents))
+                }
+                self.targetHighGraph = high
             })
         }
     }

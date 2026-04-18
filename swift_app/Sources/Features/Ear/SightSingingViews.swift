@@ -63,13 +63,17 @@ private struct SightSingingPitchGraphView: View {
                     return padL + plotW * CGFloat(u)
                 }
 
+                func clampCents(_ cents: Double) -> Double {
+                    min(max(cents, yRange.lowerBound), yRange.upperBound)
+                }
+
                 func strokeSeries(_ pts: [SightSingingPitchGraphPoint], color: Color, lineWidth: CGFloat) {
                     guard pts.count >= 2 else { return }
                     var p = Path()
                     let sorted = pts.sorted { $0.t < $1.t }
-                    p.move(to: CGPoint(x: x(forT: sorted[0].t), y: y(forCents: sorted[0].cents)))
+                    p.move(to: CGPoint(x: x(forT: sorted[0].t), y: y(forCents: clampCents(sorted[0].cents))))
                     for pt in sorted.dropFirst() {
-                        p.addLine(to: CGPoint(x: x(forT: pt.t), y: y(forCents: pt.cents)))
+                        p.addLine(to: CGPoint(x: x(forT: pt.t), y: y(forCents: clampCents(pt.cents))))
                     }
                     context.stroke(p, with: .color(color), lineWidth: lineWidth)
                 }
@@ -79,6 +83,17 @@ private struct SightSingingPitchGraphView: View {
                     strokeSeries(targetHigh, color: SwiftAppTheme.muted.opacity(0.55), lineWidth: 2)
                 }
                 strokeSeries(user, color: SwiftAppTheme.brand, lineWidth: 3)
+
+                // 单点或最新采样：画「船头」圆点，方便一眼看到当前偏差位置。
+                let sortedUser = user.sorted { $0.t < $1.t }
+                if let pt = sortedUser.last {
+                    let cx = x(forT: pt.t)
+                    let cy = y(forCents: clampCents(pt.cents))
+                    let r: CGFloat = 5
+                    let dot = Path(ellipseIn: CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2))
+                    context.fill(dot, with: .color(SwiftAppTheme.brand))
+                    context.stroke(dot, with: .color(Color.white.opacity(0.35)), lineWidth: 1)
+                }
             }
             .frame(height: 210)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -209,6 +224,20 @@ public struct SightSingingSessionView: View {
                         showsTwoTargetPitches: isIntervalQuestion
                     )
                     .appCard()
+                    .animation(.easeOut(duration: 0.12), value: viewModel.userPitchGraph.count)
+
+                    Group {
+                        if let cents = viewModel.livePitchCents {
+                            Text(String(format: "实时偏差（相对目标）：%+.0f ¢　·　100¢ ≈ 1 个半音", cents))
+                        } else if viewModel.evaluating {
+                            Text("判定收音中… 请持续发声，曲线会随麦克风更新。")
+                        } else {
+                            Text("开唱后橙色曲线会动态延伸；越接近 0¢ 参考线越准。")
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Text(isIntervalQuestion ? "目标音程（上行）" : "目标音").appSectionTitle()
