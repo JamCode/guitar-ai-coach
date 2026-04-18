@@ -11,12 +11,13 @@ public struct EarMcqSessionView: View {
 
     /// - Parameters:
     ///   - maxQuestions: `nil`（默认）为不限题量；非 `nil` 为本轮题量，末题后可「查看结果」。
-    ///     `bank == "B"` 且有上限时从题库至多抽取该题数；缺省上限的旧调用可用 `maxQuestions: 10`。
+    ///     `bank == "B"` 且有上限时预生成该题数；缺省上限的旧调用可用 `maxQuestions: 10`。
     public init(
         title: String,
         bank: String,
         maxQuestions: Int? = nil,
         chordDifficulty: EarChordMcqDifficulty = .初级,
+        progressionDifficulty: EarProgressionMcqDifficulty = .初级,
         onSessionComplete: ((Int, Int) -> Void)? = nil,
         autoDismissOnComplete: Bool = true
     ) {
@@ -25,7 +26,8 @@ public struct EarMcqSessionView: View {
                 title: title,
                 bank: bank,
                 maxQuestions: maxQuestions,
-                chordDifficulty: chordDifficulty
+                chordDifficulty: chordDifficulty,
+                progressionDifficulty: progressionDifficulty
             )
         )
         self.onSessionComplete = onSessionComplete
@@ -49,6 +51,8 @@ public struct EarMcqSessionView: View {
                             Text(q.promptZh).foregroundStyle(SwiftAppTheme.text)
                             if viewModel.bank == "A" {
                                 Self.chordDifficultyBadge(viewModel.chordDifficulty)
+                            } else if viewModel.bank == "B" {
+                                Self.progressionDifficultyBadge(viewModel.progressionDifficulty)
                             }
                         }
                         if let hint = q.hintZh, !hint.isEmpty {
@@ -247,6 +251,17 @@ public struct EarMcqSessionView: View {
             .background(SwiftAppTheme.surfaceSoft)
             .clipShape(Capsule())
             .accessibilityLabel("难度 \(d.rawValue)")
+    }
+
+    private static func progressionDifficultyBadge(_ d: EarProgressionMcqDifficulty) -> some View {
+        Text(d.rawValue)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(SwiftAppTheme.muted)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(SwiftAppTheme.surfaceSoft)
+            .clipShape(Capsule())
+            .accessibilityLabel("和弦进行难度 \(d.rawValue)")
     }
 
     private static func choiceRowBorderColor(revealed: Bool, isCorrect: Bool, isPicked: Bool) -> Color {

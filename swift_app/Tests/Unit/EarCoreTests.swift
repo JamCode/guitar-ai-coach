@@ -8,6 +8,16 @@ private actor MockIntervalEarHistoryStore: IntervalEarHistoryStoring {
     }
 }
 
+/// 可复现的 64-bit LCG，仅单测使用。
+private struct TestLCG: RandomNumberGenerator {
+    private var state: UInt64
+    init(seed: UInt64) { self.state = seed == 0 ? 0xDEADBEEF : seed }
+    mutating func next() -> UInt64 {
+        state = state &* 6364136223846793005 &+ 1442695040888963407
+        return state
+    }
+}
+
 final class EarCoreTests: XCTestCase {
     func testIntervalGeneratorBuildsFourChoicesAndAscendingPair() {
         var rng = SystemRandomNumberGenerator()
@@ -183,5 +193,45 @@ final class EarCoreTests: XCTestCase {
         XCTAssertEqual(all.count, 1)
         XCTAssertEqual(all[0].lowMidi, 60)
         try FileManager.default.removeItem(at: dir)
+    }
+
+    func testRomanNumeralSegmentCountTrimsAndIgnoresEmpty() {
+        XCTAssertEqual(EarPlaybackMidi.romanNumeralSegmentCount(" I - IV - V "), 3)
+        XCTAssertEqual(EarPlaybackMidi.romanNumeralSegmentCount(""), 0)
+    }
+
+    func testProgressionProceduralOptionsSameSegmentCountAsAnswer() {
+        for difficulty in EarProgressionMcqDifficulty.allCases {
+            var rng = SystemRandomNumberGenerator()
+            for _ in 0 ..< 80 {
+                let q = EarProgressionProceduralGenerator.makeQuestion(difficulty: difficulty, using: &rng)
+                guard let roman = q.progressionRoman else {
+                    XCTFail("missing progression_roman")
+                    continue
+                }
+                let n = EarPlaybackMidi.romanNumeralSegmentCount(roman)
+                XCTAssertEqual(q.options.count, 4)
+                let keys = Set(q.options.map(\.key))
+                XCTAssertEqual(keys.count, 4)
+                let labels = Set(q.options.map(\.label))
+                XCTAssertEqual(labels.count, 4, "duplicate option label")
+                for opt in q.options {
+                    XCTAssertEqual(EarPlaybackMidi.romanNumeralSegmentCount(opt.label), n, opt.label)
+                }
+                let correctLabel = q.options.first { $0.key == q.correctOptionKey }?.label
+                XCTAssertEqual(correctLabel, roman)
+                XCTAssertNotNil(EarProgressionPlayback.playbackFretsSequence(for: q))
+            }
+        }
+    }
+
+    func testProgressionProceduralGoldenSeed() {
+        var rng = TestLCG(seed: 42)
+        let q = EarProgressionProceduralGenerator.makeQuestion(difficulty: .中级, using: &rng)
+        XCTAssertEqual(q.questionType, "progression_recognition")
+        XCTAssertEqual(q.mode, "B")
+        XCTAssertNotNil(q.musicKey)
+        XCTAssertNotNil(q.progressionRoman)
+        XCTAssertEqual(EarPlaybackMidi.romanNumeralSegmentCount(q.progressionRoman!), 4)
     }
 }

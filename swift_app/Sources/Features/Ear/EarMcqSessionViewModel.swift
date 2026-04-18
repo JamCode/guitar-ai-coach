@@ -19,7 +19,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
     public let title: String
     public let bank: String
     /// `nil`（默认）为不限题量，可持续「下一题」；非 `nil` 为本轮题量上限（末题后「查看结果」）。
-    /// `bank == "B"` 且有上限时从题库至多抽取 `maxQuestions` 题；无上限时在整池上循环随机。
+    /// `bank == "B"` 且有上限时预生成 `maxQuestions` 道程序化题；无上限时每题现算。
     public let maxQuestions: Int?
 
     /// 仅 `bank == "A"`（和弦听辨）时使用：程序化出题难度。
@@ -31,9 +31,11 @@ public final class EarMcqSessionViewModel: ObservableObject {
     private let player: EarChordPlaying
     private let historyStore: any EarMcqHistoryStoring
     private var chordRng = SystemRandomNumberGenerator()
-    /// `bank == "B"` 且不限题量时：全量题库与发牌队列。
+    /// 非 Bank B 时仍用于 `ear_seed` 抽题；Bank B 程序化后不再使用。
     private var bankBSourcePool: [EarBankItem] = []
     private var bankBDealingQueue: [EarBankItem] = []
+    /// Bank B 无限模式：尽量避免与上一题完全相同的「调 + 进行 + 选项集合」。
+    private var lastBankBSignature: String?
 
     public init(
         title: String,
@@ -106,20 +108,32 @@ public final class EarMcqSessionViewModel: ObservableObject {
         if bank == "B" {
             bankBSourcePool = []
             bankBDealingQueue = []
+            lastBankBSignature = nil
             if let cap = maxQuestions {
-                session = (0 ..< cap).map { _ in
-                    EarProgressionProceduralGenerator.makeQuestion(
+                var built: [EarBankItem] = []
+                var seen = Set<String>()
+                built.reserveCapacity(cap)
+                while built.count < cap {
+                    let q = Self.makeDistinctBankBQuestion(
                         difficulty: progressionDifficulty,
+                        avoidSignatures: seen,
                         using: &chordRng
                     )
+                    let sig = Self.bankBSignature(q)
+                    seen.insert(sig)
+                    built.append(q)
                 }
+                session = built
                 question = session.first
             } else {
                 session = []
-                question = EarProgressionProceduralGenerator.makeQuestion(
+                let q = Self.makeDistinctBankBQuestion(
                     difficulty: progressionDifficulty,
+                    avoidSignatures: lastBankBSignature.map { Set([$0]) } ?? [],
                     using: &chordRng
                 )
+                question = q
+                lastBankBSignature = Self.bankBSignature(q)
             }
             pageIndex = 0
             correctCount = 0
@@ -242,10 +256,14 @@ public final class EarMcqSessionViewModel: ObservableObject {
             pageIndex += 1
             selectedChoiceIndex = nil
             revealed = false
-            question = EarProgressionProceduralGenerator.makeQuestion(
+            let avoid = lastBankBSignature.map { Set([$0]) } ?? []
+            let q = Self.makeDistinctBankBQuestion(
                 difficulty: progressionDifficulty,
+                avoidSignatures: avoid,
                 using: &chordRng
             )
+            question = q
+            lastBankBSignature = Self.bankBSignature(q)
             return
         }
         if pageIndex >= session.count - 1 {
@@ -274,5 +292,25 @@ public final class EarMcqSessionViewModel: ObservableObject {
               let qual = EarChordQuality(targetQualityToken: tok)
         else { return nil }
         return (r, qual)
+    }
+
+    /// 调 + 罗马进行 + 四选项标签集合（排序后），用于 Bank B 去重。
+    private static func bankBSignature(_ q: EarBankItem) -> String {
+        let labels = q.options.map(\.label).sorted().joined(separator: "|")
+        return "\(q.musicKey ?? "")|\(q.progressionRoman ?? "")|\(labels)"
+    }
+
+    private static func makeDistinctBankBQuestion(
+        difficulty: EarProgressionMcqDifficulty,
+        avoidSignatures: Set<String>,
+        using rng: inout some RandomNumberGenerator
+    ) -> EarBankItem {
+        for _ in 0 ..< 48 {
+            let q = EarProgressionProceduralGenerator.makeQuestion(difficulty: difficulty, using: &rng)
+            if !avoidSignatures.contains(bankBSignature(q)) {
+                return q
+            }
+        }
+        return EarProgressionProceduralGenerator.makeQuestion(difficulty: difficulty, using: &rng)
     }
 }
