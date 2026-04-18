@@ -320,23 +320,9 @@ public struct SightSingingSessionView: View {
         }
         .navigationTitle("视唱训练")
         .appPageBackground()
-        #if os(iOS)
-        .navigationBarBackButtonHidden(true)
-        #endif
         .toolbar {
             #if os(iOS)
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    Task {
-                        await viewModel.discardSessionSilently()
-                        dismiss()
-                    }
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .disabled(viewModel.loading || viewModel.evaluating)
-            }
+            // 保留系统返回按钮与边缘右滑 pop（勿 `navigationBarBackButtonHidden`，否则会禁用 interactive pop）。
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     settingsDraft = viewModel.currentPreferences()
