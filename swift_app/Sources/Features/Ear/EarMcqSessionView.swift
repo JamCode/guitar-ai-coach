@@ -296,11 +296,24 @@ public struct EarMcqSessionView: View {
 
     private static func feedbackChordSuffix(for q: EarBankItem) -> String {
         if q.mode == "B" || q.questionType == "progression_recognition" {
-            let t = EarProgressionPlayback.progressionMarkText(for: q)
-            return t.isEmpty ? "" : "（\(t)）"
+            return progressionFeedbackSuffix(for: q)
         }
         if let m = chordMarkText(for: q), !m.isEmpty { return "（\(m)）" }
         return ""
+    }
+
+    /// 判分文案：标明调性（当前进行题为自然大调罗马数字）+ 字母和弦链。
+    private static func progressionFeedbackSuffix(for q: EarBankItem) -> String {
+        let chain = EarProgressionPlayback.progressionMarkText(for: q)
+        let keyRaw = q.musicKey?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if keyRaw.isEmpty {
+            return chain.isEmpty ? "" : "（\(chain)）"
+        }
+        let keyLabel = "\(keyRaw)大调"
+        if chain.isEmpty {
+            return "（\(keyLabel)）"
+        }
+        return "（\(keyLabel)：\(chain)）"
     }
 
     private static func feedbackLine(ok: Bool, answerLabel: String, suffix: String) -> String {
