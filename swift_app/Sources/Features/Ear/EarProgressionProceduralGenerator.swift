@@ -1,5 +1,4 @@
 import Foundation
-import Chords
 
 /// 和弦进行（Bank B）程序化难度：与和弦听辨 `EarChordMcqDifficulty` 分离，避免语义混淆。
 public enum EarProgressionMcqDifficulty: String, Sendable, CaseIterable, Codable {
@@ -41,16 +40,9 @@ public enum EarProgressionProceduralGenerator {
         }
         let keys = Self.keys(for: difficulty)
         let templates = Self.templatesByN[n] ?? ["I-IV-V"]
-        var musicKey = keys.randomElement(using: &rng)!
-        var progressionRoman = templates[0]
-        for _ in 0 ..< 64 {
-            musicKey = keys.randomElement(using: &rng)!
-            progressionRoman = templates.randomElement(using: &rng)!
-            let probe = stubItem(musicKey: musicKey, progressionRoman: progressionRoman)
-            if EarProgressionPlayback.playbackFretsSequence(for: probe) != nil {
-                break
-            }
-        }
+        let playable = firstPlayableCandidate(keys: keys, templates: templates, n: n, using: &rng)
+        let musicKey = playable.musicKey
+        let progressionRoman = playable.progressionRoman
         let wrong = makeWrongLabels(correct: progressionRoman, n: n, using: &rng)
         let (options, correctKey) = shuffleOptions(correctLabel: progressionRoman, wrong: wrong, using: &rng)
         return EarBankItem(
@@ -69,6 +61,33 @@ public enum EarProgressionProceduralGenerator {
         )
     }
 
+    private static func firstPlayableCandidate(
+        keys: [String],
+        templates: [String],
+        n: Int,
+        using rng: inout some RandomNumberGenerator
+    ) -> (musicKey: String, progressionRoman: String) {
+        for _ in 0 ..< 64 {
+            let musicKey = keys.randomElement(using: &rng)!
+            let progressionRoman = templates.randomElement(using: &rng)!
+            if isPlayable(musicKey: musicKey, progressionRoman: progressionRoman) {
+                return (musicKey, progressionRoman)
+            }
+        }
+
+        for musicKey in keys {
+            for progressionRoman in templates {
+                if isPlayable(musicKey: musicKey, progressionRoman: progressionRoman) {
+                    return (musicKey, progressionRoman)
+                }
+            }
+        }
+
+        preconditionFailure(
+            "could not find playable progression for n=\(n); keys=\(keys); templates=\(templates)"
+        )
+    }
+
     private static func stubItem(musicKey: String, progressionRoman: String) -> EarBankItem {
         EarBankItem(
             id: "stub",
@@ -84,6 +103,11 @@ public enum EarProgressionProceduralGenerator {
             hintZh: nil,
             playbackFretsSixToOne: nil
         )
+    }
+
+    private static func isPlayable(musicKey: String, progressionRoman: String) -> Bool {
+        let probe = stubItem(musicKey: musicKey, progressionRoman: progressionRoman)
+        return EarProgressionPlayback.playbackFretsSequence(for: probe) != nil
     }
 
     private static func hintZh(for difficulty: EarProgressionMcqDifficulty) -> String {
