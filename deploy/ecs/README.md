@@ -101,34 +101,38 @@ ssh -i "$ECS_KEY" -o StrictHostKeyChecking=accept-new "${ECS_USER}@${ECS_HOST}" 
 
 ---
 
-## HTTPS（Let's Encrypt）
+## HTTPS（Let's Encrypt，推荐 acme.sh）
 
-仓库内 **`deploy/ecs/nginx/guitar-server.conf`** 已按 **Certbot 默认证书路径**（`/etc/letsencrypt/live/wanghanai.xyz/`）写好 **443** 与 **80→HTTPS 跳转**（**80 上仍保留** `/.well-known/acme-challenge/`，便于签发与续期）。
+当前线上 **`site/.well-known/acme-challenge` 可能为 `root` 属主**，`wanghan` 无法写入校验文件。约定使用 **`/home/wanghan/guitar-ai-coach/acme-webroot`** 作为 Webroot（`wanghan` 可写），Nginx 中 `alias` 到该目录；证书安装到 **`${ECS_PATH}/deploy/ecs/nginx/ssl/`**（与 `guitar-server.conf` 中 `ssl_certificate` 路径一致），**勿提交**私钥到 Git。
 
-**顺序（不要颠倒）**：当前线上若是「仅 HTTP、可访问 ACME 路径」的旧配置，先在 ECS 上 **申请证书**，再 **rsync 本文件并 reload**。若尚未有证书就 rsync 含 `ssl_certificate` 的新配置，`nginx -t` 会因找不到证书文件而失败。
+**顺序**：先 **安全组放行 443** → 在 ECS 上 **建 `acme-webroot`、安装 acme.sh、签发并 install-cert** → **rsync `guitar-server.conf` 并重载 Nginx**。
 
-1. **安全组**：在阿里云 ECS 安全组中为公网入方向放行 **TCP 443**（80 已有则保持）。
+1. **安全组**：公网入方向放行 **TCP 443**。
 
-2. **在 ECS 上安装 Certbot**（择一，按系统调整；需 `sudo`）：
-
-   ```bash
-   # Alibaba Cloud Linux 3 / CentOS Stream 等（dnf）
-   sudo dnf install -y certbot
-
-   # 或 CentOS 7：先启用 EPEL 再安装 certbot（以官方文档为准）
-   # sudo yum install -y epel-release && sudo yum install -y certbot
-   ```
-
-3. **用 Webroot 申请证书**（与 Nginx 中 `root` 一致；把邮箱改成你的）：
+2. **一次性准备目录**（`wanghan` 执行）：
 
    ```bash
-   sudo certbot certonly --webroot \
-     -w /home/wanghan/guitar-ai-coach/site \
-     -d wanghanai.xyz -d www.wanghanai.xyz \
-     --email you@example.com --agree-tos --non-interactive
+   mkdir -p /home/wanghan/guitar-ai-coach/acme-webroot/.well-known/acme-challenge
+   mkdir -p /home/wanghan/guitar-ai-coach/deploy/ecs/nginx/ssl
    ```
 
-4. **同步站点配置并重载 Nginx**（在本机仓库根目录，已设置 `ECS_*` 环境变量时）：
+3. **安装 acme.sh 并签发**（无需 `sudo`；把邮箱改成你的；默认 CA 为 Let's Encrypt）：
+
+   ```bash
+   curl https://get.acme.sh | sh -s email=you@example.com
+   . "$HOME/.acme.sh/acme.sh.env"
+   ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+   ~/.acme.sh/acme.sh --issue -d wanghanai.xyz -d www.wanghanai.xyz \
+     -w /home/wanghan/guitar-ai-coach/acme-webroot
+   ~/.acme.sh/acme.sh --install-cert -d wanghanai.xyz \
+     --fullchain-file /home/wanghan/guitar-ai-coach/deploy/ecs/nginx/ssl/wanghanai.xyz.fullchain.pem \
+     --key-file /home/wanghan/guitar-ai-coach/deploy/ecs/nginx/ssl/wanghanai.xyz.key \
+     --reloadcmd "sudo nginx -t && sudo systemctl reload nginx"
+   ```
+
+   最后一行依赖当前 ECS 上 **`wanghan` 对 `nginx -t` / `systemctl reload nginx` 的 NOPASSWD sudo**（见上文环境表）。续期时 acme.sh 会再次执行 `install-cert` 与 `reloadcmd`。
+
+4. **同步 Nginx 站点配置并重载**（本机仓库根目录，已设置 `ECS_*`）：
 
    ```bash
    rsync -avz -e "ssh -i $ECS_KEY -o StrictHostKeyChecking=accept-new" \
@@ -137,19 +141,9 @@ ssh -i "$ECS_KEY" -o StrictHostKeyChecking=accept-new "${ECS_USER}@${ECS_HOST}" 
      "sudo nginx -t && sudo systemctl reload nginx"
    ```
 
-5. **续期成功后重载 Nginx**（发行版自带的 `certbot renew` 定时任务通常**不会** reload nginx；在 ECS 上执行一次即可）：
+**说明**：若你更想用 **Certbot** 且具备 **`sudo certbot` 免密** 或交互式 `sudo`，可将证书放在 `/etc/letsencrypt/live/...` 并自行改 `ssl_certificate` 路径；本仓库默认按 **acme.sh + 项目内 `ssl/`** 维护，避免与损坏的旧版 `certbot`/Python 依赖冲突。
 
-   ```bash
-   sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh <<'EOF'
-#!/bin/sh
-systemctl reload nginx
-EOF
-   sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
-   ```
-
-   可用 `sudo certbot renew --dry-run` 自检续期；通过后下次自动续期会执行上述 hook。
-
-验证：浏览器访问 `https://wanghanai.xyz/` ，或用 `curl -I https://wanghanai.xyz/` 应返回 **200** 且证书链完整。
+验证：`curl -I https://wanghanai.xyz/` 应返回 **200** 且证书链完整。
 
 ---
 
