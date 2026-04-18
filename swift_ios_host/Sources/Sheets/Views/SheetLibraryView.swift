@@ -7,10 +7,9 @@ import UIKit
 struct SheetLibraryView: View {
     @StateObject private var vm = SheetLibraryViewModel()
     @State private var pickerItems: [PhotosPickerItem] = []
-    /// `PhotosPicker` 放在 `Menu` 里在部分系统版本上点击无效；用 `isPresented` 方式在菜单外弹出系统相册。
+    /// `PhotosPicker` 用 `isPresented` 在工具栏按钮外弹出系统相册，避免嵌在 `Menu` 内时部分系统点击无效。
     @State private var showingPhotoLibrary = false
     @State private var showingDraft = false
-    @State private var showingCamera = false
     @State private var draftImageData: [Data] = []
 
     var body: some View {
@@ -23,7 +22,7 @@ struct SheetLibraryView: View {
                     Button("重试") { Task { await vm.reload() } }.appPrimaryButton()
                 }
             } else if vm.entries.isEmpty {
-                Text("暂无谱子。点击右上角 +：拍照或相册多选；起名后保存到本地。")
+                Text("暂无谱子。点击右上角 + 从相册多选；起名后保存到本地。")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .padding()
@@ -34,23 +33,12 @@ struct SheetLibraryView: View {
         .navigationTitle("我的谱")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        // 等 `Menu` 收起后再 presentation，避免与菜单动画冲突导致相册不出现。
-                        DispatchQueue.main.async {
-                            showingPhotoLibrary = true
-                        }
-                    } label: {
-                        Label("从相册添加", systemImage: "photo.on.rectangle")
-                    }
-                    Button {
-                        showingCamera = true
-                    } label: {
-                        Label("拍照添加", systemImage: "camera")
-                    }
+                Button {
+                    showingPhotoLibrary = true
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("从相册添加")
             }
         }
         .photosPicker(
@@ -74,14 +62,6 @@ struct SheetLibraryView: View {
                 Task {
                     await vm.saveDraft(name: name, imagesData: data)
                 }
-            }
-        }
-        .sheet(isPresented: $showingCamera) {
-            MultiCaptureSheet { capturedData in
-                showingCamera = false
-                guard !capturedData.isEmpty else { return }
-                draftImageData = capturedData
-                showingDraft = true
             }
         }
         .appPageBackground()
@@ -267,96 +247,6 @@ private struct SheetDraftView: View {
                     }
                 }
             }
-        }
-    }
-}
-
-private struct MultiCaptureSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var images: [Data] = []
-    let onDone: ([Data]) -> Void
-    @State private var showingCamera = false
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 12) {
-                if images.isEmpty {
-                    Text("还未拍照，点击下方按钮开始拍摄。").foregroundStyle(SwiftAppTheme.muted)
-                } else {
-                    ScrollView(.horizontal) {
-                        HStack {
-                            ForEach(Array(images.enumerated()), id: \.offset) { idx, data in
-                                if let img = UIImage(data: data) {
-                                    Image(uiImage: img)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 90, height: 120)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                        .overlay(alignment: .topTrailing) {
-                                            Button {
-                                                images.remove(at: idx)
-                                            } label: {
-                                                Image(systemName: "xmark.circle.fill")
-                                            }
-                                            .buttonStyle(.plain)
-                                            .padding(4)
-                                        }
-                                }
-                            }
-                        }
-                    }
-                }
-                Button("继续拍摄") { showingCamera = true }
-                    .appPrimaryButton()
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("连续拍摄")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
-                        onDone(images)
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingCamera) {
-            CameraCaptureView { data in
-                if let data { images.append(data) }
-                showingCamera = false
-            }
-        }
-    }
-}
-
-private struct CameraCaptureView: UIViewControllerRepresentable {
-    let onPick: (Data?) -> Void
-
-    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = .camera
-        picker.cameraCaptureMode = .photo
-        return picker
-    }
-
-    func updateUIViewController(_: UIImagePickerController, context _: Context) {}
-
-    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let onPick: (Data?) -> Void
-        init(onPick: @escaping (Data?) -> Void) { self.onPick = onPick }
-        func imagePickerControllerDidCancel(_: UIImagePickerController) { onPick(nil) }
-        func imagePickerController(
-            _: UIImagePickerController,
-            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
-        ) {
-            let image = info[.originalImage] as? UIImage
-            let data = image?.jpegData(compressionQuality: 0.9)
-            onPick(data)
         }
     }
 }
