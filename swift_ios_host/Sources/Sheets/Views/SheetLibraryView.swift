@@ -7,6 +7,8 @@ import UIKit
 struct SheetLibraryView: View {
     @StateObject private var vm = SheetLibraryViewModel()
     @State private var pickerItems: [PhotosPickerItem] = []
+    /// `PhotosPicker` 放在 `Menu` 里在部分系统版本上点击无效；用 `isPresented` 方式在菜单外弹出系统相册。
+    @State private var showingPhotoLibrary = false
     @State private var showingDraft = false
     @State private var showingCamera = false
     @State private var draftImageData: [Data] = []
@@ -33,12 +35,13 @@ struct SheetLibraryView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    PhotosPicker(
-                        selection: $pickerItems,
-                        maxSelectionCount: 20,
-                        matching: .images
-                    ) {
-                        Label("从相册选择", systemImage: "photo.on.rectangle")
+                    Button {
+                        // 等 `Menu` 收起后再 presentation，避免与菜单动画冲突导致相册不出现。
+                        DispatchQueue.main.async {
+                            showingPhotoLibrary = true
+                        }
+                    } label: {
+                        Label("从相册添加", systemImage: "photo.on.rectangle")
                     }
                     Button {
                         showingCamera = true
@@ -50,6 +53,12 @@ struct SheetLibraryView: View {
                 }
             }
         }
+        .photosPicker(
+            isPresented: $showingPhotoLibrary,
+            selection: $pickerItems,
+            maxSelectionCount: 20,
+            matching: .images
+        )
         .task { await vm.reload() }
         .onChange(of: pickerItems) { _, newItems in
             Task {
