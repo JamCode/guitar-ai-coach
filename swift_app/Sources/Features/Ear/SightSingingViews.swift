@@ -151,7 +151,8 @@ public struct SightSingingSetupView: View {
                         includeAccidental: includeAccidental,
                         questionCount: Int(questionCount),
                         pitchTracker: DefaultSightSingingPitchTracker(),
-                        exerciseKind: exerciseKind
+                        exerciseKind: exerciseKind,
+                        startsImmediately: true
                     )
                 } label: {
                     HStack {
@@ -180,6 +181,17 @@ public struct SightSingingSessionView: View {
     @StateObject private var viewModel: SightSingingSessionViewModel
     @State private var showResult = false
     @State private var showLeaveConfirm = false
+    @State private var hasStartedSession = false
+
+    @State private var draftPitchRange: String
+    @State private var draftIncludeAccidental: Bool
+    @State private var draftExerciseKind: SightSingingExerciseKind
+
+    private let repository: SightSingingRepository
+    private let pitchTracker: SightSingingPitchTracking
+    private let intervalPreview: IntervalTonePlaying?
+    private let questionCount: Int
+    private let startsImmediately: Bool
     private let onSessionComplete: ((SightSingingResult) -> Void)?
     private let autoDismissOnComplete: Bool
 
@@ -192,8 +204,22 @@ public struct SightSingingSessionView: View {
         intervalPreview: IntervalTonePlaying? = IntervalTonePlayer(),
         exerciseKind: SightSingingExerciseKind,
         onSessionComplete: ((SightSingingResult) -> Void)? = nil,
-        autoDismissOnComplete: Bool = true
+        autoDismissOnComplete: Bool = true,
+        startsImmediately: Bool = false
     ) {
+        self.repository = repository
+        self.pitchTracker = pitchTracker
+        self.intervalPreview = intervalPreview
+        self.questionCount = questionCount
+        self.startsImmediately = startsImmediately
+        self.onSessionComplete = onSessionComplete
+        self.autoDismissOnComplete = autoDismissOnComplete
+
+        _draftPitchRange = State(initialValue: pitchRange)
+        _draftIncludeAccidental = State(initialValue: includeAccidental)
+        _draftExerciseKind = State(initialValue: exerciseKind)
+        _hasStartedSession = State(initialValue: startsImmediately)
+
         _viewModel = StateObject(
             wrappedValue: SightSingingSessionViewModel(
                 repository: repository,
@@ -201,18 +227,54 @@ public struct SightSingingSessionView: View {
                 intervalPreview: intervalPreview,
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
-                questionCount: questionCount,
+                questionCount: max(0, questionCount),
                 exerciseKind: exerciseKind
             )
         )
-        self.onSessionComplete = onSessionComplete
-        self.autoDismissOnComplete = autoDismissOnComplete
     }
 
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                if viewModel.loading {
+                if !hasStartedSession && !startsImmediately {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("开始训练前").appSectionTitle()
+                        Text("先选择音域与模式；题量默认不限（无限刷题）。")
+                            .font(.footnote)
+                            .foregroundStyle(SwiftAppTheme.muted)
+
+                        Text("训练模式").appSectionTitle()
+                        Picker("训练模式", selection: $draftExerciseKind) {
+                            ForEach(SightSingingExerciseKind.allCases) { kind in
+                                Text(kind.titleZh).tag(kind)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        Text("音域选择").appSectionTitle()
+                        Picker("音域", selection: $draftPitchRange) {
+                            Text("低音区 C3-B3").tag("low")
+                            Text("中音区 C4-B4").tag("mid")
+                            Text("宽范围 C3-B4").tag("wide")
+                        }
+                        .pickerStyle(.segmented)
+
+                        Toggle("包含升降号", isOn: $draftIncludeAccidental)
+                    }
+                    .appCard()
+
+                    Button("开始训练") {
+                        viewModel.applySessionConfig(
+                            pitchRange: draftPitchRange,
+                            includeAccidental: draftIncludeAccidental,
+                            questionCount: 0,
+                            exerciseKind: draftExerciseKind
+                        )
+                        hasStartedSession = true
+                        Task { await viewModel.bootstrap() }
+                    }
+                    .appPrimaryButton()
+                } else if viewModel.loading {
                     ProgressView("加载中…")
                         .tint(SwiftAppTheme.brand)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -322,6 +384,10 @@ public struct SightSingingSessionView: View {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
+                    if !hasStartedSession && !startsImmediately {
+                        dismiss()
+                        return
+                    }
                     if viewModel.hasGradedAnyQuestion {
                         showLeaveConfirm = true
                     } else {
@@ -339,11 +405,12 @@ public struct SightSingingSessionView: View {
             #endif
         }
         .task {
-            if viewModel.loading {
+            if startsImmediately, viewModel.loading {
                 await viewModel.bootstrap()
             }
         }
         .onDisappear {
+            guard hasStartedSession || startsImmediately else { return }
             // Leaving the screen should not keep mic sampling / preview graph tasks alive.
             viewModel.cancelActiveWork(stopPitchTracker: !viewModel.loading)
             Task {

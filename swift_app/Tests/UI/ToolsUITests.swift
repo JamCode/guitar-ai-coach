@@ -35,7 +35,8 @@ final class ToolsUITests: XCTestCase {
             questionCount: 10,
             pitchTracker: DefaultSightSingingPitchTracker(),
             intervalPreview: nil,
-            exerciseKind: .singleNoteMimic
+            exerciseKind: .singleNoteMimic,
+            startsImmediately: true
         )
     }
 }

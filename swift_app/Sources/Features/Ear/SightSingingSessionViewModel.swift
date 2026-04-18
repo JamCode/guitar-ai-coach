@@ -48,7 +48,7 @@ public struct SightSingingPitchGraphPoint: Sendable, Identifiable {
 
 @MainActor
 public final class SightSingingSessionViewModel: ObservableObject {
-    @Published public private(set) var loading = true
+    @Published public private(set) var loading = false
     @Published public private(set) var errorText: String?
     @Published public private(set) var question: SightSingingQuestion?
     @Published public private(set) var sessionId: String?
@@ -69,10 +69,10 @@ public final class SightSingingSessionViewModel: ObservableObject {
     private let repository: SightSingingRepository
     private let pitchTracker: SightSingingPitchTracking
     private let intervalPreview: IntervalTonePlaying?
-    private let pitchRange: String
-    private let includeAccidental: Bool
-    private let questionCount: Int
-    private let exerciseKind: SightSingingExerciseKind
+    private var pitchRange: String
+    private var includeAccidental: Bool
+    private var questionCount: Int
+    private var exerciseKind: SightSingingExerciseKind
 
     private let sampleStepMs = 120
     private let warmupMs = 800
@@ -111,6 +111,35 @@ public final class SightSingingSessionViewModel: ObservableObject {
         self.exerciseKind = exerciseKind
     }
 
+    public func applySessionConfig(
+        pitchRange: String,
+        includeAccidental: Bool,
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
+    ) {
+        self.pitchRange = pitchRange
+        self.includeAccidental = includeAccidental
+        self.questionCount = questionCount
+        self.exerciseKind = exerciseKind
+
+        // Reset UI/session state before (re)bootstrapping.
+        loading = false
+        errorText = nil
+        sessionId = nil
+        question = nil
+        evaluating = false
+        previewing = false
+        currentHz = nil
+        lastScore = nil
+        resultText = nil
+        finalResult = nil
+        hasGradedAnyQuestion = false
+        userPitchGraph = []
+        targetLowGraph = []
+        targetHighGraph = []
+        graphWindowStart = nil
+    }
+
     deinit {
         monitoringTask?.cancel()
         monitoringTask = nil
@@ -120,6 +149,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
     }
 
     public func bootstrap() async {
+        loading = true
+        errorText = nil
         do {
             try pitchTracker.start()
             let start = try await repository.startSession(
