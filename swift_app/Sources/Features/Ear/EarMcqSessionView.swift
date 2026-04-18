@@ -55,12 +55,15 @@ public struct EarMcqSessionView: View {
                                 Self.progressionDifficultyBadge(viewModel.progressionDifficulty)
                             }
                         }
-                        if let hint = q.hintZh, !hint.isEmpty {
-                            Text(hint).foregroundStyle(SwiftAppTheme.muted)
+                        // 和弦进行：不展示题库提示与试听说明小字，减少干扰。
+                        if !Self.isChordProgression(question: q, bank: viewModel.bank) {
+                            if let hint = q.hintZh, !hint.isEmpty {
+                                Text(hint).foregroundStyle(SwiftAppTheme.muted)
+                            }
+                            Text(Self.playbackCaption(for: q, bank: viewModel.bank))
+                                .font(.caption)
+                                .foregroundStyle(SwiftAppTheme.muted)
                         }
-                        Text(Self.playbackCaption(for: q, bank: viewModel.bank))
-                            .font(.caption)
-                            .foregroundStyle(SwiftAppTheme.muted)
                         Text(viewModel.sessionStatsLine)
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(SwiftAppTheme.muted)
