@@ -50,6 +50,28 @@ public enum EarPlaybackMidi {
         return noteToMidi(key, octave: 4) + scale[degree]
     }
 
+    /// 如 `I-V-vi-IV` 在 C 大调 → `["C","G","Am","F"]`（与当前三和弦听辨算法一致）。
+    public static func letterChordSymbols(key: String, progressionRoman: String) -> [String] {
+        progressionRoman
+            .split(separator: "-")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map { letterChordSymbol(key: key, roman: $0) }
+    }
+
+    private static func letterChordSymbol(key: String, roman: String) -> String {
+        let rootMidi = progressionRoot(key: key, roman: roman)
+        let pc = ((rootMidi % 12) + 12) % 12
+        let name = sharpPitchClassNames[pc]
+        if roman.lowercased().contains("vii") {
+            return "\(name)dim"
+        }
+        let isMinorTriad = roman == roman.lowercased()
+        return isMinorTriad ? "\(name)m" : name
+    }
+
+    private static let sharpPitchClassNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
     private static func noteToMidi(_ note: String, octave: Int) -> Int {
         let normalized = note.trimmingCharacters(in: .whitespaces)
             .uppercased()

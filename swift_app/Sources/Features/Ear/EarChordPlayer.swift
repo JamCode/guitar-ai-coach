@@ -8,6 +8,8 @@ public protocol EarChordPlaying: AnyObject {
     func playSinglePreview(midi: Int) async throws
     /// 与「常用和弦」一致：先分解琶音再柱式（`ChordVoicingTonePlayer`）。
     func playChordFromFretsSixToOne(_ frets: [Int]) async throws
+    /// 和弦进行：按顺序对每个把位执行「分解 + 柱式」，和弦间留短空隙。
+    func playProgressionFromFretsSixToOne(_ sequence: [[Int]]) async throws
 }
 
 public final class EarChordPlayer: EarChordPlaying {
@@ -32,6 +34,18 @@ public final class EarChordPlayer: EarChordPlaying {
     public func playChordFromFretsSixToOne(_ frets: [Int]) async throws {
         guard frets.count == 6 else { return }
         try await voicing.playChordFretsAwaitable(frets)
+    }
+
+    private static let progressionChordGapNs: UInt64 = 240_000_000
+
+    public func playProgressionFromFretsSixToOne(_ sequence: [[Int]]) async throws {
+        for (i, frets) in sequence.enumerated() {
+            guard frets.count == 6 else { continue }
+            try await voicing.playChordFretsAwaitable(frets)
+            if i < sequence.count - 1 {
+                try await Task.sleep(nanoseconds: Self.progressionChordGapNs)
+            }
+        }
     }
 
     public func playChordMidis(_ midis: [Int]) async throws {

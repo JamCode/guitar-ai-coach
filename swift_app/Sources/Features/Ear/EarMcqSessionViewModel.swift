@@ -18,8 +18,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
 
     public let title: String
     public let bank: String
-    /// `bank == "A"` 时：`nil` 为不限题量（与音程练耳一致，可持续「下一题」）；非 `nil` 为本轮题量上限。
-    /// `bank == "B"` 时：从题库抽取至多 `maxQuestions ?? 10` 题。
+    /// `nil`（默认）为不限题量，可持续「下一题」；非 `nil` 为本轮题量上限（末题后「查看结果」）。
+    /// `bank == "B"` 且有上限时从题库至多抽取 `maxQuestions` 题；无上限时在整池上循环随机。
     public let maxQuestions: Int?
 
     /// 仅 `bank == "A"`（和弦听辨）时使用：程序化出题难度。
@@ -29,6 +29,9 @@ public final class EarMcqSessionViewModel: ObservableObject {
     private let player: EarChordPlaying
     private let historyStore: any EarMcqHistoryStoring
     private var chordRng = SystemRandomNumberGenerator()
+    /// `bank == "B"` 且不限题量时：全量题库与发牌队列。
+    private var bankBSourcePool: [EarBankItem] = []
+    private var bankBDealingQueue: [EarBankItem] = []
 
     public init(
         title: String,
@@ -48,11 +51,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
         self.historyStore = historyStore
     }
 
-    /// `bank == "A"` 且 `maxQuestions == nil` 时可一直「下一题」；和弦进行等题库模式始终有上限。
-    public var hasSessionCap: Bool {
-        if bank == "A" { return maxQuestions != nil }
-        return true
-    }
+    public var hasSessionCap: Bool { maxQuestions != nil }
 
     /// 有上限时，当前题是否为最后一题（揭示后按钮文案为「查看结果」）。
     public var isOnLastCappedQuestion: Bool {
@@ -73,6 +72,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
     public func bootstrap() async {
         loading = true
         loadError = nil
+        bankBSourcePool = []
+        bankBDealingQueue = []
         if bank == "A" {
             if let cap = maxQuestions {
                 session = EarChordMcqGenerator.buildSession(
@@ -106,9 +107,17 @@ public final class EarMcqSessionViewModel: ObservableObject {
                 loading = false
                 return
             }
-            let cap = max(1, maxQuestions ?? 10)
-            session = Array(pool.shuffled().prefix(min(cap, pool.count)))
-            question = session.first
+            bankBSourcePool = pool
+            if maxQuestions == nil {
+                session = []
+                bankBDealingQueue = bankBSourcePool.shuffled()
+                question = bankBDealingQueue.isEmpty ? nil : bankBDealingQueue.removeFirst()
+            } else {
+                bankBDealingQueue = []
+                let cap = max(1, maxQuestions ?? 10)
+                session = Array(pool.shuffled().prefix(min(cap, pool.count)))
+                question = session.first
+            }
             pageIndex = 0
             correctCount = 0
             answeredCount = 0
@@ -129,7 +138,11 @@ public final class EarMcqSessionViewModel: ObservableObject {
         defer { isPlaybackInProgress = false }
         do {
             if q.mode == "B" || q.questionType == "progression_recognition" {
-                try await player.playChordSequence(EarPlaybackMidi.forProgression(q))
+                if let seq = EarProgressionPlayback.playbackFretsSequence(for: q), !seq.isEmpty {
+                    try await player.playProgressionFromFretsSixToOne(seq)
+                } else {
+                    try await player.playChordSequence(EarPlaybackMidi.forProgression(q))
+                }
             } else if let frets = q.playbackFretsSixToOne, frets.count == 6 {
                 try await player.playChordFromFretsSixToOne(frets)
             } else {
@@ -194,6 +207,16 @@ public final class EarMcqSessionViewModel: ObservableObject {
             )
             return
         }
+        if bank == "B", maxQuestions == nil {
+            pageIndex += 1
+            selectedChoiceIndex = nil
+            revealed = false
+            if bankBDealingQueue.isEmpty {
+                bankBDealingQueue = bankBSourcePool.shuffled()
+            }
+            question = bankBDealingQueue.isEmpty ? nil : bankBDealingQueue.removeFirst()
+            return
+        }
         if pageIndex >= session.count - 1 {
             finished = true
             return
@@ -206,10 +229,11 @@ public final class EarMcqSessionViewModel: ObservableObject {
 
     public var summaryText: String {
         let pct = answeredCount == 0 ? 0 : Int((Double(correctCount) / Double(answeredCount) * 100).rounded())
-        if bank == "A", maxQuestions == nil {
+        if maxQuestions == nil {
             return "累计 \(answeredCount) 题 · 答对 \(correctCount) · 正确率 \(pct)%"
         }
-        return "共 \(session.count) 题 · 答对 \(correctCount) / \(answeredCount) · 正确率 \(pct)%"
+        let total = max(session.count, 1)
+        return "共 \(total) 题 · 答对 \(correctCount) / \(answeredCount) · 正确率 \(pct)%"
     }
 
     private static func chordAvoidPair(from item: EarBankItem?) -> (root: String, quality: EarChordQuality)? {

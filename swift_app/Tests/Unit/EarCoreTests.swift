@@ -83,6 +83,27 @@ final class EarCoreTests: XCTestCase {
         }
     }
 
+    func testProgressionLetterMarkInCMajor() {
+        let item = EarBankItem(
+            id: "t",
+            mode: "B",
+            questionType: "progression_recognition",
+            promptZh: "听和弦进行",
+            options: [
+                EarMcqOption(key: "A", label: "I-V-vi-IV"),
+                EarMcqOption(key: "B", label: "ii-V-I"),
+            ],
+            correctOptionKey: "A",
+            root: nil,
+            targetQuality: nil,
+            musicKey: "C",
+            progressionRoman: "I-V-vi-IV",
+            hintZh: nil
+        )
+        XCTAssertEqual(EarProgressionPlayback.progressionMarkText(for: item), "C → G → Am → F")
+        XCTAssertEqual(EarPlaybackMidi.letterChordSymbols(key: "C", progressionRoman: "I-V-vi-IV"), ["C", "G", "Am", "F"])
+    }
+
     func testIntervalAdvancedPresetIncludesTritone() {
         let p = IntervalQuestionGenerator.preset(for: .高级)
         XCTAssertTrue(p.poolSemitones.contains(6))

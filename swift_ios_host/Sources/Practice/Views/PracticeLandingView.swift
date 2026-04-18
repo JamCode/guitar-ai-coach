@@ -241,8 +241,8 @@ private struct EarPracticeHubScreen: View {
                 ) {
                     EarMcqSessionView(title: "和弦听辨", bank: "A")
                 }
-                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 四选一", icon: "music.note.list") {
-                    EarMcqSessionView(title: "和弦进行", bank: "B", maxQuestions: 10)
+                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
+                    EarMcqSessionView(title: "和弦进行", bank: "B")
                 }
                 PracticeLinkCard(
                     title: "视唱训练",
@@ -312,7 +312,7 @@ private struct PracticeTrainingCatalogView: View {
                     TabBarHiddenContainer { EarMcqSessionView(title: "和弦听辨", bank: "A") }
                 }
                 NavigationLink("和弦进行") {
-                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B", maxQuestions: 10) }
+                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B") }
                 }
                 NavigationLink("视唱训练") { TabBarHiddenContainer { SightSingingSetupView() } }
             }

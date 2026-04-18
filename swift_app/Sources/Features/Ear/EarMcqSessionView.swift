@@ -10,8 +10,8 @@ public struct EarMcqSessionView: View {
     private let autoDismissOnComplete: Bool
 
     /// - Parameters:
-    ///   - maxQuestions: `bank == "A"` 时 `nil`（默认）为不限题量，与音程练耳一致可持续「下一题」；非 `nil` 为本轮题量，末题后可「查看结果」。
-    ///     `bank == "B"` 时从题库至多抽取 `maxQuestions ?? 10` 题。
+    ///   - maxQuestions: `nil`（默认）为不限题量；非 `nil` 为本轮题量，末题后可「查看结果」。
+    ///     `bank == "B"` 且有上限时从题库至多抽取该题数；缺省上限的旧调用可用 `maxQuestions: 10`。
     public init(
         title: String,
         bank: String,
@@ -55,7 +55,7 @@ public struct EarMcqSessionView: View {
                             Text(hint).foregroundStyle(SwiftAppTheme.muted)
                         }
                         Text(
-                            viewModel.bank == "A"
+                            Self.usesVoicingPlaybackCaption(for: q)
                                 ? "试听与「常用和弦」一致：先分解琶音（低音→高音），再柱式和弦；钢弦 SF2 采样。"
                                 : "使用吉他采样合成，与预录音色可能略有差异。"
                         )
@@ -124,8 +124,8 @@ public struct EarMcqSessionView: View {
                         if viewModel.revealed, let picked = viewModel.selectedChoiceIndex {
                             let ok = q.options[picked].key == q.correctOptionKey
                             let answer = q.options.first(where: { $0.key == q.correctOptionKey })?.label ?? "--"
-                            let mark = Self.chordMarkText(for: q)
-                            Text(Self.feedbackLine(ok: ok, answerLabel: answer, chordMark: mark))
+                            let suffix = Self.feedbackChordSuffix(for: q)
+                            Text(Self.feedbackLine(ok: ok, answerLabel: answer, suffix: suffix))
                                 .foregroundStyle(ok ? SwiftAppTheme.dynamic(.green, .green) : .red)
                         }
                         if viewModel.revealed {
@@ -138,6 +138,23 @@ public struct EarMcqSessionView: View {
                                         .frame(maxWidth: 184, maxHeight: 142)
                                         .clipped()
                                         .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            } else if let seq = EarProgressionPlayback.playbackFretsSequence(for: q),
+                                      !seq.isEmpty,
+                                      q.questionType == "progression_recognition" || viewModel.bank == "B" {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("本段和声指法（与试听顺序一致，左→右）")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(SwiftAppTheme.muted)
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 10) {
+                                            ForEach(0 ..< seq.count, id: \.self) { idx in
+                                                ChordDiagramView(frets: seq[idx])
+                                                    .frame(maxWidth: 132, maxHeight: 108)
+                                                    .clipped()
+                                            }
+                                        }
+                                    }
                                 }
                             } else {
                                 let strip = q.playbackChromaticStripMidis
@@ -228,6 +245,13 @@ public struct EarMcqSessionView: View {
         "\(PitchMath.midiToNoteName(midi))\(midi / 12 - 1)"
     }
 
+    private static func usesVoicingPlaybackCaption(for q: EarBankItem) -> Bool {
+        if q.questionType == "progression_recognition" || q.mode == "B" {
+            return EarProgressionPlayback.playbackFretsSequence(for: q) != nil
+        }
+        return q.mode == "A"
+    }
+
     private static func chordDifficultyBadge(_ d: EarChordMcqDifficulty) -> some View {
         Text(d.rawValue)
             .font(.caption.weight(.semibold))
@@ -269,13 +293,16 @@ public struct EarMcqSessionView: View {
         }
     }
 
-    private static func feedbackLine(ok: Bool, answerLabel: String, chordMark: String?) -> String {
-        let suffix: String
-        if let m = chordMark, !m.isEmpty {
-            suffix = "（\(m)）"
-        } else {
-            suffix = ""
+    private static func feedbackChordSuffix(for q: EarBankItem) -> String {
+        if q.mode == "B" || q.questionType == "progression_recognition" {
+            let t = EarProgressionPlayback.progressionMarkText(for: q)
+            return t.isEmpty ? "" : "（\(t)）"
         }
+        if let m = chordMarkText(for: q), !m.isEmpty { return "（\(m)）" }
+        return ""
+    }
+
+    private static func feedbackLine(ok: Bool, answerLabel: String, suffix: String) -> String {
         if ok {
             return "回答正确：\(answerLabel)\(suffix)"
         }

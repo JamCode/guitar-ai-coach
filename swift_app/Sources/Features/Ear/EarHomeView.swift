@@ -23,9 +23,9 @@ public struct EarHomeView: View {
                     ) { EarMcqSessionView(title: "和弦听辨", bank: "A", chordDifficulty: .初级) }
                     navCard(
                         title: "和弦进行",
-                        subtitle: "常见流行进行 · 四选一",
+                        subtitle: "常见流行进行 · 四选一 · 不限题量 · 揭示后指法图",
                         systemImage: "music.note.list"
-                    ) { EarMcqSessionView(title: "和弦进行", bank: "B", maxQuestions: 10) }
+                    ) { EarMcqSessionView(title: "和弦进行", bank: "B") }
                     navCard(
                         title: "视唱训练",
                         subtitle: "单音视唱 · 可选音域 · 麦克风实时判定",
