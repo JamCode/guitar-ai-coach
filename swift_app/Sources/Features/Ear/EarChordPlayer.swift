@@ -13,16 +13,31 @@ public final class EarChordPlayer: EarChordPlaying {
     private static let sampledVelocity: UInt8 = 100
     private static let previewGateSec = 0.52
     private static let previewTailSec = 0.18
+    /// 与 `ChordVoicingTonePlayer` 柱式段相近：钢弦 SF2 和弦 gate + 扫弦 stagger。
+    private static let chordGateSec = 1.22
+    private static let chordStaggerSec = 0.014
+    /// `playSampledGuitarChord` 在调度 note-off 后仍留一点释音尾，避免「播放」过早解锁叠音。
+    private static let chordAudibleTailSec = 0.32
+    /// Humanizer 单音 gate 上限约 2.6s，留足余量避免截断。
+    private static let chordWaitHeadroomSec = 2.75
 
     public init(audio: AudioEngineServing = AudioEngineService()) {
         self.audio = audio
     }
 
     public func playChordMidis(_ midis: [Int]) async throws {
-        for midi in midis {
-            try audio.playSine(frequencyHz: Self.midiToHz(midi), durationSec: 0.20)
-            try await Task.sleep(nanoseconds: 80_000_000)
-        }
+        try audio.start()
+        let notes = Self.sortedUniqueMidis(midis)
+        guard !notes.isEmpty else { return }
+        try audio.playSampledGuitarChord(
+            midis: notes,
+            velocity: Self.sampledVelocity,
+            gateDurationSec: Self.chordGateSec,
+            stringStaggerSec: Self.chordStaggerSec
+        )
+        let staggerSpan = Double(max(0, notes.count - 1)) * Self.chordStaggerSec
+        let waitSec = staggerSpan + Self.chordWaitHeadroomSec + Self.chordAudibleTailSec
+        try await Task.sleep(nanoseconds: UInt64(waitSec * 1_000_000_000))
     }
 
     public func playChordSequence(_ sequence: [[Int]]) async throws {
@@ -51,5 +66,10 @@ public final class EarChordPlayer: EarChordPlaying {
 
     private static func midiToHz(_ midi: Int) -> Double {
         440.0 * pow(2.0, Double(midi - 69) / 12.0)
+    }
+
+    /// 低→高排序、去重，便于扫弦与与 `AudioEngineService` 的 stagger 一致。
+    private static func sortedUniqueMidis(_ midis: [Int]) -> [Int] {
+        Array(Set(midis.filter { $0 >= 0 && $0 <= 127 })).sorted()
     }
 }
