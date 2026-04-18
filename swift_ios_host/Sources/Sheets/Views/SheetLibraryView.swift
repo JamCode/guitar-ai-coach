@@ -162,7 +162,6 @@ final class SheetLibraryViewModel: ObservableObject {
             }
             _ = try await store.importSheetPages(sources: urls, displayName: name)
             await cleanup(urls)
-            toast = "已保存到「我的谱」"
             await reload()
         } catch {
             toast = "保存失败：\(error.localizedDescription)"
