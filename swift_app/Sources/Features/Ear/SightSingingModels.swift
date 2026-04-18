@@ -1,10 +1,29 @@
 import Foundation
 
+public enum SightSingingExerciseKind: String, Sendable, CaseIterable, Identifiable {
+    /// 模唱单音：每题 1 个目标音高。
+    case singleNoteMimic = "single_note_mimic"
+    /// 模唱音程：每题 2 个目标音高（上行，低音 → 高音）。
+    case intervalMimic = "interval_mimic"
+
+    public var id: String { rawValue }
+
+    public var titleZh: String {
+        switch self {
+        case .singleNoteMimic:
+            return "模唱单音"
+        case .intervalMimic:
+            return "模唱音程"
+        }
+    }
+}
+
 public struct SightSingingConfig: Sendable {
     public let minNote: String
     public let maxNote: String
     public let questionCount: Int
     public let includeAccidental: Bool
+    public let exerciseKind: SightSingingExerciseKind
 }
 
 public struct SightSingingQuestion: Sendable, Identifiable {

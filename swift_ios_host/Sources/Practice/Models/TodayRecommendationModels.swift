@@ -71,7 +71,12 @@ struct TraditionalCrawlExercise {
 enum RecommendationPayload {
     case intervalQuestion(IntervalQuestion)
     case chordQuestion(EarBankItem)
-    case sightSingingConfig(pitchRange: String, includeAccidental: Bool, questionCount: Int)
+    case sightSingingConfig(
+        pitchRange: String,
+        includeAccidental: Bool,
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
+    )
     case chordSwitch(ChordSwitchExercise)
     case scaleTraining(ScaleTrainingExercise)
     case traditionalCrawl(TraditionalCrawlExercise)

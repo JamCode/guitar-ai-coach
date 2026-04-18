@@ -184,11 +184,26 @@ struct TodayRecommendationPlanner {
         case .sightSinging:
             switch difficulty {
             case .beginner:
-                return .sightSingingConfig(pitchRange: "mid", includeAccidental: false, questionCount: 6)
+                return .sightSingingConfig(
+                    pitchRange: "mid",
+                    includeAccidental: false,
+                    questionCount: 6,
+                    exerciseKind: .singleNoteMimic
+                )
             case .intermediate:
-                return .sightSingingConfig(pitchRange: "wide", includeAccidental: false, questionCount: 8)
+                return .sightSingingConfig(
+                    pitchRange: "wide",
+                    includeAccidental: false,
+                    questionCount: 8,
+                    exerciseKind: .intervalMimic
+                )
             case .advanced:
-                return .sightSingingConfig(pitchRange: "wide", includeAccidental: true, questionCount: 10)
+                return .sightSingingConfig(
+                    pitchRange: "wide",
+                    includeAccidental: true,
+                    questionCount: 10,
+                    exerciseKind: .intervalMimic
+                )
             }
         case .chordSwitch:
             let pools: [[String]] = [
@@ -248,9 +263,9 @@ struct TodayRecommendationPlanner {
         case let .chordQuestion(question):
             let opts = question.options.map(\.label).joined(separator: " / ")
             return "\(difficulty.rawValue) · \(question.promptZh) · 选项：\(opts)"
-        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount):
+        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount, exerciseKind):
             let accidental = includeAccidental ? "含升降号" : "不含升降号"
-            return "\(difficulty.rawValue) · 音域 \(pitchRange) · \(accidental) · \(questionCount) 题"
+            return "\(difficulty.rawValue) · \(exerciseKind.titleZh) · 音域 \(pitchRange) · \(accidental) · \(questionCount) 题"
         case let .chordSwitch(exercise):
             return "\(difficulty.rawValue) · \(exercise.chords.joined(separator: " → ")) · \(exercise.bpm) BPM"
         case let .scaleTraining(exercise):

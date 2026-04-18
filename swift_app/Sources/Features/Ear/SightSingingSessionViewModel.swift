@@ -37,6 +37,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var question: SightSingingQuestion?
     @Published public private(set) var sessionId: String?
     @Published public private(set) var evaluating = false
+    @Published public private(set) var previewing = false
     @Published public private(set) var currentHz: Double?
     @Published public private(set) var lastScore: SightSingingScore?
     @Published public private(set) var resultText: String?
@@ -44,9 +45,11 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
     private let repository: SightSingingRepository
     private let pitchTracker: SightSingingPitchTracking
+    private let intervalPreview: IntervalTonePlaying?
     private let pitchRange: String
     private let includeAccidental: Bool
     private let questionCount: Int
+    private let exerciseKind: SightSingingExerciseKind
 
     private let sampleStepMs = 120
     private let warmupMs = 800
@@ -55,15 +58,19 @@ public final class SightSingingSessionViewModel: ObservableObject {
     public init(
         repository: SightSingingRepository,
         pitchTracker: SightSingingPitchTracking,
+        intervalPreview: IntervalTonePlaying? = IntervalTonePlayer(),
         pitchRange: String,
         includeAccidental: Bool,
-        questionCount: Int
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
     ) {
         self.repository = repository
         self.pitchTracker = pitchTracker
+        self.intervalPreview = intervalPreview
         self.pitchRange = pitchRange
         self.includeAccidental = includeAccidental
         self.questionCount = questionCount
+        self.exerciseKind = exerciseKind
     }
 
     deinit {
@@ -76,7 +83,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
             let start = try await repository.startSession(
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
-                questionCount: questionCount
+                questionCount: questionCount,
+                exerciseKind: exerciseKind
             )
             sessionId = start.sessionId
             question = start.question
@@ -92,21 +100,29 @@ public final class SightSingingSessionViewModel: ObservableObject {
         guard !evaluating, let q = question, let sid = sessionId else { return }
         evaluating = true
         lastScore = nil
-        let target = q.targetNotes.first ?? "C4"
-        let targetMidi = noteNameToMidi(target)
-        var elapsed = 0
+        let targets = q.targetNotes.isEmpty ? ["C4"] : q.targetNotes
         var absCents: [Double] = []
-        while elapsed < warmupMs + evalMs {
-            try? await Task.sleep(nanoseconds: UInt64(sampleStepMs) * 1_000_000)
-            elapsed += sampleStepMs
-            currentHz = pitchTracker.currentHz
-            if elapsed > warmupMs, let hz = currentHz {
-                let cents = abs(Double(PitchMath.frequencyToMidi(hz) - targetMidi) * 100)
-                absCents.append(cents)
+        var detectedNotes: [String] = []
+
+        for target in targets {
+            let targetMidi = noteNameToMidi(target)
+            var elapsed = 0
+            while elapsed < warmupMs + evalMs {
+                try? await Task.sleep(nanoseconds: UInt64(sampleStepMs) * 1_000_000)
+                elapsed += sampleStepMs
+                currentHz = pitchTracker.currentHz
+                if elapsed > warmupMs, let hz = currentHz {
+                    let cents = abs(Double(PitchMath.frequencyToMidi(hz) - targetMidi) * 100)
+                    absCents.append(cents)
+                }
+            }
+            if let hz = currentHz {
+                detectedNotes.append(PitchMath.midiToNoteName(PitchMath.frequencyToMidi(hz)))
             }
         }
+
         let score = computeSightSingingScore(absCentsSamples: absCents, sampleStepMs: sampleStepMs)
-        let detected = currentHz.map { [PitchMath.midiToNoteName(PitchMath.frequencyToMidi($0))] } ?? []
+        let detected = detectedNotes
         do {
             try await repository.submitAnswer(
                 sessionId: sid,
@@ -114,12 +130,37 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 answers: detected,
                 avgCentsAbs: score.avgCentsAbs,
                 stableHitMs: score.stableHitMs,
-                durationMs: evalMs
+                durationMs: evalMs * targets.count
             )
             lastScore = score
             evaluating = false
         } catch {
             evaluating = false
+            errorText = error.localizedDescription
+        }
+    }
+
+    public func playPreview() async {
+        guard !previewing, !evaluating, let q = question else { return }
+        previewing = true
+        defer { previewing = false }
+
+        do {
+            switch exerciseKind {
+            case .singleNoteMimic:
+                guard let player = intervalPreview else { return }
+                let midi = noteNameToMidi(q.targetNotes.first ?? "C4")
+                try await player.playSinglePreview(midi: midi)
+            case .intervalMimic:
+                guard let player = intervalPreview else { return }
+                let lows = q.targetNotes
+                guard lows.count >= 2 else { return }
+                let lowMidi = noteNameToMidi(lows[0])
+                let highMidi = noteNameToMidi(lows[1])
+                try await player.playAscendingPair(lowMidi: lowMidi, highMidi: highMidi)
+            }
+        } catch {
+            // 试听失败不应阻塞训练主流程。
             errorText = error.localizedDescription
         }
     }

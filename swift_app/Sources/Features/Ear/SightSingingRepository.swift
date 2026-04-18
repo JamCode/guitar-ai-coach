@@ -5,7 +5,8 @@ public protocol SightSingingRepository: Sendable {
     func startSession(
         pitchRange: String,
         includeAccidental: Bool,
-        questionCount: Int
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
     ) async throws -> SightSingingSessionStart
 
     func submitAnswer(
@@ -38,14 +39,14 @@ public enum SightSingingRepositoryError: Error, LocalizedError {
 public actor LocalSightSingingRepository: SightSingingRepository {
     private final class LocalSession: @unchecked Sendable {
         let config: SightSingingConfig
-        let questionNotes: [String]
+        let questionTargets: [[String]]
         var currentIndex = 0
         var answered = 0
         var correct = 0
 
-        init(config: SightSingingConfig, questionNotes: [String]) {
+        init(config: SightSingingConfig, questionTargets: [[String]]) {
             self.config = config
-            self.questionNotes = questionNotes
+            self.questionTargets = questionTargets
         }
     }
 
@@ -57,18 +58,20 @@ public actor LocalSightSingingRepository: SightSingingRepository {
     public func startSession(
         pitchRange: String,
         includeAccidental: Bool,
-        questionCount: Int
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
     ) async throws -> SightSingingSessionStart {
         let range = noteRange(for: pitchRange)
         let config = SightSingingConfig(
             minNote: range.minNote,
             maxNote: range.maxNote,
             questionCount: questionCount,
-            includeAccidental: includeAccidental
+            includeAccidental: includeAccidental,
+            exerciseKind: exerciseKind
         )
-        let notes = buildQuestionNotes(config: config)
+        let targets = buildQuestionTargets(config: config)
         let sessionId = UUID().uuidString.lowercased()
-        let session = LocalSession(config: config, questionNotes: notes)
+        let session = LocalSession(config: config, questionTargets: targets)
         sessions[sessionId] = session
         return SightSingingSessionStart(
             sessionId: sessionId,
@@ -103,7 +106,7 @@ public actor LocalSightSingingRepository: SightSingingRepository {
             throw SightSingingRepositoryError.sessionNotFound
         }
         session.currentIndex += 1
-        guard session.currentIndex < session.questionNotes.count else {
+        guard session.currentIndex < session.questionTargets.count else {
             return nil
         }
         return question(for: session, index: session.currentIndex)
@@ -113,7 +116,7 @@ public actor LocalSightSingingRepository: SightSingingRepository {
         guard let session = sessions.removeValue(forKey: sessionId) else {
             throw SightSingingRepositoryError.sessionNotFound
         }
-        let total = session.questionNotes.count
+        let total = session.questionTargets.count
         let answered = min(total, max(0, session.answered))
         let correct = min(answered, max(0, session.correct))
         let accuracy = answered == 0 ? 0 : Double(correct) / Double(answered)
@@ -124,12 +127,22 @@ public actor LocalSightSingingRepository: SightSingingRepository {
         SightSingingQuestion(
             id: "q-\(index + 1)",
             index: index + 1,
-            totalQuestions: session.questionNotes.count,
-            targetNotes: [session.questionNotes[index]]
+            totalQuestions: session.questionTargets.count,
+            targetNotes: session.questionTargets[index]
         )
     }
 
-    private func buildQuestionNotes(config: SightSingingConfig) -> [String] {
+    private func buildQuestionTargets(config: SightSingingConfig) -> [[String]] {
+        switch config.exerciseKind {
+        case .singleNoteMimic:
+            let singles = buildSingleQuestionNotes(config: config)
+            return singles.map { [$0] }
+        case .intervalMimic:
+            return buildIntervalQuestionPairs(config: config)
+        }
+    }
+
+    private func buildSingleQuestionNotes(config: SightSingingConfig) -> [String] {
         let minMidi = noteNameToMidi(config.minNote)
         let maxMidi = noteNameToMidi(config.maxNote)
         let lo = min(minMidi, maxMidi)
@@ -146,6 +159,43 @@ public actor LocalSightSingingRepository: SightSingingRepository {
             return Array(repeating: "C4", count: config.questionCount)
         }
         return (0..<config.questionCount).map { _ in candidates.randomElement(using: &rng) ?? "C4" }
+    }
+
+    private func buildIntervalQuestionPairs(config: SightSingingConfig) -> [[String]] {
+        let minMidi = noteNameToMidi(config.minNote)
+        let maxMidi = noteNameToMidi(config.maxNote)
+        let lo = min(minMidi, maxMidi)
+        let hi = max(minMidi, maxMidi)
+        var candidates: [String] = []
+        for midi in lo...hi {
+            let note = midiToNoteName(midi)
+            if !config.includeAccidental && note.contains("#") {
+                continue
+            }
+            candidates.append(note)
+        }
+        guard candidates.count >= 2 else {
+            return Array(repeating: ["C4", "D4"], count: config.questionCount)
+        }
+
+        return (0..<config.questionCount).map { _ in
+            // 随机上行两音（允许同音不同八度，但不允许完全同 MIDI）。
+            for _ in 0..<48 {
+                let aName = candidates.randomElement(using: &rng) ?? "C4"
+                let bName = candidates.randomElement(using: &rng) ?? "D4"
+                let a = noteNameToMidi(aName)
+                let b = noteNameToMidi(bName)
+                if a == b { continue }
+                let lowMidi = min(a, b)
+                let highMidi = max(a, b)
+                return [midiToNoteName(lowMidi), midiToNoteName(highMidi)]
+            }
+            // 兜底：选一个相邻半音对，保证可判定。
+            let base = noteNameToMidi(candidates.randomElement(using: &rng) ?? "C4")
+            let low = max(lo, min(base, hi - 1))
+            let high = min(hi, low + 1)
+            return [midiToNoteName(low), midiToNoteName(high)]
+        }
     }
 
     private func noteRange(for pitchRange: String) -> (minNote: String, maxNote: String) {

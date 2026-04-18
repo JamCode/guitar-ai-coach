@@ -111,13 +111,14 @@ struct TodayRecommendationListView: View {
                 },
                 autoDismissOnComplete: false
             )
-        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount):
+        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount, exerciseKind):
             SightSingingSessionView(
                 repository: LocalSightSingingRepository(),
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
                 questionCount: questionCount,
                 pitchTracker: DefaultSightSingingPitchTracker(),
+                exerciseKind: exerciseKind,
                 onSessionComplete: { result in
                     Task {
                         await appendRecord(

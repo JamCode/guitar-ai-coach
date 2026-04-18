@@ -5,6 +5,7 @@ public struct SightSingingSetupView: View {
     @State private var pitchRange = "mid"
     @State private var includeAccidental = false
     @State private var questionCount = 10.0
+    @State private var exerciseKind: SightSingingExerciseKind = .singleNoteMimic
 
     public init() {}
 
@@ -12,6 +13,14 @@ public struct SightSingingSetupView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 10) {
+                    Text("训练模式").appSectionTitle()
+                    Picker("训练模式", selection: $exerciseKind) {
+                        ForEach(SightSingingExerciseKind.allCases) { kind in
+                            Text(kind.titleZh).tag(kind)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
                     Text("音域选择").appSectionTitle()
                     Picker("音域", selection: $pitchRange) {
                         Text("低音区 C3-B3").tag("low")
@@ -35,7 +44,8 @@ public struct SightSingingSetupView: View {
                         pitchRange: pitchRange,
                         includeAccidental: includeAccidental,
                         questionCount: Int(questionCount),
-                        pitchTracker: DefaultSightSingingPitchTracker()
+                        pitchTracker: DefaultSightSingingPitchTracker(),
+                        exerciseKind: exerciseKind
                     )
                 } label: {
                     HStack {
@@ -72,6 +82,8 @@ public struct SightSingingSessionView: View {
         includeAccidental: Bool,
         questionCount: Int,
         pitchTracker: SightSingingPitchTracking,
+        intervalPreview: IntervalTonePlaying? = IntervalTonePlayer(),
+        exerciseKind: SightSingingExerciseKind,
         onSessionComplete: ((SightSingingResult) -> Void)? = nil,
         autoDismissOnComplete: Bool = true
     ) {
@@ -79,9 +91,11 @@ public struct SightSingingSessionView: View {
             wrappedValue: SightSingingSessionViewModel(
                 repository: repository,
                 pitchTracker: pitchTracker,
+                intervalPreview: intervalPreview,
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
-                questionCount: questionCount
+                questionCount: questionCount,
+                exerciseKind: exerciseKind
             )
         )
         self.onSessionComplete = onSessionComplete
@@ -99,6 +113,8 @@ public struct SightSingingSessionView: View {
                 } else if let error = viewModel.errorText {
                     Text(error).foregroundStyle(.red).appCard()
                 } else if let q = viewModel.question {
+                    let segments = max(1, q.targetNotes.count)
+                    let evaluateSeconds = segments * 2
                     VStack(alignment: .leading, spacing: 10) {
                         Text("第 \(q.index) / \(q.totalQuestions) 题")
                             .font(.subheadline.weight(.semibold))
@@ -107,10 +123,26 @@ public struct SightSingingSessionView: View {
                     .appCard()
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("目标音").appSectionTitle()
-                        Text(q.targetNotes.first ?? "--")
-                            .font(.system(size: 44, weight: .bold))
-                            .foregroundStyle(SwiftAppTheme.text)
+                        Text(q.targetNotes.count >= 2 ? "目标音程（上行）" : "目标音").appSectionTitle()
+                        if q.targetNotes.count >= 2 {
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                Text(q.targetNotes[0])
+                                    .font(.system(size: 40, weight: .bold))
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                Image(systemName: "arrow.right")
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                                Text(q.targetNotes[1])
+                                    .font(.system(size: 40, weight: .bold))
+                                    .foregroundStyle(SwiftAppTheme.text)
+                            }
+                            Text("请按顺序模唱：先低音，再高音（判定会自动分段采样）")
+                                .font(.footnote)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        } else {
+                            Text(q.targetNotes.first ?? "--")
+                                .font(.system(size: 44, weight: .bold))
+                                .foregroundStyle(SwiftAppTheme.text)
+                        }
                         let current = viewModel.currentHz.map {
                             PitchMath.midiToNoteName(PitchMath.frequencyToMidi($0))
                         } ?? "--"
@@ -122,11 +154,23 @@ public struct SightSingingSessionView: View {
                     }
                     .appCard()
 
-                    Button(viewModel.evaluating ? "判定中…" : "开始判定（2秒）") {
+                    Button {
+                        Task { await viewModel.playPreview() }
+                    } label: {
+                        HStack {
+                            Image(systemName: "speaker.wave.2")
+                            Text("播放示范")
+                            Spacer()
+                        }
+                    }
+                    .appSecondaryButton()
+                    .disabled(viewModel.evaluating || viewModel.previewing)
+
+                    Button(viewModel.evaluating ? "判定中…" : "开始判定（\(evaluateSeconds) 秒）") {
                         Task { await viewModel.evaluate() }
                     }
                     .appPrimaryButton()
-                    .disabled(viewModel.evaluating)
+                    .disabled(viewModel.evaluating || viewModel.previewing)
 
                     if let score = viewModel.lastScore {
                         VStack(alignment: .leading, spacing: 8) {
