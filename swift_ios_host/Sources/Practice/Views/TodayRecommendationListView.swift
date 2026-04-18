@@ -97,7 +97,7 @@ struct TodayRecommendationListView: View {
             EarMcqSessionView(
                 title: "和弦听辨",
                 bank: question.mode,
-                totalQuestions: 10,
+                maxQuestions: 10,
                 chordDifficulty: mappedChordDifficulty(from: item.difficulty),
                 onSessionComplete: { correct, total in
                     Task {

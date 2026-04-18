@@ -8,10 +8,13 @@ public struct EarMcqSessionView: View {
     private let onSessionComplete: ((Int, Int) -> Void)?
     private let autoDismissOnComplete: Bool
 
+    /// - Parameters:
+    ///   - maxQuestions: `bank == "A"` 时 `nil`（默认）为不限题量，与音程练耳一致可持续「下一题」；非 `nil` 为本轮题量，末题后可「查看结果」。
+    ///     `bank == "B"` 时从题库至多抽取 `maxQuestions ?? 10` 题。
     public init(
         title: String,
         bank: String,
-        totalQuestions: Int = 10,
+        maxQuestions: Int? = nil,
         chordDifficulty: EarChordMcqDifficulty = .初级,
         onSessionComplete: ((Int, Int) -> Void)? = nil,
         autoDismissOnComplete: Bool = true
@@ -20,7 +23,7 @@ public struct EarMcqSessionView: View {
             wrappedValue: EarMcqSessionViewModel(
                 title: title,
                 bank: bank,
-                totalQuestions: totalQuestions,
+                maxQuestions: maxQuestions,
                 chordDifficulty: chordDifficulty
             )
         )
@@ -141,9 +144,11 @@ public struct EarMcqSessionView: View {
                     .appCard()
 
                     if viewModel.revealed {
-                        Button(viewModel.pageIndex >= viewModel.session.count - 1 ? "查看结果" : "下一题") {
+                        Button(
+                            viewModel.hasSessionCap && viewModel.isOnLastCappedQuestion ? "查看结果" : "下一题"
+                        ) {
                             viewModel.nextOrFinish()
-                            if viewModel.finished { showSummary = true }
+                            if viewModel.hasSessionCap, viewModel.finished { showSummary = true }
                         }
                         .appPrimaryButton()
                     }

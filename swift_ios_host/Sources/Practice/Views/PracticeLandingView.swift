@@ -239,10 +239,10 @@ private struct EarPracticeHubScreen: View {
                     subtitle: "大三 / 小三 / 属七 · 题库离线 · 吉他采样合成",
                     icon: "pianokeys"
                 ) {
-                    EarMcqSessionView(title: "和弦听辨", bank: "A", totalQuestions: 10)
+                    EarMcqSessionView(title: "和弦听辨", bank: "A")
                 }
                 PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 四选一", icon: "music.note.list") {
-                    EarMcqSessionView(title: "和弦进行", bank: "B", totalQuestions: 10)
+                    EarMcqSessionView(title: "和弦进行", bank: "B", maxQuestions: 10)
                 }
                 PracticeLinkCard(
                     title: "视唱训练",
@@ -309,10 +309,10 @@ private struct PracticeTrainingCatalogView: View {
             Section("视唱练耳") {
                 NavigationLink("音程识别") { TabBarHiddenContainer { IntervalEarView() } }
                 NavigationLink("和弦听辨") {
-                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦听辨", bank: "A", totalQuestions: 10) }
+                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦听辨", bank: "A") }
                 }
                 NavigationLink("和弦进行") {
-                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B", totalQuestions: 10) }
+                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B", maxQuestions: 10) }
                 }
                 NavigationLink("视唱训练") { TabBarHiddenContainer { SightSingingSetupView() } }
             }
