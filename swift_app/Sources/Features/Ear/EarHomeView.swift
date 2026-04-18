@@ -30,7 +30,19 @@ public struct EarHomeView: View {
                         title: "视唱训练",
                         subtitle: "模唱单音 / 模唱音程 · 可选音域 · 麦克风实时判定",
                         systemImage: "mic"
-                    ) { SightSingingSetupView() }
+                    ) {
+                        TabBarHiddenContainer {
+                            SightSingingSessionView(
+                                repository: LocalSightSingingRepository(),
+                                pitchRange: "mid",
+                                includeAccidental: false,
+                                questionCount: 10,
+                                pitchTracker: DefaultSightSingingPitchTracker(),
+                                intervalPreview: IntervalTonePlayer(),
+                                exerciseKind: .singleNoteMimic
+                            )
+                        }
+                    }
                 }
             }
             .padding(SwiftAppTheme.pagePadding)

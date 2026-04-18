@@ -246,10 +246,17 @@ private struct EarPracticeHubScreen: View {
                 }
                 PracticeLinkCard(
                     title: "视唱训练",
-                    subtitle: "单音视唱 · 可选音域 · 麦克风实时判定",
+                    subtitle: "默认中音区 · 10 题 · 模唱单音 · 麦克风实时判定",
                     icon: "mic"
                 ) {
-                    SightSingingSetupView()
+                    SightSingingSessionView(
+                        repository: LocalSightSingingRepository(),
+                        pitchRange: "mid",
+                        includeAccidental: false,
+                        questionCount: 10,
+                        pitchTracker: DefaultSightSingingPitchTracker(),
+                        exerciseKind: .singleNoteMimic
+                    )
                 }
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -314,7 +321,18 @@ private struct PracticeTrainingCatalogView: View {
                 NavigationLink("和弦进行") {
                     TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B") }
                 }
-                NavigationLink("视唱训练") { TabBarHiddenContainer { SightSingingSetupView() } }
+                NavigationLink("视唱训练") {
+                    TabBarHiddenContainer {
+                        SightSingingSessionView(
+                            repository: LocalSightSingingRepository(),
+                            pitchRange: "mid",
+                            includeAccidental: false,
+                            questionCount: 10,
+                            pitchTracker: DefaultSightSingingPitchTracker(),
+                            exerciseKind: .singleNoteMimic
+                        )
+                    }
+                }
             }
 
             Section("练琴") {
