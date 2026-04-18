@@ -28,7 +28,7 @@ public final class EarChordPlayer: EarChordPlaying {
     /// 和弦进行中逐和弦柱式：释音等待较短，下一和弦更紧凑（仍略长于 gate 以免叠音刺耳）。
     private static let progressionChordReleaseWaitSec = 0.68
 
-    public init(audio: AudioEngineServing = AudioEngineService()) {
+    public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
         self.voicing = ChordVoicingTonePlayer(audio: audio)
     }

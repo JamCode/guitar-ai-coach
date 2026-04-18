@@ -20,7 +20,7 @@ public final class TunerViewModel: ObservableObject {
     private let detector: PitchDetecting
     private let emaAlpha = 0.18
 
-    public init(audio: AudioEngineServing = AudioEngineService(), detector: PitchDetecting = TunerPitchDetector()) {
+    public init(audio: AudioEngineServing = AudioEngineService.shared, detector: PitchDetecting = TunerPitchDetector()) {
         self.audio = audio
         self.detector = detector
     }

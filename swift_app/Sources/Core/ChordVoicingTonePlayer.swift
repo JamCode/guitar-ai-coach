@@ -9,7 +9,7 @@ public final class ChordVoicingTonePlayer {
     /// 用于取消上一次尚未触发的延迟任务，避免快速连点叠音。
     private var playbackSerial = 0
 
-    public init(audio: AudioEngineServing = AudioEngineService()) {
+    public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
     }
 

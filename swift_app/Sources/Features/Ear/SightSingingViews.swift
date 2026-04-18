@@ -337,6 +337,10 @@ public struct SightSingingSessionView: View {
                 await viewModel.bootstrap()
             }
         }
+        .onDisappear {
+            // Leaving the screen should not keep mic sampling / preview graph tasks alive.
+            viewModel.cancelActiveWork(stopPitchTracker: !viewModel.loading)
+        }
         .confirmationDialog("结束训练？", isPresented: $showEndConfirm, titleVisibility: .visible) {
             Button("结束并查看统计", role: .destructive) {
                 Task {

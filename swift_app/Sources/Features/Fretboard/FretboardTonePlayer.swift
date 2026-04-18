@@ -6,7 +6,7 @@ public final class FretboardTonePlayer {
     private let queue = DispatchQueue(label: "guitar-ai-coach.fretboard-tone-player", qos: .userInitiated)
     private var didPrepareAudio = false
 
-    public init(audio: AudioEngineServing = AudioEngineService()) {
+    public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
     }
 

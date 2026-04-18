@@ -79,8 +79,9 @@ public final class SightSingingSessionViewModel: ObservableObject {
     private let graphWindowSeconds: Double = 6
 
     private var graphWindowStart: Date?
-    private var monitoringTask: Task<Void, Never>?
-    private var previewGraphTask: Task<Void, Never>?
+    // These tasks are cancelled from `deinit`; keep them `nonisolated(unsafe)` so teardown doesn't require MainActor.
+    nonisolated(unsafe) private var monitoringTask: Task<Void, Never>?
+    nonisolated(unsafe) private var previewGraphTask: Task<Void, Never>?
 
     // Keep aligned with `IntervalTonePlayer` (preview / sampled gates).
     private let sampledGateSec: Double = 1.1
@@ -108,6 +109,10 @@ public final class SightSingingSessionViewModel: ObservableObject {
     }
 
     deinit {
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        previewGraphTask?.cancel()
+        previewGraphTask = nil
         pitchTracker.stop()
     }
 
@@ -262,15 +267,27 @@ public final class SightSingingSessionViewModel: ObservableObject {
             let result = try await repository.endSession(sessionId: sid)
             finalResult = result
             resultText = "训练结束：共判定 \(result.answered) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
-            monitoringTask?.cancel()
-            monitoringTask = nil
-            previewGraphTask?.cancel()
-            previewGraphTask = nil
-            pitchTracker.stop()
+            cancelActiveWork(stopPitchTracker: true)
             return true
         } catch {
             errorText = error.localizedDescription
             return false
+        }
+    }
+
+    /// Cancel background sampling + any in-flight preview graph recording.
+    ///
+    /// Note: `IntervalTonePlaying` playback itself can't be hard-stopped without a richer player API,
+    /// but cancelling graph tasks prevents UI-driven work from continuing off-screen after navigation.
+    public func cancelActiveWork(stopPitchTracker: Bool) {
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        previewGraphTask?.cancel()
+        previewGraphTask = nil
+        evaluating = false
+        previewing = false
+        if stopPitchTracker {
+            pitchTracker.stop()
         }
     }
 
