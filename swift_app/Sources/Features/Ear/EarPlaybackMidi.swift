@@ -59,6 +59,15 @@ public enum EarPlaybackMidi {
             .map { letterChordSymbol(key: key, roman: $0) }
     }
 
+    /// `progression_roman` 按 `-` 分割后的功能标记段数（与 `letterChordSymbols` 分割规则一致）。
+    public static func romanNumeralSegmentCount(_ progressionRoman: String) -> Int {
+        progressionRoman
+            .split(separator: "-")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .count
+    }
+
     private static func letterChordSymbol(key: String, roman: String) -> String {
         let rootMidi = progressionRoot(key: key, roman: roman)
         let pc = ((rootMidi % 12) + 12) % 12
