@@ -13,7 +13,7 @@ public struct EarHomeView: View {
                 VStack(spacing: 8) {
                     navCard(
                         title: "音程识别",
-                        subtitle: "两音上行、四选一",
+                        subtitle: "两音上行、四选一 · 不限题量 · 累计正确率",
                         systemImage: "play.circle"
                     ) { IntervalEarView() }
                     navCard(

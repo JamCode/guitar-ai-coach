@@ -1,7 +1,7 @@
 import Foundation
 
-enum EarPlaybackMidi {
-    static func forSingleChord(_ item: EarBankItem) -> [Int] {
+public enum EarPlaybackMidi {
+    public static func forSingleChord(_ item: EarBankItem) -> [Int] {
         let root = noteToMidi(item.root ?? "C", octave: 4)
         let quality = item.targetQuality?.lowercased() ?? "major"
         let intervals: [Int]
@@ -20,7 +20,7 @@ enum EarPlaybackMidi {
         return intervals.map { root + $0 }
     }
 
-    static func forProgression(_ item: EarBankItem) -> [[Int]] {
+    public static func forProgression(_ item: EarBankItem) -> [[Int]] {
         let key = item.musicKey ?? "C"
         let romans = (item.progressionRoman ?? "I-V-vi-IV")
             .split(separator: "-")

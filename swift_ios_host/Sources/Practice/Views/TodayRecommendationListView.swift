@@ -79,13 +79,13 @@ struct TodayRecommendationListView: View {
         switch item.payload {
         case .intervalQuestion:
             IntervalEarView(
-                totalQuestions: 5,
+                maxQuestions: 5,
                 difficulty: mappedIntervalDifficulty(from: item.difficulty),
-                onSessionComplete: { correct, total in
+                onSessionComplete: { correct, answered in
                     Task {
                         await appendRecord(
                             module: .intervalEar,
-                            successRate: total == 0 ? 0 : Double(correct) / Double(total),
+                            successRate: answered == 0 ? 0 : Double(correct) / Double(answered),
                             durationSeconds: 300
                         )
                         await MainActor.run { moveToNext() }
