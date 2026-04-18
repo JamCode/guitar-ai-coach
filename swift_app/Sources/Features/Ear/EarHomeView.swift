@@ -28,19 +28,11 @@ public struct EarHomeView: View {
                     ) { EarMcqSessionView(title: "和弦进行", bank: "B") }
                     navCard(
                         title: "视唱训练",
-                        subtitle: "模唱单音 / 模唱音程 · 可选音域 · 麦克风实时判定",
+                        subtitle: "立刻出题 · 右上角齿轮调音域/模式 · 设置自动保存",
                         systemImage: "mic"
                     ) {
                         TabBarHiddenContainer {
-                            SightSingingSessionView(
-                                repository: LocalSightSingingRepository(),
-                                pitchRange: "mid",
-                                includeAccidental: false,
-                                questionCount: 0,
-                                pitchTracker: DefaultSightSingingPitchTracker(),
-                                intervalPreview: IntervalTonePlayer(),
-                                exerciseKind: .singleNoteMimic
-                            )
+                            SightSingingSessionView(intervalPreview: IntervalTonePlayer())
                         }
                     }
                 }

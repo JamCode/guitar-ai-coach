@@ -9,6 +9,15 @@ public protocol SightSingingRepository: Sendable {
         exerciseKind: SightSingingExerciseKind
     ) async throws -> SightSingingSessionStart
 
+    /// 更新已存在会话的出题参数；从**下一题**起按新参数随机出题（当前题不变）。
+    func updateSessionGenerationParameters(
+        sessionId: String,
+        pitchRange: String,
+        includeAccidental: Bool,
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
+    ) async throws
+
     /// 结束无限题会话并返回统计结果（有限题会话也可调用；重复调用会抛 `sessionNotFound`）。
     func endSession(sessionId: String) async throws -> SightSingingResult
 
@@ -41,7 +50,7 @@ public enum SightSingingRepositoryError: Error, LocalizedError {
 
 public actor LocalSightSingingRepository: SightSingingRepository {
     private final class LocalSession: @unchecked Sendable {
-        let config: SightSingingConfig
+        var config: SightSingingConfig
         var activeQuestionId: String
         var activeQuestionIndex: Int
         var answered = 0
@@ -86,6 +95,26 @@ public actor LocalSightSingingRepository: SightSingingRepository {
                 totalQuestions: isInfinite(config) ? 0 : config.questionCount,
                 targetNotes: firstTargets
             )
+        )
+    }
+
+    public func updateSessionGenerationParameters(
+        sessionId: String,
+        pitchRange: String,
+        includeAccidental: Bool,
+        questionCount: Int,
+        exerciseKind: SightSingingExerciseKind
+    ) async throws {
+        guard let session = sessions[sessionId] else {
+            throw SightSingingRepositoryError.sessionNotFound
+        }
+        let range = noteRange(for: pitchRange)
+        session.config = SightSingingConfig(
+            minNote: range.minNote,
+            maxNote: range.maxNote,
+            questionCount: questionCount,
+            includeAccidental: includeAccidental,
+            exerciseKind: exerciseKind
         )
     }
 
@@ -167,6 +196,11 @@ public actor LocalSightSingingRepository: SightSingingRepository {
         case .singleNoteMimic:
             return [pickSingleRandomNote(config: config)]
         case .intervalMimic:
+            return pickIntervalRandomPair(config: config)
+        case .mixedRandomMimic:
+            if Bool.random(using: &rng) {
+                return [pickSingleRandomNote(config: config)]
+            }
             return pickIntervalRandomPair(config: config)
         }
     }

@@ -140,6 +140,42 @@ public final class SightSingingSessionViewModel: ObservableObject {
         graphWindowStart = nil
     }
 
+    public func currentPreferences() -> SightSingingStoredPreferences {
+        SightSingingStoredPreferences(
+            pitchRange: pitchRange,
+            includeAccidental: includeAccidental,
+            questionCount: questionCount,
+            exerciseKind: exerciseKind
+        )
+    }
+
+    /// 写入本地偏好；若已有会话则更新仓库出题参数，**下一题**起生效。
+    public func persistAndApplyPreferences(_ preferences: SightSingingStoredPreferences) async {
+        pitchRange = preferences.pitchRange
+        includeAccidental = preferences.includeAccidental
+        questionCount = preferences.questionCount
+        exerciseKind = preferences.exerciseKind
+        SightSingingPreferencesStore.save(preferences)
+
+        guard let sid = sessionId else { return }
+        do {
+            try await repository.updateSessionGenerationParameters(
+                sessionId: sid,
+                pitchRange: preferences.pitchRange,
+                includeAccidental: preferences.includeAccidental,
+                questionCount: preferences.questionCount,
+                exerciseKind: preferences.exerciseKind
+            )
+        } catch {
+            errorText = error.localizedDescription
+        }
+    }
+
+    public func bootstrapIfNeeded() async {
+        guard sessionId == nil else { return }
+        await bootstrap()
+    }
+
     deinit {
         monitoringTask?.cancel()
         monitoringTask = nil
@@ -227,23 +263,9 @@ public final class SightSingingSessionViewModel: ObservableObject {
         previewGraphTask?.cancel()
 
         do {
-            switch exerciseKind {
-            case .singleNoteMimic:
-                guard let player = intervalPreview else { return }
-                let midi = noteNameToMidi(q.targetNotes.first ?? "C4")
-                startTargetGraphRecording(
-                    lowSegments: [
-                        .init(duration: previewGateSec + previewTailSec, cents: 0)
-                    ],
-                    highSegments: []
-                )
-                let graphTask = Task { await self.previewGraphTask?.value }
-                try await player.playSinglePreview(midi: midi)
-                await graphTask.value
-            case .intervalMimic:
+            if q.targetNotes.count >= 2 {
                 guard let player = intervalPreview else { return }
                 let lows = q.targetNotes
-                guard lows.count >= 2 else { return }
                 let lowMidi = noteNameToMidi(lows[0])
                 let highMidi = noteNameToMidi(lows[1])
                 let intervalCents = Double(highMidi - lowMidi) * 100.0
@@ -261,6 +283,18 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 )
                 let graphTask = Task { await self.previewGraphTask?.value }
                 try await player.playAscendingPair(lowMidi: lowMidi, highMidi: highMidi)
+                await graphTask.value
+            } else {
+                guard let player = intervalPreview else { return }
+                let midi = noteNameToMidi(q.targetNotes.first ?? "C4")
+                startTargetGraphRecording(
+                    lowSegments: [
+                        .init(duration: previewGateSec + previewTailSec, cents: 0)
+                    ],
+                    highSegments: []
+                )
+                let graphTask = Task { await self.previewGraphTask?.value }
+                try await player.playSinglePreview(midi: midi)
                 await graphTask.value
             }
         } catch {

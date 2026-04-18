@@ -246,17 +246,10 @@ private struct EarPracticeHubScreen: View {
                 }
                 PracticeLinkCard(
                     title: "视唱训练",
-                    subtitle: "默认中音区 · 不限题量 · 模唱单音 · 麦克风实时判定",
+                    subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
                     icon: "mic"
                 ) {
-                    SightSingingSessionView(
-                        repository: LocalSightSingingRepository(),
-                        pitchRange: "mid",
-                        includeAccidental: false,
-                        questionCount: 0,
-                        pitchTracker: DefaultSightSingingPitchTracker(),
-                        exerciseKind: .singleNoteMimic
-                    )
+                    SightSingingSessionView()
                 }
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -323,14 +316,7 @@ private struct PracticeTrainingCatalogView: View {
                 }
                 NavigationLink("视唱训练") {
                     TabBarHiddenContainer {
-                        SightSingingSessionView(
-                            repository: LocalSightSingingRepository(),
-                            pitchRange: "mid",
-                            includeAccidental: false,
-                            questionCount: 0,
-                            pitchTracker: DefaultSightSingingPitchTracker(),
-                            exerciseKind: .singleNoteMimic
-                        )
+                        SightSingingSessionView()
                     }
                 }
             }
