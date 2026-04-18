@@ -6,12 +6,17 @@ options:
 packages:
   GuitarAICoach:
     path: ../swift_app
+  OnnxRuntime:
+    url: https://github.com/microsoft/onnxruntime-swift-package-manager
+    from: 1.24.2
 targets:
   SwiftEarHost:
     type: application
     platform: iOS
     sources:
       - Sources
+    resources:
+      - Sources/Transcription/Resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wanghan.guitarhelper
@@ -33,13 +38,15 @@ targets:
       - package: GuitarAICoach
         product: Chords
       - package: GuitarAICoach
-        product: ChordsLive
-      - package: GuitarAICoach
         product: ChordChart
       - package: GuitarAICoach
         product: Profile
       - package: GuitarAICoach
         product: Ear
+      - package: GuitarAICoach
+        product: Practice
+      - package: OnnxRuntime
+        product: onnxruntime
 
   SwiftEarHostTests:
     type: bundle.unit-test

@@ -7,3 +7,4 @@ swift_app/.build/
 swift_app/.swiftpm/xcode/xcuserdata/
 swift_ios_host/install-device.local.env
 swift_ios_host/upload-testflight.local.env
+.superpowers/

@@ -14,7 +14,6 @@ let package = Package(
         .library(name: "Tuner", targets: ["Tuner"]),
         .library(name: "Fretboard", targets: ["Fretboard"]),
         .library(name: "Chords", targets: ["Chords"]),
-        .library(name: "ChordsLive", targets: ["ChordsLive"]),
         .library(name: "ChordChart", targets: ["ChordChart"]),
         .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Ear", targets: ["Ear"]),
@@ -28,7 +27,6 @@ let package = Package(
                 "Tuner",
                 "Fretboard",
                 "Chords",
-                "ChordsLive",
                 "ChordChart",
                 "Ear",
                 "Practice"
@@ -60,11 +58,6 @@ let package = Package(
             path: "Sources/Features/Chords"
         ),
         .target(
-            name: "ChordsLive",
-            dependencies: ["Core"],
-            path: "Sources/Features/ChordsLive"
-        ),
-        .target(
             name: "ChordChart",
             dependencies: ["Core", "Chords"],
             path: "Sources/Features/ChordChart"
@@ -89,17 +82,17 @@ let package = Package(
         ),
         .testTarget(
             name: "GuitarAICoachUnitTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice"],
             path: "Tests/Unit"
         ),
         .testTarget(
             name: "GuitarAICoachIntegrationTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice"],
             path: "Tests/Integration"
         ),
         .testTarget(
             name: "GuitarAICoachUITests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice"],
             path: "Tests/UI"
         )
     ]

@@ -2,7 +2,6 @@ import SwiftUI
 import Tuner
 import Fretboard
 import Chords
-import ChordsLive
 import ChordChart
 import Profile
 import Core
@@ -107,7 +106,7 @@ private struct RootTabView: View {
             .tag(2)
 
             NavigationStack {
-                LiveChordView()
+                TranscriptionHomeView()
             }
             .tabItem {
                 Label("扒歌", systemImage: "waveform.path.ecg")
