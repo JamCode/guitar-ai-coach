@@ -47,12 +47,56 @@ public final class ChordVoicingTonePlayer {
         }
     }
 
+    /// 与 `playChordFrets` 同一琶音→柱式节奏，但顺序 `await` 至柱式释音尾结束，供练耳等需要与 UI 同步的场景。
+    public func playChordFretsAwaitable(_ frets: [Int]) async throws {
+        let midis = GuitarStandardTuning.midisFromChordFretsSixToOne(frets)
+        guard !midis.isEmpty else { return }
+        try audio.start()
+        let n = midis.count
+        let arpStep = Self.arpStepSec
+        let arpGate = Self.arpGateSec
+        let pauseAfterArpeggio = Self.pauseAfterArpeggioSec
+        let velArp = UInt8(max(74, min(98, 94 - n)))
+        let velBlock = UInt8(max(78, min(102, 98 - n * 2)))
+
+        if n == 1 {
+            try audio.playSampledGuitarNote(midi: midis[0], velocity: velArp, gateDurationSec: 1.15)
+            try await Task.sleep(nanoseconds: UInt64((1.15 + 0.22) * 1_000_000_000))
+            return
+        }
+
+        for (i, midi) in midis.enumerated() {
+            if i > 0 {
+                try await Task.sleep(nanoseconds: UInt64(arpStep * 1_000_000_000))
+            }
+            try audio.playSampledGuitarNote(midi: midi, velocity: velArp, gateDurationSec: arpGate)
+        }
+        try await Task.sleep(nanoseconds: UInt64((arpGate + pauseAfterArpeggio) * 1_000_000_000))
+        try audio.playSampledGuitarChord(
+            midis: midis,
+            velocity: velBlock,
+            gateDurationSec: Self.blockGateSec,
+            stringStaggerSec: Self.blockStaggerSec
+        )
+        let staggerSpan = Double(max(0, n - 1)) * Self.blockStaggerSec
+        let blockTail = staggerSpan + Self.blockWaitHeadroomSec + Self.blockAudibleTailSec
+        try await Task.sleep(nanoseconds: UInt64(blockTail * 1_000_000_000))
+    }
+
+    private static let arpStepSec = 0.28
+    private static let arpGateSec = 0.24
+    private static let pauseAfterArpeggioSec = 0.22
+    private static let blockGateSec = 1.42
+    private static let blockStaggerSec = 0.014
+    private static let blockWaitHeadroomSec = 2.75
+    private static let blockAudibleTailSec = 0.32
+
     private func scheduleArpeggioThenBlock(midis: [Int], token: Int) {
         let n = midis.count
         // 分解琶音节奏：步进略长于单音 gate，既留气口又有一点自然交叠。
-        let arpStep = 0.28
-        let arpGate = 0.24
-        let pauseAfterArpeggio = 0.22
+        let arpStep = Self.arpStepSec
+        let arpGate = Self.arpGateSec
+        let pauseAfterArpeggio = Self.pauseAfterArpeggioSec
         let velArp = UInt8(max(74, min(98, 94 - n)))
         let velBlock = UInt8(max(78, min(102, 98 - n * 2)))
 
@@ -78,8 +122,8 @@ public final class ChordVoicingTonePlayer {
             try? self.audio.playSampledGuitarChord(
                 midis: midis,
                 velocity: velBlock,
-                gateDurationSec: 1.42,
-                stringStaggerSec: 0.014
+                gateDurationSec: Self.blockGateSec,
+                stringStaggerSec: Self.blockStaggerSec
             )
         }
     }

@@ -230,3 +230,38 @@ public enum IntervalQuestionGenerator {
         return lowerMin + k
     }
 }
+
+// MARK: - 揭示后：本题连续半音音区（至少一个八度）
+
+/// 生成「本题两音」附近的连续半音 MIDI 列表，用于揭示后可点试听。
+public enum IntervalChromaticStrip {
+    /// 升序连续半音；跨度至少 **12 半音**（含一个完整八度），且必含 `lowMidi` 与 `highMidi`。
+    public static func midisCoveringOctaveIncluding(lowMidi: Int, highMidi: Int) -> [Int] {
+        let lo = min(lowMidi, highMidi)
+        let hi = max(lowMidi, highMidi)
+        var start = lo
+        var end = hi
+        if end - start < 12 {
+            let deficit = 12 - (end - start)
+            start -= deficit / 2
+            end += deficit - deficit / 2
+        }
+        if start < 0 {
+            end += -start
+            start = 0
+        }
+        if end > 127 {
+            start -= end - 127
+            end = 127
+        }
+        start = max(0, min(start, lo))
+        end = min(127, max(end, hi))
+        while end - start < 12, end < 127 {
+            end += 1
+        }
+        while end - start < 12, start > 0 {
+            start -= 1
+        }
+        return Array(start ... end)
+    }
+}

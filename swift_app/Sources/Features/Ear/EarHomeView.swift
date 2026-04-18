@@ -13,19 +13,19 @@ public struct EarHomeView: View {
                 VStack(spacing: 8) {
                     navCard(
                         title: "音程识别",
-                        subtitle: "两音上行、四选一",
+                        subtitle: "两音上行、四选一 · 不限题量 · 累计正确率",
                         systemImage: "play.circle"
                     ) { IntervalEarView() }
                     navCard(
                         title: "和弦听辨",
-                        subtitle: "大三 / 小三 / 属七 / 七和弦 · 按难度程序化出题 · 吉他采样合成",
+                        subtitle: "大三 / 小三 / 属七 / 七和弦 · 不限题量 · 即时判分 · 吉他采样",
                         systemImage: "pianokeys"
-                    ) { EarMcqSessionView(title: "和弦听辨", bank: "A", totalQuestions: 10, chordDifficulty: .初级) }
+                    ) { EarMcqSessionView(title: "和弦听辨", bank: "A", chordDifficulty: .初级) }
                     navCard(
                         title: "和弦进行",
-                        subtitle: "常见流行进行 · 四选一",
+                        subtitle: "常见流行进行 · 四选一 · 不限题量 · 揭示后指法图",
                         systemImage: "music.note.list"
-                    ) { EarMcqSessionView(title: "和弦进行", bank: "B", totalQuestions: 10) }
+                    ) { EarMcqSessionView(title: "和弦进行", bank: "B") }
                     navCard(
                         title: "视唱训练",
                         subtitle: "单音视唱 · 可选音域 · 麦克风实时判定",

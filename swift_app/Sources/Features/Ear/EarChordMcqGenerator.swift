@@ -1,4 +1,5 @@
 import Foundation
+import Chords
 
 // MARK: - 难度（和弦听辨 bank A：程序化、无固定题库）
 
@@ -150,6 +151,7 @@ public enum EarChordMcqGenerator {
         let root = pickRoot(from: p.roots, avoid: avoid, answer: answer, using: &rng)
         let id = "EA-P-\(UUID().uuidString.prefix(8))"
         let promptZh = "听音后判断和弦性质：\(root) ?"
+        let frets = Self.playbackFretsSixToOne(root: root, answer: answer)
 
         return EarBankItem(
             id: id,
@@ -160,8 +162,27 @@ public enum EarChordMcqGenerator {
             correctOptionKey: correctKey,
             root: root,
             targetQuality: answer.targetQualityToken,
-            hintZh: nil
+            hintZh: nil,
+            playbackFretsSixToOne: frets
         )
+    }
+
+    /// 与「工具 · 常用和弦 / 和弦速查」同源：`OfflineChordBuilder` 常用把位①（6→1 弦）。
+    private static func playbackFretsSixToOne(root: String, answer: EarChordQuality) -> [Int]? {
+        let qualityId: String
+        switch answer {
+        case .major: qualityId = ""
+        case .minor: qualityId = "m"
+        case .dominant7: qualityId = "7"
+        case .major7: qualityId = "maj7"
+        case .minor7: qualityId = "m7"
+        }
+        let symbol = ChordSymbolBuilder.build(root: root, qualityId: qualityId, bassId: "")
+        guard let payload = OfflineChordBuilder.buildPayload(displaySymbol: symbol),
+              let frets = payload.voicings.first?.explain.frets,
+              frets.count == 6
+        else { return nil }
+        return frets
     }
 
     // MARK: 乐理干扰项
