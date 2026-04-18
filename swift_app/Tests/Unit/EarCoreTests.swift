@@ -148,18 +148,17 @@ final class EarCoreTests: XCTestCase {
         XCTAssertEqual(doc.bankA.first?.id, "a1")
     }
 
+    @MainActor
     func testIntervalEarSubmitAppendsHistoryRecord() async throws {
         let mock = MockIntervalEarHistoryStore()
-        let wrongIdx: Int = await MainActor.run {
-            let vm = IntervalEarSessionViewModel(maxQuestions: 3, difficulty: .初级, historyStore: mock)
-            guard let q = vm.question else {
-                XCTFail("missing question")
-                return 0
-            }
-            let idx = q.choices.firstIndex { $0.semitones != q.answer.semitones } ?? 0
-            vm.selectChoice(idx)
-            return idx
+        let vm = IntervalEarSessionViewModel(maxQuestions: 3, difficulty: .初级, historyStore: mock)
+        guard let q = vm.question else {
+            XCTFail("missing question")
+            return
         }
+        await vm.playPair()
+        let wrongIdx = q.choices.firstIndex { $0.semitones != q.answer.semitones } ?? 0
+        vm.selectChoice(wrongIdx)
         try await Task.sleep(nanoseconds: 400_000_000)
         let got = await mock.attempts
         XCTAssertEqual(got.count, 1)

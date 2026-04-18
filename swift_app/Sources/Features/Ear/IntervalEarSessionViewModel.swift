@@ -13,6 +13,8 @@ public final class IntervalEarSessionViewModel: ObservableObject {
     @Published public private(set) var playError: String?
     /// 整段两音（含间隔与第二音释音）播放结束前为 `true`，用于禁用「播放」。
     @Published public private(set) var isPlaybackInProgress = false
+    /// 当前题是否已至少成功完整播放一次两音；未满足前不可选答案。
+    @Published public private(set) var hasCompletedInitialAudition = false
 
     /// `nil` 表示不限题量，可一直「下一题」由算法续出题；非 `nil` 时答满后结束并弹出小结。
     public let maxQuestions: Int?
@@ -61,6 +63,7 @@ public final class IntervalEarSessionViewModel: ObservableObject {
         do {
             try await player.playAscendingPair(lowMidi: q.lowMidi, highMidi: q.highMidi)
             playError = nil
+            hasCompletedInitialAudition = true
         } catch {
             playError = "播放失败：\(error.localizedDescription)"
         }
@@ -77,6 +80,7 @@ public final class IntervalEarSessionViewModel: ObservableObject {
 
     /// 点选某一格后立即判分并揭示（不再单独点「提交答案」）。
     public func selectChoice(_ index: Int) {
+        guard hasCompletedInitialAudition else { return }
         guard !revealed, let q = question, q.choices.indices.contains(index) else { return }
         selectedChoiceIndex = index
         submit()
@@ -123,6 +127,7 @@ public final class IntervalEarSessionViewModel: ObservableObject {
             antiAbsolutePitch: Self.antiAbsolutePitch(for: difficulty, previousLowerMidi: previousLow),
             using: &rng
         )
+        hasCompletedInitialAudition = false
     }
 
     /// 中/高档默认拉开相邻题低音 MIDI，减轻「记绝对音高」猜题。
