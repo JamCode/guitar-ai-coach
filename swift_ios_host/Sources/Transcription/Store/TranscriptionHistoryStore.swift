@@ -1,0 +1,121 @@
+import Foundation
+
+enum TranscriptionHistoryStoreError: LocalizedError {
+    case invalidDocumentsRoot
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidDocumentsRoot:
+            return "无法访问本地文档目录"
+        }
+    }
+}
+
+actor TranscriptionHistoryStore {
+    private let rootOverride: URL?
+    private let fileManager: FileManager
+    private let indexFileName = "transcription_history.json"
+    private let mediaDirectoryName = "transcription_media"
+
+    init(rootOverride: URL? = nil, fileManager: FileManager = .default) {
+        self.rootOverride = rootOverride
+        self.fileManager = fileManager
+    }
+
+    func loadAll() async -> [TranscriptionHistoryEntry] {
+        guard let indexURL = try? indexURL(), fileManager.fileExists(atPath: indexURL.path) else {
+            return []
+        }
+        guard let data = try? Data(contentsOf: indexURL) else {
+            return []
+        }
+        guard let list = try? JSONDecoder().decode([TranscriptionHistoryEntry].self, from: data) else {
+            return []
+        }
+        return list.sorted { $0.createdAtMs > $1.createdAtMs }
+    }
+
+    func saveResult(
+        sourceURL: URL,
+        sourceType: TranscriptionSourceType,
+        fileName: String,
+        durationMs: Int,
+        originalKey: String,
+        segments: [TranscriptionSegment],
+        waveform: [Double]
+    ) async throws -> TranscriptionHistoryEntry {
+        let mediaDir = try mediaDirectoryURL()
+        let id = UUID().uuidString
+        let ext = sourceURL.pathExtension.isEmpty ? "m4a" : sourceURL.pathExtension.lowercased()
+        let destination = mediaDir.appendingPathComponent("\(id).\(ext)")
+        if fileManager.fileExists(atPath: destination.path) {
+            try fileManager.removeItem(at: destination)
+        }
+        try fileManager.copyItem(at: sourceURL, to: destination)
+
+        let entry = TranscriptionHistoryEntry(
+            id: id,
+            sourceType: sourceType,
+            fileName: fileName,
+            storedMediaPath: destination.path,
+            durationMs: durationMs,
+            originalKey: originalKey,
+            createdAtMs: Int(Date().timeIntervalSince1970 * 1000),
+            segments: segments,
+            waveform: waveform
+        )
+
+        var all = await loadAll()
+        all.append(entry)
+        try writeAll(all)
+        return entry
+    }
+
+    func remove(id: String) async throws {
+        let all = await loadAll()
+        var remaining: [TranscriptionHistoryEntry] = []
+        var victim: TranscriptionHistoryEntry?
+        for entry in all {
+            if entry.id == id {
+                victim = entry
+            } else {
+                remaining.append(entry)
+            }
+        }
+
+        if let victim {
+            let fileURL = URL(fileURLWithPath: victim.storedMediaPath)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                try? fileManager.removeItem(at: fileURL)
+            }
+        }
+        try writeAll(remaining)
+    }
+
+    private func writeAll(_ entries: [TranscriptionHistoryEntry]) throws {
+        let data = try JSONEncoder().encode(entries)
+        try data.write(to: try indexURL(), options: .atomic)
+    }
+
+    private func docsRoot() throws -> URL {
+        if let rootOverride {
+            return rootOverride
+        }
+        guard let dir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            throw TranscriptionHistoryStoreError.invalidDocumentsRoot
+        }
+        return dir
+    }
+
+    private func indexURL() throws -> URL {
+        try docsRoot().appendingPathComponent(indexFileName)
+    }
+
+    private func mediaDirectoryURL() throws -> URL {
+        let dir = try docsRoot().appendingPathComponent(mediaDirectoryName, isDirectory: true)
+        if !fileManager.fileExists(atPath: dir.path) {
+            try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+}

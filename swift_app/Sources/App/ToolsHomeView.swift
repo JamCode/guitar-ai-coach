@@ -2,7 +2,6 @@ import SwiftUI
 import Tuner
 import Fretboard
 import Chords
-import ChordsLive
 import ChordChart
 import Ear
 import Practice
@@ -20,15 +19,6 @@ public struct ToolsHomeView: View {
                         title: "练耳",
                         subtitle: "音程/和弦/视唱训练",
                         systemImage: "ear"
-                    )
-                }
-                NavigationLink {
-                    LiveChordView()
-                } label: {
-                    toolsRow(
-                        title: "实时和弦建议（Beta）",
-                        subtitle: "监听音乐并实时显示主和弦与候选",
-                        systemImage: "waveform.path.ecg"
                     )
                 }
                 NavigationLink {
