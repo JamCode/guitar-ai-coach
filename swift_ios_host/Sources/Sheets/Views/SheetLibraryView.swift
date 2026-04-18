@@ -4,7 +4,7 @@ import Core
 import UIKit
 
 struct SheetLibraryView: View {
-    @StateObject private var vm = SheetLibraryViewModel()
+    @ObservedObject var vm: SheetLibraryViewModel
     @State private var pickerItems: [PhotosPickerItem] = []
     /// `PhotosPicker` 用 `isPresented` 在工具栏按钮外弹出系统相册，避免嵌在 `Menu` 内时部分系统点击无效。
     @State private var showingPhotoLibrary = false
@@ -13,7 +13,7 @@ struct SheetLibraryView: View {
 
     var body: some View {
         Group {
-            if vm.loading {
+            if vm.loading, !vm.hasLoadedOnce {
                 ProgressView()
             } else if let error = vm.error {
                 VStack(spacing: 12) {
@@ -135,6 +135,8 @@ struct SheetLibraryView: View {
 
 @MainActor
 final class SheetLibraryViewModel: ObservableObject {
+    /// 仅在从未成功拉取过列表时配合 `loading` 显示全屏 Progress，避免切 Tab 反复 `reload` 造成闪屏。
+    @Published private(set) var hasLoadedOnce = false
     @Published var loading = true
     @Published var entries: [SheetEntry] = []
     @Published var error: String?
@@ -144,10 +146,13 @@ final class SheetLibraryViewModel: ObservableObject {
     let store = SheetLibraryStore()
 
     func reload() async {
-        loading = true
+        if !hasLoadedOnce {
+            loading = true
+        }
         error = nil
         entries = await store.loadAll()
         loading = false
+        hasLoadedOnce = true
     }
 
     func saveDraft(name: String, imagesData: [Data]) async {

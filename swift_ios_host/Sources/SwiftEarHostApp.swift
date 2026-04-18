@@ -52,6 +52,7 @@ struct SwiftEarHostApp: App {
 private struct RootTabView: View {
     @State private var selectedTab: Int = 0
     @State private var practiceTabMounted: Bool = false
+    @StateObject private var sheetLibraryVM = SheetLibraryViewModel()
     
     /// 自定义 Tab 选择绑定：切到「练习」时在同一事务内先完成挂载，
     /// 避免先显示占位页再切到真实页面造成导航标题闪动。
@@ -98,7 +99,7 @@ private struct RootTabView: View {
             .tag(1)
 
             NavigationStack {
-                SheetLibraryView()
+                SheetLibraryView(vm: sheetLibraryVM)
             }
             .tabItem {
                 Label("我的谱", systemImage: "music.note.list")
