@@ -1,10 +1,108 @@
 import SwiftUI
 import Core
 
+private struct SightSingingPitchGraphView: View {
+    let user: [SightSingingPitchGraphPoint]
+    let targetLow: [SightSingingPitchGraphPoint]
+    let targetHigh: [SightSingingPitchGraphPoint]
+
+    private let yRange: ClosedRange<Double> = -50 ... 50
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("音准曲线（相对目标音）")
+                .appSectionTitle()
+
+            Canvas { context, size in
+                let w = size.width
+                let h = size.height
+                let padL: CGFloat = 34
+                let padR: CGFloat = 10
+                let padT: CGFloat = 10
+                let padB: CGFloat = 18
+                let plotW = w - padL - padR
+                let plotH = h - padT - padB
+
+                func y(forCents cents: Double) -> CGFloat {
+                    let t = (cents - yRange.lowerBound) / (yRange.upperBound - yRange.lowerBound)
+                    return padT + plotH * (1 - CGFloat(t))
+                }
+
+                // Background
+                context.fill(
+                    Path(
+                        CGRect(x: padL, y: padT, width: plotW, height: plotH)
+                    ),
+                    with: .color(SwiftAppTheme.surfaceSoft)
+                )
+
+                // Grid: 0 line + +/-25
+                for cents in [-25.0, 0.0, 25.0] {
+                    var p = Path()
+                    p.move(to: CGPoint(x: padL, y: y(forCents: cents)))
+                    p.addLine(to: CGPoint(x: padL + plotW, y: y(forCents: cents)))
+                    context.stroke(
+                        p,
+                        with: .color(cents == 0 ? SwiftAppTheme.line : SwiftAppTheme.line.opacity(0.55)),
+                        lineWidth: cents == 0 ? 1.2 : 0.8
+                    )
+                }
+
+                let nowT = max(
+                    user.last?.t ?? 0,
+                    targetLow.last?.t ?? 0,
+                    targetHigh.last?.t ?? 0,
+                    0.000_001
+                )
+                let t0 = max(0, nowT - 6)
+
+                func x(forT t: Double) -> CGFloat {
+                    let u = (t - t0) / max(0.000_001, (nowT - t0))
+                    return padL + plotW * CGFloat(u)
+                }
+
+                func strokeSeries(_ pts: [SightSingingPitchGraphPoint], color: Color, lineWidth: CGFloat) {
+                    guard pts.count >= 2 else { return }
+                    var p = Path()
+                    let sorted = pts.sorted { $0.t < $1.t }
+                    p.move(to: CGPoint(x: x(forT: sorted[0].t), y: y(forCents: sorted[0].cents)))
+                    for pt in sorted.dropFirst() {
+                        p.addLine(to: CGPoint(x: x(forT: pt.t), y: y(forCents: pt.cents)))
+                    }
+                    context.stroke(p, with: .color(color), lineWidth: lineWidth)
+                }
+
+                strokeSeries(targetLow, color: SwiftAppTheme.muted.opacity(0.85), lineWidth: 2)
+                strokeSeries(targetHigh, color: SwiftAppTheme.muted.opacity(0.55), lineWidth: 2)
+                strokeSeries(user, color: SwiftAppTheme.brand, lineWidth: 3)
+            }
+            .frame(height: 210)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            HStack(spacing: 12) {
+                legendDot(color: SwiftAppTheme.brand, text: "你唱的音高")
+                legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标低音")
+                legendDot(color: SwiftAppTheme.muted.opacity(0.55), text: "目标高音")
+            }
+            .font(.caption)
+            .foregroundStyle(SwiftAppTheme.muted)
+        }
+    }
+
+    private func legendDot(color: Color, text: String) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(text)
+        }
+    }
+}
+
 public struct SightSingingSetupView: View {
     @State private var pitchRange = "mid"
     @State private var includeAccidental = false
-    @State private var questionCount = 10.0
+    @State private var questionCount = 0.0
     @State private var exerciseKind: SightSingingExerciseKind = .singleNoteMimic
 
     public init() {}
@@ -31,9 +129,9 @@ public struct SightSingingSetupView: View {
 
                     Toggle("包含升降号", isOn: $includeAccidental)
 
-                    Text("题量：\(Int(questionCount)) 题")
+                    Text(questionCount <= 0 ? "题量：不限（无限刷题）" : "题量：\(Int(questionCount)) 题")
                         .foregroundStyle(SwiftAppTheme.text)
-                    Slider(value: $questionCount, in: 5...20, step: 5)
+                    Slider(value: $questionCount, in: 0...20, step: 5)
                         .tint(SwiftAppTheme.brand)
                 }
                 .appCard()
@@ -73,6 +171,7 @@ public struct SightSingingSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: SightSingingSessionViewModel
     @State private var showResult = false
+    @State private var showEndConfirm = false
     private let onSessionComplete: ((SightSingingResult) -> Void)?
     private let autoDismissOnComplete: Bool
 
@@ -115,11 +214,13 @@ public struct SightSingingSessionView: View {
                 } else if let q = viewModel.question {
                     let segments = max(1, q.targetNotes.count)
                     let evaluateSeconds = segments * 2
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("第 \(q.index) / \(q.totalQuestions) 题")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(SwiftAppTheme.text)
-                    }
+                    let infinite = q.totalQuestions <= 0
+
+                    SightSingingPitchGraphView(
+                        user: viewModel.userPitchGraph,
+                        targetLow: viewModel.targetLowGraph,
+                        targetHigh: viewModel.targetHighGraph
+                    )
                     .appCard()
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -148,6 +249,9 @@ public struct SightSingingSessionView: View {
                         } ?? "--"
                         Text("当前检测：\(current)")
                             .foregroundStyle(SwiftAppTheme.muted)
+                        Text("提示：曲线纵轴为音分偏差（±50¢），横轴为最近 6 秒。")
+                            .font(.caption)
+                            .foregroundStyle(SwiftAppTheme.muted)
                         if viewModel.evaluating {
                             ProgressView().tint(SwiftAppTheme.brand)
                         }
@@ -174,14 +278,18 @@ public struct SightSingingSessionView: View {
 
                     if let score = viewModel.lastScore {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("结果").appSectionTitle()
-                            Text("单题得分 \(score.score.formatted(.number.precision(.fractionLength(1)))) / 10")
-                                .foregroundStyle(SwiftAppTheme.text)
-                            Text("平均偏差 \(score.avgCentsAbs.formatted(.number.precision(.fractionLength(1)))) cent")
-                                .foregroundStyle(SwiftAppTheme.muted)
-                            Text("稳定命中 \(score.stableHitMs) ms")
-                                .foregroundStyle(SwiftAppTheme.muted)
-                            Button(q.index >= q.totalQuestions ? "查看结果" : "下一题") {
+                            Text("本题结果").appSectionTitle()
+                            HStack(spacing: 12) {
+                                Text("得分 \(score.score.formatted(.number.precision(.fractionLength(1)))) / 10")
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                Text("偏差 \(score.avgCentsAbs.formatted(.number.precision(.fractionLength(1))))¢")
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                                Text("稳定 \(score.stableHitMs) ms")
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                            }
+                            .font(.subheadline)
+
+                            Button(infinite ? "下一题" : (q.index >= q.totalQuestions ? "查看结果" : "下一题")) {
                                 Task {
                                     if await viewModel.nextOrFinish() { showResult = true }
                                 }
@@ -197,10 +305,39 @@ public struct SightSingingSessionView: View {
         }
         .navigationTitle("视唱训练")
         .appPageBackground()
+        .toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("结束") {
+                    showEndConfirm = true
+                }
+                .disabled(viewModel.loading || viewModel.evaluating)
+            }
+            #else
+            ToolbarItem(placement: .primaryAction) {
+                Button("结束") {
+                    showEndConfirm = true
+                }
+                .disabled(viewModel.loading || viewModel.evaluating)
+            }
+            #endif
+        }
         .task {
             if viewModel.loading {
                 await viewModel.bootstrap()
             }
+        }
+        .confirmationDialog("结束训练？", isPresented: $showEndConfirm, titleVisibility: .visible) {
+            Button("结束并查看统计", role: .destructive) {
+                Task {
+                    if await viewModel.endTraining() {
+                        showResult = true
+                    }
+                }
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("点右上角「结束」会统计本轮已判定题目；不限题量时不会自动收尾。")
         }
         .alert("本轮完成", isPresented: $showResult) {
             Button("确定") {

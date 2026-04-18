@@ -187,21 +187,21 @@ struct TodayRecommendationPlanner {
                 return .sightSingingConfig(
                     pitchRange: "mid",
                     includeAccidental: false,
-                    questionCount: 6,
+                    questionCount: 0,
                     exerciseKind: .singleNoteMimic
                 )
             case .intermediate:
                 return .sightSingingConfig(
                     pitchRange: "wide",
                     includeAccidental: false,
-                    questionCount: 8,
+                    questionCount: 0,
                     exerciseKind: .intervalMimic
                 )
             case .advanced:
                 return .sightSingingConfig(
                     pitchRange: "wide",
                     includeAccidental: true,
-                    questionCount: 10,
+                    questionCount: 0,
                     exerciseKind: .intervalMimic
                 )
             }
@@ -265,7 +265,8 @@ struct TodayRecommendationPlanner {
             return "\(difficulty.rawValue) · \(question.promptZh) · 选项：\(opts)"
         case let .sightSingingConfig(pitchRange, includeAccidental, questionCount, exerciseKind):
             let accidental = includeAccidental ? "含升降号" : "不含升降号"
-            return "\(difficulty.rawValue) · \(exerciseKind.titleZh) · 音域 \(pitchRange) · \(accidental) · \(questionCount) 题"
+            let volume = questionCount <= 0 ? "不限题量" : "\(questionCount) 题"
+            return "\(difficulty.rawValue) · \(exerciseKind.titleZh) · 音域 \(pitchRange) · \(accidental) · \(volume)"
         case let .chordSwitch(exercise):
             return "\(difficulty.rawValue) · \(exercise.chords.joined(separator: " → ")) · \(exercise.bpm) BPM"
         case let .scaleTraining(exercise):

@@ -246,14 +246,14 @@ private struct EarPracticeHubScreen: View {
                 }
                 PracticeLinkCard(
                     title: "视唱训练",
-                    subtitle: "默认中音区 · 10 题 · 模唱单音 · 麦克风实时判定",
+                    subtitle: "默认中音区 · 不限题量 · 模唱单音 · 麦克风实时判定",
                     icon: "mic"
                 ) {
                     SightSingingSessionView(
                         repository: LocalSightSingingRepository(),
                         pitchRange: "mid",
                         includeAccidental: false,
-                        questionCount: 10,
+                        questionCount: 0,
                         pitchTracker: DefaultSightSingingPitchTracker(),
                         exerciseKind: .singleNoteMimic
                     )
@@ -327,7 +327,7 @@ private struct PracticeTrainingCatalogView: View {
                             repository: LocalSightSingingRepository(),
                             pitchRange: "mid",
                             includeAccidental: false,
-                            questionCount: 10,
+                            questionCount: 0,
                             pitchTracker: DefaultSightSingingPitchTracker(),
                             exerciseKind: .singleNoteMimic
                         )

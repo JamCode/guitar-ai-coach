@@ -36,7 +36,7 @@ public struct EarHomeView: View {
                                 repository: LocalSightSingingRepository(),
                                 pitchRange: "mid",
                                 includeAccidental: false,
-                                questionCount: 10,
+                                questionCount: 0,
                                 pitchTracker: DefaultSightSingingPitchTracker(),
                                 intervalPreview: IntervalTonePlayer(),
                                 exerciseKind: .singleNoteMimic

@@ -124,7 +124,7 @@ struct TodayRecommendationListView: View {
                         await appendRecord(
                             module: .sightSinging,
                             successRate: result.accuracy,
-                            durationSeconds: max(300, result.total * 45)
+                            durationSeconds: max(300, result.answered * 45)
                         )
                         await MainActor.run { moveToNext() }
                     }
