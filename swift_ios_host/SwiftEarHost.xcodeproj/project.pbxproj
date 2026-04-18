@@ -24,7 +24,6 @@
 		6C61AD5387584DE05CBAEEFC /* Fretboard in Frameworks */ = {isa = PBXBuildFile; productRef = 680D96401F590C260C21FB94 /* Fretboard */; };
 		7A1A7A19018CB5C4774DE4D5 /* RhythmStrummingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C849930EEBA4B913F9D21D21 /* RhythmStrummingView.swift */; };
 		7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */; };
-		7FA26181FC5B3B11E730D464 /* SheetOcrParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD74D9857A33196AB3E3E6AE /* SheetOcrParser.swift */; };
 		859A9E07A72362A83CC2D81D /* TodayRecommendationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAA48FC7903A0CA365BBE2E /* TodayRecommendationModels.swift */; };
 		85F401EA077A7B0339A02A78 /* ChordChart in Frameworks */ = {isa = PBXBuildFile; productRef = BC4B202C5F0E941A20A787C7 /* ChordChart */; };
 		93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E249F8FED69E85EB6CEE605 /* SheetModels.swift */; };
@@ -34,7 +33,6 @@
 		A79B3979F4B96E1C5526E106 /* PracticeTimerSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */; };
 		AC95FA8C2C108EB623BE6679 /* ChordsLive in Frameworks */ = {isa = PBXBuildFile; productRef = B1D1A8040EE477067D835C6D /* ChordsLive */; };
 		BAAB390B79382E696ABF0074 /* PracticeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99248B2B89EEEF58AC61A45E /* PracticeModels.swift */; };
-		C81297C1598B244EE8B65940 /* SheetOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8EDFBDBF5E75CB90D0B630 /* SheetOCRService.swift */; };
 		D201453C3449669F76C49202 /* PracticeFinishDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */; };
 		E69983D149243B7A6D946061 /* Tuner in Frameworks */ = {isa = PBXBuildFile; productRef = D68C530C664DD0805DDA1187 /* Tuner */; };
 		EADF9BF054D46963D836E9AC /* PracticeAcceptanceChecklist.md in Resources */ = {isa = PBXBuildFile; fileRef = F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */; };
@@ -63,7 +61,6 @@
 		4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSessionView.swift; sourceTree = "<group>"; };
 		49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeTimerSessionView.swift; sourceTree = "<group>"; };
 		4A3DB2D65570E500966B666B /* ChordProgressionLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordProgressionLibrary.swift; sourceTree = "<group>"; };
-		4F8EDFBDBF5E75CB90D0B630 /* SheetOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetOCRService.swift; sourceTree = "<group>"; };
 		66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeFinishDialog.swift; sourceTree = "<group>"; };
 		6BBE379FBC86AF30F9A09A12 /* ChordPracticeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSelectionView.swift; sourceTree = "<group>"; };
 		6F5E4D3C2B1A0987654321AB /* RecommendationHistoryMerging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationHistoryMerging.swift; sourceTree = "<group>"; };
@@ -82,7 +79,6 @@
 		D163D2D4AC366005CC23C1EF /* PracticeLocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLocalStore.swift; sourceTree = "<group>"; };
 		DCFCA483F73447F3060E1101 /* TodayRecommendationPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRecommendationPlannerTests.swift; sourceTree = "<group>"; };
 		DD4498E65917DC2E2FA2DB69 /* PracticeSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSessionStore.swift; sourceTree = "<group>"; };
-		DD74D9857A33196AB3E3E6AE /* SheetOcrParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetOcrParser.swift; sourceTree = "<group>"; };
 		DEAA48FC7903A0CA365BBE2E /* TodayRecommendationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRecommendationModels.swift; sourceTree = "<group>"; };
 		E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLocalStoreTests.swift; sourceTree = "<group>"; };
 		ECEFC296F96FEFDB9F5197B3 /* TodayRecommendationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRecommendationPlanner.swift; sourceTree = "<group>"; };
@@ -214,7 +210,6 @@
 			isa = PBXGroup;
 			children = (
 				82A281551AFE2223304F9D08 /* Models */,
-				FBFBDC47B2605B642D3849D6 /* Services */,
 				5935DA3152749B79E2A5B934 /* Store */,
 				9D35BF715621D53698CD9F2C /* Views */,
 			);
@@ -241,15 +236,6 @@
 				ECEFC296F96FEFDB9F5197B3 /* TodayRecommendationPlanner.swift */,
 			);
 			path = Store;
-			sourceTree = "<group>";
-		};
-		FBFBDC47B2605B642D3849D6 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				DD74D9857A33196AB3E3E6AE /* SheetOcrParser.swift */,
-				4F8EDFBDBF5E75CB90D0B630 /* SheetOCRService.swift */,
-			);
-			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -386,8 +372,6 @@
 				F9C3785BA4276FDB2D7476AE /* SheetLibraryStore.swift in Sources */,
 				482F6F903FB7DF1F60DC16A9 /* SheetLibraryView.swift in Sources */,
 				93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */,
-				C81297C1598B244EE8B65940 /* SheetOCRService.swift in Sources */,
-				7FA26181FC5B3B11E730D464 /* SheetOcrParser.swift in Sources */,
 				58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */,
 				4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */,
 				38A6C604DFC07C237B556CD5 /* TodayRecommendationListView.swift in Sources */,

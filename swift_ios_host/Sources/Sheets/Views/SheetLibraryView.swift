@@ -1,7 +1,6 @@
 import SwiftUI
 import PhotosUI
 import Core
-import Chords
 import UIKit
 
 struct SheetLibraryView: View {
@@ -73,9 +72,7 @@ struct SheetLibraryView: View {
         }
         .navigationDestination(item: $vm.selectedEntry) { entry in
             TabBarHiddenContainer {
-                SheetDetailView(entry: entry, store: vm.store) {
-                    Task { await vm.reload() }
-                }
+                SheetDetailView(entry: entry, store: vm.store)
             }
         }
     }
@@ -253,14 +250,9 @@ private struct SheetDraftView: View {
 private struct SheetDetailView: View {
     let entry: SheetEntry
     let store: SheetLibraryStore
-    let onUpdated: () -> Void
     @State private var files: [URL] = []
-    @State private var parsed: SheetParsedData?
     @State private var loading = true
-    @State private var showingReview = false
-    @State private var showingTranspose = false
     @State private var startedAt = Date()
-    @State private var toast: String?
     private let practiceStore = PracticeLocalStore()
 
     var body: some View {
@@ -289,13 +281,6 @@ private struct SheetDetailView: View {
             }
         }
         .navigationTitle(entry.displayName)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button("识别校对") { Task { await runOCR() } }
-                Button("变调预览") { showingTranspose = true }
-                    .disabled(parsed == nil)
-            }
-        }
         .task {
             startedAt = Date()
             await load()
@@ -321,157 +306,11 @@ private struct SheetDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingReview) {
-            SheetOCRReviewView(initial: parsed) { updated in
-                Task {
-                    do {
-                        try await store.saveParsed(updated)
-                        parsed = updated
-                        onUpdated()
-                    } catch {
-                        toast = "保存识别结果失败：\(error.localizedDescription)"
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingTranspose) {
-            if let parsed {
-                SheetTransposePreviewView(parsed: parsed)
-            }
-        }
-        .alert("提示", isPresented: Binding(get: { toast != nil }, set: { _ in toast = nil })) {
-            Button("确定", role: .cancel) { toast = nil }
-        } message: {
-            Text(toast ?? "")
-        }
     }
 
     private func load() async {
         loading = true
         files = (try? await store.resolveStoredFiles(entry)) ?? []
-        parsed = await store.loadParsed(sheetId: entry.id)
         loading = false
-    }
-
-    private func runOCR() async {
-        if parsed != nil {
-            showingReview = true
-            return
-        }
-        let ocr = SheetOCRService()
-        let segments = await ocr.recognizeSheetSegments(pageURLs: files)
-        parsed = SheetParsedData(
-            sheetId: entry.id,
-            parseStatus: .draft,
-            originalKey: "C",
-            segments: segments,
-            updatedAtMs: Int(Date().timeIntervalSince1970 * 1000)
-        )
-        showingReview = true
-    }
-}
-
-private struct SheetOCRReviewView: View {
-    let initial: SheetParsedData?
-    let onSave: (SheetParsedData) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var originalKey = "C"
-    @State private var chordsText = ""
-    @State private var melodyText = ""
-    @State private var lyricsText = ""
-
-    private let allKeys = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Picker("原调", selection: $originalKey) {
-                    ForEach(allKeys, id: \.self) { Text($0) }
-                }
-                section("和弦（每行一段）", text: $chordsText)
-                section("旋律（每行一段）", text: $melodyText)
-                section("歌词（每行一段）", text: $lyricsText)
-            }
-            .navigationTitle("识别结果校对")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        guard let initial else { return }
-                        let result = buildParsed(initial.sheetId)
-                        onSave(result)
-                        dismiss()
-                    }
-                }
-            }
-            .onAppear {
-                guard let initial else { return }
-                originalKey = initial.originalKey
-                chordsText = initial.segments.map { $0.chords.joined(separator: " ") }.joined(separator: "\n")
-                melodyText = initial.segments.map { $0.melody }.joined(separator: "\n")
-                lyricsText = initial.segments.map { $0.lyrics }.joined(separator: "\n")
-            }
-        }
-    }
-
-    private func section(_ title: String, text: Binding<String>) -> some View {
-        Section(title) {
-            TextEditor(text: text)
-                .frame(minHeight: 120)
-        }
-    }
-
-    private func buildParsed(_ sheetId: String) -> SheetParsedData {
-        let chordLines = splitLines(chordsText)
-        let melodyLines = splitLines(melodyText)
-        let lyricLines = splitLines(lyricsText)
-        let maxCount = max(chordLines.count, max(melodyLines.count, lyricLines.count))
-        var segments: [SheetSegment] = []
-        for idx in 0..<maxCount {
-            let line = idx < chordLines.count ? chordLines[idx] : ""
-            segments.append(
-                SheetSegment(
-                    chords: line.split(whereSeparator: \.isWhitespace).map(String.init),
-                    melody: idx < melodyLines.count ? melodyLines[idx] : "",
-                    lyrics: idx < lyricLines.count ? lyricLines[idx] : ""
-                )
-            )
-        }
-        return SheetParsedData(
-            sheetId: sheetId,
-            parseStatus: .ready,
-            originalKey: originalKey,
-            segments: segments,
-            updatedAtMs: Int(Date().timeIntervalSince1970 * 1000)
-        )
-    }
-
-    private func splitLines(_ text: String) -> [String] {
-        text.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
-    }
-}
-
-private struct SheetTransposePreviewView: View {
-    let parsed: SheetParsedData
-    @State private var targetKey = "C"
-    private let allKeys = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Picker("目标调", selection: $targetKey) {
-                    ForEach(allKeys, id: \.self) { Text($0) }
-                }
-                Section("和弦预览") {
-                    ForEach(Array(parsed.segments.enumerated()), id: \.offset) { _, seg in
-                        let line = seg.chords.map {
-                            ChordTransposeLocal.transposeChordSymbol($0, from: parsed.originalKey, to: targetKey)
-                        }.joined(separator: " ")
-                        Text(line.isEmpty ? "（无和弦）" : line)
-                    }
-                }
-            }
-            .navigationTitle("一键变调预览")
-        }
     }
 }
