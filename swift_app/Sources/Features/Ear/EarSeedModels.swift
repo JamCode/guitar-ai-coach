@@ -22,6 +22,8 @@ public struct EarBankItem: Decodable, Hashable, Sendable, Identifiable {
     public let musicKey: String?
     public let progressionRoman: String?
     public let hintZh: String?
+    /// 程序化和弦听辨：与试听一致的 6→1 弦品格（闷弦为 `-1`）；JSON 题库可无此字段。
+    public let playbackFretsSixToOne: [Int]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -35,6 +37,7 @@ public struct EarBankItem: Decodable, Hashable, Sendable, Identifiable {
         case musicKey = "music_key"
         case progressionRoman = "progression_roman"
         case hintZh = "hint_zh"
+        case playbackFretsSixToOne = "playback_frets_six_to_one"
     }
 
     /// 程序化构造（和弦听辨等），不依赖 `ear_seed` 条目。
@@ -49,7 +52,8 @@ public struct EarBankItem: Decodable, Hashable, Sendable, Identifiable {
         targetQuality: String?,
         musicKey: String? = nil,
         progressionRoman: String? = nil,
-        hintZh: String? = nil
+        hintZh: String? = nil,
+        playbackFretsSixToOne: [Int]? = nil
     ) {
         self.id = id
         self.mode = mode
@@ -62,6 +66,7 @@ public struct EarBankItem: Decodable, Hashable, Sendable, Identifiable {
         self.musicKey = musicKey
         self.progressionRoman = progressionRoman
         self.hintZh = hintZh
+        self.playbackFretsSixToOne = playbackFretsSixToOne
     }
 }
 

@@ -76,7 +76,7 @@ let package = Package(
         ),
         .target(
             name: "Ear",
-            dependencies: ["Core", "Tuner"],
+            dependencies: ["Core", "Tuner", "Chords"],
             path: "Sources/Features/Ear",
             resources: [
                 .process("Resources")

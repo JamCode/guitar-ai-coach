@@ -6,10 +6,13 @@ public protocol EarChordPlaying: AnyObject {
     func playChordSequence(_ sequence: [[Int]]) async throws
     /// 与指板同源 SF2 单音试听（音区条用）。
     func playSinglePreview(midi: Int) async throws
+    /// 与「常用和弦」一致：先分解琶音再柱式（`ChordVoicingTonePlayer`）。
+    func playChordFromFretsSixToOne(_ frets: [Int]) async throws
 }
 
 public final class EarChordPlayer: EarChordPlaying {
     private let audio: AudioEngineServing
+    private let voicing: ChordVoicingTonePlayer
     private static let sampledVelocity: UInt8 = 100
     private static let previewGateSec = 0.52
     private static let previewTailSec = 0.18
@@ -23,6 +26,12 @@ public final class EarChordPlayer: EarChordPlaying {
 
     public init(audio: AudioEngineServing = AudioEngineService()) {
         self.audio = audio
+        self.voicing = ChordVoicingTonePlayer(audio: audio)
+    }
+
+    public func playChordFromFretsSixToOne(_ frets: [Int]) async throws {
+        guard frets.count == 6 else { return }
+        try await voicing.playChordFretsAwaitable(frets)
     }
 
     public func playChordMidis(_ midis: [Int]) async throws {

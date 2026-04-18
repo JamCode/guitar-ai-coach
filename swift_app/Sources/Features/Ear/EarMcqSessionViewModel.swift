@@ -130,6 +130,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
         do {
             if q.mode == "B" || q.questionType == "progression_recognition" {
                 try await player.playChordSequence(EarPlaybackMidi.forProgression(q))
+            } else if let frets = q.playbackFretsSixToOne, frets.count == 6 {
+                try await player.playChordFromFretsSixToOne(frets)
             } else {
                 try await player.playChordMidis(EarPlaybackMidi.forSingleChord(q))
             }

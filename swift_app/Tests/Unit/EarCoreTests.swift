@@ -71,6 +71,18 @@ final class EarCoreTests: XCTestCase {
         XCTAssertEqual(p.optionQualities.count, 5)
     }
 
+    func testChordMcqQuestionIncludesSixStringPlaybackFrets() {
+        var rng = SystemRandomNumberGenerator()
+        for _ in 0 ..< 16 {
+            let q = EarChordMcqGenerator.makeQuestion(difficulty: .高级, using: &rng)
+            XCTAssertEqual(
+                q.playbackFretsSixToOne?.count,
+                6,
+                "expected OfflineChordBuilder voicing for \(q.root ?? "") \(q.targetQuality ?? "")"
+            )
+        }
+    }
+
     func testIntervalAdvancedPresetIncludesTritone() {
         let p = IntervalQuestionGenerator.preset(for: .高级)
         XCTAssertTrue(p.poolSemitones.contains(6))

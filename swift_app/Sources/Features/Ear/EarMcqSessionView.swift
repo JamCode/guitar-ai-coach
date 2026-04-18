@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Chords
 
 public struct EarMcqSessionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -53,7 +54,11 @@ public struct EarMcqSessionView: View {
                         if let hint = q.hintZh, !hint.isEmpty {
                             Text(hint).foregroundStyle(SwiftAppTheme.muted)
                         }
-                        Text("使用吉他采样合成，与预录音色可能略有差异。")
+                        Text(
+                            viewModel.bank == "A"
+                                ? "试听与「常用和弦」一致：先分解琶音（低音→高音），再柱式和弦；钢弦 SF2 采样。"
+                                : "使用吉他采样合成，与预录音色可能略有差异。"
+                        )
                             .font(.caption)
                             .foregroundStyle(SwiftAppTheme.muted)
                         Text(viewModel.sessionStatsLine)
@@ -123,19 +128,30 @@ public struct EarMcqSessionView: View {
                                 .foregroundStyle(ok ? SwiftAppTheme.dynamic(.green, .green) : .red)
                         }
                         if viewModel.revealed {
-                            let strip = q.playbackChromaticStripMidis
-                            let highlights = q.playbackHighlightMidiSet
-                            if !strip.isEmpty {
-                                let firstRowCount = (strip.count + 1) / 2
-                                let row1 = Array(strip.prefix(firstRowCount))
-                                let row2 = Array(strip.suffix(strip.count - firstRowCount))
+                            if viewModel.bank == "A", let frets = q.playbackFretsSixToOne, frets.count == 6 {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("本题音区（可点试听，至少一个八度）")
+                                    Text("本题指法（与试听相同，6→1 弦）")
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(SwiftAppTheme.muted)
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        mcqChromaticPillRow(midis: row1, highlights: highlights)
-                                        mcqChromaticPillRow(midis: row2, highlights: highlights)
+                                    ChordDiagramView(frets: frets)
+                                        .frame(maxWidth: 260)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            } else {
+                                let strip = q.playbackChromaticStripMidis
+                                let highlights = q.playbackHighlightMidiSet
+                                if !strip.isEmpty {
+                                    let firstRowCount = (strip.count + 1) / 2
+                                    let row1 = Array(strip.prefix(firstRowCount))
+                                    let row2 = Array(strip.suffix(strip.count - firstRowCount))
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("本题音区（可点试听，至少一个八度）")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(SwiftAppTheme.muted)
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            mcqChromaticPillRow(midis: row1, highlights: highlights)
+                                            mcqChromaticPillRow(midis: row2, highlights: highlights)
+                                        }
                                     }
                                 }
                             }
