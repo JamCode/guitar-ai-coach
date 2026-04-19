@@ -437,32 +437,27 @@ public struct SightSingingSessionView: View {
                         .tint(SwiftAppTheme.brand)
                     }
 
+                    // 与 `ChordLookupView` 一致：标题在 Picker 外 + `.pickerStyle(.menu)` + 横向拉满，避免 Form 内默认 Picker 命中区偏窄。
                     Section {
-                        Picker(selection: $settingsDraft.exerciseKind) {
-                            ForEach(SightSingingExerciseKind.allCases) { kind in
-                                Text(kind.titleZh).tag(kind)
+                        settingsMenuPickerRow(title: "训练模式") {
+                            Picker("训练模式", selection: $settingsDraft.exerciseKind) {
+                                ForEach(SightSingingExerciseKind.allCases) { kind in
+                                    Text(kind.titleZh).tag(kind)
+                                }
                             }
-                        } label: {
-                            EmptyView()
+                            .pickerStyle(.menu)
                         }
-                        .labelsHidden()
-                        .accessibilityLabel("训练模式")
-                    } header: {
-                        Text("训练模式")
                     }
 
                     Section {
-                        Picker(selection: $settingsDraft.pitchRange) {
-                            Text("低音区 C3-B3").tag("low")
-                            Text("中音区 C4-B4").tag("mid")
-                            Text("宽范围 C3-B4").tag("wide")
-                        } label: {
-                            EmptyView()
+                        settingsMenuPickerRow(title: "音域") {
+                            Picker("音域", selection: $settingsDraft.pitchRange) {
+                                Text("低音区 C3-B3").tag("low")
+                                Text("中音区 C4-B4").tag("mid")
+                                Text("宽范围 C3-B4").tag("wide")
+                            }
+                            .pickerStyle(.menu)
                         }
-                        .labelsHidden()
-                        .accessibilityLabel("音域")
-                    } header: {
-                        Text("音域")
                     } footer: {
                         Text("保存后从下一题起按新设置随机出题；并写入本机，下次打开自动沿用。")
                             .font(.footnote)
@@ -506,6 +501,21 @@ public struct SightSingingSessionView: View {
             }
         } message: {
             Text(viewModel.resultText ?? "训练完成")
+        }
+    }
+}
+
+// MARK: - 出题设置 menu 行（对齐 `ChordLookupView.chordMenuRow`）
+
+private extension SightSingingSessionView {
+    @ViewBuilder
+    func settingsMenuPickerRow<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
