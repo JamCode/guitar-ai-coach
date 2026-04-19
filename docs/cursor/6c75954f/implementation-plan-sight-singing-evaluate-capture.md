@@ -1,7 +1,8 @@
 # 视唱判定拾音可靠性 + 示范直通 — Implementation Plan
 
 > **For agentic workers:** 可按任务顺序执行；每任务内步骤使用 `- [ ]` 勾选跟踪。  
-> **关联设计：** `docs/cursor/6c75954f/sight-singing-evaluate-capture-design.md`
+> **关联设计：** `docs/cursor/6c75954f/sight-singing-evaluate-capture-design.md`  
+> **关联 UI/UX：** `docs/cursor/6c75954f/ui-ux.md`（音柱为主、弱化时间线曲线；与下列 Task 可并行排期）
 
 **Goal:** 在真机视唱训练中，提升判定窗口内有效拾音样本率与分数稳定性；示范音频播完后自动进入与 `evaluate()` 等价的判定流程，并保留「跳过示范直接判定」；样本不足时不给出误导性低分。
 
@@ -161,6 +162,24 @@ cd swift_app && swift test
 
 ---
 
+### Task UI-Bar（待排期 · 见 `ui-ux.md`）
+
+**Goal:** 以 **音高柱状图**（目标 vs 用户）作为视唱页**主**视觉反馈；**稳/抖** 通过柱高随采样更新时的浮动感知；**弱化或移除** `SightSingingPitchGraphView` 时间–音分曲线作为主展示。
+
+**Files（预期）：**
+- Modify: `swift_app/Sources/Features/Ear/SightSingingViews.swift`（新组件 + 布局）
+- Modify: `swift_app/Sources/Features/Ear/SightSingingSessionViewModel.swift`（暴露聚合 MIDI / 目标 MIDI 供柱高绑定，或与 P1 聚合逻辑共用）
+- Create（可选）: `swift_app/Sources/Features/Ear/SightSingingPitchBarCompareView.swift`
+
+**建议顺序：** P1 聚合稳定后再做柱的「判定窗内高度」，避免 UI 绑在噪声过大的原始 `currentHz` 上。
+
+- [ ] **Step 1:** 读 `ui-ux.md` 第 2、5 节，与产品确认「实时柱 vs 仅结束定格」。
+- [ ] **Step 2:** 单音 MVP：两柱 + 纵轴音名刻度；接入现有 `livePitchCents` 的等价 MIDI 或新增 `@Published` 字段。
+- [ ] **Step 3:** 音程题扩展柱布局；手测清单增加「柱高与听感一致」。
+- [ ] **Step 4:** 曲线降级为折叠/移除（二选一）；`swift test` 后单独 commit。
+
+---
+
 ## 手测清单（合并 spec §7）
 
 1. 单音：仅示范直通；跳过示范直判；播完立即唱；停半拍再唱。  
@@ -181,5 +200,5 @@ cd swift_app && swift test
 ## 计划自检
 
 - 无 `TBD`：阈值处已写「先用 5 / 300ms，用 P0 日志回填」。  
-- 与 design 非目标一致：未要求重做曲线动画；后端协议默认不变（不提交无效答案时不调 `submitAnswer`）。  
+- 与 design 一致：大动效工程仍非目标；**主时间线曲线**可由 **`ui-ux.md` / Task UI-Bar** 降级或移除；后端协议默认不变（不提交无效答案时不调 `submitAnswer`）。  
 - `evaluateTrigger` 满足 design 对日志的要求。
