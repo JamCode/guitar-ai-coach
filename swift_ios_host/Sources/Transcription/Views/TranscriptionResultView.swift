@@ -33,7 +33,13 @@ struct TranscriptionResultView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SwiftAppTheme.pagePadding)
 
-            ChordRibbonView(segments: entry.segments, currentIndex: currentIndex)
+            ChordRibbonView(
+                segments: entry.segments,
+                currentIndex: currentIndex,
+                durationMs: entry.durationMs,
+                currentTimeMs: vm.currentTimeMs,
+                onScrubMs: vm.seek
+            )
                 .padding(.bottom, 12)
 
             WaveformView(samples: entry.waveform, progress: progress) { progress01 in
