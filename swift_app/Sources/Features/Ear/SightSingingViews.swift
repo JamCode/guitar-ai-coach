@@ -153,7 +153,7 @@ private struct SightSingingPitchBarCompareView: View {
     }
 }
 
-/// 目标卡片右侧：仅播放示范音，不触发判定（判定见底栏「判定」）。
+/// 目标卡片右侧：仅播放示范音；打分在开麦后由句尾静音自动触发。
 private struct SightSingingInlineDemoButton: View {
     @ObservedObject var viewModel: SightSingingSessionViewModel
 
@@ -290,13 +290,13 @@ public struct SightSingingSessionView: View {
 
                     Group {
                         if !viewModel.pitchListeningEnabled {
-                            Text("开启底栏「录音」后，柱状「你唱」与下方「当前检测」会随麦克风更新。")
+                            Text("开启底栏「录音」后，柱状「你唱」与下方「当前检测」会随麦克风更新；唱完稍停会自动打分。")
                         } else if let cents = viewModel.livePitchCents {
                             Text(String(format: "实时偏差（相对最近目标）：%+.0f ¢　·　100¢ ≈ 1 个半音", cents))
                         } else if viewModel.evaluating {
-                            Text("判定收音中… 请持续发声，「你唱」柱高会随麦克风更新。")
+                            Text("正在收音并分析…「你唱」柱仍会随麦克风更新。")
                         } else {
-                            Text("开唱后「你唱」柱会升高；与灰色目标柱越接近越好。")
+                            Text("开唱后「你唱」柱会升高；唱完稍停片刻，系统会自动截取并打分。")
                         }
                     }
                     .font(.caption)
@@ -319,7 +319,7 @@ public struct SightSingingSessionView: View {
                                             .font(.system(size: 30, weight: .bold))
                                             .foregroundStyle(SwiftAppTheme.text)
                                     }
-                                    Text("请按顺序模唱：先低音，再高音（判定会自动分段采样）")
+                                    Text("请按顺序模唱：先低音，再高音；两音都唱完后稍停，系统会自动打分。")
                                         .font(.footnote)
                                         .foregroundStyle(SwiftAppTheme.muted)
                                 }
@@ -375,9 +375,9 @@ public struct SightSingingSessionView: View {
                         .appCard()
                     }
 
-                    // 底栏：录音 → 判定 → 下一题（示范仅在目标卡内，且仅播放）。
+                    // 底栏：录音 ↔ 下一题（示范在目标卡内；开麦后句尾静音自动打分）。
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .center, spacing: 6) {
+                        HStack(alignment: .center, spacing: 10) {
                             Button {
                                 Task { await viewModel.setPitchListeningEnabled(!viewModel.pitchListeningEnabled) }
                             } label: {
@@ -390,7 +390,7 @@ public struct SightSingingSessionView: View {
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.75)
                                     }
-                                    Text(viewModel.pitchListeningEnabled ? "关" : "开麦")
+                                    Text(viewModel.pitchListeningEnabled ? "关麦" : "开麦拾音")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
@@ -405,33 +405,6 @@ public struct SightSingingSessionView: View {
                             .tint(SwiftAppTheme.brand)
                             .frame(maxWidth: .infinity)
                             .disabled(viewModel.evaluating)
-
-                            Button {
-                                Task { await viewModel.evaluate() }
-                            } label: {
-                                VStack(spacing: 2) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "checkmark.circle")
-                                            .font(.system(size: 14, weight: .semibold))
-                                        Text("判定")
-                                            .font(.caption.weight(.semibold))
-                                            .lineLimit(1)
-                                    }
-                                    Text("提交")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 2)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            .tint(SwiftAppTheme.brand)
-                            .frame(maxWidth: .infinity)
-                            .disabled(!viewModel.pitchListeningEnabled || viewModel.evaluating || viewModel.previewing)
 
                             Button {
                                 Task {

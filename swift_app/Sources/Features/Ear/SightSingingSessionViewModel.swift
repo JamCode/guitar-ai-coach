@@ -60,6 +60,8 @@ public struct SightSingingPitchGraphPoint: Sendable, Identifiable {
 public enum SightSingingEvaluateTrigger: String, Sendable {
     case manual
     case postPreview
+    /// 开麦后检测到句尾静音，自动走采集 + 离线分析。
+    case phraseEndAuto
 }
 
 #if canImport(os)
@@ -117,6 +119,16 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
     private let graphTickMs = 33
     private let graphWindowSeconds: Double = 6
+
+    /// 句尾静音达到该时长后尝试自动打分（与 `SightSingingEvaluateCapture` 尾静音同量级）。
+    private let phraseTailSilenceMs = 480
+    /// 单音题：本句累计检测到基频的最少时长，避免一开麦静默就提交。
+    private let phraseMinTotalVoicedSingleMs = 400
+    /// 音程题：两音之间可能有短暂间隙，累计有声阈值高于单音（按目标数放大）。
+    private let phraseMinVoicedPerTargetMs = 340
+
+    private var phraseAutoTotalVoicedMs = 0
+    private var phraseAutoTrailingSilenceMs = 0
 
     private var graphWindowStart: Date?
     /// 换新题后的短窗：不向 UI 写入 `pitchTracker` 的拾音，避免上一题尾音或旧 `currentHz`「粘」在新题上。
@@ -186,6 +198,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         monitoringTask = nil
         previewGraphTask?.cancel()
         previewGraphTask = nil
+        resetPhraseAutoGate()
         pitchTracker.stop()
     }
 
@@ -279,11 +292,12 @@ public final class SightSingingSessionViewModel: ObservableObject {
             currentHz = nil
             livePitchCents = nil
             livePickupPauseUntil = nil
+            resetPhraseAutoGate()
             pitchTracker.stop()
         }
     }
 
-    /// 用户点底栏「判定」或测试入口；与示范播完自动判（`postPreview`）区分。
+    /// 测试或调试入口；产品主路径为句尾自动 `phraseEndAuto`。
     public func evaluate() async {
         await evaluate(trigger: .manual)
     }
@@ -291,9 +305,10 @@ public final class SightSingingSessionViewModel: ObservableObject {
     public func evaluate(trigger: SightSingingEvaluateTrigger) async {
         guard !evaluating, let q = question, let sid = sessionId else { return }
         guard pitchListeningEnabled else {
-            evaluateUserHint = "请先开启底栏「录音」再判定。"
+            evaluateUserHint = "请先开启底栏「录音」；唱完后稍停，系统会自动打分。"
             return
         }
+        resetPhraseAutoGate()
         evaluating = true
         lastScore = nil
         evaluateUserHint = nil
@@ -305,6 +320,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         pitchTracker.stop()
         defer {
             activeEvaluatingTargetIndex = nil
+            resetPhraseAutoGate()
             if pitchListeningEnabled {
                 do {
                     try pitchTracker.start()
@@ -428,7 +444,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         }
     }
 
-    /// 播完整段示范后短间隔自动判定（保留给测试/实验；产品主路径为「示范仅 `playPreview` + 手动判定」）。
+    /// 播完整段示范后短间隔自动判定（保留给测试/实验）。
     public func playPreviewAndEvaluate() async {
         guard !previewing, !evaluating else { return }
         let ok = await playPreview()
@@ -556,6 +572,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         previewGraphTask = nil
         evaluating = false
         previewing = false
+        resetPhraseAutoGate()
         if stopPitchTracker {
             pitchListeningEnabled = false
             pitchTracker.stop()
@@ -589,6 +606,46 @@ public final class SightSingingSessionViewModel: ObservableObject {
         evaluateUserHint = nil
         currentHz = nil
         livePickupPauseUntil = Date().addingTimeInterval(0.4)
+        resetPhraseAutoGate()
+    }
+
+    private func resetPhraseAutoGate() {
+        phraseAutoTotalVoicedMs = 0
+        phraseAutoTrailingSilenceMs = 0
+    }
+
+    private func minVoicedMsForPhraseAutoSubmit(question: SightSingingQuestion?) -> Int {
+        guard let q = question else { return phraseMinTotalVoicedSingleMs }
+        let n = max(1, q.targetNotes.count)
+        return max(phraseMinTotalVoicedSingleMs, phraseMinVoicedPerTargetMs * n)
+    }
+
+    /// 开麦且非示范/非判定时：累计有声 + 句尾静音达到阈值则自动 `evaluate`。
+    private func tickPhraseAutoEvaluateIfNeeded() {
+        guard pitchListeningEnabled, !previewing, !evaluating else {
+            if !pitchListeningEnabled || previewing { resetPhraseAutoGate() }
+            return
+        }
+        guard question != nil, sessionId != nil else { return }
+        if let pause = livePickupPauseUntil, Date() < pause {
+            resetPhraseAutoGate()
+            return
+        }
+        let step = graphTickMs
+        let minVoiced = minVoicedMsForPhraseAutoSubmit(question: question)
+        if currentHz != nil {
+            phraseAutoTotalVoicedMs += step
+            phraseAutoTrailingSilenceMs = 0
+        } else {
+            phraseAutoTrailingSilenceMs += step
+            if phraseAutoTrailingSilenceMs >= phraseTailSilenceMs,
+               phraseAutoTotalVoicedMs >= minVoiced {
+                resetPhraseAutoGate()
+                Task { @MainActor [weak self] in
+                    await self?.evaluate(trigger: .phraseEndAuto)
+                }
+            }
+        }
     }
 
     private func emitEvaluateLog(
@@ -638,6 +695,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
     private func appendLiveUserSampleIfPossible() {
         guard let q = question else { return }
+        defer { tickPhraseAutoEvaluateIfNeeded() }
         let trackerHz = pitchTracker.currentHz
         if let pause = livePickupPauseUntil {
             if Date() < pause {
