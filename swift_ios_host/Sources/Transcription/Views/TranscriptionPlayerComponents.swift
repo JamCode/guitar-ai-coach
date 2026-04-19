@@ -103,7 +103,9 @@ struct ChordRibbonView: View {
 
     /// 与 `ChordRibbonTimeline.layout` 的累计坐标一致：不在卡片之间留缝，避免 scrub 落在「无时间」区间。
     private let cardSpacing: CGFloat = 0
-    private let cardMinWidth: CGFloat = 52
+    /// 略增最窄卡片宽度，给 `ChordDiagramView`（约 0.78 宽高比）留足横向像素。
+    private let cardMinWidth: CGFloat = 58
+    private let cardInteriorHeight: CGFloat = 104
     /// 略大于一屏，便于左右拖动浏览全曲。
     private let timelineWidthStretch: CGFloat = 2
 
@@ -148,25 +150,31 @@ struct ChordRibbonView: View {
                             Button {
                                 onScrubMs(seekMs)
                             } label: {
-                                VStack(spacing: 6) {
+                                VStack(alignment: .center, spacing: 2) {
                                     Text(segment.chord)
-                                        .font(.headline)
+                                        .font(.footnote.weight(.semibold))
                                         .foregroundStyle(SwiftAppTheme.text)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.75)
                                     if let fingering {
                                         ChordDiagramView(frets: fingering.frets)
-                                            .frame(width: 34, height: 44)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                            .layoutPriority(1)
                                     } else {
                                         Text("—")
-                                            .font(.caption)
+                                            .font(.caption2)
                                             .foregroundStyle(SwiftAppTheme.muted)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     }
                                 }
+                                .padding(.horizontal, 3)
+                                .padding(.vertical, 4)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("跳到 \(segment.chord)")
-                            .frame(width: w, height: 84)
+                            .frame(width: w, height: cardInteriorHeight)
                             .background(idx == currentIndex ? SwiftAppTheme.surfaceSoft : SwiftAppTheme.surface)
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .overlay(
@@ -217,7 +225,7 @@ struct ChordRibbonView: View {
                     }
             )
         }
-        .frame(height: 100)
+        .frame(height: 120)
     }
 }
 
