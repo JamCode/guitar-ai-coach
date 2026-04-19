@@ -420,49 +420,70 @@ public struct SightSingingSessionView: View {
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
-                Form {
-                    // Toggle/Slider 置顶，两个 Picker 分节置底，减轻菜单浮层压住下方可点控件。
-                    Section {
-                        Toggle("包含升降号", isOn: $settingsDraft.includeAccidental)
-                        Text(settingsDraft.questionCount <= 0 ? "题量：不限（无限刷题）" : "题量：\(settingsDraft.questionCount) 题")
-                            .foregroundStyle(SwiftAppTheme.text)
-                        Slider(
-                            value: Binding(
-                                get: { Double(settingsDraft.questionCount) },
-                                set: { settingsDraft.questionCount = Int($0) }
-                            ),
-                            in: 0...20,
-                            step: 5
-                        )
-                        .tint(SwiftAppTheme.brand)
-                    }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Toggle("包含升降号", isOn: $settingsDraft.includeAccidental)
+                            Text(settingsDraft.questionCount <= 0 ? "题量：不限（无限刷题）" : "题量：\(settingsDraft.questionCount) 题")
+                                .foregroundStyle(SwiftAppTheme.text)
+                            Slider(
+                                value: Binding(
+                                    get: { Double(settingsDraft.questionCount) },
+                                    set: { settingsDraft.questionCount = Int($0) }
+                                ),
+                                in: 0...20,
+                                step: 5
+                            )
+                            .tint(SwiftAppTheme.brand)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCard()
 
-                    // 与 `ChordLookupView` 一致：标题在 Picker 外 + `.pickerStyle(.menu)` + 横向拉满，避免 Form 内默认 Picker 命中区偏窄。
-                    Section {
-                        settingsMenuPickerRow(title: "训练模式") {
-                            Picker("训练模式", selection: $settingsDraft.exerciseKind) {
-                                ForEach(SightSingingExerciseKind.allCases) { kind in
-                                    Text(kind.titleZh).tag(kind)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("训练模式").appSectionTitle()
+                                .padding(.bottom, 6)
+                            ForEach(Array(SightSingingExerciseKind.allCases.enumerated()), id: \.element) { index, kind in
+                                if index > 0 {
+                                    Divider()
+                                }
+                                SightSingingSettingsChoiceRow(
+                                    title: kind.titleZh,
+                                    selected: settingsDraft.exerciseKind == kind
+                                ) {
+                                    settingsDraft.exerciseKind = kind
                                 }
                             }
-                            .pickerStyle(.menu)
                         }
-                    }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCard()
 
-                    Section {
-                        settingsMenuPickerRow(title: "音域") {
-                            Picker("音域", selection: $settingsDraft.pitchRange) {
-                                Text("低音区 C3-B3").tag("low")
-                                Text("中音区 C4-B4").tag("mid")
-                                Text("宽范围 C3-B4").tag("wide")
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("音域").appSectionTitle()
+                                .padding(.bottom, 6)
+                            ForEach(Array(SightSingingPitchRangeOption.allCases.enumerated()), id: \.element) { index, option in
+                                if index > 0 {
+                                    Divider()
+                                }
+                                SightSingingSettingsChoiceRow(
+                                    title: option.titleZh,
+                                    selected: settingsDraft.pitchRange == option.rawValue
+                                ) {
+                                    settingsDraft.pitchRange = option.rawValue
+                                }
                             }
-                            .pickerStyle(.menu)
                         }
-                    } footer: {
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCard()
+
                         Text("保存后从下一题起按新设置随机出题；并写入本机，下次打开自动沿用。")
                             .font(.footnote)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(SwiftAppTheme.pagePadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .appPageBackground()
                 .navigationTitle("出题设置")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -505,17 +526,48 @@ public struct SightSingingSessionView: View {
     }
 }
 
-// MARK: - 出题设置 menu 行（对齐 `ChordLookupView.chordMenuRow`）
+// MARK: - 出题设置：卡片内全宽单选行（方案 C，无弹出菜单）
 
-private extension SightSingingSessionView {
-    @ViewBuilder
-    func settingsMenuPickerRow<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(SwiftAppTheme.muted)
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
+private enum SightSingingPitchRangeOption: String, CaseIterable {
+    case low
+    case mid
+    case wide
+
+    fileprivate var titleZh: String {
+        switch self {
+        case .low:
+            return "低音区 C3-B3"
+        case .mid:
+            return "中音区 C4-B4"
+        case .wide:
+            return "宽范围 C3-B4"
         }
+    }
+}
+
+private struct SightSingingSettingsChoiceRow: View {
+    let title: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(selected ? SwiftAppTheme.brand : SwiftAppTheme.muted)
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(SwiftAppTheme.text)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .contentShape(Rectangle())
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 }
