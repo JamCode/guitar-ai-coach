@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import AVFoundation
 import Core
 
@@ -35,7 +36,11 @@ struct TranscriptionResultView: View {
             ChordRibbonView(segments: entry.segments, currentIndex: currentIndex)
                 .padding(.bottom, 12)
 
-            WaveformView(samples: entry.waveform, progress: progress)
+            WaveformView(samples: entry.waveform, progress: progress) { progress01 in
+                guard entry.durationMs > 0 else { return }
+                let ms = Int((min(max(progress01, 0), 1) * Double(entry.durationMs)).rounded())
+                vm.seek(ms)
+            }
                 .frame(height: 280)
                 .padding(.horizontal, SwiftAppTheme.pagePadding)
 
@@ -51,7 +56,13 @@ struct TranscriptionResultView: View {
         .navigationTitle("识别结果")
         .appPageBackground()
         .task { vm.prepareIfNeeded() }
-        .onDisappear { vm.teardown() }
+        .onChange(of: vm.isPlaying) { _, isPlaying in
+            UIApplication.shared.isIdleTimerDisabled = isPlaying
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+            vm.teardown()
+        }
         .alert("播放失败", isPresented: $vm.showingPlaybackError) {
             Button("知道了", role: .cancel) {}
         } message: {

@@ -50,6 +50,9 @@ struct ChordRibbonView: View {
 struct WaveformView: View {
     let samples: [Double]
     let progress: Double
+    let onScrubProgress: (_ progress01: Double) -> Void
+
+    @State private var dragAnchorProgress: Double?
 
     var body: some View {
         GeometryReader { proxy in
@@ -78,6 +81,24 @@ struct WaveformView: View {
                     .frame(width: 2)
             }
             .clipShape(RoundedRectangle(cornerRadius: SwiftAppTheme.cardRadius, style: .continuous))
+            .contentShape(Rectangle())
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        if dragAnchorProgress == nil {
+                            dragAnchorProgress = min(max(progress, 0), 1)
+                        }
+                        guard let anchor = dragAnchorProgress else { return }
+                        guard totalWidth > 0 else { return }
+
+                        let deltaProgress = Double(value.translation.width / totalWidth)
+                        let next = min(max(anchor + deltaProgress, 0), 1)
+                        onScrubProgress(next)
+                    }
+                    .onEnded { _ in
+                        dragAnchorProgress = nil
+                    }
+            )
         }
     }
 }
