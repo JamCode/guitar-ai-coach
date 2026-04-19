@@ -427,11 +427,14 @@ public struct SightSingingSessionView: View {
                                 Text(kind.titleZh).tag(kind)
                             }
                         }
+                        // Form 内默认 `.menu` 会弹出浮层，易与下方 Toggle/Slider 叠层导致点选不灵；改为内联展开更稳。
+                        .pickerStyle(.inline)
                         Picker("音域", selection: $settingsDraft.pitchRange) {
-                            Text("低音区 C3-B3").tag("low")
-                            Text("中音区 C4-B4").tag("mid")
-                            Text("宽范围 C3-B4").tag("wide")
+                            Text("C3-B3").tag("low")
+                            Text("C4-B4").tag("mid")
+                            Text("C3-B4").tag("wide")
                         }
+                        .pickerStyle(.segmented)
                         Toggle("包含升降号", isOn: $settingsDraft.includeAccidental)
                         Text(settingsDraft.questionCount <= 0 ? "题量：不限（无限刷题）" : "题量：\(settingsDraft.questionCount) 题")
                             .foregroundStyle(SwiftAppTheme.text)
