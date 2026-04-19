@@ -438,19 +438,31 @@ public struct SightSingingSessionView: View {
                     }
 
                     Section {
-                        Picker("训练模式", selection: $settingsDraft.exerciseKind) {
+                        Picker(selection: $settingsDraft.exerciseKind) {
                             ForEach(SightSingingExerciseKind.allCases) { kind in
                                 Text(kind.titleZh).tag(kind)
                             }
+                        } label: {
+                            EmptyView()
                         }
+                        .labelsHidden()
+                        .accessibilityLabel("训练模式")
+                    } header: {
+                        Text("训练模式")
                     }
 
                     Section {
-                        Picker("音域", selection: $settingsDraft.pitchRange) {
+                        Picker(selection: $settingsDraft.pitchRange) {
                             Text("低音区 C3-B3").tag("low")
                             Text("中音区 C4-B4").tag("mid")
                             Text("宽范围 C3-B4").tag("wide")
+                        } label: {
+                            EmptyView()
                         }
+                        .labelsHidden()
+                        .accessibilityLabel("音域")
+                    } header: {
+                        Text("音域")
                     } footer: {
                         Text("保存后从下一题起按新设置随机出题；并写入本机，下次打开自动沿用。")
                             .font(.footnote)
