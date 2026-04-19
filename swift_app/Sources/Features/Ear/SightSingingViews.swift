@@ -2,6 +2,7 @@ import SwiftUI
 import Core
 
 /// 主反馈：目标音 vs 当前拾音的柱状对比（弱化时间–音分曲线，见 `docs/cursor/6c75954f/ui-ux.md`）。
+/// 每个目标一柱，柱内并排：左/灰=目标音高，右/品牌色=你唱（同一纵轴刻度）。
 private struct SightSingingPitchBarCompareView: View {
     let targetNotes: [String]
     let targetMidis: [Double]
@@ -35,7 +36,7 @@ private struct SightSingingPitchBarCompareView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("音高对比").appSectionTitle()
-            Text("柱高为相对 MIDI（纵轴为音名刻度）；「你唱」随麦克风更新。")
+            Text("每根柱子里：左/灰为目标音，右/亮色为你唱；柱高均为同一 MIDI 刻度，随麦克风更新。")
                 .font(.caption)
                 .foregroundStyle(SwiftAppTheme.muted)
 
@@ -45,21 +46,12 @@ private struct SightSingingPitchBarCompareView: View {
 
                 HStack(alignment: .bottom, spacing: 12) {
                     ForEach(0..<targetNotes.count, id: \.self) { i in
-                        barColumn(
+                        mergedBarColumn(
                             headline: targetNotes.count > 1 ? "目标 \(i + 1)" : "目标",
                             caption: targetNotes[i],
-                            midi: i < targetMidis.count ? targetMidis[i] : lo,
-                            fill: SwiftAppTheme.muted.opacity(0.5),
-                            isPlaceholder: false
+                            targetMidi: i < targetMidis.count ? targetMidis[i] : lo
                         )
                     }
-                    barColumn(
-                        headline: "你唱",
-                        caption: userCaption,
-                        midi: userMidi ?? lo,
-                        fill: userMidi == nil ? SwiftAppTheme.line : SwiftAppTheme.brand,
-                        isPlaceholder: userMidi == nil
-                    )
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -88,15 +80,15 @@ private struct SightSingingPitchBarCompareView: View {
         HStack(spacing: 14) {
             HStack(spacing: 6) {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(SwiftAppTheme.brand)
+                    .fill(SwiftAppTheme.muted.opacity(0.55))
                     .frame(width: 10, height: 10)
-                Text("你唱")
+                Text("目标（柱左）")
             }
             HStack(spacing: 6) {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(SwiftAppTheme.muted.opacity(0.5))
+                    .fill(SwiftAppTheme.brand)
                     .frame(width: 10, height: 10)
-                Text("目标")
+                Text("你唱（柱右）")
             }
             Spacer(minLength: 0)
         }
@@ -104,34 +96,43 @@ private struct SightSingingPitchBarCompareView: View {
         .foregroundStyle(SwiftAppTheme.muted)
     }
 
-    @ViewBuilder
-    private func barColumn(
-        headline: String,
-        caption: String,
-        midi: Double,
-        fill: Color,
-        isPlaceholder: Bool
-    ) -> some View {
+    private func barHeight(for midi: Double) -> CGFloat {
         let span = max(hi - lo, 0.000_001)
-        let barH: CGFloat = {
-            if isPlaceholder {
-                return 10
-            }
-            let t = (midi - lo) / span
-            let u = CGFloat(min(1, max(0, t)))
-            return max(14, 146 * u)
+        let t = (midi - lo) / span
+        let u = CGFloat(min(1, max(0, t)))
+        return max(14, 146 * u)
+    }
+
+    private func mergedBarColumn(headline: String, caption: String, targetMidi: Double) -> some View {
+        let hTarget = barHeight(for: targetMidi)
+        let hasUser = userMidi != nil
+        let hUser: CGFloat = {
+            guard let u = userMidi else { return 10 }
+            return max(12, barHeight(for: u))
         }()
 
-        VStack(spacing: 8) {
+        return VStack(spacing: 8) {
             ZStack(alignment: .bottom) {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(SwiftAppTheme.surfaceSoft)
-                    .frame(width: 44, height: 150)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 150)
 
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(fill)
-                    .frame(width: 36, height: barH)
-                    .opacity(isPlaceholder ? 0.45 : 1)
+                HStack(alignment: .bottom, spacing: 5) {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(SwiftAppTheme.muted.opacity(0.55))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: hTarget)
+
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(hasUser ? SwiftAppTheme.brand : SwiftAppTheme.line)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: hUser)
+                        .opacity(hasUser ? 1 : 0.38)
+                }
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity)
+                .frame(height: 150, alignment: .bottom)
             }
             .frame(height: 150)
 
@@ -148,7 +149,7 @@ private struct SightSingingPitchBarCompareView: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(headline)，\(caption)")
+        .accessibilityLabel("\(headline)，目标 \(caption)，你唱 \(userCaption)")
     }
 }
 
