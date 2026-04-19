@@ -1,5 +1,7 @@
-import SwiftUI
+import ChordChart
+import Chords
 import Core
+import SwiftUI
 
 struct ChordPracticeSessionView: View {
     let task: PracticeTask
@@ -20,23 +22,27 @@ struct ChordPracticeSessionView: View {
     @State private var savingError: String?
     @State private var savedToast: Bool = false
 
-    @State private var chordSymbolToPresent: String?
-
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(spacing: 12) {
-            VStack(spacing: 10) {
-                FlowLayout(spacing: 8, runSpacing: 6) {
-                    ForEach(Array(config.resolvedChords.enumerated()), id: \.offset) { idx, chord in
-                        chordButton(chord: chord, index: idx)
-                    }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("本组和弦")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.muted)
+                    Spacer()
+                    Text(config.complexity.practiceTierZh)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.brand)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(SwiftAppTheme.brandSoft)
+                        .clipShape(Capsule())
                 }
-                Text("点击和弦名查看指法")
-                    .font(.subheadline)
-                    .foregroundStyle(SwiftAppTheme.muted)
+                ChordPracticeDiagramStrip(chordSymbols: config.resolvedChords)
                 Text(config.complexity.fullLabel)
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(SwiftAppTheme.muted)
             }
             .appCard()
@@ -111,21 +117,7 @@ struct ChordPracticeSessionView: View {
                 }
             )
         }
-        .chordQuickReferenceSheet(chordSymbolToPresent: $chordSymbolToPresent)
         .appPageBackground()
-    }
-
-    private func chordButton(chord: String, index: Int) -> some View {
-        Button {
-            chordSymbolToPresent = chord
-        } label: {
-            Text(chord)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(SwiftAppTheme.brand)
-                .underline(true, color: SwiftAppTheme.brand.opacity(0.35))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("会话和弦 \(chord) \(index + 1)")
     }
 
     private func start() {
@@ -177,4 +169,3 @@ private func formatDurationLocal(_ seconds: Int) -> String {
     let r = String(format: "%02d", s % 60)
     return "\(m):\(r)"
 }
-

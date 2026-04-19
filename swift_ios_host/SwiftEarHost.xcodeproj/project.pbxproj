@@ -51,6 +51,7 @@
 		C43C649F834BDB6D9503DF75 /* TranscriptionOnnxPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B6EE54B98314A51942ED04 /* TranscriptionOnnxPipeline.swift */; };
 		C787FACA423985B8AB60B3F3 /* TranscriptionImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7057D28BD44309D9AB1073C9 /* TranscriptionImportService.swift */; };
 		D201453C3449669F76C49202 /* PracticeFinishDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */; };
+		D29C08EF68159ECDFBEAED4A /* ChordPracticeDiagramStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 794CD07A0EA8977083421938 /* ChordPracticeDiagramStrip.swift */; };
 		DD61CF628A04537E6C473939 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EBEA87C47D232B232E814C /* TranscriptionEngine.swift */; };
 		E4EAB09290F9A8C43C587AE2 /* RecommendationHistoryMerging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEE6B960D44ECFD5930467C /* RecommendationHistoryMerging.swift */; };
 		E69983D149243B7A6D946061 /* Tuner in Frameworks */ = {isa = PBXBuildFile; productRef = D68C530C664DD0805DDA1187 /* Tuner */; };
@@ -99,6 +100,7 @@
 		71EBEA87C47D232B232E814C /* TranscriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionEngine.swift; sourceTree = "<group>"; };
 		7311799DB975BB28A9DA4E69 /* TranscriptionWaveformService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionWaveformService.swift; sourceTree = "<group>"; };
 		760384F757B9ADBF5C5E2DB7 /* SheetLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetLibraryView.swift; sourceTree = "<group>"; };
+		794CD07A0EA8977083421938 /* ChordPracticeDiagramStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeDiagramStrip.swift; sourceTree = "<group>"; };
 		7A0944BA0BAA6C603F2C127D /* RecommendationHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationHistoryStore.swift; sourceTree = "<group>"; };
 		806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrummingPattern.swift; sourceTree = "<group>"; };
 		8A109020D4CD7E24C3E10927 /* TranscriptionResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionResultView.swift; sourceTree = "<group>"; };
@@ -228,6 +230,7 @@
 		4BB75095F0792EB43B8A1133 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				794CD07A0EA8977083421938 /* ChordPracticeDiagramStrip.swift */,
 				6BBE379FBC86AF30F9A09A12 /* ChordPracticeSelectionView.swift */,
 				4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */,
 				95326B0E05757D83577B0F63 /* ChordQuickReferenceSheet.swift */,
@@ -475,6 +478,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				20447C35DE97E863892D45D1 /* ChordFingeringResolver.swift in Sources */,
+				D29C08EF68159ECDFBEAED4A /* ChordPracticeDiagramStrip.swift in Sources */,
 				1D6925B0C7D1C03655046420 /* ChordPracticeSelectionView.swift in Sources */,
 				7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */,
 				A54032D2550FD222A9DA87FD /* ChordProgressionLibrary.swift in Sources */,

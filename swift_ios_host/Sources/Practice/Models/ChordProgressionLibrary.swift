@@ -24,6 +24,15 @@ enum ChordComplexity: String, CaseIterable, Identifiable {
         case .advanced: "高级（九和弦+）"
         }
     }
+
+    /// 与 Tools「和弦切换」初 / 中 / 高档级文案对齐（用于标签展示）。
+    var practiceTierZh: String {
+        switch self {
+        case .basic: "初级"
+        case .intermediate: "中级"
+        case .advanced: "高级"
+        }
+    }
 }
 
 struct ChordProgression: Identifiable, Equatable {
@@ -34,6 +43,17 @@ struct ChordProgression: Identifiable, Equatable {
     /// 风格标签，用于列表分组。
     let style: String
     let description: String?
+}
+
+extension ChordProgression {
+    /// 不再由用户手选复杂度：按进行风格给出默认和弦档次（与罗马级数解析表一致）。
+    var impliedComplexity: ChordComplexity {
+        switch style {
+        case "Jazz": return .advanced
+        case "Blues": return .intermediate
+        default: return .basic
+        }
+    }
 }
 
 let kChordProgressions: [ChordProgression] = [

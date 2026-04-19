@@ -1,5 +1,7 @@
-import SwiftUI
+import ChordChart
+import Chords
 import Core
+import SwiftUI
 
 struct ChordPracticeConfig: Equatable {
     let progression: ChordProgression
@@ -8,22 +10,26 @@ struct ChordPracticeConfig: Equatable {
     let resolvedChords: [String]
 }
 
-/// 和弦进行选择页：选进行 / 调 / 复杂度，预览实际和弦名，进入练习（对齐 Flutter）。
+/// 和弦进行选择页：选进行、预览指法图；调性在齿轮内；复杂度按进行风格自动决定并显示档级标签。
 struct ChordPracticeSelectionView: View {
     let task: PracticeTask
     let store: PracticeSessionStore
 
     @State private var selectedProgression: ChordProgression = kChordProgressions.first!
     @State private var selectedKey: String = "C"
-    @State private var selectedComplexity: ChordComplexity = .basic
 
     @State private var showPickerSheet: Bool = false
+    @State private var showPracticeSettings: Bool = false
+
+    private var impliedComplexity: ChordComplexity {
+        selectedProgression.impliedComplexity
+    }
 
     private var resolvedChords: [String] {
         ChordProgressionEngine.resolveChordNames(
             romanNumerals: selectedProgression.romanNumerals,
             key: selectedKey,
-            complexity: selectedComplexity
+            complexity: impliedComplexity
         )
     }
 
@@ -32,29 +38,6 @@ struct ChordPracticeSelectionView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     previewCard
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("调性").appSectionTitle()
-                        Picker("调性", selection: $selectedKey) {
-                            ForEach(kMusicKeys, id: \.self) { Text($0).tag($0) }
-                        }
-                        .pickerStyle(.menu)
-                    }
-                    .appCard()
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("复杂度").appSectionTitle()
-                        Picker("复杂度", selection: $selectedComplexity) {
-                            ForEach(ChordComplexity.allCases) { c in
-                                Text(c.label).tag(c)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        Text(selectedComplexity.fullLabel)
-                            .font(.subheadline)
-                            .foregroundStyle(SwiftAppTheme.muted)
-                    }
-                    .appCard()
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("和弦进行").appSectionTitle()
@@ -83,7 +66,6 @@ struct ChordPracticeSelectionView: View {
                 }
                 .padding(SwiftAppTheme.pagePadding)
             }
-
         }
         .safeAreaInset(edge: .bottom) {
             NavigationLink {
@@ -94,7 +76,7 @@ struct ChordPracticeSelectionView: View {
                         config: ChordPracticeConfig(
                             progression: selectedProgression,
                             key: selectedKey,
-                            complexity: selectedComplexity,
+                            complexity: impliedComplexity,
                             resolvedChords: resolvedChords
                         )
                     )
@@ -110,6 +92,16 @@ struct ChordPracticeSelectionView: View {
         }
         .navigationTitle("和弦切换练习")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showPracticeSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("练习设置与调性")
+            }
+        }
         .sheet(isPresented: $showPickerSheet) {
             ChordProgressionPickerSheet(
                 selectedId: selectedProgression.id,
@@ -119,29 +111,57 @@ struct ChordPracticeSelectionView: View {
                 }
             )
         }
+        .sheet(isPresented: $showPracticeSettings) {
+            NavigationStack {
+                Form {
+                    Section("调性") {
+                        Picker("调性", selection: $selectedKey) {
+                            ForEach(kMusicKeys, id: \.self) { Text("\($0) 调").tag($0) }
+                        }
+                    }
+                    Section("难度档") {
+                        Text(impliedComplexity.practiceTierZh)
+                            .font(.title3.weight(.semibold))
+                        Text(impliedComplexity.fullLabel)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Text("根据所选「和弦进行」的音乐风格自动选用三和弦 / 七和弦 / 九和弦等档次，无需手选。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle("练习设置")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("完成") { showPracticeSettings = false }
+                    }
+                }
+            }
+        }
         .appPageBackground()
     }
 
     @ViewBuilder
     private var previewCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("当前选择预览").appSectionTitle()
-                .foregroundStyle(SwiftAppTheme.text)
-
-            FlowLayout(spacing: 8, runSpacing: 6) {
-                ForEach(Array(resolvedChords.enumerated()), id: \.offset) { idx, chord in
-                    Text(chord)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(SwiftAppTheme.brand)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(SwiftAppTheme.brandSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .accessibilityLabel("预览和弦 \(chord) \(idx + 1)")
-                }
+            HStack(alignment: .center) {
+                Text("当前选择预览")
+                    .appSectionTitle()
+                    .foregroundStyle(SwiftAppTheme.text)
+                Spacer()
+                Text(impliedComplexity.practiceTierZh)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(SwiftAppTheme.brand)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(SwiftAppTheme.brandSoft)
+                    .clipShape(Capsule())
             }
 
-            Text("\(selectedProgression.name) · \(selectedKey) 调 · \(selectedComplexity.label) · 点和弦名查看指法")
+            ChordPracticeDiagramStrip(chordSymbols: resolvedChords)
+
+            Text("\(selectedProgression.name) · \(impliedComplexity.practiceTierZh)")
                 .font(.subheadline)
                 .foregroundStyle(SwiftAppTheme.muted)
         }
@@ -208,4 +228,3 @@ private struct ChordProgressionPickerSheet: View {
         }
     }
 }
-
