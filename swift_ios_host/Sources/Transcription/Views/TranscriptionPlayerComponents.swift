@@ -111,7 +111,7 @@ struct ChordRibbonView: View {
         GeometryReader { proxy in
             let visibleW = proxy.size.width
             let pagePad = SwiftAppTheme.pagePadding
-            let (starts, widths, contentW) = ChordRibbonTimeline.layout(
+            let (starts, widths, _) = ChordRibbonTimeline.layout(
                 segments: segments,
                 durationMs: durationMs,
                 visibleWidth: visibleW,
