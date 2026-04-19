@@ -14,7 +14,6 @@ struct PracticeTimerSessionView: View {
     @State private var showFinishSheet: Bool = false
     @State private var noteText: String = ""
 
-    @State private var showLeaveConfirm: Bool = false
     @State private var showNeedStartHint: Bool = false
     @State private var savingError: String?
     @State private var savedToast: Bool = false
@@ -57,22 +56,17 @@ struct PracticeTimerSessionView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-                    showLeaveConfirm = true
+                    dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
                 }
+                .accessibilityLabel("返回")
             }
         }
         .onReceive(ticker) { _ in
             guard running else { return }
             elapsedSeconds += 1
-        }
-        .alert("离开练习？", isPresented: $showLeaveConfirm) {
-            Button("继续练习", role: .cancel) {}
-            Button("放弃返回", role: .destructive) { dismiss() }
-        } message: {
-            Text("当前练习尚未保存，确定要返回吗？")
         }
         .alert("先开始练习再结束哦", isPresented: $showNeedStartHint) {
             Button("知道了", role: .cancel) {}
