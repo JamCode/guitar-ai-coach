@@ -473,13 +473,6 @@ public struct SightSingingSessionView: View {
                                 .foregroundStyle(.orange)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        Text(
-                            infinite || q.index < q.totalQuestions
-                                ? "「示范」仅听参考；先「录音」再模唱，点「判定」提交得分。「下一题」可跳过本题不计分。"
-                                : "末题点「结果」查看本轮统计。"
-                        )
-                            .font(.caption2)
-                            .foregroundStyle(SwiftAppTheme.muted)
                     }
                     .padding(12)
                     .background(
