@@ -273,37 +273,90 @@ public struct SightSingingSessionView: View {
                     }
                     .appCard()
 
-                    Button {
-                        Task { await viewModel.playPreview() }
-                    } label: {
-                        HStack {
-                            Image(systemName: "speaker.wave.2")
-                            Text("播放示范")
-                            Spacer()
-                        }
-                    }
-                    .appSecondaryButton()
-                    .disabled(viewModel.evaluating || viewModel.previewing)
+                    // 方案 B：底栏三栏（示范 | 判定 | 下一题），中间为主 CTA、两侧图标+短标签。
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .center, spacing: 8) {
+                            Button {
+                                Task { await viewModel.playPreview() }
+                            } label: {
+                                VStack(spacing: 5) {
+                                    Image(systemName: "speaker.wave.2.fill")
+                                        .font(.system(size: 20, weight: .semibold))
+                                    Text("示范")
+                                        .font(.caption.weight(.semibold))
+                                        .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(SwiftAppTheme.brand)
+                            .disabled(viewModel.evaluating || viewModel.previewing)
+                            .frame(width: 76)
 
-                    Button(viewModel.evaluating ? "判定中…" : "开始判定（\(evaluateSeconds) 秒）") {
-                        Task { await viewModel.evaluate() }
-                    }
-                    .appPrimaryButton()
-                    .disabled(viewModel.evaluating || viewModel.previewing)
+                            Button {
+                                Task { await viewModel.evaluate() }
+                            } label: {
+                                VStack(spacing: 3) {
+                                    Text(viewModel.evaluating ? "判定中…" : "开始判定")
+                                        .font(.subheadline.weight(.semibold))
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.85)
+                                    if !viewModel.evaluating {
+                                        Text("\(evaluateSeconds) 秒")
+                                            .font(.caption2.weight(.medium))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(SwiftAppTheme.brand)
+                            .disabled(viewModel.evaluating || viewModel.previewing)
+                            .layoutPriority(1)
 
-                    Button {
-                        Task {
-                            if await viewModel.nextOrFinish() { showResult = true }
+                            Button {
+                                Task {
+                                    if await viewModel.nextOrFinish() { showResult = true }
+                                }
+                            } label: {
+                                VStack(spacing: 5) {
+                                    Image(systemName: "forward.end.fill")
+                                        .font(.system(size: 20, weight: .semibold))
+                                    Text(
+                                        infinite
+                                            ? "下一题"
+                                            : (q.index >= q.totalQuestions ? "结果" : "下一题")
+                                    )
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(SwiftAppTheme.brand)
+                            .disabled(viewModel.evaluating || viewModel.previewing)
+                            .frame(width: 76)
                         }
-                    } label: {
-                        HStack {
-                            Image(systemName: "forward.fill")
-                            Text(infinite ? "下一题（可跳过本题）" : (q.index >= q.totalQuestions ? "查看结果" : "下一题（可跳过本题）"))
-                            Spacer()
-                        }
+                        Text(
+                            infinite || q.index < q.totalQuestions
+                                ? "「下一题」可跳过本题，不计入得分。"
+                                : "末题点「结果」查看本轮统计。"
+                        )
+                            .font(.caption2)
+                            .foregroundStyle(SwiftAppTheme.muted)
                     }
-                    .appSecondaryButton()
-                    .disabled(viewModel.evaluating || viewModel.previewing)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: SwiftAppTheme.cardRadius, style: .continuous)
+                            .fill(SwiftAppTheme.surfaceSoft)
+                    )
 
                     if let score = viewModel.lastScore {
                         VStack(alignment: .leading, spacing: 8) {
