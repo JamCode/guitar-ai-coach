@@ -421,17 +421,8 @@ public struct SightSingingSessionView: View {
         .sheet(isPresented: $showSettings) {
             NavigationStack {
                 Form {
+                    // Toggle/Slider 置顶，两个 Picker 分节置底，减轻菜单浮层压住下方可点控件。
                     Section {
-                        Picker("训练模式", selection: $settingsDraft.exerciseKind) {
-                            ForEach(SightSingingExerciseKind.allCases) { kind in
-                                Text(kind.titleZh).tag(kind)
-                            }
-                        }
-                        Picker("音域", selection: $settingsDraft.pitchRange) {
-                            Text("低音区 C3-B3").tag("low")
-                            Text("中音区 C4-B4").tag("mid")
-                            Text("宽范围 C3-B4").tag("wide")
-                        }
                         Toggle("包含升降号", isOn: $settingsDraft.includeAccidental)
                         Text(settingsDraft.questionCount <= 0 ? "题量：不限（无限刷题）" : "题量：\(settingsDraft.questionCount) 题")
                             .foregroundStyle(SwiftAppTheme.text)
@@ -444,6 +435,22 @@ public struct SightSingingSessionView: View {
                             step: 5
                         )
                         .tint(SwiftAppTheme.brand)
+                    }
+
+                    Section {
+                        Picker("训练模式", selection: $settingsDraft.exerciseKind) {
+                            ForEach(SightSingingExerciseKind.allCases) { kind in
+                                Text(kind.titleZh).tag(kind)
+                            }
+                        }
+                    }
+
+                    Section {
+                        Picker("音域", selection: $settingsDraft.pitchRange) {
+                            Text("低音区 C3-B3").tag("low")
+                            Text("中音区 C4-B4").tag("mid")
+                            Text("宽范围 C3-B4").tag("wide")
+                        }
                     } footer: {
                         Text("保存后从下一题起按新设置随机出题；并写入本机，下次打开自动沿用。")
                             .font(.footnote)
