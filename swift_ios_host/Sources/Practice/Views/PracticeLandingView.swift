@@ -523,7 +523,7 @@ private struct PracticeTaskRouterScreen: View {
     var body: some View {
         switch task.id {
         case "chord-switch":
-            ChordPracticeSelectionView(task: task, store: store)
+            ChordPracticeSessionView(task: task, store: store)
         case "rhythm-strum":
             RhythmStrummingView(task: task, store: store)
         case "scale-walk":

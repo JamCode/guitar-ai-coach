@@ -4,12 +4,12 @@ import Core
 import Practice
 import SwiftUI
 
+/// 练琴「和弦切换」：进入即练习；题目仅来自 `ChordSwitchGenerator`。
 struct ChordPracticeSessionView: View {
     let task: PracticeTask
     let store: PracticeSessionStore
-    let config: ChordPracticeConfig
 
-    private var exercise: ChordSwitchExercise { config.exercise }
+    @State private var exercise: ChordSwitchExercise = Self.bootstrapExercise()
 
     @Environment(\.dismiss) private var dismiss
 
@@ -56,6 +56,10 @@ struct ChordPracticeSessionView: View {
                     .font(.caption)
                     .foregroundStyle(SwiftAppTheme.text)
                     .lineLimit(8)
+
+                Button("下一组") { advanceToNextGroup() }
+                    .appSecondaryButton()
+                    .frame(maxWidth: .infinity)
             }
             .appCard()
 
@@ -83,7 +87,7 @@ struct ChordPracticeSessionView: View {
             Spacer()
         }
         .padding(SwiftAppTheme.pagePadding)
-        .navigationTitle("和弦切换")
+        .navigationTitle("和弦切换练习")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -112,8 +116,7 @@ struct ChordPracticeSessionView: View {
                         Text(referenceKeyLabel)
                             .font(.title3.weight(.semibold))
                         Text(
-                            "根据本练习中出现的和弦符号自动推断最可能的自然大调主音，便于理解级数；"
-                                + "题目本身由 `ChordSwitchGenerator` 生成，无单独选调。"
+                            "根据本组和弦符号自动推断最可能的自然大调主音；题目由 `ChordSwitchGenerator` 生成。"
                         )
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -155,6 +158,23 @@ struct ChordPracticeSessionView: View {
             )
         }
         .appPageBackground()
+    }
+
+    private static func bootstrapExercise() -> ChordSwitchExercise {
+        var rng = SystemRandomNumberGenerator()
+        return ChordSwitchGenerator.buildExercise(difficulty: .初级, using: &rng)
+    }
+
+    /// 初 → 中 → 高 → 初，每次用 `ChordSwitchGenerator` 重新随机组卷。
+    private func advanceToNextGroup() {
+        running = false
+        var rng = SystemRandomNumberGenerator()
+        let nextDifficulty: ChordSwitchDifficulty = switch exercise.difficulty {
+        case .初级: .中级
+        case .中级: .高级
+        case .高级: .初级
+        }
+        exercise = ChordSwitchGenerator.buildExercise(difficulty: nextDifficulty, using: &rng)
     }
 
     private func start() {
