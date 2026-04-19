@@ -77,7 +77,7 @@ let package = Package(
         ),
         .target(
             name: "Practice",
-            dependencies: ["Core", "Fretboard"],
+            dependencies: ["Core", "Fretboard", "Chords", "ChordChart"],
             path: "Sources/Features/Practice"
         ),
         .testTarget(
