@@ -2,6 +2,7 @@ import Foundation
 import Core
 
 /// 视唱「判定」离线分析：重采样 44.1k、轻高通、端点裁剪、50ms 基频、稳定段、单音/音程与目标比对。
+/// 初学者音头滑音：每个用于评分的连续段会跳过段首约 `onsetGraceMs`，仅用后续 hop 计算音分与识别音高。
 /// 与 `TunerPitchDetector` 同构的自相关估频，便于与实时路径行为接近。
 public struct SightSingingPipelineResult: Sendable {
     public let absCentsSamples: [Double]
@@ -17,7 +18,24 @@ public enum SightSingingEvaluateAnalysis {
     private static let stableWindowMs: Int = 300
     private static let stableSpreadCents: Double = 45
     private static let minStableMs: Int = 200
+    /// 每个评分段内丢弃的段首时长（滑音/音头不准）；与 `hopMs` 对齐为整 hop。
+    private static let onsetGraceMs: Int = 200
     private static let pitchConfig = PitchDetectorConfig.sightSinging
+
+    /// 从一段 hop 索引里去掉起音宽容窗口；若去掉后为空则退回原段（避免无样本）。
+    private static func hopRangeAfterOnsetGrace(_ full: Range<Int>) -> Range<Int> {
+        let skipHops = max(0, onsetGraceMs / hopMs)
+        let start = full.lowerBound + skipHops
+        guard start < full.upperBound else { return full }
+        return start..<full.upperBound
+    }
+
+    /// 起音后的 hop 范围：若裁掉后没有任何有效基频帧，则仍用原段（避免全 nil 导致无输出）。
+    private static func scoringHopRange(segment: Range<Int>, midiPerHop: [Double?]) -> Range<Int> {
+        let trimmed = hopRangeAfterOnsetGrace(segment)
+        let trimmedHasF0 = trimmed.contains { midiPerHop[$0] != nil }
+        return trimmedHasF0 ? trimmed : segment
+    }
 
     public static func run(monoPCM: [Float], inputSampleRate: Double, targetNotes: [String]) -> SightSingingPipelineResult? {
         let targets = targetNotes.isEmpty ? ["C4"] : targetNotes
@@ -270,11 +288,12 @@ public enum SightSingingEvaluateAnalysis {
             useRange = 0..<midis.count
         }
         guard useRange.count > 0 else { return nil }
-        guard let meanM = meanMidi(in: useRange, midiPerHop: midis) else { return nil }
+        let scoreRange = scoringHopRange(segment: useRange, midiPerHop: midis)
+        guard let meanM = meanMidi(in: scoreRange, midiPerHop: midis) else { return nil }
 
         var absSamples: [Double] = []
-        absSamples.reserveCapacity(useRange.count)
-        for idx in useRange {
+        absSamples.reserveCapacity(scoreRange.count)
+        for idx in scoreRange {
             guard let m = midis[idx] else { continue }
             absSamples.append(abs((m - targetMidi) * 100))
         }
@@ -314,16 +333,18 @@ public enum SightSingingEvaluateAnalysis {
             s0 = 0..<mid
             s1 = mid..<n
         }
-        guard let m0 = meanMidi(in: s0, midiPerHop: midis), let m1 = meanMidi(in: s1, midiPerHop: midis) else { return nil }
+        let s0Score = scoringHopRange(segment: s0, midiPerHop: midis)
+        let s1Score = scoringHopRange(segment: s1, midiPerHop: midis)
+        guard let m0 = meanMidi(in: s0Score, midiPerHop: midis), let m1 = meanMidi(in: s1Score, midiPerHop: midis) else { return nil }
         let expected = targetHighMidi - targetLowMidi
         let observed = m1 - m0
         let intervalErrCents = abs(observed - expected) * 100
 
         var absSamples: [Double] = []
-        for idx in s0 {
+        for idx in s0Score {
             if let mm = midis[idx] { absSamples.append(abs((mm - targetLowMidi) * 100)) }
         }
-        for idx in s1 {
+        for idx in s1Score {
             if let mm = midis[idx] { absSamples.append(abs((mm - targetHighMidi) * 100)) }
         }
         if !absSamples.isEmpty {
