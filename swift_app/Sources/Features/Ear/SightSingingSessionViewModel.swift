@@ -1,6 +1,9 @@
 import Foundation
 import Core
 import Tuner
+#if canImport(os)
+import os
+#endif
 
 public protocol SightSingingPitchTracking: AnyObject {
     var currentHz: Double? { get }
@@ -53,6 +56,21 @@ public struct SightSingingPitchGraphPoint: Sendable, Identifiable {
     }
 }
 
+/// 判定入口来源（用于日志与后续分析）。
+public enum SightSingingEvaluateTrigger: String, Sendable {
+    case manual
+    case postPreview
+    /// 开麦后检测到句尾静音，自动走采集 + 离线分析。
+    case phraseEndAuto
+}
+
+#if canImport(os)
+private let sightSingingEvaluateLogger = Logger(
+    subsystem: "com.jamcode.guitar-ai-coach.ear",
+    category: "SightSingingEvaluate"
+)
+#endif
+
 @MainActor
 public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var loading = false
@@ -61,6 +79,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var sessionId: String?
     @Published public private(set) var evaluating = false
     @Published public private(set) var previewing = false
+    /// 用户是否已打开麦克风拾音；进入训练页默认 `false`，不自动监听。
+    @Published public private(set) var pitchListeningEnabled = false
     @Published public private(set) var currentHz: Double?
     @Published public private(set) var lastScore: SightSingingScore?
     @Published public private(set) var resultText: String?
@@ -77,6 +97,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var livePitchCents: Double?
     /// 判定进行中、且为音程题时，曲线与 `livePitchCents` 相对应当前采样的那一个目标音。
     @Published public private(set) var activeEvaluatingTargetIndex: Int?
+    /// 拾音样本不足等「未提交得分」时的用户提示；与 `errorText`（网络/权限等）分离。
+    @Published public private(set) var evaluateUserHint: String?
 
     private let repository: SightSingingRepository
     private let pitchTracker: SightSingingPitchTracking
@@ -86,14 +108,31 @@ public final class SightSingingSessionViewModel: ObservableObject {
     private var questionCount: Int
     private var exerciseKind: SightSingingExerciseKind
 
-    private let sampleStepMs = 120
     private let warmupMs = 800
     private let evalMs = 2000
+    /// 示范扬声器结束后到开始判定（防串音），纳秒。
+    private let postPreviewEvaluateDelayNs: UInt64 = 300_000_000
+    /// 判定管线输出的绝对音分样本数下限（低于则不调 `submitAnswer`）。
+    private let minPipelineAbsCentsSamples = 5
+    /// 判定时暂停曲线监控任务，减轻与 `currentHz` 读争用（P2，可改 `false` 做 A/B）。
+    private let suspendGraphMonitoringDuringEvaluate = true
 
     private let graphTickMs = 33
     private let graphWindowSeconds: Double = 6
 
+    /// 句尾静音达到该时长后尝试自动打分（与 `SightSingingEvaluateCapture` 尾静音同量级）。
+    private let phraseTailSilenceMs = 480
+    /// 单音题：本句累计检测到基频的最少时长，避免一开麦静默就提交。
+    private let phraseMinTotalVoicedSingleMs = 400
+    /// 音程题：两音之间可能有短暂间隙，累计有声阈值高于单音（按目标数放大）。
+    private let phraseMinVoicedPerTargetMs = 340
+
+    private var phraseAutoTotalVoicedMs = 0
+    private var phraseAutoTrailingSilenceMs = 0
+
     private var graphWindowStart: Date?
+    /// 换新题后的短窗：不向 UI 写入 `pitchTracker` 的拾音，避免上一题尾音或旧 `currentHz`「粘」在新题上。
+    private var livePickupPauseUntil: Date?
     // These tasks are cancelled from `deinit`; keep them `nonisolated(unsafe)` so teardown doesn't require MainActor.
     nonisolated(unsafe) private var monitoringTask: Task<Void, Never>?
     nonisolated(unsafe) private var previewGraphTask: Task<Void, Never>?
@@ -141,6 +180,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         question = nil
         evaluating = false
         previewing = false
+        pitchListeningEnabled = false
         currentHz = nil
         lastScore = nil
         resultText = nil
@@ -151,7 +191,15 @@ public final class SightSingingSessionViewModel: ObservableObject {
         targetHighGraph = []
         livePitchCents = nil
         activeEvaluatingTargetIndex = nil
+        evaluateUserHint = nil
         graphWindowStart = nil
+        livePickupPauseUntil = nil
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        previewGraphTask?.cancel()
+        previewGraphTask = nil
+        resetPhraseAutoGate()
+        pitchTracker.stop()
     }
 
     public func currentPreferences() -> SightSingingStoredPreferences {
@@ -202,8 +250,6 @@ public final class SightSingingSessionViewModel: ObservableObject {
         loading = true
         errorText = nil
         do {
-            try await MicrophoneRecordingPermission.ensureGranted()
-            try pitchTracker.start()
             let start = try await repository.startSession(
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
@@ -215,45 +261,155 @@ public final class SightSingingSessionViewModel: ObservableObject {
             loading = false
             errorText = nil
             hasGradedAnyQuestion = false
+            pitchListeningEnabled = false
 
             resetGraphsForNewQuestion()
-            startPitchMonitoringIfNeeded()
         } catch {
             loading = false
             errorText = error.localizedDescription
         }
     }
 
+    /// 显式开关麦克风拾音；进入页默认关闭，用户点底栏「录音」后再启动 `pitchTracker` 与曲线采样。
+    public func setPitchListeningEnabled(_ enabled: Bool) async {
+        if enabled {
+            guard !pitchListeningEnabled else { return }
+            do {
+                try await MicrophoneRecordingPermission.ensureGranted()
+                try pitchTracker.start()
+                pitchListeningEnabled = true
+                resetGraphsForNewQuestion()
+                startPitchMonitoringIfNeeded()
+            } catch {
+                pitchListeningEnabled = false
+                errorText = error.localizedDescription
+            }
+        } else {
+            guard pitchListeningEnabled else { return }
+            pitchListeningEnabled = false
+            monitoringTask?.cancel()
+            monitoringTask = nil
+            currentHz = nil
+            livePitchCents = nil
+            livePickupPauseUntil = nil
+            resetPhraseAutoGate()
+            pitchTracker.stop()
+        }
+    }
+
+    /// 测试或调试入口；产品主路径为句尾自动 `phraseEndAuto`。
     public func evaluate() async {
+        await evaluate(trigger: .manual)
+    }
+
+    public func evaluate(trigger: SightSingingEvaluateTrigger) async {
         guard !evaluating, let q = question, let sid = sessionId else { return }
+        guard pitchListeningEnabled else {
+            evaluateUserHint = "请先开启底栏「录音」；唱完后稍停，系统会自动打分。"
+            return
+        }
+        resetPhraseAutoGate()
         evaluating = true
         lastScore = nil
-        defer { activeEvaluatingTargetIndex = nil }
-        let targets = q.targetNotes.isEmpty ? ["C4"] : q.targetNotes
-        var absCents: [Double] = []
-        var detectedNotes: [String] = []
-
-        for (idx, target) in targets.enumerated() {
-            activeEvaluatingTargetIndex = idx
-            let targetMidi = Double(noteNameToMidi(target))
-            var elapsed = 0
-            while elapsed < warmupMs + evalMs {
-                try? await Task.sleep(nanoseconds: UInt64(sampleStepMs) * 1_000_000)
-                elapsed += sampleStepMs
-                currentHz = pitchTracker.currentHz
-                if elapsed > warmupMs, let hz = currentHz {
-                    let midi = Double(PitchMath.frequencyToMidi(hz))
-                    let cents = abs((midi - targetMidi) * 100.0)
-                    absCents.append(cents)
+        evaluateUserHint = nil
+        activeEvaluatingTargetIndex = nil
+        if suspendGraphMonitoringDuringEvaluate {
+            monitoringTask?.cancel()
+            monitoringTask = nil
+        }
+        pitchTracker.stop()
+        defer {
+            activeEvaluatingTargetIndex = nil
+            resetPhraseAutoGate()
+            if pitchListeningEnabled {
+                do {
+                    try pitchTracker.start()
+                } catch {
+                    errorText = error.localizedDescription
                 }
             }
-            if let hz = currentHz {
-                detectedNotes.append(PitchMath.midiToNoteName(PitchMath.frequencyToMidi(hz)))
+            if suspendGraphMonitoringDuringEvaluate, question != nil, sessionId != nil, pitchListeningEnabled {
+                startPitchMonitoringIfNeeded()
             }
         }
 
-        let score = computeSightSingingScore(absCentsSamples: absCents, sampleStepMs: sampleStepMs)
-        let detected = detectedNotes
+        let targets = q.targetNotes.isEmpty ? ["C4"] : q.targetNotes
+        let maxDurationMs = warmupMs + evalMs * max(1, targets.count)
+
+        let capture: (samples: [Float], sampleRate: Double, wallClockMs: Int)
+        do {
+            capture = try await SightSingingEvaluateCapture.recordMonoPCM(
+                maxDurationMs: maxDurationMs,
+                warmupMs: warmupMs
+            )
+        } catch {
+            evaluating = false
+            lastScore = nil
+            evaluateUserHint = "录音失败，请检查麦克风权限后重试。"
+            emitEvaluateLog(
+                questionId: q.id,
+                trigger: trigger,
+                targetsCount: targets.count,
+                absCentsCount: 0,
+                segments: [],
+                outcome: "capture_error"
+            )
+            return
+        }
+
+        let pipeline = await Task.detached(priority: .userInitiated) {
+            SightSingingEvaluateAnalysis.run(
+                monoPCM: capture.samples,
+                inputSampleRate: capture.sampleRate,
+                targetNotes: targets
+            )
+        }.value
+
+        let logSegments: [(index: Int, ticksTotal: Int, ticksAfterWarmup: Int, ticksWithMedian: Int, firstSampleMs: Int?)] = [
+            (
+                index: 0,
+                ticksTotal: pipeline?.absCentsSamples.count ?? 0,
+                ticksAfterWarmup: max(0, (pipeline?.absCentsSamples.count ?? 0)),
+                ticksWithMedian: pipeline?.absCentsSamples.count ?? 0,
+                firstSampleMs: pipeline == nil ? nil : warmupMs
+            )
+        ]
+
+        guard let pipeline else {
+            evaluating = false
+            lastScore = nil
+            evaluateUserHint = "未稳定拾音，请重试（可先点「示范」再唱）。"
+            emitEvaluateLog(
+                questionId: q.id,
+                trigger: trigger,
+                targetsCount: targets.count,
+                absCentsCount: 0,
+                segments: logSegments,
+                outcome: "insufficient_samples"
+            )
+            return
+        }
+
+        if pipeline.absCentsSamples.count < minPipelineAbsCentsSamples {
+            evaluating = false
+            lastScore = nil
+            evaluateUserHint = "未稳定拾音，请重试（可先点「示范」再唱）。"
+            emitEvaluateLog(
+                questionId: q.id,
+                trigger: trigger,
+                targetsCount: targets.count,
+                absCentsCount: pipeline.absCentsSamples.count,
+                segments: logSegments,
+                outcome: "insufficient_samples"
+            )
+            return
+        }
+
+        let score = computeSightSingingScore(
+            absCentsSamples: pipeline.absCentsSamples,
+            sampleStepMs: pipeline.sampleStepMs
+        )
+        let detected = pipeline.detectedAnswers
         do {
             try await repository.submitAnswer(
                 sessionId: sid,
@@ -261,19 +417,46 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 answers: detected,
                 avgCentsAbs: score.avgCentsAbs,
                 stableHitMs: score.stableHitMs,
-                durationMs: evalMs * targets.count
+                durationMs: capture.wallClockMs
             )
             lastScore = score
             hasGradedAnyQuestion = true
             evaluating = false
+            emitEvaluateLog(
+                questionId: q.id,
+                trigger: trigger,
+                targetsCount: targets.count,
+                absCentsCount: pipeline.absCentsSamples.count,
+                segments: logSegments,
+                outcome: "submitted"
+            )
         } catch {
             evaluating = false
             errorText = error.localizedDescription
+            emitEvaluateLog(
+                questionId: q.id,
+                trigger: trigger,
+                targetsCount: targets.count,
+                absCentsCount: pipeline.absCentsSamples.count,
+                segments: logSegments,
+                outcome: "submit_error"
+            )
         }
     }
 
-    public func playPreview() async {
-        guard !previewing, !evaluating, let q = question else { return }
+    /// 播完整段示范后短间隔自动判定（保留给测试/实验）。
+    public func playPreviewAndEvaluate() async {
+        guard !previewing, !evaluating else { return }
+        let ok = await playPreview()
+        guard ok else { return }
+        try? await Task.sleep(nanoseconds: postPreviewEvaluateDelayNs)
+        await evaluate(trigger: .postPreview)
+    }
+
+    /// - Returns: 示范是否完整播完（可用于衔接判定）；`false` 含 guard 失败、无播放器、或播放抛错。
+    @discardableResult
+    public func playPreview() async -> Bool {
+        guard !previewing, !evaluating, let q = question else { return false }
         previewing = true
         defer { previewing = false }
 
@@ -281,7 +464,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
         do {
             if q.targetNotes.count >= 2 {
-                guard let player = intervalPreview else { return }
+                guard let player = intervalPreview else { return false }
                 let lows = q.targetNotes
                 let lowMidi = noteNameToMidi(lows[0])
                 let highMidi = noteNameToMidi(lows[1])
@@ -302,7 +485,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 try await player.playAscendingPair(lowMidi: lowMidi, highMidi: highMidi)
                 await graphTask.value
             } else {
-                guard let player = intervalPreview else { return }
+                guard let player = intervalPreview else { return false }
                 let midi = noteNameToMidi(q.targetNotes.first ?? "C4")
                 startTargetGraphRecording(
                     lowSegments: [
@@ -318,12 +501,15 @@ public final class SightSingingSessionViewModel: ObservableObject {
             previewGraphTask?.cancel()
             previewGraphTask = nil
         } catch {
-            // 试听失败不应阻塞训练主流程。
             errorText = error.localizedDescription
+            previewGraphTask?.cancel()
+            previewGraphTask = nil
+            return false
         }
 
         previewGraphTask?.cancel()
         previewGraphTask = nil
+        return true
     }
 
     public func nextOrFinish() async -> Bool {
@@ -340,10 +526,9 @@ public final class SightSingingSessionViewModel: ObservableObject {
             let result = try await repository.fetchResult(sessionId: sid)
             finalResult = result
             resultText = "本轮完成：共判定 \(result.answered) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
-            monitoringTask?.cancel()
-            monitoringTask = nil
             previewGraphTask?.cancel()
             previewGraphTask = nil
+            await setPitchListeningEnabled(false)
             sessionId = nil
             return true
         } catch {
@@ -388,12 +573,19 @@ public final class SightSingingSessionViewModel: ObservableObject {
         evaluating = false
         previewing = false
         intervalPreview?.cancelIntervalPlayback()
+        resetPhraseAutoGate()
         if stopPitchTracker {
+            pitchListeningEnabled = false
             pitchTracker.stop()
         }
     }
 
     private func startPitchMonitoringIfNeeded() {
+        guard pitchListeningEnabled else {
+            monitoringTask?.cancel()
+            monitoringTask = nil
+            return
+        }
         monitoringTask?.cancel()
         monitoringTask = Task { [weak self] in
             guard let self else { return }
@@ -412,6 +604,69 @@ public final class SightSingingSessionViewModel: ObservableObject {
         targetLowGraph = []
         targetHighGraph = []
         livePitchCents = nil
+        evaluateUserHint = nil
+        currentHz = nil
+        livePickupPauseUntil = Date().addingTimeInterval(0.4)
+        resetPhraseAutoGate()
+    }
+
+    private func resetPhraseAutoGate() {
+        phraseAutoTotalVoicedMs = 0
+        phraseAutoTrailingSilenceMs = 0
+    }
+
+    private func minVoicedMsForPhraseAutoSubmit(question: SightSingingQuestion?) -> Int {
+        guard let q = question else { return phraseMinTotalVoicedSingleMs }
+        let n = max(1, q.targetNotes.count)
+        return max(phraseMinTotalVoicedSingleMs, phraseMinVoicedPerTargetMs * n)
+    }
+
+    /// 开麦且非示范/非判定时：累计有声 + 句尾静音达到阈值则自动 `evaluate`。
+    private func tickPhraseAutoEvaluateIfNeeded() {
+        guard pitchListeningEnabled, !previewing, !evaluating else {
+            if !pitchListeningEnabled || previewing { resetPhraseAutoGate() }
+            return
+        }
+        guard question != nil, sessionId != nil else { return }
+        if let pause = livePickupPauseUntil, Date() < pause {
+            resetPhraseAutoGate()
+            return
+        }
+        let step = graphTickMs
+        let minVoiced = minVoicedMsForPhraseAutoSubmit(question: question)
+        if currentHz != nil {
+            phraseAutoTotalVoicedMs += step
+            phraseAutoTrailingSilenceMs = 0
+        } else {
+            phraseAutoTrailingSilenceMs += step
+            if phraseAutoTrailingSilenceMs >= phraseTailSilenceMs,
+               phraseAutoTotalVoicedMs >= minVoiced {
+                resetPhraseAutoGate()
+                Task { @MainActor [weak self] in
+                    await self?.evaluate(trigger: .phraseEndAuto)
+                }
+            }
+        }
+    }
+
+    private func emitEvaluateLog(
+        questionId: String,
+        trigger: SightSingingEvaluateTrigger,
+        targetsCount: Int,
+        absCentsCount: Int,
+        segments: [(index: Int, ticksTotal: Int, ticksAfterWarmup: Int, ticksWithMedian: Int, firstSampleMs: Int?)],
+        outcome: String
+    ) {
+        let segDesc = segments.map { s in
+            "(i=\(s.index),ticks=\(s.ticksTotal),postW=\(s.ticksAfterWarmup),med=\(s.ticksWithMedian),firstMs=\(s.firstSampleMs.map(String.init) ?? "nil"))"
+        }.joined(separator: ";")
+        let line =
+            "sightSingingEvaluate questionId=\(questionId) trigger=\(trigger.rawValue) targets=\(targetsCount) absCents=\(absCentsCount) outcome=\(outcome) segments=[\(segDesc)]"
+        #if canImport(os)
+        sightSingingEvaluateLogger.debug("\(line)")
+        #else
+        print(line)
+        #endif
     }
 
     private func windowStartOrNow() -> Date {
@@ -441,6 +696,19 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
     private func appendLiveUserSampleIfPossible() {
         guard let q = question else { return }
+        defer { tickPhraseAutoEvaluateIfNeeded() }
+        let trackerHz = pitchTracker.currentHz
+        if let pause = livePickupPauseUntil {
+            if Date() < pause {
+                currentHz = nil
+            } else {
+                livePickupPauseUntil = nil
+                currentHz = trackerHz
+            }
+        } else {
+            currentHz = trackerHz
+        }
+
         let now = Date()
         let start = windowStartOrNow()
 
@@ -552,6 +820,10 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 try? await Task.sleep(nanoseconds: UInt64(graphTickMs) * 1_000_000)
             }
         }
+    }
+
+    public func targetMidiDoubles(for question: SightSingingQuestion) -> [Double] {
+        question.targetNotes.map { Double(noteNameToMidi($0)) }
     }
 
     private func noteNameToMidi(_ note: String) -> Int {

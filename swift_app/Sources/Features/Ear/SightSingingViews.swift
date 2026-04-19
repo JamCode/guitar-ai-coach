@@ -1,124 +1,190 @@
 import SwiftUI
 import Core
 
-private struct SightSingingPitchGraphView: View {
-    let user: [SightSingingPitchGraphPoint]
-    let targetLow: [SightSingingPitchGraphPoint]
-    let targetHigh: [SightSingingPitchGraphPoint]
-    /// When false, only the first target pitch is meaningful (single-note mimic).
-    let showsTwoTargetPitches: Bool
+/// 主反馈：目标音 vs 当前拾音的柱状对比（弱化时间–音分曲线，见 `docs/cursor/6c75954f/ui-ux.md`）。
+/// 每个目标一柱，柱内并排：左/灰=目标音高，右/品牌色=你唱（同一纵轴刻度）。
+private struct SightSingingPitchBarCompareView: View {
+    let targetNotes: [String]
+    let targetMidis: [Double]
+    let userMidi: Double?
 
-    private let yRange: ClosedRange<Double> = -50 ... 50
+    private var midiRange: ClosedRange<Double> {
+        guard !targetMidis.isEmpty else { return 58...74 }
+        let tLo = targetMidis.min()!
+        let tHi = targetMidis.max()!
+        let u = userMidi
+        var lo = min(tLo, u ?? tLo)
+        var hi = max(tHi, u ?? tHi)
+        lo -= 3
+        hi += 3
+        if hi - lo < 8 {
+            let mid = (hi + lo) / 2
+            lo = mid - 4
+            hi = mid + 4
+        }
+        return lo...hi
+    }
+
+    private var lo: Double { midiRange.lowerBound }
+    private var hi: Double { midiRange.upperBound }
+
+    private var userCaption: String {
+        guard let m = userMidi else { return "未拾音" }
+        return PitchMath.midiToPitchLabel(Int(m.rounded()))
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("音准曲线（相对目标音）")
-                .appSectionTitle()
+        VStack(alignment: .leading, spacing: 10) {
+            Text("音高对比").appSectionTitle()
+            Text("每根柱子里：左/灰为目标音，右/亮色为你唱；柱高均为同一 MIDI 刻度，随麦克风更新。")
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
 
-            Canvas { context, size in
-                let w = size.width
-                let h = size.height
-                let padL: CGFloat = 34
-                let padR: CGFloat = 10
-                let padT: CGFloat = 10
-                let padB: CGFloat = 18
-                let plotW = w - padL - padR
-                let plotH = h - padT - padB
+            HStack(alignment: .bottom, spacing: 0) {
+                yAxisStrip
+                    .frame(width: 36)
 
-                func y(forCents cents: Double) -> CGFloat {
-                    let t = (cents - yRange.lowerBound) / (yRange.upperBound - yRange.lowerBound)
-                    return padT + plotH * (1 - CGFloat(t))
-                }
-
-                // Background
-                context.fill(
-                    Path(
-                        CGRect(x: padL, y: padT, width: plotW, height: plotH)
-                    ),
-                    with: .color(SwiftAppTheme.surfaceSoft)
-                )
-
-                // Grid: 0 line + +/-25
-                for cents in [-25.0, 0.0, 25.0] {
-                    var p = Path()
-                    p.move(to: CGPoint(x: padL, y: y(forCents: cents)))
-                    p.addLine(to: CGPoint(x: padL + plotW, y: y(forCents: cents)))
-                    context.stroke(
-                        p,
-                        with: .color(cents == 0 ? SwiftAppTheme.line : SwiftAppTheme.line.opacity(0.55)),
-                        lineWidth: cents == 0 ? 1.2 : 0.8
-                    )
-                }
-
-                let nowT = max(
-                    user.last?.t ?? 0,
-                    targetLow.last?.t ?? 0,
-                    targetHigh.last?.t ?? 0,
-                    0.000_001
-                )
-                let t0 = max(0, nowT - 6)
-
-                func x(forT t: Double) -> CGFloat {
-                    let u = (t - t0) / max(0.000_001, (nowT - t0))
-                    return padL + plotW * CGFloat(u)
-                }
-
-                func clampCents(_ cents: Double) -> Double {
-                    min(max(cents, yRange.lowerBound), yRange.upperBound)
-                }
-
-                func strokeSeries(_ pts: [SightSingingPitchGraphPoint], color: Color, lineWidth: CGFloat) {
-                    guard pts.count >= 2 else { return }
-                    var p = Path()
-                    let sorted = pts.sorted { $0.t < $1.t }
-                    p.move(to: CGPoint(x: x(forT: sorted[0].t), y: y(forCents: clampCents(sorted[0].cents))))
-                    for pt in sorted.dropFirst() {
-                        p.addLine(to: CGPoint(x: x(forT: pt.t), y: y(forCents: clampCents(pt.cents))))
+                HStack(alignment: .bottom, spacing: 12) {
+                    ForEach(0..<targetNotes.count, id: \.self) { i in
+                        mergedBarColumn(
+                            headline: targetNotes.count > 1 ? "目标 \(i + 1)" : "目标",
+                            caption: targetNotes[i],
+                            targetMidi: i < targetMidis.count ? targetMidis[i] : lo
+                        )
                     }
-                    context.stroke(p, with: .color(color), lineWidth: lineWidth)
                 }
-
-                strokeSeries(targetLow, color: SwiftAppTheme.muted.opacity(0.85), lineWidth: 2)
-                if showsTwoTargetPitches {
-                    strokeSeries(targetHigh, color: SwiftAppTheme.muted.opacity(0.55), lineWidth: 2)
-                }
-                strokeSeries(user, color: SwiftAppTheme.brand, lineWidth: 3)
-
-                // 单点或最新采样：画「船头」圆点，方便一眼看到当前偏差位置。
-                let sortedUser = user.sorted { $0.t < $1.t }
-                if let pt = sortedUser.last {
-                    let cx = x(forT: pt.t)
-                    let cy = y(forCents: clampCents(pt.cents))
-                    let r: CGFloat = 5
-                    let dot = Path(ellipseIn: CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2))
-                    context.fill(dot, with: .color(SwiftAppTheme.brand))
-                    context.stroke(dot, with: .color(Color.white.opacity(0.35)), lineWidth: 1)
-                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(height: 210)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(height: 190)
 
-            HStack(spacing: 12) {
-                legendDot(color: SwiftAppTheme.brand, text: "你唱的音高")
-                if showsTwoTargetPitches {
-                    legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标第 1 个音")
-                    legendDot(color: SwiftAppTheme.muted.opacity(0.55), text: "目标第 2 个音")
-                } else {
-                    legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标音（0¢ 参考线）")
-                }
-            }
-            .font(.caption)
-            .foregroundStyle(SwiftAppTheme.muted)
+            legendRow
         }
     }
 
-    private func legendDot(color: Color, text: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(text)
+    private var yAxisStrip: some View {
+        VStack {
+            Text(PitchMath.midiToPitchLabel(Int(round(hi))))
+                .font(.caption2)
+            Spacer()
+            Text(PitchMath.midiToPitchLabel(Int(round((hi + lo) / 2))))
+                .font(.caption2)
+            Spacer()
+            Text(PitchMath.midiToPitchLabel(Int(round(lo))))
+                .font(.caption2)
         }
+        .foregroundStyle(SwiftAppTheme.muted)
+        .frame(maxHeight: .infinity)
+    }
+
+    private var legendRow: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(SwiftAppTheme.muted.opacity(0.55))
+                    .frame(width: 10, height: 10)
+                Text("目标（柱左）")
+            }
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(SwiftAppTheme.brand)
+                    .frame(width: 10, height: 10)
+                Text("你唱（柱右）")
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.caption)
+        .foregroundStyle(SwiftAppTheme.muted)
+    }
+
+    private func barHeight(for midi: Double) -> CGFloat {
+        let span = max(hi - lo, 0.000_001)
+        let t = (midi - lo) / span
+        let u = CGFloat(min(1, max(0, t)))
+        return max(14, 146 * u)
+    }
+
+    private func mergedBarColumn(headline: String, caption: String, targetMidi: Double) -> some View {
+        let hTarget = barHeight(for: targetMidi)
+        let hasUser = userMidi != nil
+        let hUser: CGFloat = {
+            guard let u = userMidi else { return 10 }
+            return max(12, barHeight(for: u))
+        }()
+
+        return VStack(spacing: 8) {
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(SwiftAppTheme.surfaceSoft)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 150)
+
+                HStack(alignment: .bottom, spacing: 5) {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(SwiftAppTheme.muted.opacity(0.55))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: hTarget)
+
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(hasUser ? SwiftAppTheme.brand : SwiftAppTheme.line)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: hUser)
+                        .opacity(hasUser ? 1 : 0.38)
+                }
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity)
+                .frame(height: 150, alignment: .bottom)
+            }
+            .frame(height: 150)
+
+            Text(headline)
+                .font(.caption2)
+                .foregroundStyle(SwiftAppTheme.muted)
+
+            Text(caption)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.text)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(headline)，目标 \(caption)，你唱 \(userCaption)")
+    }
+}
+
+/// 目标卡片右侧：仅播放示范音；打分在开麦后由句尾静音自动触发。
+private struct SightSingingInlineDemoButton: View {
+    @ObservedObject var viewModel: SightSingingSessionViewModel
+
+    var body: some View {
+        Button {
+            Task { _ = await viewModel.playPreview() }
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(viewModel.previewing ? "示范中…" : "示范")
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Text("仅听参考")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+            .multilineTextAlignment(.center)
+            .frame(minWidth: 76, maxWidth: 100)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 6)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.small)
+        .tint(SwiftAppTheme.brand)
+        .disabled(viewModel.evaluating || viewModel.previewing)
+        .accessibilityLabel("示范，仅播放参考音")
     }
 }
 
@@ -212,26 +278,25 @@ public struct SightSingingSessionView: View {
                     Text(error).foregroundStyle(.red).appCard()
                 } else if let q = viewModel.question {
                     let isIntervalQuestion = q.targetNotes.count >= 2
-                    let segments = max(1, q.targetNotes.count)
-                    let evaluateSeconds = segments * 2
                     let infinite = q.totalQuestions <= 0
 
-                    SightSingingPitchGraphView(
-                        user: viewModel.userPitchGraph,
-                        targetLow: viewModel.targetLowGraph,
-                        targetHigh: viewModel.targetHighGraph,
-                        showsTwoTargetPitches: isIntervalQuestion
+                    SightSingingPitchBarCompareView(
+                        targetNotes: q.targetNotes,
+                        targetMidis: viewModel.targetMidiDoubles(for: q),
+                        userMidi: viewModel.currentHz.map { Double(PitchMath.frequencyToMidi($0)) }
                     )
                     .appCard()
-                    .animation(.easeOut(duration: 0.12), value: viewModel.userPitchGraph.count)
+                    .animation(.easeOut(duration: 0.12), value: viewModel.currentHz)
 
                     Group {
-                        if let cents = viewModel.livePitchCents {
-                            Text(String(format: "实时偏差（相对目标）：%+.0f ¢　·　100¢ ≈ 1 个半音", cents))
+                        if !viewModel.pitchListeningEnabled {
+                            Text("开启底栏「录音」后，柱状「你唱」与下方「当前检测」会随麦克风更新；唱完稍停会自动打分。")
+                        } else if let cents = viewModel.livePitchCents {
+                            Text(String(format: "实时偏差（相对最近目标）：%+.0f ¢　·　100¢ ≈ 1 个半音", cents))
                         } else if viewModel.evaluating {
-                            Text("判定收音中… 请持续发声，曲线会随麦克风更新。")
+                            Text("正在收音并分析…「你唱」柱仍会随麦克风更新。")
                         } else {
-                            Text("开唱后橙色曲线会动态延伸；越接近 0¢ 参考线越准。")
+                            Text("开唱后「你唱」柱会升高；唱完稍停片刻，系统会自动截取并打分。")
                         }
                     }
                     .font(.caption)
@@ -241,30 +306,48 @@ public struct SightSingingSessionView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(isIntervalQuestion ? "目标音程（上行）" : "目标音").appSectionTitle()
                         if isIntervalQuestion {
-                            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                                Text(q.targetNotes[0])
-                                    .font(.system(size: 40, weight: .bold))
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                Image(systemName: "arrow.right")
-                                    .foregroundStyle(SwiftAppTheme.muted)
-                                Text(q.targetNotes[1])
-                                    .font(.system(size: 40, weight: .bold))
-                                    .foregroundStyle(SwiftAppTheme.text)
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                        Text(q.targetNotes[0])
+                                            .font(.system(size: 30, weight: .bold))
+                                            .foregroundStyle(SwiftAppTheme.text)
+                                        Image(systemName: "arrow.right")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(SwiftAppTheme.muted)
+                                        Text(q.targetNotes[1])
+                                            .font(.system(size: 30, weight: .bold))
+                                            .foregroundStyle(SwiftAppTheme.text)
+                                    }
+                                    Text("请按顺序模唱：先低音，再高音；两音都唱完后稍停，系统会自动打分。")
+                                        .font(.footnote)
+                                        .foregroundStyle(SwiftAppTheme.muted)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                                SightSingingInlineDemoButton(viewModel: viewModel)
                             }
-                            Text("请按顺序模唱：先低音，再高音（判定会自动分段采样）")
-                                .font(.footnote)
-                                .foregroundStyle(SwiftAppTheme.muted)
                         } else {
-                            Text(q.targetNotes.first ?? "--")
-                                .font(.system(size: 44, weight: .bold))
-                                .foregroundStyle(SwiftAppTheme.text)
+                            HStack(alignment: .center, spacing: 12) {
+                                Text(q.targetNotes.first ?? "--")
+                                    .font(.system(size: 34, weight: .bold))
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                SightSingingInlineDemoButton(viewModel: viewModel)
+                            }
                         }
                         let current = viewModel.currentHz.map {
                             PitchMath.midiToNoteName(PitchMath.frequencyToMidi($0))
                         } ?? "--"
                         Text("当前检测：\(current)")
                             .foregroundStyle(SwiftAppTheme.muted)
-                        Text("提示：曲线纵轴为音分偏差（±50¢），横轴为最近 6 秒。")
+                        if !viewModel.pitchListeningEnabled {
+                            Text("拾音未开启：请先点底栏「录音」。")
+                                .font(.caption2)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
+                        Text("提示：音柱高度对应当前 MIDI；纵轴刻度为音名，便于对齐目标。")
                             .font(.caption)
                             .foregroundStyle(SwiftAppTheme.muted)
                         if viewModel.evaluating {
@@ -273,28 +356,11 @@ public struct SightSingingSessionView: View {
                     }
                     .appCard()
 
-                    Button {
-                        Task { await viewModel.playPreview() }
-                    } label: {
-                        HStack {
-                            Image(systemName: "speaker.wave.2")
-                            Text("播放示范")
-                            Spacer()
-                        }
-                    }
-                    .appSecondaryButton()
-                    .disabled(viewModel.evaluating || viewModel.previewing)
-
-                    Button(viewModel.evaluating ? "判定中…" : "开始判定（\(evaluateSeconds) 秒）") {
-                        Task { await viewModel.evaluate() }
-                    }
-                    .appPrimaryButton()
-                    .disabled(viewModel.evaluating || viewModel.previewing)
-
+                    // 本题结果放在目标与底栏之间，避免在 ScrollView 最底部才出现、一屏挤不下。
                     if let score = viewModel.lastScore {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 6) {
                             Text("本题结果").appSectionTitle()
-                            HStack(spacing: 12) {
+                            HStack(spacing: 10) {
                                 Text("得分 \(score.score.formatted(.number.precision(.fractionLength(1)))) / 10")
                                     .foregroundStyle(SwiftAppTheme.text)
                                 Text("偏差 \(score.avgCentsAbs.formatted(.number.precision(.fractionLength(1))))¢")
@@ -302,17 +368,90 @@ public struct SightSingingSessionView: View {
                                 Text("稳定 \(score.stableHitMs) ms")
                                     .foregroundStyle(SwiftAppTheme.muted)
                             }
-                            .font(.subheadline)
-
-                            Button(infinite ? "下一题" : (q.index >= q.totalQuestions ? "查看结果" : "下一题")) {
-                                Task {
-                                    if await viewModel.nextOrFinish() { showResult = true }
-                                }
-                            }
-                            .appPrimaryButton()
+                            .font(.footnote)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
                         }
                         .appCard()
                     }
+
+                    // 底栏：录音 ↔ 下一题（示范在目标卡内；开麦后句尾静音自动打分）。
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .center, spacing: 10) {
+                            Button {
+                                Task { await viewModel.setPitchListeningEnabled(!viewModel.pitchListeningEnabled) }
+                            } label: {
+                                VStack(spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: viewModel.pitchListeningEnabled ? "mic.fill" : "mic.slash.fill")
+                                            .font(.system(size: 14, weight: .semibold))
+                                        Text(viewModel.pitchListeningEnabled ? "录音中" : "录音")
+                                            .font(.caption.weight(.semibold))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.75)
+                                    }
+                                    Text(viewModel.pitchListeningEnabled ? "关麦" : "开麦拾音")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 2)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                            .tint(SwiftAppTheme.brand)
+                            .frame(maxWidth: .infinity)
+                            .disabled(viewModel.evaluating)
+
+                            Button {
+                                Task {
+                                    if await viewModel.nextOrFinish() { showResult = true }
+                                }
+                            } label: {
+                                VStack(spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "forward.end.fill")
+                                            .font(.system(size: 14, weight: .semibold))
+                                        Text(
+                                            infinite
+                                                ? "下一题"
+                                                : (q.index >= q.totalQuestions ? "结果" : "下一题")
+                                        )
+                                        .font(.caption.weight(.semibold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.75)
+                                    }
+                                    Text("换题")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 2)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(SwiftAppTheme.brand)
+                            .frame(maxWidth: .infinity)
+                            .disabled(viewModel.evaluating || viewModel.previewing)
+                        }
+                        if let hint = viewModel.evaluateUserHint {
+                            Text(hint)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: SwiftAppTheme.cardRadius, style: .continuous)
+                            .fill(SwiftAppTheme.surfaceSoft)
+                    )
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -360,35 +499,70 @@ public struct SightSingingSessionView: View {
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
-                Form {
-                    Section {
-                        Picker("训练模式", selection: $settingsDraft.exerciseKind) {
-                            ForEach(SightSingingExerciseKind.allCases) { kind in
-                                Text(kind.titleZh).tag(kind)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Toggle("包含升降号", isOn: $settingsDraft.includeAccidental)
+                            Text(settingsDraft.questionCount <= 0 ? "题量：不限（无限刷题）" : "题量：\(settingsDraft.questionCount) 题")
+                                .foregroundStyle(SwiftAppTheme.text)
+                            Slider(
+                                value: Binding(
+                                    get: { Double(settingsDraft.questionCount) },
+                                    set: { settingsDraft.questionCount = Int($0) }
+                                ),
+                                in: 0...20,
+                                step: 5
+                            )
+                            .tint(SwiftAppTheme.brand)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCard()
+
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("训练模式").appSectionTitle()
+                                .padding(.bottom, 6)
+                            ForEach(Array(SightSingingExerciseKind.allCases.enumerated()), id: \.element) { index, kind in
+                                if index > 0 {
+                                    Divider()
+                                }
+                                SightSingingSettingsChoiceRow(
+                                    title: kind.titleZh,
+                                    selected: settingsDraft.exerciseKind == kind
+                                ) {
+                                    settingsDraft.exerciseKind = kind
+                                }
                             }
                         }
-                        Picker("音域", selection: $settingsDraft.pitchRange) {
-                            Text("低音区 C3-B3").tag("low")
-                            Text("中音区 C4-B4").tag("mid")
-                            Text("宽范围 C3-B4").tag("wide")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCard()
+
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("音域").appSectionTitle()
+                                .padding(.bottom, 6)
+                            ForEach(Array(SightSingingPitchRangeOption.allCases.enumerated()), id: \.element) { index, option in
+                                if index > 0 {
+                                    Divider()
+                                }
+                                SightSingingSettingsChoiceRow(
+                                    title: option.titleZh,
+                                    selected: settingsDraft.pitchRange == option.rawValue
+                                ) {
+                                    settingsDraft.pitchRange = option.rawValue
+                                }
+                            }
                         }
-                        Toggle("包含升降号", isOn: $settingsDraft.includeAccidental)
-                        Text(settingsDraft.questionCount <= 0 ? "题量：不限（无限刷题）" : "题量：\(settingsDraft.questionCount) 题")
-                            .foregroundStyle(SwiftAppTheme.text)
-                        Slider(
-                            value: Binding(
-                                get: { Double(settingsDraft.questionCount) },
-                                set: { settingsDraft.questionCount = Int($0) }
-                            ),
-                            in: 0...20,
-                            step: 5
-                        )
-                        .tint(SwiftAppTheme.brand)
-                    } footer: {
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .appCard()
+
                         Text("保存后从下一题起按新设置随机出题；并写入本机，下次打开自动沿用。")
                             .font(.footnote)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(SwiftAppTheme.pagePadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .appPageBackground()
                 .navigationTitle("出题设置")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -428,5 +602,51 @@ public struct SightSingingSessionView: View {
         } message: {
             Text(viewModel.resultText ?? "训练完成")
         }
+    }
+}
+
+// MARK: - 出题设置：卡片内全宽单选行（方案 C，无弹出菜单）
+
+private enum SightSingingPitchRangeOption: String, CaseIterable {
+    case low
+    case mid
+    case wide
+
+    fileprivate var titleZh: String {
+        switch self {
+        case .low:
+            return "低音区 C3-B3"
+        case .mid:
+            return "中音区 C4-B4"
+        case .wide:
+            return "宽范围 C3-B4"
+        }
+    }
+}
+
+private struct SightSingingSettingsChoiceRow: View {
+    let title: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(selected ? SwiftAppTheme.brand : SwiftAppTheme.muted)
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(SwiftAppTheme.text)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .contentShape(Rectangle())
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 }
