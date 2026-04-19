@@ -4,9 +4,9 @@
 > **关联设计：** `docs/cursor/6c75954f/sight-singing-evaluate-capture-design.md`  
 > **关联 UI/UX：** `docs/cursor/6c75954f/ui-ux.md`（音柱为主、弱化时间线曲线；与下列 Task 可并行排期）
 
-**Goal:** 在真机视唱训练中，提升判定窗口内有效拾音样本率与分数稳定性；示范音频播完后自动进入与 `evaluate()` 等价的判定流程，并保留「跳过示范直接判定」；样本不足时不给出误导性低分。
+**Goal:** 在真机视唱训练中，提升判定窗口内有效拾音样本率与分数稳定性；示范音频播完后自动进入与 `evaluate()` 等价的判定流程；底栏 **「示范」与「下一题」并列**，**不提供「跳过示范」**（见 `ui-ux.md` §6）；样本不足时不给出误导性低分。
 
-**Architecture:** 在 `SightSingingSessionViewModel` 内集中扩展——结构化判定日志（P0）、示范结束衔接与触发源枚举（P-UX）、判定循环内短窗聚合与样本下限分支（P1）、可选暂停曲线监控任务（P2）、视日志微调 `PitchDetectorConfig.sightSinging` 与窗口常量（P3）。UI 仅在 `SightSingingViews` 底栏做文案/按钮与调用入口调整。
+**Architecture:** 在 `SightSingingSessionViewModel` 内集中扩展——结构化判定日志（P0）、示范结束衔接与触发源枚举（P-UX）、判定循环内短窗聚合与样本下限分支（P1）、可选暂停曲线监控任务（P2）、视日志微调 `PitchDetectorConfig.sightSinging` 与窗口常量（P3）。UI 在 `SightSingingViews` 底栏改为 **并列「示范」（`playPreviewAndEvaluate`）与「下一题」**（`nextOrFinish`），及禁用态文案。
 
 **Tech Stack:** Swift 5、SwiftUI、Swift Package（`swift_app`）、现有 `TunerPitchDetector` / `IntervalTonePlayer`、XCTest（`swift test`）。
 
@@ -17,7 +17,7 @@
 | 路径 | 职责 |
 |------|------|
 | `swift_app/Sources/Features/Ear/SightSingingSessionViewModel.swift` | `evaluate()` 改造、日志、聚合采样、暂停监控开关、`playPreview` 后自动 `evaluate`、防串音延迟、互斥状态 |
-| `swift_app/Sources/Features/Ear/SightSingingViews.swift` | 底栏：主路径「示范并判定」、跳过示范、`previewing`/`evaluating` 禁用态与文案 |
+| `swift_app/Sources/Features/Ear/SightSingingViews.swift` | 底栏：`HStack` **示范**（`playPreviewAndEvaluate`）与 **下一题**（`nextOrFinish`）并列；`previewing`/`evaluating`/`loading` 禁用策略 |
 | `swift_app/Sources/Features/Ear/SightSingingModels.swift` | 可选：`computeSightSingingScore` 或新增类型仅当 P1 需对外暴露「无效判定」语义时（默认先只在 ViewModel 层短路 `submitAnswer`） |
 | `swift_app/Sources/Core/TunerPitchDetector.swift` | P3：`PitchDetectorConfig.sightSinging` 参数微调 |
 | `swift_app/Sources/Features/Ear/IntervalTonePlayer.swift` | 只读确认：`playSinglePreview` / `playAscendingPair` 返回即表示播放结束（P-UX 衔接点） |
@@ -44,7 +44,7 @@
 **定义（建议字段，一次打印一行 JSON 或 `Logger` 子系统 `ear.sightSinging.evaluate`）：**
 
 - `questionId`, `targetIndex`（音程多段时）
-- `evaluateTrigger`: `manual` | `postPreview`
+- `evaluateTrigger`: `manual` | `postPreview`（**产品 UI** 仅 `postPreview`；`manual` 保留给测试或内部调用）
 - `windowMs` = `warmupMs + evalMs`（每段）
 - `sampleStepMs`
 - `ticksTotal`, `ticksAfterWarmup`, `ticksWithHz`（`currentHz != nil`）
@@ -82,10 +82,10 @@ cd swift_app && swift test
 - 若用户在示范中又点示范：`playPreview` 应 `previewGraphTask?.cancel()` 等已有逻辑基础上，**不**在取消路径自动触发 `evaluate`（仅「正常播完返回」触发）。
 
 - [ ] **Step 1:** 在 `SightSingingSessionViewModel` 新增 `public func playPreviewAndEvaluate() async`：直接 `await playPreview()`（内部已维护 `previewing` 与 `defer`）；仅在 `playPreview` **正常返回且无提前 `return`** 后执行 `try? await Task.sleep(nanoseconds: 300_000_000)`，再 `await evaluate(trigger: .postPreview)`。若 `playPreview` 因 `guard` 早退（无题目等），**不得**调用 `evaluate`。当前 `playPreview` 在 `catch` 里写 `errorText` 仍会继续执行尾部清理；**实现时**须二选一：`playPreview` 改为返回 `Bool` / `throws`，或在 `catch` 内 `return`，以便试听失败时**不**自动 `evaluate`。将 `evaluateTrigger` 传入 P0 日志路径。
-- [ ] **Step 2:** 保留原 `public func playPreview()` 不动，供将来「仅试听」或测试复用；UI 首版用 `playPreviewAndEvaluate` + 跳过按钮调 `evaluate(trigger: .manual)`。
-- [ ] **Step 3:** `SightSingingViews.swift` 底栏主按钮改为调用 `Task { await viewModel.playPreviewAndEvaluate() }`（文案如「示范并判定」）；次要按钮「跳过示范，直接判定」→ `Task { await viewModel.evaluate(trigger: .manual) }`（或仅 `evaluate()` 默认 manual）。
-- [ ] **Step 4:** `previewing || evaluating` 时禁用另一按钮与「下一题」，与现逻辑对齐。
-- [ ] **Step 5:** 真机手测：播完不点第二按钮即进入判定；跳过示范路径仍一键判定。
+- [ ] **Step 2:** 保留原 `public func playPreview()` 不动，供测试或内部复用；产品路径仅用 `playPreviewAndEvaluate()`。
+- [ ] **Step 3:** `SightSingingViews.swift` 底栏改为 **`HStack` 并列**：左 **「示范」**（`Task { await viewModel.playPreviewAndEvaluate() }`，播完自动 `evaluate(.postPreview)`）；右 **「下一题」**（`Task { if await viewModel.nextOrFinish() { ... } }`，与现三栏布局中下一题逻辑一致）。**移除**「跳过示范，直接判定」及整行「示范并判定」单大按钮方案。
+- [ ] **Step 4:** `previewing || evaluating || loading` 时禁用规则：`evaluating` 时建议 **示范、下一题均禁用**；`previewing` 时禁用下一题、示范可禁用或允许重播（与 spec「中途再点示范」一致，**建议**：允许再点以取消并重播，不自动判）。在注释中写死最终组合。
+- [ ] **Step 5:** 真机手测：点示范 → 播完自动判；点下一题 → 不进判定直接换题；**无**跳过示范入口。
 
 ```bash
 cd swift_app && swift test
@@ -182,7 +182,7 @@ cd swift_app && swift test
 
 ## 手测清单（合并 spec §7）
 
-1. 单音：仅示范直通；跳过示范直判；播完立即唱；停半拍再唱。  
+1. 单音：仅示范直通；下一题换题；播完立即唱；停半拍再唱。  
 2. 音程：同上 + 确认两段 `targetIndex` 日志独立。  
 3. 示范中途再次点示范：不应触发半截 `evaluate`。  
 4. 判定中：示范按钮禁用。  
