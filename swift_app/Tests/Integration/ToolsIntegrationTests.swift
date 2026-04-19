@@ -77,6 +77,10 @@ private final class TestAudioEngine: AudioEngineServing {
     ) throws {
         quality.markCallback(renderCostMs: 0.15)
     }
+
+    func stopSampledGuitarNotes(midis: [Int]) {}
+
+    func stopPluckedGuitarVoices() {}
 }
 
 private final class TestPitchDetector: PitchDetecting {

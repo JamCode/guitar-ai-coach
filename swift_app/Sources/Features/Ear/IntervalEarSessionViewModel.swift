@@ -22,6 +22,7 @@ public final class IntervalEarSessionViewModel: ObservableObject {
     private let player: IntervalTonePlaying
     private let historyStore: any IntervalEarHistoryStoring
     private var rng: SystemRandomNumberGenerator
+    private var pairPlaybackTask: Task<Void, Never>?
 
     public init(
         maxQuestions: Int? = nil,
@@ -55,18 +56,37 @@ public final class IntervalEarSessionViewModel: ObservableObject {
         return "已答 \(answeredCount) 题 · 答对 \(correctCount) · 正确率 \(Int(pct))%"
     }
 
+    /// 播放当前题上行两音；若已在播放会先取消上一轮。`async` 以便单测与 UI 在「整段播完」后再判题。
     public func playPair() async {
+        pairPlaybackTask?.cancel()
+        pairPlaybackTask = nil
         guard let q = question else { return }
-        guard !isPlaybackInProgress else { return }
         isPlaybackInProgress = true
-        defer { isPlaybackInProgress = false }
-        do {
-            try await player.playAscendingPair(lowMidi: q.lowMidi, highMidi: q.highMidi)
-            playError = nil
-            hasCompletedInitialAudition = true
-        } catch {
-            playError = "播放失败：\(error.localizedDescription)"
+        defer {
+            isPlaybackInProgress = false
+            pairPlaybackTask = nil
         }
+        let work = Task { @MainActor in
+            do {
+                try await self.player.playAscendingPair(lowMidi: q.lowMidi, highMidi: q.highMidi)
+                self.playError = nil
+                self.hasCompletedInitialAudition = true
+            } catch is CancellationError {
+                self.player.cancelIntervalPlayback()
+            } catch {
+                self.playError = "播放失败：\(error.localizedDescription)"
+            }
+        }
+        pairPlaybackTask = work
+        await work.value
+    }
+
+    /// 离开音程页或需要立刻静音时调用：取消尚未完成的 `Task.sleep` 间隔，并截断采样器上本题两音。
+    public func cancelPlayback() {
+        player.cancelIntervalPlayback()
+        pairPlaybackTask?.cancel()
+        pairPlaybackTask = nil
+        isPlaybackInProgress = false
     }
 
     /// 音区条单音试听（与指板同源采样，略短音长）。

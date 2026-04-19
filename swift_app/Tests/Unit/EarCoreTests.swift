@@ -9,6 +9,13 @@ private actor MockIntervalEarHistoryStore: IntervalEarHistoryStoring {
     }
 }
 
+/// 单测里替代真实 `IntervalTonePlayer`，避免 `playPair()` 走 `AudioEngineService.shared`
+/// 在模拟器/本机扬声器播出吉他两音（开发者会误以为 App 前台「莫名」发声）。
+private final class SilentIntervalTonePlayerForTests: IntervalTonePlaying {
+    func playAscendingPair(lowMidi: Int, highMidi: Int) async throws {}
+    func playSinglePreview(midi: Int) async throws {}
+}
+
 /// 可复现的 64-bit LCG，仅单测使用。
 private struct TestLCG: RandomNumberGenerator {
     private var state: UInt64
@@ -152,7 +159,12 @@ final class EarCoreTests: XCTestCase {
     @MainActor
     func testIntervalEarSubmitAppendsHistoryRecord() async throws {
         let mock = MockIntervalEarHistoryStore()
-        let vm = IntervalEarSessionViewModel(maxQuestions: 3, difficulty: .初级, historyStore: mock)
+        let vm = IntervalEarSessionViewModel(
+            maxQuestions: 3,
+            difficulty: .初级,
+            player: SilentIntervalTonePlayerForTests(),
+            historyStore: mock
+        )
         guard let q = vm.question else {
             XCTFail("missing question")
             return

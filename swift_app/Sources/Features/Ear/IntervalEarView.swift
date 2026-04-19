@@ -155,6 +155,9 @@ public struct IntervalEarView: View {
         }
         .navigationTitle("音程识别")
         .appPageBackground()
+        .onDisappear {
+            viewModel.cancelPlayback()
+        }
         .alert("本轮完成", isPresented: $showSummary) {
             Button("确定") {
                 onSessionComplete?(viewModel.correctCount, viewModel.answeredCount)

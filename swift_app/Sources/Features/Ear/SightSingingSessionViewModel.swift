@@ -314,6 +314,9 @@ public final class SightSingingSessionViewModel: ObservableObject {
                 try await player.playSinglePreview(midi: midi)
                 await graphTask.value
             }
+        } catch is CancellationError {
+            previewGraphTask?.cancel()
+            previewGraphTask = nil
         } catch {
             // 试听失败不应阻塞训练主流程。
             errorText = error.localizedDescription
@@ -376,10 +379,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         sessionId = nil
     }
 
-    /// Cancel background sampling + any in-flight preview graph recording.
-    ///
-    /// Note: `IntervalTonePlaying` playback itself can't be hard-stopped without a richer player API,
-    /// but cancelling graph tasks prevents UI-driven work from continuing off-screen after navigation.
+    /// Cancel background sampling + any in-flight preview graph recording，并截断示范音（与音程页共用 `IntervalTonePlayer` 时尤其重要）。
     public func cancelActiveWork(stopPitchTracker: Bool) {
         monitoringTask?.cancel()
         monitoringTask = nil
@@ -387,6 +387,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         previewGraphTask = nil
         evaluating = false
         previewing = false
+        intervalPreview?.cancelIntervalPlayback()
         if stopPitchTracker {
             pitchTracker.stop()
         }
