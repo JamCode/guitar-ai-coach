@@ -153,23 +153,22 @@ private struct SightSingingPitchBarCompareView: View {
     }
 }
 
-/// 目标卡片右侧：示范（播完自动判）；需已开启「录音」。
+/// 目标卡片右侧：仅播放示范音，不触发判定（判定见底栏「判定」）。
 private struct SightSingingInlineDemoButton: View {
     @ObservedObject var viewModel: SightSingingSessionViewModel
-    let evaluateSeconds: Int
 
     var body: some View {
         Button {
-            Task { await viewModel.playPreviewAndEvaluate() }
+            Task { _ = await viewModel.playPreview() }
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: "speaker.wave.2.fill")
                     .font(.system(size: 16, weight: .semibold))
-                Text(viewModel.evaluating ? "判定中…" : (viewModel.previewing ? "示范中…" : "示范"))
+                Text(viewModel.previewing ? "示范中…" : "示范")
                     .font(.caption.weight(.semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                Text(viewModel.evaluating ? "请持续发声" : "播完自动判")
+                Text("仅听参考")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -184,8 +183,8 @@ private struct SightSingingInlineDemoButton: View {
         .buttonStyle(.borderedProminent)
         .controlSize(.small)
         .tint(SwiftAppTheme.brand)
-        .disabled(viewModel.evaluating || viewModel.previewing || !viewModel.pitchListeningEnabled)
-        .accessibilityLabel("示范，约 \(evaluateSeconds) 秒后自动判定")
+        .disabled(viewModel.evaluating || viewModel.previewing)
+        .accessibilityLabel("示范，仅播放参考音")
     }
 }
 
@@ -279,8 +278,6 @@ public struct SightSingingSessionView: View {
                     Text(error).foregroundStyle(.red).appCard()
                 } else if let q = viewModel.question {
                     let isIntervalQuestion = q.targetNotes.count >= 2
-                    let segments = max(1, q.targetNotes.count)
-                    let evaluateSeconds = segments * 2
                     let infinite = q.totalQuestions <= 0
 
                     SightSingingPitchBarCompareView(
@@ -328,7 +325,7 @@ public struct SightSingingSessionView: View {
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                                SightSingingInlineDemoButton(viewModel: viewModel, evaluateSeconds: evaluateSeconds)
+                                SightSingingInlineDemoButton(viewModel: viewModel)
                             }
                         } else {
                             HStack(alignment: .center, spacing: 12) {
@@ -337,7 +334,7 @@ public struct SightSingingSessionView: View {
                                     .foregroundStyle(SwiftAppTheme.text)
                                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                                SightSingingInlineDemoButton(viewModel: viewModel, evaluateSeconds: evaluateSeconds)
+                                SightSingingInlineDemoButton(viewModel: viewModel)
                             }
                         }
                         let current = viewModel.currentHz.map {
@@ -378,31 +375,29 @@ public struct SightSingingSessionView: View {
                         .appCard()
                     }
 
-                    // 底栏：录音（原示范位移至目标卡右侧）与下一题并列。
+                    // 底栏：录音 → 判定 → 下一题（示范仅在目标卡内，且仅播放）。
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .center, spacing: 8) {
+                        HStack(alignment: .center, spacing: 6) {
                             Button {
                                 Task { await viewModel.setPitchListeningEnabled(!viewModel.pitchListeningEnabled) }
                             } label: {
                                 VStack(spacing: 2) {
-                                    HStack(spacing: 5) {
+                                    HStack(spacing: 4) {
                                         Image(systemName: viewModel.pitchListeningEnabled ? "mic.fill" : "mic.slash.fill")
-                                            .font(.system(size: 15, weight: .semibold))
+                                            .font(.system(size: 14, weight: .semibold))
                                         Text(viewModel.pitchListeningEnabled ? "录音中" : "录音")
-                                            .font(.footnote.weight(.semibold))
+                                            .font(.caption.weight(.semibold))
                                             .lineLimit(1)
-                                            .minimumScaleFactor(0.8)
+                                            .minimumScaleFactor(0.75)
                                     }
-                                    Text(viewModel.pitchListeningEnabled ? "点一下关闭拾音" : "点一下开启麦克风")
+                                    Text(viewModel.pitchListeningEnabled ? "关" : "开麦")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
-                                        .multilineTextAlignment(.center)
                                         .lineLimit(1)
-                                        .minimumScaleFactor(0.72)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 7)
-                                .padding(.horizontal, 4)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 2)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.borderedProminent)
@@ -412,33 +407,58 @@ public struct SightSingingSessionView: View {
                             .disabled(viewModel.evaluating)
 
                             Button {
+                                Task { await viewModel.evaluate() }
+                            } label: {
+                                VStack(spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark.circle")
+                                            .font(.system(size: 14, weight: .semibold))
+                                        Text("判定")
+                                            .font(.caption.weight(.semibold))
+                                            .lineLimit(1)
+                                    }
+                                    Text("提交")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 2)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(SwiftAppTheme.brand)
+                            .frame(maxWidth: .infinity)
+                            .disabled(!viewModel.pitchListeningEnabled || viewModel.evaluating || viewModel.previewing)
+
+                            Button {
                                 Task {
                                     if await viewModel.nextOrFinish() { showResult = true }
                                 }
                             } label: {
                                 VStack(spacing: 2) {
-                                    HStack(spacing: 5) {
+                                    HStack(spacing: 4) {
                                         Image(systemName: "forward.end.fill")
-                                            .font(.system(size: 15, weight: .semibold))
+                                            .font(.system(size: 14, weight: .semibold))
                                         Text(
                                             infinite
                                                 ? "下一题"
                                                 : (q.index >= q.totalQuestions ? "结果" : "下一题")
                                         )
-                                        .font(.footnote.weight(.semibold))
+                                        .font(.caption.weight(.semibold))
                                         .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
+                                        .minimumScaleFactor(0.75)
                                     }
                                     Text("换题")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
-                                        .multilineTextAlignment(.center)
                                         .lineLimit(1)
-                                        .minimumScaleFactor(0.72)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 7)
-                                .padding(.horizontal, 4)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 2)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.bordered)
@@ -455,7 +475,7 @@ public struct SightSingingSessionView: View {
                         }
                         Text(
                             infinite || q.index < q.totalQuestions
-                                ? "先「录音」再点题目旁「示范」将自动判定；「下一题」可跳过本题不计分。"
+                                ? "「示范」仅听参考；先「录音」再模唱，点「判定」提交得分。「下一题」可跳过本题不计分。"
                                 : "末题点「结果」查看本轮统计。"
                         )
                             .font(.caption2)

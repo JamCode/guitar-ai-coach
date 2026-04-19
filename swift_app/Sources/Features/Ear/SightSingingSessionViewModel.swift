@@ -317,7 +317,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         }
     }
 
-    /// 仅判定（测试或内部）；产品 UI 上「示范」走 `playPreviewAndEvaluate()`。
+    /// 用户点底栏「判定」或测试入口；与示范播完自动判（`postPreview`）区分。
     public func evaluate() async {
         await evaluate(trigger: .manual)
     }
@@ -440,9 +440,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
         }
     }
 
-    /// 播完整段示范后短间隔自动判定（产品主路径）。
+    /// 播完整段示范后短间隔自动判定（保留给测试/实验；产品主路径为「示范仅 `playPreview` + 手动判定」）。
     public func playPreviewAndEvaluate() async {
-        guard pitchListeningEnabled else { return }
         guard !previewing, !evaluating else { return }
         let ok = await playPreview()
         guard ok else { return }
