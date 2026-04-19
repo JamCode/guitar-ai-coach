@@ -273,80 +273,68 @@ public struct SightSingingSessionView: View {
                     }
                     .appCard()
 
-                    // 方案 B：底栏三栏（示范 | 判定 | 下一题），中间为主 CTA、两侧图标+短标签。
+                    // 底栏：示范（播完自动判）与下一题并列（见 docs/cursor/6c75954f/ui-ux.md §6）。
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .center, spacing: 8) {
+                        HStack(alignment: .center, spacing: 10) {
                             Button {
-                                Task { await viewModel.playPreview() }
+                                Task { await viewModel.playPreviewAndEvaluate() }
                             } label: {
-                                VStack(spacing: 5) {
-                                    Image(systemName: "speaker.wave.2.fill")
-                                        .font(.system(size: 20, weight: .semibold))
-                                    Text("示范")
-                                        .font(.caption.weight(.semibold))
-                                        .lineLimit(1)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(SwiftAppTheme.brand)
-                            .disabled(viewModel.evaluating || viewModel.previewing)
-                            .frame(width: 76)
-
-                            Button {
-                                Task { await viewModel.evaluate() }
-                            } label: {
-                                VStack(spacing: 3) {
-                                    Text(viewModel.evaluating ? "判定中…" : "开始判定")
-                                        .font(.subheadline.weight(.semibold))
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                        .minimumScaleFactor(0.85)
-                                    if !viewModel.evaluating {
-                                        Text("\(evaluateSeconds) 秒")
-                                            .font(.caption2.weight(.medium))
-                                            .foregroundStyle(.secondary)
+                                VStack(spacing: 4) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "speaker.wave.2.fill")
+                                            .font(.system(size: 18, weight: .semibold))
+                                        Text(viewModel.evaluating ? "判定中…" : (viewModel.previewing ? "示范中…" : "示范"))
+                                            .font(.subheadline.weight(.semibold))
                                     }
+                                    Text(viewModel.evaluating ? "请持续发声" : "播完约 \(evaluateSeconds) 秒自动判")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.center)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
+                                .padding(.vertical, 12)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(SwiftAppTheme.brand)
                             .disabled(viewModel.evaluating || viewModel.previewing)
-                            .layoutPriority(1)
 
                             Button {
                                 Task {
                                     if await viewModel.nextOrFinish() { showResult = true }
                                 }
                             } label: {
-                                VStack(spacing: 5) {
+                                VStack(spacing: 4) {
                                     Image(systemName: "forward.end.fill")
-                                        .font(.system(size: 20, weight: .semibold))
+                                        .font(.system(size: 18, weight: .semibold))
                                     Text(
                                         infinite
                                             ? "下一题"
                                             : (q.index >= q.totalQuestions ? "结果" : "下一题")
                                     )
-                                    .font(.caption.weight(.semibold))
-                                    .lineLimit(1)
+                                    .font(.subheadline.weight(.semibold))
+                                        .lineLimit(1)
+                                    Text("换题")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
+                                .padding(.vertical, 12)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.bordered)
                             .tint(SwiftAppTheme.brand)
                             .disabled(viewModel.evaluating || viewModel.previewing)
-                            .frame(width: 76)
+                        }
+                        if let hint = viewModel.evaluateUserHint {
+                            Text(hint)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         Text(
                             infinite || q.index < q.totalQuestions
-                                ? "「下一题」可跳过本题，不计入得分。"
+                                ? "点「示范」听示范后将自动判定；「下一题」可跳过本题不计分。"
                                 : "末题点「结果」查看本轮统计。"
                         )
                             .font(.caption2)
