@@ -210,7 +210,8 @@ struct ChordRibbonView: View {
                             widths: widths,
                             durationMs: durationMs
                         )
-                        let newCenterX = anchorX + value.translation.width
+                        // 与地图拖动一致：手指向右拖，内容跟随，中心刻度指向更早时间。
+                        let newCenterX = anchorX - value.translation.width
                         let nextMs = ChordRibbonTimeline.timeAtX(
                             newCenterX,
                             segments: segments,
@@ -273,7 +274,8 @@ struct WaveformView: View {
                         guard let anchor = dragAnchorProgress else { return }
                         guard totalWidth > 0 else { return }
 
-                        let deltaProgress = Double(value.translation.width / totalWidth)
+                        // 与和弦条一致：手指向右拖，波形向右走，播放点移向更早（progress 减小）。
+                        let deltaProgress = -Double(value.translation.width / totalWidth)
                         let next = min(max(anchor + deltaProgress, 0), 1)
                         onScrubProgress(next)
                     }
