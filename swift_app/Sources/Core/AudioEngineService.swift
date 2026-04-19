@@ -142,10 +142,14 @@ public final class AudioEngineService: AudioEngineServing {
         }
         engine.stop()
         started = false
-        // `AVAudioEngine` stop invalidates the graph; `AVAudioUnitSampler` must reload the sound bank on next `start()`.
-        // Otherwise `isSampledGuitarAvailable` stays true while playback is corrupt (e.g. after leaving Tuner then opening ear training).
-        sampledGuitarLoaded = false
+        invalidateGraphDependentPlaybackState()
         quality.markStop()
+    }
+
+    /// After `AVAudioEngine.stop()`, any state that assumes the graph is running must be cleared so the next `start()`
+    /// rebuilds it. Add new flags here if they describe sampler / node readiness tied to a running engine.
+    private func invalidateGraphDependentPlaybackState() {
+        sampledGuitarLoaded = false
     }
 
     public func stopSampledGuitarNotes(midis: [Int]) {
