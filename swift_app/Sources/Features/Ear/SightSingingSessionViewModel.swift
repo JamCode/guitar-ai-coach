@@ -110,6 +110,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
     @Published public private(set) var sessionId: String?
     @Published public private(set) var evaluating = false
     @Published public private(set) var previewing = false
+    /// 用户是否已打开麦克风拾音；进入训练页默认 `false`，不自动监听。
+    @Published public private(set) var pitchListeningEnabled = false
     @Published public private(set) var currentHz: Double?
     @Published public private(set) var lastScore: SightSingingScore?
     @Published public private(set) var resultText: String?
@@ -200,6 +202,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         question = nil
         evaluating = false
         previewing = false
+        pitchListeningEnabled = false
         currentHz = nil
         lastScore = nil
         resultText = nil
@@ -213,6 +216,11 @@ public final class SightSingingSessionViewModel: ObservableObject {
         evaluateUserHint = nil
         graphWindowStart = nil
         livePickupPauseUntil = nil
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        previewGraphTask?.cancel()
+        previewGraphTask = nil
+        pitchTracker.stop()
     }
 
     public func currentPreferences() -> SightSingingStoredPreferences {
@@ -263,8 +271,6 @@ public final class SightSingingSessionViewModel: ObservableObject {
         loading = true
         errorText = nil
         do {
-            try await MicrophoneRecordingPermission.ensureGranted()
-            try pitchTracker.start()
             let start = try await repository.startSession(
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
@@ -276,12 +282,38 @@ public final class SightSingingSessionViewModel: ObservableObject {
             loading = false
             errorText = nil
             hasGradedAnyQuestion = false
+            pitchListeningEnabled = false
 
             resetGraphsForNewQuestion()
-            startPitchMonitoringIfNeeded()
         } catch {
             loading = false
             errorText = error.localizedDescription
+        }
+    }
+
+    /// 显式开关麦克风拾音；进入页默认关闭，用户点底栏「录音」后再启动 `pitchTracker` 与曲线采样。
+    public func setPitchListeningEnabled(_ enabled: Bool) async {
+        if enabled {
+            guard !pitchListeningEnabled else { return }
+            do {
+                try await MicrophoneRecordingPermission.ensureGranted()
+                try pitchTracker.start()
+                pitchListeningEnabled = true
+                resetGraphsForNewQuestion()
+                startPitchMonitoringIfNeeded()
+            } catch {
+                pitchListeningEnabled = false
+                errorText = error.localizedDescription
+            }
+        } else {
+            guard pitchListeningEnabled else { return }
+            pitchListeningEnabled = false
+            monitoringTask?.cancel()
+            monitoringTask = nil
+            currentHz = nil
+            livePitchCents = nil
+            livePickupPauseUntil = nil
+            pitchTracker.stop()
         }
     }
 
@@ -301,7 +333,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         }
         defer {
             activeEvaluatingTargetIndex = nil
-            if suspendGraphMonitoringDuringEvaluate, question != nil, sessionId != nil {
+            if suspendGraphMonitoringDuringEvaluate, question != nil, sessionId != nil, pitchListeningEnabled {
                 startPitchMonitoringIfNeeded()
             }
         }
@@ -410,6 +442,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
     /// 播完整段示范后短间隔自动判定（产品主路径）。
     public func playPreviewAndEvaluate() async {
+        guard pitchListeningEnabled else { return }
         guard !previewing, !evaluating else { return }
         let ok = await playPreview()
         guard ok else { return }
@@ -487,10 +520,9 @@ public final class SightSingingSessionViewModel: ObservableObject {
             let result = try await repository.fetchResult(sessionId: sid)
             finalResult = result
             resultText = "本轮完成：共判定 \(result.answered) 题，答对 \(result.correct) 题，准确率 \((result.accuracy * 100).formatted(.number.precision(.fractionLength(0))))%"
-            monitoringTask?.cancel()
-            monitoringTask = nil
             previewGraphTask?.cancel()
             previewGraphTask = nil
+            await setPitchListeningEnabled(false)
             sessionId = nil
             return true
         } catch {
@@ -538,11 +570,17 @@ public final class SightSingingSessionViewModel: ObservableObject {
         evaluating = false
         previewing = false
         if stopPitchTracker {
+            pitchListeningEnabled = false
             pitchTracker.stop()
         }
     }
 
     private func startPitchMonitoringIfNeeded() {
+        guard pitchListeningEnabled else {
+            monitoringTask?.cancel()
+            monitoringTask = nil
+            return
+        }
         monitoringTask?.cancel()
         monitoringTask = Task { [weak self] in
             guard let self else { return }

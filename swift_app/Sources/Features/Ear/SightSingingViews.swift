@@ -153,6 +153,42 @@ private struct SightSingingPitchBarCompareView: View {
     }
 }
 
+/// 目标卡片右侧：示范（播完自动判）；需已开启「录音」。
+private struct SightSingingInlineDemoButton: View {
+    @ObservedObject var viewModel: SightSingingSessionViewModel
+    let evaluateSeconds: Int
+
+    var body: some View {
+        Button {
+            Task { await viewModel.playPreviewAndEvaluate() }
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(viewModel.evaluating ? "判定中…" : (viewModel.previewing ? "示范中…" : "示范"))
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Text(viewModel.evaluating ? "请持续发声" : "播完自动判")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+            .multilineTextAlignment(.center)
+            .frame(minWidth: 76, maxWidth: 100)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 6)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.small)
+        .tint(SwiftAppTheme.brand)
+        .disabled(viewModel.evaluating || viewModel.previewing || !viewModel.pitchListeningEnabled)
+        .accessibilityLabel("示范，约 \(evaluateSeconds) 秒后自动判定")
+    }
+}
+
 public struct SightSingingSetupView: View {
     public init() {}
 
@@ -256,7 +292,9 @@ public struct SightSingingSessionView: View {
                     .animation(.easeOut(duration: 0.12), value: viewModel.currentHz)
 
                     Group {
-                        if let cents = viewModel.livePitchCents {
+                        if !viewModel.pitchListeningEnabled {
+                            Text("开启底栏「录音」后，柱状「你唱」与下方「当前检测」会随麦克风更新。")
+                        } else if let cents = viewModel.livePitchCents {
                             Text(String(format: "实时偏差（相对最近目标）：%+.0f ¢　·　100¢ ≈ 1 个半音", cents))
                         } else if viewModel.evaluating {
                             Text("判定收音中… 请持续发声，「你唱」柱高会随麦克风更新。")
@@ -271,30 +309,47 @@ public struct SightSingingSessionView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(isIntervalQuestion ? "目标音程（上行）" : "目标音").appSectionTitle()
                         if isIntervalQuestion {
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text(q.targetNotes[0])
-                                    .font(.system(size: 30, weight: .bold))
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(SwiftAppTheme.muted)
-                                Text(q.targetNotes[1])
-                                    .font(.system(size: 30, weight: .bold))
-                                    .foregroundStyle(SwiftAppTheme.text)
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                        Text(q.targetNotes[0])
+                                            .font(.system(size: 30, weight: .bold))
+                                            .foregroundStyle(SwiftAppTheme.text)
+                                        Image(systemName: "arrow.right")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(SwiftAppTheme.muted)
+                                        Text(q.targetNotes[1])
+                                            .font(.system(size: 30, weight: .bold))
+                                            .foregroundStyle(SwiftAppTheme.text)
+                                    }
+                                    Text("请按顺序模唱：先低音，再高音（判定会自动分段采样）")
+                                        .font(.footnote)
+                                        .foregroundStyle(SwiftAppTheme.muted)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                                SightSingingInlineDemoButton(viewModel: viewModel, evaluateSeconds: evaluateSeconds)
                             }
-                            Text("请按顺序模唱：先低音，再高音（判定会自动分段采样）")
-                                .font(.footnote)
-                                .foregroundStyle(SwiftAppTheme.muted)
                         } else {
-                            Text(q.targetNotes.first ?? "--")
-                                .font(.system(size: 34, weight: .bold))
-                                .foregroundStyle(SwiftAppTheme.text)
+                            HStack(alignment: .center, spacing: 12) {
+                                Text(q.targetNotes.first ?? "--")
+                                    .font(.system(size: 34, weight: .bold))
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                SightSingingInlineDemoButton(viewModel: viewModel, evaluateSeconds: evaluateSeconds)
+                            }
                         }
                         let current = viewModel.currentHz.map {
                             PitchMath.midiToNoteName(PitchMath.frequencyToMidi($0))
                         } ?? "--"
                         Text("当前检测：\(current)")
                             .foregroundStyle(SwiftAppTheme.muted)
+                        if !viewModel.pitchListeningEnabled {
+                            Text("拾音未开启：请先点底栏「录音」。")
+                                .font(.caption2)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
                         Text("提示：音柱高度对应当前 MIDI；纵轴刻度为音名，便于对齐目标。")
                             .font(.caption)
                             .foregroundStyle(SwiftAppTheme.muted)
@@ -323,23 +378,22 @@ public struct SightSingingSessionView: View {
                         .appCard()
                     }
 
-                    // 底栏：示范（播完自动判）与下一题并列（见 docs/cursor/6c75954f/ui-ux.md §6）。
-                    // 两钮等宽、同结构、偏小尺寸，避免一侧因副标题更长而撑开。
+                    // 底栏：录音（原示范位移至目标卡右侧）与下一题并列。
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(alignment: .center, spacing: 8) {
                             Button {
-                                Task { await viewModel.playPreviewAndEvaluate() }
+                                Task { await viewModel.setPitchListeningEnabled(!viewModel.pitchListeningEnabled) }
                             } label: {
                                 VStack(spacing: 2) {
                                     HStack(spacing: 5) {
-                                        Image(systemName: "speaker.wave.2.fill")
+                                        Image(systemName: viewModel.pitchListeningEnabled ? "mic.fill" : "mic.slash.fill")
                                             .font(.system(size: 15, weight: .semibold))
-                                        Text(viewModel.evaluating ? "判定中…" : (viewModel.previewing ? "示范中…" : "示范"))
+                                        Text(viewModel.pitchListeningEnabled ? "录音中" : "录音")
                                             .font(.footnote.weight(.semibold))
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.8)
                                     }
-                                    Text(viewModel.evaluating ? "请持续发声" : "约\(evaluateSeconds)秒后自动判")
+                                    Text(viewModel.pitchListeningEnabled ? "点一下关闭拾音" : "点一下开启麦克风")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .multilineTextAlignment(.center)
@@ -355,7 +409,7 @@ public struct SightSingingSessionView: View {
                             .controlSize(.small)
                             .tint(SwiftAppTheme.brand)
                             .frame(maxWidth: .infinity)
-                            .disabled(viewModel.evaluating || viewModel.previewing)
+                            .disabled(viewModel.evaluating)
 
                             Button {
                                 Task {
@@ -401,7 +455,7 @@ public struct SightSingingSessionView: View {
                         }
                         Text(
                             infinite || q.index < q.totalQuestions
-                                ? "点「示范」听示范后将自动判定；「下一题」可跳过本题不计分。"
+                                ? "先「录音」再点题目旁「示范」将自动判定；「下一题」可跳过本题不计分。"
                                 : "末题点「结果」查看本轮统计。"
                         )
                             .font(.caption2)
