@@ -75,7 +75,11 @@ public enum ChordChartData {
                 ChordChartEntry(symbol: "Bm7b5", frets: [-1, 2, 3, 2, 3, -1], theory: "半减七（1-b3-b5-b7）；悲伤爵士色彩。", voicing: "5～2 弦紧凑按法。"),
                 ChordChartEntry(symbol: "Dm7b5", frets: [-1, 5, 6, 5, 6, -1], theory: "半减七（1-b3-b5-b7）；小调 iiø7 常见。", voicing: "5 品紧凑按法。"),
                 ChordChartEntry(symbol: "Cdim7", frets: [-1, 3, 4, 2, 4, -1], theory: "减七（1-b3-b5-bb7）；紧张且常用于转调。", voicing: "5～2 弦对称按法。"),
-                ChordChartEntry(symbol: "Edim7", frets: [0, 1, 2, 0, 2, 0], theory: "减七（省略根音常见形态）；过渡导向强。", voicing: "开放形态，便于入门。")
+                ChordChartEntry(symbol: "Edim7", frets: [0, 1, 2, 0, 2, 0], theory: "减七（省略根音常见形态）；过渡导向强。", voicing: "开放形态，便于入门。"),
+                ChordChartEntry(symbol: "Cm7", frets: [-1, 3, 5, 3, 4, 3], theory: "小七（1-b3-5-b7）；小调 ii 或布鲁斯色彩。", voicing: "5 弦根横按小七。"),
+                ChordChartEntry(symbol: "Ebmaj7", frets: [-1, 6, 5, 3, 3, 3], theory: "大七（1-3-5-7）；柔和明亮。", voicing: "A 型大七，6 弦根。"),
+                ChordChartEntry(symbol: "Bbm7", frets: [-1, 1, 3, 1, 2, 1], theory: "小七；小调 ii 或转调过渡常用。", voicing: "1 品 A 型小七。"),
+                ChordChartEntry(symbol: "C#m7", frets: [-1, 4, 6, 4, 5, 4], theory: "小七；爵士/流行延伸进行。", voicing: "4 品 A 型小七。")
             ]
         ),
         ChordChartSection(
@@ -100,6 +104,7 @@ public enum ChordChartData {
                 ChordChartEntry(symbol: "Cadd9", frets: [-1, 3, 2, 0, 3, 0], theory: "add9；最常用加音和弦之一。", voicing: "开放 Cadd9。"),
                 ChordChartEntry(symbol: "Gadd9", frets: [3, 0, 0, 2, 0, 3], theory: "add9；明亮宽阔。", voicing: "开放 Gadd9。"),
                 ChordChartEntry(symbol: "Dadd9", frets: [-1, -1, 0, 2, 3, 0], theory: "add9；干净清透。", voicing: "开放 Dadd9。"),
+                ChordChartEntry(symbol: "Aadd9", frets: [-1, 0, 2, 4, 0, 0], theory: "add9；开阔明亮。", voicing: "开放 Aadd9。"),
                 ChordChartEntry(symbol: "Fadd9", frets: [1, 3, 3, 2, 1, 3], theory: "add9；抒情氛围感强。", voicing: "1 品横按 add9。"),
                 ChordChartEntry(symbol: "Cadd6", frets: [-1, 3, 2, 2, 1, 0], theory: "add6；温暖复古。", voicing: "开放 Cadd6。"),
                 ChordChartEntry(symbol: "C6", frets: [-1, 3, 2, 2, 1, 0], theory: "6 和弦（1-3-5-6）；流行/爵士常用。", voicing: "开放 C6。"),
@@ -142,5 +147,22 @@ public enum ChordChartData {
             ]
         )
     ]
+}
+
+extension ChordChartData {
+    private static let entryBySymbol: [String: ChordChartEntry] = {
+        var dict: [String: ChordChartEntry] = [:]
+        for section in sections {
+            for entry in section.entries {
+                dict[entry.symbol] = entry
+            }
+        }
+        return dict
+    }()
+
+    /// 按和弦符号查找本地指法表条目（与「常用和弦」表一致）。
+    public static func chordChartEntry(symbol: String) -> ChordChartEntry? {
+        entryBySymbol[symbol]
+    }
 }
 

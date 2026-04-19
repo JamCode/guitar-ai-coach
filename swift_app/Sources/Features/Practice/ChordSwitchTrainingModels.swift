@@ -72,3 +72,69 @@ public struct ChordSwitchExercise: Sendable, Identifiable, Hashable, Codable {
         return "建议节拍器 \(bpmMin)–\(bpmMax) BPM，\(beatWord)。"
     }
 }
+
+// MARK: - 参考调性（用于 UI 展示，非乐理判题）
+
+public enum ChordSwitchKeyResolver {
+    /// 自然大调音阶内的根音 pitch class（相对主音 0）。
+    private static let majorScalePCs: Set<Int> = [0, 2, 4, 5, 7, 9, 11]
+
+    private static let rootPitchClass: [String: Int] = [
+        "C": 0, "C#": 1, "Db": 1,
+        "D": 2, "D#": 3, "Eb": 3,
+        "E": 4,
+        "F": 5, "F#": 6, "Gb": 6,
+        "G": 7, "G#": 8, "Ab": 8,
+        "A": 9, "A#": 10, "Bb": 10,
+        "B": 11,
+    ]
+
+    private static let tonicOrder: [String] = [
+        "C", "G", "D", "A", "E", "B", "F#", "C#", "F", "Bb", "Eb", "Ab",
+    ]
+
+    private static let tonicPitchClasses: [String: Int] = [
+        "C": 0, "G": 7, "D": 2, "A": 9, "E": 4, "B": 11, "F#": 6, "C#": 1,
+        "F": 5, "Bb": 10, "Eb": 3, "Ab": 8,
+    ]
+
+    /// 从练习中出现的和弦符号推断「最像」的自然大调主音，用于齿轮内「参考调性」文案。
+    public static func referenceMajorKeyLabel(for exercise: ChordSwitchExercise) -> String {
+        referenceMajorKeyLabel(forChordSymbols: exercise.flattenedChords)
+    }
+
+    public static func referenceMajorKeyLabel(forChordSymbols symbols: [String]) -> String {
+        let roots = symbols.compactMap { Self.parseRoot($0) }
+        guard !roots.isEmpty else { return "参考调性未明" }
+
+        var bestTonic = "C"
+        var bestScore = -1
+        for tonic in tonicOrder {
+            guard let tpc = tonicPitchClasses[tonic] else { continue }
+            var score = 0
+            for sym in symbols {
+                guard let r = Self.parseRoot(sym), let rpc = rootPitchClass[r] else { continue }
+                let rel = (rpc - tpc + 12) % 12
+                if majorScalePCs.contains(rel) { score += 1 }
+            }
+            if score > bestScore {
+                bestScore = score
+                bestTonic = tonic
+            }
+        }
+        return "\(bestTonic) 调"
+    }
+
+    private static func parseRoot(_ symbol: String) -> String? {
+        let s = symbol.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty else { return nil }
+        let rootsLongestFirst = [
+            "C#", "Db", "D#", "Eb", "F#", "Gb", "G#", "Ab", "A#", "Bb",
+            "C", "D", "E", "F", "G", "A", "B",
+        ]
+        for r in rootsLongestFirst where s.hasPrefix(r) {
+            return r
+        }
+        return nil
+    }
+}

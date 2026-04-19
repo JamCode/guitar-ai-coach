@@ -15,7 +15,6 @@ struct RhythmStrummingView: View {
     @State private var showFinishSheet: Bool = false
     @State private var noteText: String = ""
 
-    @State private var showLeaveConfirm: Bool = false
     @State private var savingError: String?
     @State private var savedToast: Bool = false
 
@@ -72,11 +71,12 @@ struct RhythmStrummingView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-                    showLeaveConfirm = true
+                    dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
                 }
+                .accessibilityLabel("返回")
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -86,12 +86,6 @@ struct RhythmStrummingView: View {
                 }
                 .accessibilityLabel("图示说明")
             }
-        }
-        .alert("离开练习？", isPresented: $showLeaveConfirm) {
-            Button("继续练习", role: .cancel) {}
-            Button("返回", role: .destructive) { dismiss() }
-        } message: {
-            Text("确定要返回吗？未保存的记录将丢失。")
         }
         .alert("图示说明", isPresented: $showHelp) {
             Button("知道了", role: .cancel) {}

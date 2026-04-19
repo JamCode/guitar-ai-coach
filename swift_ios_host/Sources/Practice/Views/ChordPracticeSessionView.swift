@@ -1,10 +1,15 @@
-import SwiftUI
+import ChordChart
+import Chords
 import Core
+import Practice
+import SwiftUI
 
+/// 练琴「和弦切换」：进入即练习；题目仅来自 `ChordSwitchGenerator`。
 struct ChordPracticeSessionView: View {
     let task: PracticeTask
     let store: PracticeSessionStore
-    let config: ChordPracticeConfig
+
+    @State private var exercise: ChordSwitchExercise = Self.bootstrapExercise()
 
     @Environment(\.dismiss) private var dismiss
 
@@ -15,29 +20,46 @@ struct ChordPracticeSessionView: View {
     @State private var showFinishSheet: Bool = false
     @State private var noteText: String = ""
 
-    @State private var showLeaveConfirm: Bool = false
     @State private var showNeedStartHint: Bool = false
     @State private var savingError: String?
     @State private var savedToast: Bool = false
 
-    @State private var chordSymbolToPresent: String?
+    @State private var showPracticeSettings: Bool = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
+    private var referenceKeyLabel: String {
+        ChordSwitchKeyResolver.referenceMajorKeyLabel(for: exercise)
+    }
+
     var body: some View {
         VStack(spacing: 12) {
-            VStack(spacing: 10) {
-                FlowLayout(spacing: 8, runSpacing: 6) {
-                    ForEach(Array(config.resolvedChords.enumerated()), id: \.offset) { idx, chord in
-                        chordButton(chord: chord, index: idx)
-                    }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("本组练习")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.muted)
+                    Spacer()
+                    Text(exercise.difficulty.rawValue)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.brand)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(SwiftAppTheme.brandSoft)
+                        .clipShape(Capsule())
                 }
-                Text("点击和弦名查看指法")
-                    .font(.subheadline)
+                ChordPracticeDiagramStrip(chordSymbols: exercise.flattenedChords)
+                Text(exercise.bpmHintZh)
+                    .font(.caption)
                     .foregroundStyle(SwiftAppTheme.muted)
-                Text(config.complexity.fullLabel)
-                    .font(.subheadline)
-                    .foregroundStyle(SwiftAppTheme.muted)
+                Text(exercise.promptZh)
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.text)
+                    .lineLimit(8)
+
+                Button("下一组") { advanceToNextGroup() }
+                    .appSecondaryButton()
+                    .frame(maxWidth: .infinity)
             }
             .appCard()
 
@@ -65,28 +87,52 @@ struct ChordPracticeSessionView: View {
             Spacer()
         }
         .padding(SwiftAppTheme.pagePadding)
-        .navigationTitle("\(config.progression.name) · \(config.key) 调")
+        .navigationTitle("和弦切换练习")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-                    showLeaveConfirm = true
+                    dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
+                }
+                .accessibilityLabel("返回")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showPracticeSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("参考调性")
+            }
+        }
+        .sheet(isPresented: $showPracticeSettings) {
+            NavigationStack {
+                Form {
+                    Section("参考调性") {
+                        Text(referenceKeyLabel)
+                            .font(.title3.weight(.semibold))
+                        Text(
+                            "根据本组和弦符号自动推断最可能的自然大调主音；题目由 `ChordSwitchGenerator` 生成。"
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle("练习说明")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("完成") { showPracticeSettings = false }
+                    }
                 }
             }
         }
         .onReceive(ticker) { _ in
             guard running else { return }
             elapsedSeconds += 1
-        }
-        .alert("离开练习？", isPresented: $showLeaveConfirm) {
-            Button("继续练习", role: .cancel) {}
-            Button("放弃返回", role: .destructive) { dismiss() }
-        } message: {
-            Text("当前练习尚未保存，确定要返回吗？")
         }
         .alert("先开始练习再结束哦", isPresented: $showNeedStartHint) {
             Button("知道了", role: .cancel) {}
@@ -111,21 +157,24 @@ struct ChordPracticeSessionView: View {
                 }
             )
         }
-        .chordQuickReferenceSheet(chordSymbolToPresent: $chordSymbolToPresent)
         .appPageBackground()
     }
 
-    private func chordButton(chord: String, index: Int) -> some View {
-        Button {
-            chordSymbolToPresent = chord
-        } label: {
-            Text(chord)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(SwiftAppTheme.brand)
-                .underline(true, color: SwiftAppTheme.brand.opacity(0.35))
+    private static func bootstrapExercise() -> ChordSwitchExercise {
+        var rng = SystemRandomNumberGenerator()
+        return ChordSwitchGenerator.buildExercise(difficulty: .初级, using: &rng)
+    }
+
+    /// 初 → 中 → 高 → 初，每次用 `ChordSwitchGenerator` 重新随机组卷。
+    private func advanceToNextGroup() {
+        running = false
+        var rng = SystemRandomNumberGenerator()
+        let nextDifficulty: ChordSwitchDifficulty = switch exercise.difficulty {
+        case .初级: .中级
+        case .中级: .高级
+        case .高级: .初级
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("会话和弦 \(chord) \(index + 1)")
+        exercise = ChordSwitchGenerator.buildExercise(difficulty: nextDifficulty, using: &rng)
     }
 
     private func start() {
@@ -159,9 +208,9 @@ struct ChordPracticeSessionView: View {
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
-                progressionId: config.progression.id,
-                musicKey: config.key,
-                complexity: config.complexity.rawValue,
+                progressionId: exercise.id,
+                musicKey: referenceKeyLabel,
+                complexity: exercise.difficulty.rawValue,
                 rhythmPatternId: nil
             )
             savedToast = true
@@ -177,4 +226,3 @@ private func formatDurationLocal(_ seconds: Int) -> String {
     let r = String(format: "%02d", s % 60)
     return "\(m):\(r)"
 }
-
