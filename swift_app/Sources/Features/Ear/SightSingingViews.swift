@@ -303,29 +303,37 @@ public struct SightSingingSessionView: View {
                     .appCard()
 
                     // 底栏：示范（播完自动判）与下一题并列（见 docs/cursor/6c75954f/ui-ux.md §6）。
+                    // 两钮等宽、同结构、偏小尺寸，避免一侧因副标题更长而撑开。
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .center, spacing: 10) {
+                        HStack(alignment: .center, spacing: 8) {
                             Button {
                                 Task { await viewModel.playPreviewAndEvaluate() }
                             } label: {
-                                VStack(spacing: 4) {
-                                    HStack(spacing: 6) {
+                                VStack(spacing: 2) {
+                                    HStack(spacing: 5) {
                                         Image(systemName: "speaker.wave.2.fill")
-                                            .font(.system(size: 18, weight: .semibold))
+                                            .font(.system(size: 15, weight: .semibold))
                                         Text(viewModel.evaluating ? "判定中…" : (viewModel.previewing ? "示范中…" : "示范"))
-                                            .font(.subheadline.weight(.semibold))
+                                            .font(.footnote.weight(.semibold))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
                                     }
-                                    Text(viewModel.evaluating ? "请持续发声" : "播完约 \(evaluateSeconds) 秒自动判")
+                                    Text(viewModel.evaluating ? "请持续发声" : "约\(evaluateSeconds)秒后自动判")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .multilineTextAlignment(.center)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.72)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 7)
+                                .padding(.horizontal, 4)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
                             .tint(SwiftAppTheme.brand)
+                            .frame(maxWidth: .infinity)
                             .disabled(viewModel.evaluating || viewModel.previewing)
 
                             Button {
@@ -333,26 +341,35 @@ public struct SightSingingSessionView: View {
                                     if await viewModel.nextOrFinish() { showResult = true }
                                 }
                             } label: {
-                                VStack(spacing: 4) {
-                                    Image(systemName: "forward.end.fill")
-                                        .font(.system(size: 18, weight: .semibold))
-                                    Text(
-                                        infinite
-                                            ? "下一题"
-                                            : (q.index >= q.totalQuestions ? "结果" : "下一题")
-                                    )
-                                    .font(.subheadline.weight(.semibold))
+                                VStack(spacing: 2) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "forward.end.fill")
+                                            .font(.system(size: 15, weight: .semibold))
+                                        Text(
+                                            infinite
+                                                ? "下一题"
+                                                : (q.index >= q.totalQuestions ? "结果" : "下一题")
+                                        )
+                                        .font(.footnote.weight(.semibold))
                                         .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
+                                    }
                                     Text("换题")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.72)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 7)
+                                .padding(.horizontal, 4)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.bordered)
+                            .controlSize(.small)
                             .tint(SwiftAppTheme.brand)
+                            .frame(maxWidth: .infinity)
                             .disabled(viewModel.evaluating || viewModel.previewing)
                         }
                         if let hint = viewModel.evaluateUserHint {
