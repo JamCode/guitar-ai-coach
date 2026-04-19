@@ -721,6 +721,10 @@ public final class SightSingingSessionViewModel: ObservableObject {
         }
     }
 
+    public func targetMidiDoubles(for question: SightSingingQuestion) -> [Double] {
+        question.targetNotes.map { Double(noteNameToMidi($0)) }
+    }
+
     private func noteNameToMidi(_ note: String) -> Int {
         let normalized = note.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         let regex = try? NSRegularExpression(pattern: "^([A-G])(#?)(\\d)$")

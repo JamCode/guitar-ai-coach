@@ -162,21 +162,20 @@ cd swift_app && swift test
 
 ---
 
-### Task UI-Bar（待排期 · 见 `ui-ux.md`）
+### Task UI-Bar（已落地首版 · 见 `ui-ux.md`）
 
 **Goal:** 以 **音高柱状图**（目标 vs 用户）作为视唱页**主**视觉反馈；**稳/抖** 通过柱高随采样更新时的浮动感知；**弱化或移除** `SightSingingPitchGraphView` 时间–音分曲线作为主展示。
 
-**Files（预期）：**
-- Modify: `swift_app/Sources/Features/Ear/SightSingingViews.swift`（新组件 + 布局）
-- Modify: `swift_app/Sources/Features/Ear/SightSingingSessionViewModel.swift`（暴露聚合 MIDI / 目标 MIDI 供柱高绑定，或与 P1 聚合逻辑共用）
-- Create（可选）: `swift_app/Sources/Features/Ear/SightSingingPitchBarCompareView.swift`
+**Files：**
+- Modify: `swift_app/Sources/Features/Ear/SightSingingViews.swift`（内联 `SightSingingPitchBarCompareView` + 会话布局）
+- Modify: `swift_app/Sources/Features/Ear/SightSingingSessionViewModel.swift`（`targetMidiDoubles(for:)` 供目标柱绑定）
 
-**建议顺序：** P1 聚合稳定后再做柱的「判定窗内高度」，避免 UI 绑在噪声过大的原始 `currentHz` 上。
+**首版说明：** 「你唱」柱绑定 `currentHz → MIDI`（与拾音一致）；P1 聚合仍用于打分链路。若后续希望柱高仅反映判定窗内中位 MIDI，可再增加 `@Published` 专用字段。
 
-- [ ] **Step 1:** 读 `ui-ux.md` 第 2、5 节，与产品确认「实时柱 vs 仅结束定格」。
-- [ ] **Step 2:** 单音 MVP：两柱 + 纵轴音名刻度；接入现有 `livePitchCents` 的等价 MIDI 或新增 `@Published` 字段。
-- [ ] **Step 3:** 音程题扩展柱布局；手测清单增加「柱高与听感一致」。
-- [ ] **Step 4:** 曲线降级为折叠/移除（二选一）；`swift test` 后单独 commit。
+- [x] **Step 1:** 按 `ui-ux.md` 第 2、5 节实现**实时柱**（未另做「仅结束定格」分支）。
+- [x] **Step 2:** 单音：两柱 + 左侧纵轴音名刻度；`livePitchCents` 仍用于下方音分说明行。
+- [x] **Step 3:** 音程题：按 `targetNotes` 多目标柱 + 「你唱」柱。
+- [x] **Step 4:** 主界面移除 Canvas 时间–音分曲线；`swift test` 通过后提交。
 
 ---
 

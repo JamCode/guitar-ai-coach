@@ -1,124 +1,154 @@
 import SwiftUI
 import Core
 
-private struct SightSingingPitchGraphView: View {
-    let user: [SightSingingPitchGraphPoint]
-    let targetLow: [SightSingingPitchGraphPoint]
-    let targetHigh: [SightSingingPitchGraphPoint]
-    /// When false, only the first target pitch is meaningful (single-note mimic).
-    let showsTwoTargetPitches: Bool
+/// 主反馈：目标音 vs 当前拾音的柱状对比（弱化时间–音分曲线，见 `docs/cursor/6c75954f/ui-ux.md`）。
+private struct SightSingingPitchBarCompareView: View {
+    let targetNotes: [String]
+    let targetMidis: [Double]
+    let userMidi: Double?
 
-    private let yRange: ClosedRange<Double> = -50 ... 50
+    private var midiRange: ClosedRange<Double> {
+        guard !targetMidis.isEmpty else { return 58...74 }
+        let tLo = targetMidis.min()!
+        let tHi = targetMidis.max()!
+        let u = userMidi
+        var lo = min(tLo, u ?? tLo)
+        var hi = max(tHi, u ?? tHi)
+        lo -= 3
+        hi += 3
+        if hi - lo < 8 {
+            let mid = (hi + lo) / 2
+            lo = mid - 4
+            hi = mid + 4
+        }
+        return lo...hi
+    }
+
+    private var lo: Double { midiRange.lowerBound }
+    private var hi: Double { midiRange.upperBound }
+
+    private var userCaption: String {
+        guard let m = userMidi else { return "未拾音" }
+        return PitchMath.midiToPitchLabel(Int(m.rounded()))
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("音准曲线（相对目标音）")
-                .appSectionTitle()
+        VStack(alignment: .leading, spacing: 10) {
+            Text("音高对比").appSectionTitle()
+            Text("柱高为相对 MIDI（纵轴为音名刻度）；「你唱」随麦克风更新。")
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
 
-            Canvas { context, size in
-                let w = size.width
-                let h = size.height
-                let padL: CGFloat = 34
-                let padR: CGFloat = 10
-                let padT: CGFloat = 10
-                let padB: CGFloat = 18
-                let plotW = w - padL - padR
-                let plotH = h - padT - padB
+            HStack(alignment: .bottom, spacing: 0) {
+                yAxisStrip
+                    .frame(width: 36)
 
-                func y(forCents cents: Double) -> CGFloat {
-                    let t = (cents - yRange.lowerBound) / (yRange.upperBound - yRange.lowerBound)
-                    return padT + plotH * (1 - CGFloat(t))
-                }
-
-                // Background
-                context.fill(
-                    Path(
-                        CGRect(x: padL, y: padT, width: plotW, height: plotH)
-                    ),
-                    with: .color(SwiftAppTheme.surfaceSoft)
-                )
-
-                // Grid: 0 line + +/-25
-                for cents in [-25.0, 0.0, 25.0] {
-                    var p = Path()
-                    p.move(to: CGPoint(x: padL, y: y(forCents: cents)))
-                    p.addLine(to: CGPoint(x: padL + plotW, y: y(forCents: cents)))
-                    context.stroke(
-                        p,
-                        with: .color(cents == 0 ? SwiftAppTheme.line : SwiftAppTheme.line.opacity(0.55)),
-                        lineWidth: cents == 0 ? 1.2 : 0.8
+                HStack(alignment: .bottom, spacing: 12) {
+                    ForEach(0..<targetNotes.count, id: \.self) { i in
+                        barColumn(
+                            headline: targetNotes.count > 1 ? "目标 \(i + 1)" : "目标",
+                            caption: targetNotes[i],
+                            midi: i < targetMidis.count ? targetMidis[i] : lo,
+                            fill: SwiftAppTheme.muted.opacity(0.5),
+                            isPlaceholder: false
+                        )
+                    }
+                    barColumn(
+                        headline: "你唱",
+                        caption: userCaption,
+                        midi: userMidi ?? lo,
+                        fill: userMidi == nil ? SwiftAppTheme.line : SwiftAppTheme.brand,
+                        isPlaceholder: userMidi == nil
                     )
                 }
-
-                let nowT = max(
-                    user.last?.t ?? 0,
-                    targetLow.last?.t ?? 0,
-                    targetHigh.last?.t ?? 0,
-                    0.000_001
-                )
-                let t0 = max(0, nowT - 6)
-
-                func x(forT t: Double) -> CGFloat {
-                    let u = (t - t0) / max(0.000_001, (nowT - t0))
-                    return padL + plotW * CGFloat(u)
-                }
-
-                func clampCents(_ cents: Double) -> Double {
-                    min(max(cents, yRange.lowerBound), yRange.upperBound)
-                }
-
-                func strokeSeries(_ pts: [SightSingingPitchGraphPoint], color: Color, lineWidth: CGFloat) {
-                    guard pts.count >= 2 else { return }
-                    var p = Path()
-                    let sorted = pts.sorted { $0.t < $1.t }
-                    p.move(to: CGPoint(x: x(forT: sorted[0].t), y: y(forCents: clampCents(sorted[0].cents))))
-                    for pt in sorted.dropFirst() {
-                        p.addLine(to: CGPoint(x: x(forT: pt.t), y: y(forCents: clampCents(pt.cents))))
-                    }
-                    context.stroke(p, with: .color(color), lineWidth: lineWidth)
-                }
-
-                strokeSeries(targetLow, color: SwiftAppTheme.muted.opacity(0.85), lineWidth: 2)
-                if showsTwoTargetPitches {
-                    strokeSeries(targetHigh, color: SwiftAppTheme.muted.opacity(0.55), lineWidth: 2)
-                }
-                strokeSeries(user, color: SwiftAppTheme.brand, lineWidth: 3)
-
-                // 单点或最新采样：画「船头」圆点，方便一眼看到当前偏差位置。
-                let sortedUser = user.sorted { $0.t < $1.t }
-                if let pt = sortedUser.last {
-                    let cx = x(forT: pt.t)
-                    let cy = y(forCents: clampCents(pt.cents))
-                    let r: CGFloat = 5
-                    let dot = Path(ellipseIn: CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2))
-                    context.fill(dot, with: .color(SwiftAppTheme.brand))
-                    context.stroke(dot, with: .color(Color.white.opacity(0.35)), lineWidth: 1)
-                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(height: 210)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(height: 190)
 
-            HStack(spacing: 12) {
-                legendDot(color: SwiftAppTheme.brand, text: "你唱的音高")
-                if showsTwoTargetPitches {
-                    legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标第 1 个音")
-                    legendDot(color: SwiftAppTheme.muted.opacity(0.55), text: "目标第 2 个音")
-                } else {
-                    legendDot(color: SwiftAppTheme.muted.opacity(0.85), text: "目标音（0¢ 参考线）")
-                }
-            }
-            .font(.caption)
-            .foregroundStyle(SwiftAppTheme.muted)
+            legendRow
         }
     }
 
-    private func legendDot(color: Color, text: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(text)
+    private var yAxisStrip: some View {
+        VStack {
+            Text(PitchMath.midiToPitchLabel(Int(round(hi))))
+                .font(.caption2)
+            Spacer()
+            Text(PitchMath.midiToPitchLabel(Int(round((hi + lo) / 2))))
+                .font(.caption2)
+            Spacer()
+            Text(PitchMath.midiToPitchLabel(Int(round(lo))))
+                .font(.caption2)
         }
+        .foregroundStyle(SwiftAppTheme.muted)
+        .frame(maxHeight: .infinity)
+    }
+
+    private var legendRow: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(SwiftAppTheme.brand)
+                    .frame(width: 10, height: 10)
+                Text("你唱")
+            }
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(SwiftAppTheme.muted.opacity(0.5))
+                    .frame(width: 10, height: 10)
+                Text("目标")
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.caption)
+        .foregroundStyle(SwiftAppTheme.muted)
+    }
+
+    @ViewBuilder
+    private func barColumn(
+        headline: String,
+        caption: String,
+        midi: Double,
+        fill: Color,
+        isPlaceholder: Bool
+    ) -> some View {
+        let span = max(hi - lo, 0.000_001)
+        let barH: CGFloat = {
+            if isPlaceholder {
+                return 10
+            }
+            let t = (midi - lo) / span
+            let u = CGFloat(min(1, max(0, t)))
+            return max(14, 146 * u)
+        }()
+
+        VStack(spacing: 8) {
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(SwiftAppTheme.surfaceSoft)
+                    .frame(width: 44, height: 150)
+
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(fill)
+                    .frame(width: 36, height: barH)
+                    .opacity(isPlaceholder ? 0.45 : 1)
+            }
+            .frame(height: 150)
+
+            Text(headline)
+                .font(.caption2)
+                .foregroundStyle(SwiftAppTheme.muted)
+
+            Text(caption)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.text)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(headline)，\(caption)")
     }
 }
 
@@ -216,22 +246,21 @@ public struct SightSingingSessionView: View {
                     let evaluateSeconds = segments * 2
                     let infinite = q.totalQuestions <= 0
 
-                    SightSingingPitchGraphView(
-                        user: viewModel.userPitchGraph,
-                        targetLow: viewModel.targetLowGraph,
-                        targetHigh: viewModel.targetHighGraph,
-                        showsTwoTargetPitches: isIntervalQuestion
+                    SightSingingPitchBarCompareView(
+                        targetNotes: q.targetNotes,
+                        targetMidis: viewModel.targetMidiDoubles(for: q),
+                        userMidi: viewModel.currentHz.map { Double(PitchMath.frequencyToMidi($0)) }
                     )
                     .appCard()
-                    .animation(.easeOut(duration: 0.12), value: viewModel.userPitchGraph.count)
+                    .animation(.easeOut(duration: 0.12), value: viewModel.currentHz)
 
                     Group {
                         if let cents = viewModel.livePitchCents {
-                            Text(String(format: "实时偏差（相对目标）：%+.0f ¢　·　100¢ ≈ 1 个半音", cents))
+                            Text(String(format: "实时偏差（相对最近目标）：%+.0f ¢　·　100¢ ≈ 1 个半音", cents))
                         } else if viewModel.evaluating {
-                            Text("判定收音中… 请持续发声，曲线会随麦克风更新。")
+                            Text("判定收音中… 请持续发声，「你唱」柱高会随麦克风更新。")
                         } else {
-                            Text("开唱后橙色曲线会动态延伸；越接近 0¢ 参考线越准。")
+                            Text("开唱后「你唱」柱会升高；与灰色目标柱越接近越好。")
                         }
                     }
                     .font(.caption)
@@ -264,7 +293,7 @@ public struct SightSingingSessionView: View {
                         } ?? "--"
                         Text("当前检测：\(current)")
                             .foregroundStyle(SwiftAppTheme.muted)
-                        Text("提示：曲线纵轴为音分偏差（±50¢），横轴为最近 6 秒。")
+                        Text("提示：音柱高度对应当前 MIDI；纵轴刻度为音名，便于对齐目标。")
                             .font(.caption)
                             .foregroundStyle(SwiftAppTheme.muted)
                         if viewModel.evaluating {
