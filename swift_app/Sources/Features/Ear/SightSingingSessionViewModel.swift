@@ -151,6 +151,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
     private let graphWindowSeconds: Double = 6
 
     private var graphWindowStart: Date?
+    /// 换新题后的短窗：不向 UI 写入 `pitchTracker` 的拾音，避免上一题尾音或旧 `currentHz`「粘」在新题上。
+    private var livePickupPauseUntil: Date?
     // These tasks are cancelled from `deinit`; keep them `nonisolated(unsafe)` so teardown doesn't require MainActor.
     nonisolated(unsafe) private var monitoringTask: Task<Void, Never>?
     nonisolated(unsafe) private var previewGraphTask: Task<Void, Never>?
@@ -210,6 +212,7 @@ public final class SightSingingSessionViewModel: ObservableObject {
         activeEvaluatingTargetIndex = nil
         evaluateUserHint = nil
         graphWindowStart = nil
+        livePickupPauseUntil = nil
     }
 
     public func currentPreferences() -> SightSingingStoredPreferences {
@@ -559,6 +562,8 @@ public final class SightSingingSessionViewModel: ObservableObject {
         targetHighGraph = []
         livePitchCents = nil
         evaluateUserHint = nil
+        currentHz = nil
+        livePickupPauseUntil = Date().addingTimeInterval(0.4)
     }
 
     private func emitEvaluateLog(
@@ -608,6 +613,18 @@ public final class SightSingingSessionViewModel: ObservableObject {
 
     private func appendLiveUserSampleIfPossible() {
         guard let q = question else { return }
+        let trackerHz = pitchTracker.currentHz
+        if let pause = livePickupPauseUntil {
+            if Date() < pause {
+                currentHz = nil
+            } else {
+                livePickupPauseUntil = nil
+                currentHz = trackerHz
+            }
+        } else {
+            currentHz = trackerHz
+        }
+
         let now = Date()
         let start = windowStartOrNow()
 
