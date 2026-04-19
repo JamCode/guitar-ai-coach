@@ -1,5 +1,6 @@
-import Foundation
 import Ear
+import Foundation
+import Practice
 
 struct TodayRecommendationPlanner {
     private let referenceDate: Date
@@ -206,16 +207,13 @@ struct TodayRecommendationPlanner {
                 )
             }
         case .chordSwitch:
-            let pools: [[String]] = [
-                ["C", "G", "Am", "Em"],
-                ["Dm", "G", "Cmaj7", "Am7", "F"],
-                ["Bb", "Fmaj7", "Gm7", "C7", "Dm7"]
-            ]
-            let idx = difficulty == .beginner ? 0 : (difficulty == .intermediate ? 1 : 2)
-            let pool = pools[idx]
-            let chords = Array(pool.shuffled(using: &rng).prefix(4))
-            let bpm = difficulty == .beginner ? 60 : (difficulty == .intermediate ? 80 : 100)
-            return .chordSwitch(ChordSwitchExercise(chords: chords, bpm: bpm))
+            let mapped: ChordSwitchDifficulty = switch difficulty {
+            case .beginner: .初级
+            case .intermediate: .中级
+            case .advanced: .高级
+            }
+            let ex = ChordSwitchGenerator.buildExercise(difficulty: mapped, using: &rng)
+            return .chordSwitch(ex)
         case .scaleTraining:
             let keys = difficulty == .advanced ? ["C", "G", "D", "A", "E", "F", "Bb"] : ["C", "G", "D", "F"]
             let mode = difficulty == .beginner ? "自然大调" : (difficulty == .intermediate ? "五声音阶大调" : "自然小调")
@@ -268,7 +266,7 @@ struct TodayRecommendationPlanner {
             let volume = questionCount <= 0 ? "不限题量" : "\(questionCount) 题"
             return "\(difficulty.rawValue) · \(exerciseKind.titleZh) · 音域 \(pitchRange) · \(accidental) · \(volume)"
         case let .chordSwitch(exercise):
-            return "\(difficulty.rawValue) · \(exercise.chords.joined(separator: " → ")) · \(exercise.bpm) BPM"
+            return "\(difficulty.rawValue) · \(exercise.flattenedChords.joined(separator: " → ")) · \(exercise.bpmHintZh)"
         case let .scaleTraining(exercise):
             return "\(difficulty.rawValue) · \(exercise.keyName) \(exercise.modeName) · \(exercise.patternName) · \(exercise.bpm) BPM"
         case let .traditionalCrawl(exercise):

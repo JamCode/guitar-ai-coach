@@ -1,6 +1,7 @@
-import SwiftUI
-import Ear
 import Core
+import Ear
+import Practice
+import SwiftUI
 
 struct TodayRecommendationListView: View {
     let sessions: [PracticeSession]
@@ -137,10 +138,10 @@ struct TodayRecommendationListView: View {
                 summary: item.summary,
                 module: item.module,
                 lines: [
-                    "建议和弦序列：\(exercise.chords.joined(separator: " → "))",
-                    "建议速度：\(exercise.bpm) BPM",
-                    "保持每拍稳定换和弦。"
-                ],
+                    exercise.bpmHintZh,
+                    "和弦序列：\(exercise.flattenedChords.joined(separator: " → "))",
+                    "组数：\(exercise.segments.count)",
+                ] + exercise.goalsZh.prefix(2).map { "目标：\($0)" },
                 onComplete: { duration in
                     Task {
                         await appendRecord(module: .chordSwitch, successRate: 1, durationSeconds: duration)

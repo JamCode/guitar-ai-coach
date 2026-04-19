@@ -1,5 +1,6 @@
-import Foundation
 import Ear
+import Foundation
+import Practice
 
 enum RecommendationDifficultyLevel: String, CaseIterable, Identifiable {
     case beginner = "初级"
@@ -48,11 +49,6 @@ struct RecommendationHistoryRecord: Codable, Equatable, Sendable {
     let successRate: Double
     let durationSeconds: Int
     let occurredAt: Date
-}
-
-struct ChordSwitchExercise {
-    let chords: [String]
-    let bpm: Int
 }
 
 struct ScaleTrainingExercise {

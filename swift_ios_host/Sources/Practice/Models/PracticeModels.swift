@@ -15,7 +15,7 @@ let kDefaultPracticeTasks: [PracticeTask] = [
         id: "chord-switch",
         name: "和弦切换",
         targetMinutes: 5,
-        description: "多种进行 · 12 调 · 3 档复杂度"
+        description: "ChordSwitchGenerator 自动组卷：初 / 中 / 高三档，与工具箱一致。"
     ),
     PracticeTask(
         id: "rhythm-strum",

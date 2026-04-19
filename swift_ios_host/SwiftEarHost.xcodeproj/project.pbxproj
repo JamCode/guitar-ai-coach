@@ -40,7 +40,6 @@
 		98A583E7F69934A211742082 /* TranscriptionPlayerComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BC3FAF5DB303FC85D919D9E /* TranscriptionPlayerComponents.swift */; };
 		9FA03874E2C97FF63F5923C3 /* PracticeSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4498E65917DC2E2FA2DB69 /* PracticeSessionStore.swift */; };
 		A1E418DAEBB1B8A41FB2E81B /* PracticeLocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D163D2D4AC366005CC23C1EF /* PracticeLocalStore.swift */; };
-		A54032D2550FD222A9DA87FD /* ChordProgressionLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3DB2D65570E500966B666B /* ChordProgressionLibrary.swift */; };
 		A79B3979F4B96E1C5526E106 /* PracticeTimerSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */; };
 		AC95FA8C2C108EB623BE6679 /* ChordChart in Frameworks */ = {isa = PBXBuildFile; productRef = BC4B202C5F0E941A20A787C7 /* ChordChart */; };
 		B171B90382977C156D5ADC27 /* TranscriptionMediaDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5949CDF8018DDF958DB27304 /* TranscriptionMediaDecoder.swift */; };
@@ -90,7 +89,6 @@
 		44471F8A97B071DF5D17B507 /* TranscriptionHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryStore.swift; sourceTree = "<group>"; };
 		4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSessionView.swift; sourceTree = "<group>"; };
 		49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeTimerSessionView.swift; sourceTree = "<group>"; };
-		4A3DB2D65570E500966B666B /* ChordProgressionLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordProgressionLibrary.swift; sourceTree = "<group>"; };
 		4E88D873D9F1B077821D23E7 /* consonance_ace.onnx */ = {isa = PBXFileReference; path = consonance_ace.onnx; sourceTree = "<group>"; };
 		5949CDF8018DDF958DB27304 /* TranscriptionMediaDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionMediaDecoder.swift; sourceTree = "<group>"; };
 		66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeFinishDialog.swift; sourceTree = "<group>"; };
@@ -264,7 +262,6 @@
 		5A1C0E535B745C5E308C0E8F /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				4A3DB2D65570E500966B666B /* ChordProgressionLibrary.swift */,
 				99248B2B89EEEF58AC61A45E /* PracticeModels.swift */,
 				1FEE6B960D44ECFD5930467C /* RecommendationHistoryMerging.swift */,
 				806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */,
@@ -481,7 +478,6 @@
 				D29C08EF68159ECDFBEAED4A /* ChordPracticeDiagramStrip.swift in Sources */,
 				1D6925B0C7D1C03655046420 /* ChordPracticeSelectionView.swift in Sources */,
 				7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */,
-				A54032D2550FD222A9DA87FD /* ChordProgressionLibrary.swift in Sources */,
 				F8DF882624B2A38F4303EF98 /* ChordQuickReferenceSheet.swift in Sources */,
 				419BD4626AB180A34C81D97D /* FlowLayout.swift in Sources */,
 				FC88A8FEEF6BF4F2A31DCA4E /* OnnxChordRecognizer.swift in Sources */,

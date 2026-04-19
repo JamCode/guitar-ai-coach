@@ -1,12 +1,15 @@
 import ChordChart
 import Chords
 import Core
+import Practice
 import SwiftUI
 
 struct ChordPracticeSessionView: View {
     let task: PracticeTask
     let store: PracticeSessionStore
     let config: ChordPracticeConfig
+
+    private var exercise: ChordSwitchExercise { config.exercise }
 
     @Environment(\.dismiss) private var dismiss
 
@@ -22,17 +25,23 @@ struct ChordPracticeSessionView: View {
     @State private var savingError: String?
     @State private var savedToast: Bool = false
 
+    @State private var showPracticeSettings: Bool = false
+
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var referenceKeyLabel: String {
+        ChordSwitchKeyResolver.referenceMajorKeyLabel(for: exercise)
+    }
 
     var body: some View {
         VStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text("本组和弦")
+                    Text("本组练习")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(SwiftAppTheme.muted)
                     Spacer()
-                    Text(config.complexity.practiceTierZh)
+                    Text(exercise.difficulty.rawValue)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(SwiftAppTheme.brand)
                         .padding(.horizontal, 10)
@@ -40,10 +49,14 @@ struct ChordPracticeSessionView: View {
                         .background(SwiftAppTheme.brandSoft)
                         .clipShape(Capsule())
                 }
-                ChordPracticeDiagramStrip(chordSymbols: config.resolvedChords)
-                Text(config.complexity.fullLabel)
+                ChordPracticeDiagramStrip(chordSymbols: exercise.flattenedChords)
+                Text(exercise.bpmHintZh)
                     .font(.caption)
                     .foregroundStyle(SwiftAppTheme.muted)
+                Text(exercise.promptZh)
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.text)
+                    .lineLimit(8)
             }
             .appCard()
 
@@ -71,7 +84,7 @@ struct ChordPracticeSessionView: View {
             Spacer()
         }
         .padding(SwiftAppTheme.pagePadding)
-        .navigationTitle("\(config.progression.name) · \(config.key) 调")
+        .navigationTitle("和弦切换")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -81,6 +94,36 @@ struct ChordPracticeSessionView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showPracticeSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("参考调性")
+            }
+        }
+        .sheet(isPresented: $showPracticeSettings) {
+            NavigationStack {
+                Form {
+                    Section("参考调性") {
+                        Text(referenceKeyLabel)
+                            .font(.title3.weight(.semibold))
+                        Text(
+                            "根据本练习中出现的和弦符号自动推断最可能的自然大调主音，便于理解级数；"
+                                + "题目本身由 `ChordSwitchGenerator` 生成，无单独选调。"
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle("练习说明")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("完成") { showPracticeSettings = false }
+                    }
                 }
             }
         }
@@ -151,9 +194,9 @@ struct ChordPracticeSessionView: View {
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
-                progressionId: config.progression.id,
-                musicKey: config.key,
-                complexity: config.complexity.rawValue,
+                progressionId: exercise.id,
+                musicKey: referenceKeyLabel,
+                complexity: exercise.difficulty.rawValue,
                 rhythmPatternId: nil
             )
             savedToast = true
