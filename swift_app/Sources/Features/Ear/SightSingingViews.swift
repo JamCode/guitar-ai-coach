@@ -291,6 +291,20 @@ public struct SightSingingSessionView: View {
                     .appPrimaryButton()
                     .disabled(viewModel.evaluating || viewModel.previewing)
 
+                    Button {
+                        Task {
+                            if await viewModel.nextOrFinish() { showResult = true }
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "forward.fill")
+                            Text(infinite ? "下一题（可跳过本题）" : (q.index >= q.totalQuestions ? "查看结果" : "下一题（可跳过本题）"))
+                            Spacer()
+                        }
+                    }
+                    .appSecondaryButton()
+                    .disabled(viewModel.evaluating || viewModel.previewing)
+
                     if let score = viewModel.lastScore {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("本题结果").appSectionTitle()
@@ -303,13 +317,6 @@ public struct SightSingingSessionView: View {
                                     .foregroundStyle(SwiftAppTheme.muted)
                             }
                             .font(.subheadline)
-
-                            Button(infinite ? "下一题" : (q.index >= q.totalQuestions ? "查看结果" : "下一题")) {
-                                Task {
-                                    if await viewModel.nextOrFinish() { showResult = true }
-                                }
-                            }
-                            .appPrimaryButton()
                         }
                         .appCard()
                     }
