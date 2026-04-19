@@ -142,6 +142,9 @@ public final class AudioEngineService: AudioEngineServing {
         }
         engine.stop()
         started = false
+        // `AVAudioEngine` stop invalidates the graph; `AVAudioUnitSampler` must reload the sound bank on next `start()`.
+        // Otherwise `isSampledGuitarAvailable` stays true while playback is corrupt (e.g. after leaving Tuner then opening ear training).
+        sampledGuitarLoaded = false
         quality.markStop()
     }
 
