@@ -144,19 +144,28 @@ struct ChordRibbonView: View {
                         ForEach(Array(segments.enumerated()), id: \.offset) { idx, segment in
                             let fingering = ChordFingeringResolver.resolve(segment.chord)
                             let w = idx < widths.count ? widths[idx] : cardMinWidth
-                            VStack(spacing: 6) {
-                                Text(segment.chord)
-                                    .font(.headline)
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                if let fingering {
-                                    ChordDiagramView(frets: fingering.frets)
-                                        .frame(width: 34, height: 44)
-                                } else {
-                                    Text("—")
-                                        .font(.caption)
-                                        .foregroundStyle(SwiftAppTheme.muted)
+                            let seekMs = min(max(segment.startMs, 0), max(0, durationMs))
+                            Button {
+                                onScrubMs(seekMs)
+                            } label: {
+                                VStack(spacing: 6) {
+                                    Text(segment.chord)
+                                        .font(.headline)
+                                        .foregroundStyle(SwiftAppTheme.text)
+                                    if let fingering {
+                                        ChordDiagramView(frets: fingering.frets)
+                                            .frame(width: 34, height: 44)
+                                    } else {
+                                        Text("—")
+                                            .font(.caption)
+                                            .foregroundStyle(SwiftAppTheme.muted)
+                                    }
                                 }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("跳到 \(segment.chord)")
                             .frame(width: w, height: 84)
                             .background(idx == currentIndex ? SwiftAppTheme.surfaceSoft : SwiftAppTheme.surface)
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -176,7 +185,8 @@ struct ChordRibbonView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: SwiftAppTheme.cardRadius, style: .continuous))
             .contentShape(Rectangle())
-            .highPriorityGesture(
+            // 与卡片点击并存：不用 highPriority，否则会吞掉子视图 Button 的点击。
+            .simultaneousGesture(
                 DragGesture(minimumDistance: 10)
                     .onChanged { value in
                         guard !segments.isEmpty, durationMs > 0 else { return }
