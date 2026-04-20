@@ -80,6 +80,7 @@
 		119222F862F03CC58F905D72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1197509EA1DAFB3E6F4E6004 /* TranscriptionImportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionImportServiceTests.swift; sourceTree = "<group>"; };
 		1BC3FAF5DB303FC85D919D9E /* TranscriptionPlayerComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionPlayerComponents.swift; sourceTree = "<group>"; };
+		1DCFAFA1FA93AD8B45C64E55 /* onnxruntime-swift-package-manager */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "onnxruntime-swift-package-manager"; path = "LocalPackages/onnxruntime-swift-package-manager"; sourceTree = SOURCE_ROOT; };
 		1FEE6B960D44ECFD5930467C /* RecommendationHistoryMerging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationHistoryMerging.swift; sourceTree = "<group>"; };
 		204B9222505DBB4250713D86 /* TranscriptionProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionProcessingView.swift; sourceTree = "<group>"; };
 		2396A158BEE17BFE3AF2BADA /* TranscriptionHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHomeView.swift; sourceTree = "<group>"; };
@@ -186,6 +187,7 @@
 		3095ACC0B41E928A4E3B2270 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
+				1DCFAFA1FA93AD8B45C64E55 /* onnxruntime-swift-package-manager */,
 				C7BAB7DF709977E2E26FF769 /* swift_app */,
 			);
 			name = Packages;
@@ -416,8 +418,8 @@
 			mainGroup = A6B29DF5C58EDFDDA8643C3A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				1AE9D56C85AC68E7D4EDF0CF /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,
 				4B8695203103A0B1BDC140D1 /* XCLocalSwiftPackageReference "../swift_app" */,
+				563F32FDB8140CF31FE9DE1F /* XCLocalSwiftPackageReference "LocalPackages/onnxruntime-swift-package-manager" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 56B1476CE7B8BBAD15CA17E0 /* Products */;
@@ -760,18 +762,11 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../swift_app;
 		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		1AE9D56C85AC68E7D4EDF0CF /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.24.2;
-			};
+		563F32FDB8140CF31FE9DE1F /* XCLocalSwiftPackageReference "LocalPackages/onnxruntime-swift-package-manager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "LocalPackages/onnxruntime-swift-package-manager";
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		21929BB5D4BC54C7C1690129 /* Profile */ = {
@@ -800,7 +795,6 @@
 		};
 		E39F5AF77BCA907BCD92D067 /* onnxruntime */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1AE9D56C85AC68E7D4EDF0CF /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
 			productName = onnxruntime;
 		};
 		EEDC03120E5A07496D4BF215 /* Ear */ = {

@@ -7,6 +7,9 @@
 #   ./run-simulator.sh --pull       # 先 git pull 再编译（在仓库根目录执行 pull）
 #
 # 依赖：Xcode 命令行工具（xcodebuild、xcrun simctl）、已安装的 iOS Simulator 运行时。
+#
+# 默认离线构建：OnnxRuntime 使用本地 package + 本地二进制 zip，不依赖 GitHub/外网。
+# 若首次初始化本地包，请先把 `LocalPackages/onnxruntime-swift-package-manager` 准备好。
 
 set -euo pipefail
 
@@ -15,6 +18,14 @@ REPO_ROOT="$(cd "${HOST_DIR}/.." && pwd)"
 PROJECT="${HOST_DIR}/SwiftEarHost.xcodeproj"
 SCHEME="SwiftEarHost"
 BUNDLE_ID="com.wanghan.guitarhelper"
+LOCAL_ORT_PACKAGE_DIR="${HOST_DIR}/LocalPackages/onnxruntime-swift-package-manager"
+LOCAL_ORT_POD_REL=".vendor/pod-archive-onnxruntime-c-1.24.2.zip"
+LOCAL_ORT_EXT_POD_REL=".vendor/pod-archive-onnxruntime-extensions-c-0.13.0.zip"
+LOCAL_ORT_POD_ABS="${LOCAL_ORT_PACKAGE_DIR}/${LOCAL_ORT_POD_REL}"
+LOCAL_ORT_EXT_POD_ABS="${LOCAL_ORT_PACKAGE_DIR}/${LOCAL_ORT_EXT_POD_REL}"
+
+# 与 DerivedData 分开存放，避免每次删 /tmp 下 Derived 时把已拉取的 SPM 仓库一并删掉。
+SPM_CLONES_DIR="${SPM_CLONES_DIR:-${HOME}/Library/Caches/SwiftEarHost-spm-repos}"
 
 # 默认：此前会话中使用的「iPhone 16 Flutter」；可改成本机 `xcrun simctl list devices available` 里的 UDID
 DEFAULT_SIMULATOR_UDID="${SIMULATOR_UDID:-F877F638-03AC-4C4B-ADDF-5631C27FEB05}"
@@ -24,7 +35,7 @@ for arg in "$@"; do
   case "${arg}" in
     --pull) DO_PULL=1 ;;
     -h|--help)
-      sed -n '1,20p' "$0"
+      sed -n '1,40p' "$0"
       exit 0
       ;;
     *)
@@ -42,6 +53,25 @@ fi
 UDID="${SIMULATOR_UDID:-${DEFAULT_SIMULATOR_UDID}}"
 DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostSimBuild-${USER}}"
 
+mkdir -p "${SPM_CLONES_DIR}"
+
+if [[ ! -d "${LOCAL_ORT_PACKAGE_DIR}" ]]; then
+  echo "缺少本地 OnnxRuntime 包目录: ${LOCAL_ORT_PACKAGE_DIR}" >&2
+  echo "请先准备 LocalPackages/onnxruntime-swift-package-manager 后再运行。" >&2
+  exit 1
+fi
+if [[ ! -f "${LOCAL_ORT_POD_ABS}" || ! -f "${LOCAL_ORT_EXT_POD_ABS}" ]]; then
+  echo "缺少本地 OnnxRuntime 二进制 zip。" >&2
+  echo "期望存在：" >&2
+  echo "  ${LOCAL_ORT_POD_ABS}" >&2
+  echo "  ${LOCAL_ORT_EXT_POD_ABS}" >&2
+  exit 1
+fi
+
+# 这两个环境变量由 onnxruntime-swift-package-manager/Package.swift 读取，且要求相对包根目录。
+export ORT_POD_LOCAL_PATH="${LOCAL_ORT_POD_REL}"
+export ORT_EXTENSIONS_POD_LOCAL_PATH="${LOCAL_ORT_EXT_POD_REL}"
+
 echo "==> 打开 Simulator"
 open -a Simulator 2>/dev/null || true
 
@@ -49,13 +79,18 @@ echo "==> 启动模拟器 ${UDID}（若已启动则忽略错误）"
 xcrun simctl boot "${UDID}" 2>/dev/null || true
 
 echo "==> xcodebuild（Debug / iphonesimulator）"
-rm -rf "${DERIVED}"
+echo "    SPM 克隆缓存: ${SPM_CLONES_DIR}"
+# 只清编译产物，保留本 DerivedData 内已解析的包状态；SPM 仓库本体在 SPM_CLONES_DIR。
+rm -rf "${DERIVED}/Build"
+mkdir -p "${DERIVED}"
 xcodebuild \
   -project "${PROJECT}" \
   -scheme "${SCHEME}" \
   -configuration Debug \
   -destination "platform=iOS Simulator,id=${UDID}" \
   -derivedDataPath "${DERIVED}" \
+  -disableAutomaticPackageResolution \
+  -clonedSourcePackagesDirPath "${SPM_CLONES_DIR}" \
   build
 
 APP="${DERIVED}/Build/Products/Debug-iphonesimulator/SwiftEarHost.app"

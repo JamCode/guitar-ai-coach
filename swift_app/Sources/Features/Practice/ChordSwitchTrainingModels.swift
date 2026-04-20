@@ -32,6 +32,10 @@ public struct ChordSwitchExercise: Sendable, Identifiable, Hashable, Codable {
     public var difficulty: ChordSwitchDifficulty
     /// 多组串联；每组内按顺序切换。
     public var segments: [ChordSwitchSegment]
+    /// 出题固定为 C 大调（和弦符号与级数均相对 C）。
+    public var keyZh: String
+    /// 与 `flattenedChords` 等长的一一对应级数（如 I、vi、IV、V7）。
+    public var romanNumerals: [String]
     public var bpmMin: Int
     public var bpmMax: Int
     /// 每个和弦所占拍数：初级 2；中级 1；高级 0.5（半拍）。
@@ -43,6 +47,8 @@ public struct ChordSwitchExercise: Sendable, Identifiable, Hashable, Codable {
         id: String,
         difficulty: ChordSwitchDifficulty,
         segments: [ChordSwitchSegment],
+        keyZh: String,
+        romanNumerals: [String],
         bpmMin: Int,
         bpmMax: Int,
         beatsPerChord: Double,
@@ -52,6 +58,8 @@ public struct ChordSwitchExercise: Sendable, Identifiable, Hashable, Codable {
         self.id = id
         self.difficulty = difficulty
         self.segments = segments
+        self.keyZh = keyZh
+        self.romanNumerals = romanNumerals
         self.bpmMin = bpmMin
         self.bpmMax = bpmMax
         self.beatsPerChord = beatsPerChord
@@ -62,6 +70,11 @@ public struct ChordSwitchExercise: Sendable, Identifiable, Hashable, Codable {
     /// 顺序展开所有和弦，便于节拍器或跟练 UI。
     public var flattenedChords: [String] {
         segments.flatMap(\.chords)
+    }
+
+    /// 级数连成一句，如 `I → vi → IV → V`。
+    public var romanProgressionZh: String {
+        romanNumerals.joined(separator: " → ")
     }
 
     public var bpmHintZh: String {

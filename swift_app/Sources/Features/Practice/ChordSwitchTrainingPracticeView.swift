@@ -13,7 +13,9 @@ public struct ChordSwitchTrainingPracticeView: View {
         List {
             Section {
                 Text(
-                    "按难度自动组卷：每组内从左到右切换；BPM 与每和弦拍数为固定区间随机。"
+                    "按难度自动组卷：固定 \(ChordSwitchGenerator.defaultKeyZh)，"
+                        + "和弦进行按大调功能设计并标注级数；"
+                        + "每组内从左到右切换，BPM 与每和弦拍数在区间内随机。"
                         + "下方直接展示常用把位指法图。"
                 )
                 .font(.subheadline)
@@ -27,8 +29,12 @@ public struct ChordSwitchTrainingPracticeView: View {
                     } label: {
                         HStack(alignment: .center, spacing: 10) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("\(item.segments.count) 组")
+                                Text("\(item.segments.count) 组 · \(item.flattenedChords.count) 和弦")
                                     .font(.headline)
+                                Text(item.romanProgressionZh)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
                                 Text(item.bpmHintZh)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -85,12 +91,33 @@ private struct ChordSwitchExerciseDetailView: View {
         ChordSwitchKeyResolver.referenceMajorKeyLabel(for: exercise)
     }
 
+    private func romanBase(segmentIndex: Int) -> Int {
+        exercise.segments.prefix(segmentIndex).reduce(0) { $0 + $1.chords.count }
+    }
+
+    private func romanSlice(segmentIndex: Int) -> [String] {
+        let base = romanBase(segmentIndex: segmentIndex)
+        guard segmentIndex < exercise.segments.count else { return [] }
+        let seg = exercise.segments[segmentIndex]
+        let end = min(base + seg.chords.count, exercise.romanNumerals.count)
+        guard base < end else { return [] }
+        return Array(exercise.romanNumerals[base ..< end])
+    }
+
+    private func romanForChord(segmentIndex: Int, chordIndex: Int) -> String {
+        let idx = romanBase(segmentIndex: segmentIndex) + chordIndex
+        guard idx < exercise.romanNumerals.count else { return "—" }
+        return exercise.romanNumerals[idx]
+    }
+
     var body: some View {
         List {
             Section {
                 ChordSwitchSelectionPreviewCard(
                     chords: previewChords,
-                    difficulty: exercise.difficulty
+                    romans: romanSlice(segmentIndex: 0),
+                    difficulty: exercise.difficulty,
+                    keyZh: exercise.keyZh
                 )
                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                 .listRowBackground(Color.clear)
@@ -115,17 +142,17 @@ private struct ChordSwitchExerciseDetailView: View {
                 ForEach(Array(exercise.segments.enumerated()), id: \.offset) { i, seg in
                     VStack(alignment: .leading, spacing: 10) {
                         Text("第 \(i + 1) 组").font(.subheadline.weight(.semibold))
+                        Text("级数：\(romanSlice(segmentIndex: i).joined(separator: " → "))")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
                         Text(seg.summaryZh)
                             .font(.caption.monospaced())
                             .foregroundStyle(.secondary)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(alignment: .top, spacing: 12) {
-                                ForEach(Array(seg.chords.enumerated()), id: \.offset) { _, sym in
-                                    ChordSwitchSymbolCell(symbol: sym)
-                                }
+                        ChordSwitchChordDiagramGrid(
+                            items: seg.chords.enumerated().map { j, sym in
+                                (sym, romanForChord(segmentIndex: i, chordIndex: j))
                             }
-                            .padding(.vertical, 4)
-                        }
+                        )
                     }
                     .padding(.vertical, 4)
                 }
@@ -168,14 +195,58 @@ private struct ChordSwitchExerciseDetailView: View {
     }
 }
 
+// MARK: - 指法图网格（每行最多 4 个，自动换行）
+
+private struct ChordSwitchChordDiagramGrid: View {
+    let items: [(symbol: String, roman: String)]
+
+    private var widthToHeight: CGFloat {
+        1 / ChordSwitchDiagramLayout.heightOverWidthRatio(
+            chordCount: items.count,
+            includeRomanLine: true
+        )
+    }
+
+    var body: some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .aspectRatio(widthToHeight, contentMode: .fit)
+            .overlay(
+                GeometryReader { geo in
+                    let w = max(geo.size.width, 1)
+                    let m = ChordSwitchDiagramLayout.metrics(containerWidth: w, includeRomanLine: true)
+                    let rowGap = w * ChordSwitchDiagramLayout.rowGapOverWidth
+                    LazyVGrid(
+                        columns: Array(
+                            repeating: GridItem(.flexible(), spacing: m.columnGutter),
+                            count: ChordSwitchDiagramLayout.maxColumns
+                        ),
+                        alignment: .leading,
+                        spacing: rowGap
+                    ) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                            ChordSwitchSymbolCell(symbol: item.symbol, roman: item.roman, metrics: m)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.horizontal, m.outerHorizontalPadding)
+                    .padding(.vertical, w * ChordSwitchDiagramLayout.verticalMarginOverWidth)
+                    .frame(width: w, height: geo.size.height, alignment: .topLeading)
+                }
+            )
+    }
+}
+
 // MARK: - 预览卡片（首组）
 
 private struct ChordSwitchSelectionPreviewCard: View {
     let chords: [String]
+    let romans: [String]
     let difficulty: ChordSwitchDifficulty
+    let keyZh: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center) {
                 Text("当前选择预览")
                     .font(.subheadline.weight(.semibold))
@@ -190,19 +261,20 @@ private struct ChordSwitchSelectionPreviewCard: View {
                     .clipShape(Capsule())
             }
 
+            Text(keyZh)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.text)
+
             if chords.isEmpty {
                 Text("暂无和弦序列")
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 12) {
-                        ForEach(Array(chords.enumerated()), id: \.offset) { _, sym in
-                            ChordSwitchSymbolCell(symbol: sym)
-                        }
+                ChordSwitchChordDiagramGrid(
+                    items: chords.enumerated().map { i, sym in
+                        (sym, i < romans.count ? romans[i] : "—")
                     }
-                    .padding(.vertical, 4)
-                }
+                )
             }
 
             Text("和弦切换 · \(difficulty.rawValue)")
@@ -221,41 +293,60 @@ private struct ChordSwitchSelectionPreviewCard: View {
 
 private struct ChordSwitchSymbolCell: View {
     let symbol: String
+    let roman: String
+    let metrics: ChordSwitchDiagramLayout.Metrics
+
+    private var romanFontSize: CGFloat {
+        max(9, metrics.columnWidth * 0.095)
+    }
+
+    private var symbolFontSize: CGFloat {
+        max(10, metrics.columnWidth * 0.11)
+    }
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: metrics.cellVStackSpacing) {
             Group {
                 if let entry = ChordChartData.chordChartEntry(symbol: symbol) {
                     ChordDiagramView(frets: entry.frets)
-                        .frame(width: 72, height: 92)
-                        .padding(6)
+                        .frame(width: metrics.diagramWidth, height: metrics.diagramHeight)
+                        .padding(metrics.diagramInnerPadding)
                         .background(SwiftAppTheme.surfaceSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous)
                                 .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
                         )
                 } else {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous)
                             .fill(SwiftAppTheme.surfaceSoft)
                         Text("无本地指法")
-                            .font(.caption2)
+                            .font(.system(size: max(9, metrics.columnWidth * 0.09)))
                             .multilineTextAlignment(.center)
                             .foregroundStyle(SwiftAppTheme.muted)
-                            .padding(6)
+                            .padding(metrics.diagramInnerPadding * 0.6)
                     }
-                    .frame(width: 84, height: 104)
+                    .frame(width: metrics.placeholderWidth, height: metrics.placeholderHeight)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous)
                             .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
                     )
                 }
             }
 
+            Text(roman)
+                .font(.system(size: romanFontSize, weight: .semibold, design: .monospaced))
+                .foregroundStyle(SwiftAppTheme.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+
             Text(symbol)
-                .font(.caption.weight(.semibold))
+                .font(.system(size: symbolFontSize, weight: .semibold, design: .default))
                 .foregroundStyle(SwiftAppTheme.text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
+        .frame(maxWidth: .infinity)
     }
 }

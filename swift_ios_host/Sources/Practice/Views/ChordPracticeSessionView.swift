@@ -1,40 +1,32 @@
 import ChordChart
-import Chords
 import Core
 import Practice
 import SwiftUI
 
-/// 练琴「和弦切换」：进入即练习；题目仅来自 `ChordSwitchGenerator`。
+/// 练琴「和弦切换」：题目来自 `ChordSwitchGenerator`。
+/// 「下一组」按练习设置里的**难度**与**调性**重新出题；在设置里改**调性**会立即移调当前题（级数不变）。
 struct ChordPracticeSessionView: View {
-    let task: PracticeTask
-    let store: PracticeSessionStore
-
     @State private var exercise: ChordSwitchExercise = Self.bootstrapExercise()
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var startedAt: Date?
-    @State private var elapsedSeconds: Int = 0
-    @State private var running: Bool = false
-
-    @State private var showFinishSheet: Bool = false
-    @State private var noteText: String = ""
-
-    @State private var showNeedStartHint: Bool = false
-    @State private var savingError: String?
-    @State private var savedToast: Bool = false
-
     @State private var showPracticeSettings: Bool = false
 
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    /// 「下一组」使用的难度（默认与首题一致）。
+    @State private var selectedDifficulty: ChordSwitchDifficulty = .初级
 
-    private var referenceKeyLabel: String {
-        ChordSwitchKeyResolver.referenceMajorKeyLabel(for: exercise)
+    /// 当前调性主音；修改后立即作用到 `exercise`。
+    @State private var selectedTonic: String = ChordSwitchGenerator.defaultTonic
+
+    /// 练习页一行说明：本组和弦所在调性（与出题 `keyZh` 一致）。
+    private var practiceKeyDescriptionLine: String {
+        let t = ChordSwitchGenerator.parseTonicKey(from: exercise.keyZh)
+        return "本组和弦为 \(exercise.keyZh) 的 \(t) 自然大调进行；和弦符号、指法与级数均相对该调。"
     }
 
     var body: some View {
         VStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text("本组练习")
                         .font(.subheadline.weight(.semibold))
@@ -48,41 +40,30 @@ struct ChordPracticeSessionView: View {
                         .background(SwiftAppTheme.brandSoft)
                         .clipShape(Capsule())
                 }
+
+                Text(practiceKeyDescriptionLine)
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.text)
+                    .fixedSize(horizontal: false, vertical: true)
+
                 ChordPracticeDiagramStrip(chordSymbols: exercise.flattenedChords)
+
                 Text(exercise.bpmHintZh)
                     .font(.caption)
                     .foregroundStyle(SwiftAppTheme.muted)
+                    .padding(.top, 4)
+
                 Text(exercise.promptZh)
                     .font(.caption)
                     .foregroundStyle(SwiftAppTheme.text)
-                    .lineLimit(8)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Button("下一组") { advanceToNextGroup() }
                     .appSecondaryButton()
                     .frame(maxWidth: .infinity)
             }
             .appCard()
-
-            Spacer()
-
-            Text(formatDurationLocal(elapsedSeconds))
-                .font(.system(size: 54, weight: .semibold, design: .rounded))
-                .foregroundStyle(SwiftAppTheme.text)
-                .monospacedDigit()
-
-            HStack(spacing: 12) {
-                if !running {
-                    Button("开始") { start() }
-                        .appPrimaryButton()
-                } else {
-                    Button("暂停") { pause() }
-                        .appSecondaryButton()
-                }
-
-                Button("结束") { finishTapped() }
-                    .buttonStyle(.bordered)
-                    .tint(SwiftAppTheme.brandSoft)
-            }
 
             Spacer()
         }
@@ -106,23 +87,44 @@ struct ChordPracticeSessionView: View {
                 } label: {
                     Image(systemName: "gearshape")
                 }
-                .accessibilityLabel("参考调性")
+                .accessibilityLabel("练习设置")
             }
         }
         .sheet(isPresented: $showPracticeSettings) {
             NavigationStack {
                 Form {
-                    Section("参考调性") {
-                        Text(referenceKeyLabel)
-                            .font(.title3.weight(.semibold))
-                        Text(
-                            "根据本组和弦符号自动推断最可能的自然大调主音；题目由 `ChordSwitchGenerator` 生成。"
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    Section("难度") {
+                        Picker("难度", selection: $selectedDifficulty) {
+                            ForEach(ChordSwitchDifficulty.allCases, id: \.self) { level in
+                                Text(level.rawValue).tag(level)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        Text("选择后点击「下一组」按该难度重新随机出题。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section("调性") {
+                        Picker("调性", selection: $selectedTonic) {
+                            ForEach(ChordSwitchGenerator.selectableTonics, id: \.self) { t in
+                                Text(ChordSwitchGenerator.keyZhLabel(tonic: t)).tag(t)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        Text("更改后立即按新调性移调当前和弦与指法（级数不变）。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .navigationTitle("练习说明")
+                .navigationTitle("练习设置")
+                .onAppear {
+                    // 仅同步调性：避免覆盖用户已选、尚未点「下一组」的难度。
+                    selectedTonic = ChordSwitchGenerator.parseTonicKey(from: exercise.keyZh)
+                }
+                .onChange(of: selectedTonic) { _, newValue in
+                    exercise = ChordSwitchGenerator.withTonic(exercise, to: newValue)
+                }
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("完成") { showPracticeSettings = false }
@@ -130,99 +132,24 @@ struct ChordPracticeSessionView: View {
                 }
             }
         }
-        .onReceive(ticker) { _ in
-            guard running else { return }
-            elapsedSeconds += 1
-        }
-        .alert("先开始练习再结束哦", isPresented: $showNeedStartHint) {
-            Button("知道了", role: .cancel) {}
-        }
-        .alert("保存失败", isPresented: Binding(get: { savingError != nil }, set: { if !$0 { savingError = nil } })) {
-            Button("知道了", role: .cancel) {}
-        } message: {
-            Text(savingError ?? "")
-        }
-        .alert("记录已保存", isPresented: $savedToast) {
-            Button("返回", role: .cancel) { dismiss() }
-        }
-        .sheet(isPresented: $showFinishSheet) {
-            PracticeFinishDialog(
-                title: "本次练习完成",
-                showCompletedGoal: true,
-                noteText: $noteText,
-                onCancel: { showFinishSheet = false },
-                onSave: { result in
-                    showFinishSheet = false
-                    Task { await save(result: result) }
-                }
-            )
-        }
         .appPageBackground()
     }
 
     private static func bootstrapExercise() -> ChordSwitchExercise {
         var rng = SystemRandomNumberGenerator()
-        return ChordSwitchGenerator.buildExercise(difficulty: .初级, using: &rng)
+        return ChordSwitchGenerator.buildExercise(
+            difficulty: .初级,
+            tonic: ChordSwitchGenerator.defaultTonic,
+            using: &rng
+        )
     }
 
-    /// 初 → 中 → 高 → 初，每次用 `ChordSwitchGenerator` 重新随机组卷。
     private func advanceToNextGroup() {
-        running = false
         var rng = SystemRandomNumberGenerator()
-        let nextDifficulty: ChordSwitchDifficulty = switch exercise.difficulty {
-        case .初级: .中级
-        case .中级: .高级
-        case .高级: .初级
-        }
-        exercise = ChordSwitchGenerator.buildExercise(difficulty: nextDifficulty, using: &rng)
+        exercise = ChordSwitchGenerator.buildExercise(
+            difficulty: selectedDifficulty,
+            tonic: selectedTonic,
+            using: &rng
+        )
     }
-
-    private func start() {
-        guard !running else { return }
-        startedAt = startedAt ?? Date()
-        running = true
-    }
-
-    private func pause() {
-        running = false
-    }
-
-    private func finishTapped() {
-        guard elapsedSeconds > 0 else {
-            showNeedStartHint = true
-            return
-        }
-        pause()
-        showFinishSheet = true
-    }
-
-    @MainActor
-    private func save(result: PracticeFinishResult) async {
-        guard let startedAt else { return }
-        do {
-            try await store.saveSession(
-                task: task,
-                startedAt: startedAt,
-                endedAt: Date(),
-                durationSeconds: elapsedSeconds,
-                completed: result.completed,
-                difficulty: result.difficulty,
-                note: result.note,
-                progressionId: exercise.id,
-                musicKey: referenceKeyLabel,
-                complexity: exercise.difficulty.rawValue,
-                rhythmPatternId: nil
-            )
-            savedToast = true
-        } catch {
-            savingError = String(describing: error)
-        }
-    }
-}
-
-private func formatDurationLocal(_ seconds: Int) -> String {
-    let s = max(0, seconds)
-    let m = String(format: "%02d", s / 60)
-    let r = String(format: "%02d", s % 60)
-    return "\(m):\(r)"
 }

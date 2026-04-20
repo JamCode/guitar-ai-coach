@@ -7,8 +7,7 @@ packages:
   GuitarAICoach:
     path: ../swift_app
   OnnxRuntime:
-    url: https://github.com/microsoft/onnxruntime-swift-package-manager
-    from: 1.24.2
+    path: LocalPackages/onnxruntime-swift-package-manager
 targets:
   SwiftEarHost:
     type: application
