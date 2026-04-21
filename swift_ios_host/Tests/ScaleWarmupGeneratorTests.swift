@@ -19,6 +19,15 @@ final class ScaleWarmupGeneratorTests: XCTestCase {
         }
     }
 
+    func testAllDrills_spanAtLeastFourFrets() {
+        for difficulty in ScaleWarmupDifficulty.allCases {
+            for d in ScaleWarmupGenerator.drills(for: difficulty) {
+                let span = d.fretEnd - d.fretStart + 1
+                XCTAssertGreaterThanOrEqual(span, 4, "drill=\(d.id) span=\(span)")
+            }
+        }
+    }
+
     func testDrill_crawl_b_6_4_68_hasSequenceAndGridSteps() {
         let d = ScaleWarmupGenerator.drills(for: .初级).first { $0.id == "crawl_b_6_4_68" }!
         XCTAssertEqual(d.stringsIncluded, [4, 5, 6])

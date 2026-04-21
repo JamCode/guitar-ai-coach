@@ -120,7 +120,7 @@ enum ScaleWarmupGenerator {
                     tip: "力度均匀，换品时贴弦减少杂音。"
                 ),
                 ScaleWarmupDrill(
-                    id: "crawl_b_5_3_64",
+                    id: "crawl_b_5_4_64",
                     stringsLabel: "⑤–③弦",
                     fretLabel: "1–3 品",
                     patternLabel: "半音三品型（上行）",

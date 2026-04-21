@@ -60,14 +60,14 @@ enum ScaleWarmupGenerator {
                     isRoundTrip: false
                 ),
                 makeDrill(
-                    id: "crawl_b_5_3_64",
+                    id: "crawl_b_5_4_64",
                     stringsLabel: "⑤–③弦",
-                    fretLabel: "1–3 品",
+                    fretLabel: "1–4 品",
                     stringsPlayLowToHigh: [5, 4, 3],
-                    fretRange: 1 ... 3,
-                    patternLabel: "半音三品型（上行）",
+                    fretRange: 1 ... 4,
+                    patternLabel: "半音四品型（上行）",
                     suggestedBpm: 64,
-                    roundsHint: "建议 3 轮",
+                    roundsHint: "建议 4 轮",
                     tip: "左手保留指能留则留，减少跳指。",
                     isRoundTrip: false
                 ),
@@ -155,6 +155,8 @@ enum ScaleWarmupGenerator {
         tip: String,
         isRoundTrip: Bool
     ) -> ScaleWarmupDrill {
+        let fretSpan = fretRange.upperBound - fretRange.lowerBound + 1
+        precondition(fretSpan >= 4, "爬格子热身题卡品位跨度至少 4 品，便于四指分配。")
         let stringsIncluded = stringsPlayLowToHigh.sorted()
         let steps = upSteps(stringsPlayLowToHigh: stringsPlayLowToHigh, fretRange: fretRange)
         let bullets = sequenceBullets(
@@ -203,11 +205,21 @@ enum ScaleWarmupGenerator {
         let low = fretRange.lowerBound
         let high = fretRange.upperBound
         let circle = stringsPlayLowToHigh.map(circleStringName).joined(separator: " → ")
+        let span = high - low + 1
         var lines: [String] = [
             "练习区域：\(stringsLabel)，\(fretLabel)。弦弹奏顺序（先 → 后）：\(circle)。",
             "每根弦上品位从低到高：\(low) 品 → \(high) 品（上行）。",
             "四指尽量一品一指；指尖立起，换弦时手腕放松。",
         ]
+        if span == 4 {
+            lines.append(
+                "本题连续四品：同一弦上建议食指、中指、无名指、小指依次各占一品（可按手型微调）。"
+            )
+        } else if span > 4 {
+            lines.append(
+                "品位跨度大于四品时，需要挪动把位或分段练习；仍保持手型放松、音量均匀。"
+            )
+        }
         if isRoundTrip {
             lines.append(
                 "本题为「往返」：格内数字只标上行半段；下行请按相反顺序原路返回（\(high) 品 → \(low) 品），再换到上一根弦重复。"
