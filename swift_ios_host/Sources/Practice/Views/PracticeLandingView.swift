@@ -527,7 +527,7 @@ private struct PracticeTaskRouterScreen: View {
         case "rhythm-strum":
             RhythmStrummingView(task: task, store: store)
         case "scale-walk":
-            PracticeTimerSessionView(task: task, store: store)
+            ScaleWarmupSessionView(task: task, store: store)
         default:
             VStack(spacing: 12) {
                 Image(systemName: "hammer.circle")
