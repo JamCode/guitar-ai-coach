@@ -28,6 +28,7 @@
 		4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */; };
 		566E75613410B952C4E68533 /* TranscriptionHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2396A158BEE17BFE3AF2BADA /* TranscriptionHomeView.swift */; };
 		58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */; };
+		C5049DEB0D1F775F285D6A28 /* ScaleWarmupDrill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E48D67A8D42B33749EC04E /* ScaleWarmupDrill.swift */; };
 		682303963F7DBBEA6CBE3F4A /* RecommendationHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0944BA0BAA6C603F2C127D /* RecommendationHistoryStore.swift */; };
 		6C61AD5387584DE05CBAEEFC /* Fretboard in Frameworks */ = {isa = PBXBuildFile; productRef = 680D96401F590C260C21FB94 /* Fretboard */; };
 		7A1A7A19018CB5C4774DE4D5 /* RhythmStrummingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C849930EEBA4B913F9D21D21 /* RhythmStrummingView.swift */; };
@@ -44,6 +45,8 @@
 		B171B90382977C156D5ADC27 /* TranscriptionMediaDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5949CDF8018DDF958DB27304 /* TranscriptionMediaDecoder.swift */; };
 		B38E1AD5836EDA48F676DAA2 /* TranscriptionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B18D0E46EFB063B53B059B /* TranscriptionEngineTests.swift */; };
 		B3EF0D4AECBD7ED1AF411700 /* TranscriptionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F95F0F7B7389DBB8E409492 /* TranscriptionModels.swift */; };
+		B922D6E8B22060CC2AF8206E /* StrummingPatternGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A8A952097B1432FE113B90E /* StrummingPatternGeneratorTests.swift */; };
+		EA9E5840942F2104D62E6D26 /* ScaleWarmupGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D582CDB1B847D7DA0C7406 /* ScaleWarmupGeneratorTests.swift */; };
 		BAAB390B79382E696ABF0074 /* PracticeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99248B2B89EEEF58AC61A45E /* PracticeModels.swift */; };
 		BC053B1E5E74AF884B735DB8 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = E39F5AF77BCA907BCD92D067 /* onnxruntime */; };
 		C43C649F834BDB6D9503DF75 /* TranscriptionOnnxPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B6EE54B98314A51942ED04 /* TranscriptionOnnxPipeline.swift */; };
@@ -85,6 +88,9 @@
 		204B9222505DBB4250713D86 /* TranscriptionProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionProcessingView.swift; sourceTree = "<group>"; };
 		2396A158BEE17BFE3AF2BADA /* TranscriptionHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHomeView.swift; sourceTree = "<group>"; };
 		3A2E8064C40ABA4BEDBB7812 /* ChordFingeringResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordFingeringResolver.swift; sourceTree = "<group>"; };
+		3A8A952097B1432FE113B90E /* StrummingPatternGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrummingPatternGeneratorTests.swift; sourceTree = "<group>"; };
+		74E48D67A8D42B33749EC04E /* ScaleWarmupDrill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleWarmupDrill.swift; sourceTree = "<group>"; };
+		A1D582CDB1B847D7DA0C7406 /* ScaleWarmupGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleWarmupGeneratorTests.swift; sourceTree = "<group>"; };
 		40962FBB227FF51EC6BCDD77 /* SwiftEarHostTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SwiftEarHostTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		44471F8A97B071DF5D17B507 /* TranscriptionHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryStore.swift; sourceTree = "<group>"; };
 		4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSessionView.swift; sourceTree = "<group>"; };
@@ -173,6 +179,8 @@
 				F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */,
 				E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */,
 				FB009ADEB470D6167573E47E /* SheetsStoreAndParserTests.swift */,
+				3A8A952097B1432FE113B90E /* StrummingPatternGeneratorTests.swift */,
+				A1D582CDB1B847D7DA0C7406 /* ScaleWarmupGeneratorTests.swift */,
 				DCFCA483F73447F3060E1101 /* TodayRecommendationPlannerTests.swift */,
 				A3B18D0E46EFB063B53B059B /* TranscriptionEngineTests.swift */,
 				B5BE73BE481650BACC522D16 /* TranscriptionHistoryStoreTests.swift */,
@@ -264,6 +272,7 @@
 				99248B2B89EEEF58AC61A45E /* PracticeModels.swift */,
 				1FEE6B960D44ECFD5930467C /* RecommendationHistoryMerging.swift */,
 				806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */,
+				74E48D67A8D42B33749EC04E /* ScaleWarmupDrill.swift */,
 				DEAA48FC7903A0CA365BBE2E /* TodayRecommendationModels.swift */,
 			);
 			path = Models;
@@ -459,6 +468,8 @@
 			files = (
 				493A486B3D6711B60958BDAD /* PracticeLocalStoreTests.swift in Sources */,
 				1D79CC2FD290C774E1D86265 /* SheetsStoreAndParserTests.swift in Sources */,
+				B922D6E8B22060CC2AF8206E /* StrummingPatternGeneratorTests.swift in Sources */,
+				EA9E5840942F2104D62E6D26 /* ScaleWarmupGeneratorTests.swift in Sources */,
 				2B53E21535C1F1C6DB45DFA4 /* TodayRecommendationPlannerTests.swift in Sources */,
 				B38E1AD5836EDA48F676DAA2 /* TranscriptionEngineTests.swift in Sources */,
 				E7F96863B18B84598A051C56 /* TranscriptionHistoryStoreTests.swift in Sources */,
@@ -492,6 +503,7 @@
 				482F6F903FB7DF1F60DC16A9 /* SheetLibraryView.swift in Sources */,
 				93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */,
 				58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */,
+				C5049DEB0D1F775F285D6A28 /* ScaleWarmupDrill.swift in Sources */,
 				4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */,
 				38A6C604DFC07C237B556CD5 /* TodayRecommendationListView.swift in Sources */,
 				859A9E07A72362A83CC2D81D /* TodayRecommendationModels.swift in Sources */,
