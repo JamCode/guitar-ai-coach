@@ -53,7 +53,7 @@ struct ScaleWarmupSessionView: View {
                     Text(drill.tip)
                         .font(.footnote)
                         .foregroundStyle(SwiftAppTheme.muted)
-                    Text("每次进入或点「下一组」会按当前难度随机抽题卡；练完后点右上角「保存」写入记录。可与外置节拍器同练，本页不含音频节拍器。")
+                    Text("每次进入或点「下一组」会按当前难度随机抽题卡；可与外置节拍器同练，本页不含音频节拍器。")
                         .font(.footnote)
                         .foregroundStyle(SwiftAppTheme.muted)
                 }
@@ -103,15 +103,6 @@ struct ScaleWarmupSessionView: View {
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .accessibilityLabel("返回")
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showFinishSheet = true
-                } label: {
-                    Text("保存")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .accessibilityLabel("保存练习记录")
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
