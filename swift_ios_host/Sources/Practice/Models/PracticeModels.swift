@@ -25,7 +25,7 @@ let kDefaultPracticeTasks: [PracticeTask] = [
     ),
     PracticeTask(
         id: "scale-walk",
-        name: "音阶爬格子",
+        name: "爬格子热身",
         targetMinutes: 5,
         description: "目标：保持力度均匀，减少杂音。"
     ),

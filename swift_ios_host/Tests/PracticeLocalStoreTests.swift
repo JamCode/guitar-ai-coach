@@ -11,7 +11,7 @@ final class PracticeLocalStoreTests: XCTestCase {
         let good: [String: Any] = [
             "id": "1",
             "taskId": "scale-walk",
-            "taskName": "音阶爬格子",
+            "taskName": "爬格子热身",
             "startedAt": "2026-01-01T00:00:00Z",
             "endedAt": "2026-01-01T00:01:00Z",
             "durationSeconds": 60,
@@ -41,7 +41,7 @@ final class PracticeLocalStoreTests: XCTestCase {
             PracticeSession(
                 id: "a",
                 taskId: "scale-walk",
-                taskName: "音阶爬格子",
+                taskName: "爬格子热身",
                 startedAt: todayEnd.addingTimeInterval(-120),
                 endedAt: todayEnd,
                 durationSeconds: 120,
@@ -56,7 +56,7 @@ final class PracticeLocalStoreTests: XCTestCase {
             PracticeSession(
                 id: "b",
                 taskId: "scale-walk",
-                taskName: "音阶爬格子",
+                taskName: "爬格子热身",
                 startedAt: todayEnd.addingTimeInterval(-60),
                 endedAt: todayEnd,
                 durationSeconds: 60,
@@ -71,7 +71,7 @@ final class PracticeLocalStoreTests: XCTestCase {
             PracticeSession(
                 id: "c",
                 taskId: "scale-walk",
-                taskName: "音阶爬格子",
+                taskName: "爬格子热身",
                 startedAt: yesterdayEnd.addingTimeInterval(-60),
                 endedAt: yesterdayEnd,
                 durationSeconds: 60,
