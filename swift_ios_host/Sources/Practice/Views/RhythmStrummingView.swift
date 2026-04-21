@@ -52,10 +52,10 @@ struct RhythmStrummingView: View {
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("一小节（4/4，八分音符网格）")
+                    Text("一小节（4/4，八分六线谱）")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(SwiftAppTheme.text)
-                    StrummingGrid(cells: pattern.cells, beatLabels: beatLabels)
+                    StrummingTabStaffView(cells: pattern.cells, beatLabels: beatLabels)
                 }
                 .appCard()
 
@@ -117,7 +117,9 @@ struct RhythmStrummingView: View {
                             """
                             每一格对应一拍里的两个八分位置之一，顺序为「1 & 2 & 3 & 4 &」。
 
-                            「下」「上」表示扫弦方向；「休」表示该位置不扫弦，可做空拍或制音准备。
+                            六线谱弦序固定为：① 在上、⑥ 在下（最粗弦在最下）。
+
+                            在该弦序下：↑ 表示下扫，↓ 表示上扫，· 表示空拍。
 
                             本页为 4/4 常用型，可与节拍器或歌曲一起练习；本期不含内置节拍器与音频。
                             """
@@ -141,7 +143,9 @@ struct RhythmStrummingView: View {
                 """
                 每一格对应一拍里的两个八分位置之一，顺序为「1 & 2 & 3 & 4 &」。
 
-                「下」「上」表示扫弦方向；「休」表示该位置不扫弦，可做空拍或制音准备。
+                六线谱弦序固定为：① 在上、⑥ 在下（最粗弦在最下）。
+
+                在该弦序下：↑ 表示下扫，↓ 表示上扫，· 表示空拍。
 
                 本页为 4/4 常用型，可与节拍器或歌曲一起练习；本期不含内置节拍器与音频。
                 """
@@ -211,55 +215,91 @@ struct RhythmStrummingView: View {
     }
 }
 
-private struct StrummingGrid: View {
-    let cells: [StrumCellKind]
-    let beatLabels: [String]
+enum StrummingTabStaffGlyph: Equatable {
+    case downStroke
+    case upStroke
+    case rest
 
-    var body: some View {
-        VStack(spacing: 6) {
-            HStack {
-                ForEach(0..<8, id: \.self) { i in
-                    Spacer(minLength: 0)
-                    Text(beatLabels[i])
-                        .font(.caption)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                    Spacer(minLength: 0)
-                }
-            }
-            HStack(spacing: 6) {
-                ForEach(0..<8, id: \.self) { i in
-                    StrumCellChip(kind: cells[safe: i] ?? .rest)
-                        .frame(maxWidth: .infinity)
-                }
-            }
+    static func from(kind: StrumCellKind) -> Self {
+        switch kind {
+        case .down: .downStroke
+        case .up: .upStroke
+        case .rest: .rest
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .downStroke: "↑" // 下扫（①上⑥下坐标系）
+        case .upStroke: "↓" // 上扫
+        case .rest: "·" // 空拍
         }
     }
 }
 
-private struct StrumCellChip: View {
-    let kind: StrumCellKind
+private struct StrummingTabStaffView: View {
+    let cells: [StrumCellKind]
+    let beatLabels: [String]
+    private let stringLabels = ["①", "②", "③", "④", "⑤", "⑥"]
 
     var body: some View {
-        let (label, bg, fg): (String, Color, Color) = {
-            switch kind {
-            case .down: ("下", SwiftAppTheme.brandSoft, SwiftAppTheme.brand)
-            case .up: ("上", SwiftAppTheme.surfaceSoft, SwiftAppTheme.text)
-            case .rest: ("休", SwiftAppTheme.surfaceSoft, SwiftAppTheme.muted)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(" ")
+                    .frame(width: 18)
+                ForEach(0..<8, id: \.self) { i in
+                    Text(beatLabels[i])
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .frame(maxWidth: .infinity)
+                }
             }
-        }()
 
-        return ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(bg)
+            HStack(alignment: .top, spacing: 8) {
+                VStack(spacing: 8) {
+                    ForEach(stringLabels, id: \.self) { label in
+                        Text(label)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .frame(width: 18, height: 10)
+                    }
+                }
+                .padding(.top, 6)
+
+                ZStack {
+                    VStack(spacing: 10) {
+                        ForEach(0..<6, id: \.self) { _ in
+                            Rectangle()
+                                .fill(SwiftAppTheme.line)
+                                .frame(height: 1)
+                        }
+                    }
+
+                    HStack(spacing: 6) {
+                        ForEach(0..<8, id: \.self) { i in
+                            Text(StrummingTabStaffGlyph.from(kind: cells[safe: i] ?? .rest).symbol)
+                                .font(.system(size: 24, weight: .semibold))
+                                .foregroundStyle(SwiftAppTheme.text)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 76)
+                .padding(10)
+                .background(SwiftAppTheme.surfaceSoft.opacity(0.35))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(SwiftAppTheme.line, lineWidth: 1)
                 )
-            Text(label)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(fg)
+            }
+
+            Text("图例：↑ 下扫，↓ 上扫，· 空拍；弦序为 ① 在上、⑥ 在下（最粗弦）。")
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
         }
-        .aspectRatio(1, contentMode: .fit)
     }
 }
 
