@@ -30,7 +30,8 @@ final class PracticeLocalStore: PracticeSessionStore {
         progressionId: String?,
         musicKey: String?,
         complexity: String?,
-        rhythmPatternId: String?
+        rhythmPatternId: String?,
+        scaleWarmupDrillId: String?
     ) async throws {
         var sessions = try await loadSessions()
         let session = PracticeSession(
@@ -46,7 +47,8 @@ final class PracticeLocalStore: PracticeSessionStore {
             progressionId: progressionId,
             musicKey: musicKey,
             complexity: complexity,
-            rhythmPatternId: rhythmPatternId
+            rhythmPatternId: rhythmPatternId,
+            scaleWarmupDrillId: scaleWarmupDrillId
         )
         sessions.append(session)
         defaults.set(encodeSessions(sessions), forKey: key)
@@ -88,6 +90,7 @@ func encodeSessions(_ sessions: [PracticeSession]) -> String {
         if let musicKey = s.musicKey { m["musicKey"] = musicKey }
         if let complexity = s.complexity { m["complexity"] = complexity }
         if let rhythmPatternId = s.rhythmPatternId { m["rhythmPatternId"] = rhythmPatternId }
+        if let scaleWarmupDrillId = s.scaleWarmupDrillId { m["scaleWarmupDrillId"] = scaleWarmupDrillId }
         return m
     }
     guard
@@ -134,6 +137,7 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
     let musicKey = dict["musicKey"] as? String
     let complexity = dict["complexity"] as? String
     let rhythmPatternId = dict["rhythmPatternId"] as? String
+    let scaleWarmupDrillId = dict["scaleWarmupDrillId"] as? String
 
     return PracticeSession(
         id: id,
@@ -148,7 +152,8 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
         progressionId: progressionId,
         musicKey: musicKey,
         complexity: complexity,
-        rhythmPatternId: rhythmPatternId
+        rhythmPatternId: rhythmPatternId,
+        scaleWarmupDrillId: scaleWarmupDrillId
     )
 }
 

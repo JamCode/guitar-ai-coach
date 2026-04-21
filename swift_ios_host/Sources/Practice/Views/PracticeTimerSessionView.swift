@@ -128,7 +128,8 @@ struct PracticeTimerSessionView: View {
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
-                rhythmPatternId: nil
+                rhythmPatternId: nil,
+                scaleWarmupDrillId: nil
             )
             savedToast = true
         } catch {

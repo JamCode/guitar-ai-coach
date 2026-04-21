@@ -15,7 +15,8 @@ protocol PracticeSessionStore {
         progressionId: String?,
         musicKey: String?,
         complexity: String?,
-        rhythmPatternId: String?
+        rhythmPatternId: String?,
+        scaleWarmupDrillId: String?
     ) async throws
 
     func loadSummary(now: Date?) async throws -> PracticeSummary

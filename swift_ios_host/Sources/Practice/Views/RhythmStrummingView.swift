@@ -8,9 +8,11 @@ struct RhythmStrummingView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var pattern: StrummingPattern = kStrummingPatterns.first!
+    @State private var selectedDifficulty: StrummingDifficulty = .初级
+    @State private var pattern: StrummingPattern = StrummingPatternGenerator.defaultPattern(for: .初级)
     @State private var openedAt: Date = Date()
 
+    @State private var showSettings: Bool = false
     @State private var showHelp: Bool = false
     @State private var showFinishSheet: Bool = false
     @State private var noteText: String = ""
@@ -27,13 +29,25 @@ struct RhythmStrummingView: View {
                     .foregroundStyle(SwiftAppTheme.text)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("当前节奏").appSectionTitle()
-                    Picker("扫弦节奏型", selection: $pattern) {
-                        ForEach(kStrummingPatterns, id: \.id) { p in
-                            Text("\(p.name) · \(p.subtitle)").tag(p)
-                        }
+                    HStack {
+                        Text("本组练习")
+                            .appSectionTitle()
+                        Spacer()
+                        Text(selectedDifficulty.rawValue)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.brand)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(SwiftAppTheme.brandSoft)
+                            .clipShape(Capsule())
                     }
-                    .pickerStyle(.menu)
+                    Text("当前节奏：\(pattern.name) · \(pattern.subtitle)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .lineLimit(2)
+                    Text("点击「下一组」按当前难度抽取常用扫弦型；难度在右上角齿轮设置。")
+                        .font(.footnote)
+                        .foregroundStyle(SwiftAppTheme.muted)
                 }
                 .appCard()
 
@@ -54,14 +68,10 @@ struct RhythmStrummingView: View {
                 }
                 .appCard()
 
-                Button {
-                    showFinishSheet = true
-                } label: {
-                    Label("完成练习", systemImage: "checkmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .appPrimaryButton()
-                .padding(.top, 6)
+                Button("下一组") { nextPattern() }
+                    .appSecondaryButton()
+                    .frame(maxWidth: .infinity)
+
             }
             .padding(SwiftAppTheme.pagePadding)
         }
@@ -80,11 +90,48 @@ struct RhythmStrummingView: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    showHelp = true
+                    showSettings = true
                 } label: {
-                    Image(systemName: "questionmark.circle")
+                    Image(systemName: "gearshape")
                 }
-                .accessibilityLabel("图示说明")
+                .accessibilityLabel("练习设置")
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                Form {
+                    Section("难度") {
+                        Picker("难度", selection: $selectedDifficulty) {
+                            ForEach(StrummingDifficulty.allCases, id: \.self) { lv in
+                                Text(lv.rawValue).tag(lv)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        Text("选择后会立即按该难度抽取新的扫弦型。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section("图示说明") {
+                        Text(
+                            """
+                            每一格对应一拍里的两个八分位置之一，顺序为「1 & 2 & 3 & 4 &」。
+
+                            「下」「上」表示扫弦方向；「休」表示该位置不扫弦，可做空拍或制音准备。
+
+                            本页为 4/4 常用型，可与节拍器或歌曲一起练习；本期不含内置节拍器与音频。
+                            """
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle("练习设置")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("完成") { showSettings = false }
+                    }
+                }
             }
         }
         .alert("图示说明", isPresented: $showHelp) {
@@ -121,7 +168,23 @@ struct RhythmStrummingView: View {
             )
         }
         .appPageBackground()
-        .onAppear { openedAt = Date() }
+        .onAppear {
+            openedAt = Date()
+            // 首次进入按默认难度抽一次，避免每次都固定显示池子首项。
+            nextPattern()
+        }
+        .onChange(of: selectedDifficulty) { _, _ in
+            nextPattern()
+        }
+    }
+
+    private func nextPattern() {
+        var rng = SystemRandomNumberGenerator()
+        pattern = StrummingPatternGenerator.nextPattern(
+            difficulty: selectedDifficulty,
+            excluding: pattern.id,
+            using: &rng
+        )
     }
 
     @MainActor
@@ -138,7 +201,8 @@ struct RhythmStrummingView: View {
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
-                rhythmPatternId: pattern.id
+                rhythmPatternId: pattern.id,
+                scaleWarmupDrillId: nil
             )
             savedToast = true
         } catch {

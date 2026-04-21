@@ -62,6 +62,9 @@ struct PracticeSession: Identifiable, Codable, Equatable {
 
     /// 节奏扫弦练习所选内置节奏型 id（可空，兼容旧数据）。
     let rhythmPatternId: String?
+
+    /// 爬格子热身题卡 id（可空，兼容旧数据）。
+    let scaleWarmupDrillId: String?
 }
 
 // MARK: - Summary computation (aligned with Flutter)

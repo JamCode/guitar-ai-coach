@@ -31,6 +31,24 @@ final class PracticeLocalStoreTests: XCTestCase {
         XCTAssertEqual(sessions.first?.id, "1")
     }
 
+    func testDecodeSessions_acceptsScaleWarmupDrillId() {
+        let raw: [String: Any] = [
+            "id": "1",
+            "taskId": "scale-walk",
+            "taskName": "爬格子热身",
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-01T00:01:00Z",
+            "durationSeconds": 60,
+            "completed": true,
+            "difficulty": 3,
+            "scaleWarmupDrillId": "crawl_b_6_4_68",
+        ]
+        let data = try! JSONSerialization.data(withJSONObject: [raw], options: [])
+        let sessions = decodeSessions(String(data: data, encoding: .utf8)!)
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions.first?.scaleWarmupDrillId, "crawl_b_6_4_68")
+    }
+
     func testComputeSummary_todayCounts_completedOnly() async throws {
         let calendar = Calendar(identifier: .gregorian)
         let now = ISO8601DateFormatter().date(from: "2026-01-02T12:00:00Z")!
@@ -51,7 +69,8 @@ final class PracticeLocalStoreTests: XCTestCase {
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
-                rhythmPatternId: nil
+                rhythmPatternId: nil,
+                scaleWarmupDrillId: nil
             ),
             PracticeSession(
                 id: "b",
@@ -66,7 +85,8 @@ final class PracticeLocalStoreTests: XCTestCase {
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
-                rhythmPatternId: nil
+                rhythmPatternId: nil,
+                scaleWarmupDrillId: nil
             ),
             PracticeSession(
                 id: "c",
@@ -81,7 +101,8 @@ final class PracticeLocalStoreTests: XCTestCase {
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
-                rhythmPatternId: nil
+                rhythmPatternId: nil,
+                scaleWarmupDrillId: nil
             ),
         ]
 
@@ -98,10 +119,10 @@ final class PracticeLocalStoreTests: XCTestCase {
         let day4 = calendar.date(byAdding: .day, value: -4, to: now)!
 
         let sessions: [PracticeSession] = [
-            PracticeSession(id: "0", taskId: "x", taskName: "x", startedAt: day0, endedAt: day0, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
-            PracticeSession(id: "1", taskId: "x", taskName: "x", startedAt: day1, endedAt: day1, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
-            PracticeSession(id: "2", taskId: "x", taskName: "x", startedAt: day2, endedAt: day2, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
-            PracticeSession(id: "4", taskId: "x", taskName: "x", startedAt: day4, endedAt: day4, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil),
+            PracticeSession(id: "0", taskId: "x", taskName: "x", startedAt: day0, endedAt: day0, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil, scaleWarmupDrillId: nil),
+            PracticeSession(id: "1", taskId: "x", taskName: "x", startedAt: day1, endedAt: day1, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil, scaleWarmupDrillId: nil),
+            PracticeSession(id: "2", taskId: "x", taskName: "x", startedAt: day2, endedAt: day2, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil, scaleWarmupDrillId: nil),
+            PracticeSession(id: "4", taskId: "x", taskName: "x", startedAt: day4, endedAt: day4, durationSeconds: 60, completed: true, difficulty: 3, note: nil, progressionId: nil, musicKey: nil, complexity: nil, rhythmPatternId: nil, scaleWarmupDrillId: nil),
         ]
 
         XCTAssertEqual(computeStreakDays(sessions, now: now), 3)
