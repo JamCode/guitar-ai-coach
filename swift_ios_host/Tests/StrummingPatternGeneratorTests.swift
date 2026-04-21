@@ -34,9 +34,29 @@ final class StrummingPatternGeneratorTests: XCTestCase {
         XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .down), .downStroke)
         XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .up), .upStroke)
         XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .rest), .rest)
+        XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .mute), .mute)
 
         XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .down).symbol, "↑") // 下扫
         XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .up).symbol, "↓") // 上扫
         XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .rest).symbol, "·") // 空拍
+        XCTAssertEqual(StrummingTabStaffGlyph.from(kind: .mute).symbol, "×") // 拍弦
+    }
+
+    func testAllBuiltInPatterns_totalUnitsEqualsEightIn44() {
+        for p in kStrummingPatterns {
+            XCTAssertEqual(p.events.reduce(0) { $0 + $1.units }, 8, "pattern=\(p.id)")
+        }
+    }
+
+    func testExpandEvents_downOneBeat_thenDownUpOneBeat() {
+        let events: [StrumActionEvent] = [
+            .init(kind: .down, units: 2), // 1 beat
+            .init(kind: .down, units: 1), // half beat
+            .init(kind: .up, units: 1), // half beat
+            .init(kind: .rest, units: 4), // remaining 2 beats
+        ]
+        let cells = expandStrumEventsToCells(events, totalUnits: 8)
+        XCTAssertEqual(cells.count, 8)
+        XCTAssertEqual(cells, [.down, .rest, .down, .up, .rest, .rest, .rest, .rest])
     }
 }
