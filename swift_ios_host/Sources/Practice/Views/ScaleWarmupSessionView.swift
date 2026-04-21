@@ -1,7 +1,7 @@
 import SwiftUI
 import Core
 
-/// 爬格子热身：随机题卡 + 计时；难度在齿轮内选择（与节奏扫弦一致）。
+/// 爬格子热身：随机题卡；难度在齿轮内选择（与节奏扫弦一致）。不含页面内计时器。
 struct ScaleWarmupSessionView: View {
     let task: PracticeTask
     let store: PracticeSessionStore
@@ -11,19 +11,14 @@ struct ScaleWarmupSessionView: View {
     @AppStorage("practice.scaleWarmup.difficultyRaw") private var difficultyRaw: String = ScaleWarmupDifficulty.初级.rawValue
 
     @State private var drill: ScaleWarmupDrill = ScaleWarmupGenerator.drills(for: .初级)[0]
-    @State private var startedAt: Date?
-    @State private var elapsedSeconds: Int = 0
-    @State private var running: Bool = false
+    @State private var openedAt: Date = Date()
 
     @State private var showSettings: Bool = false
     @State private var showFinishSheet: Bool = false
     @State private var noteText: String = ""
 
-    @State private var showNeedStartHint: Bool = false
     @State private var savingError: String?
     @State private var savedToast: Bool = false
-
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var selectedDifficulty: ScaleWarmupDifficulty {
         ScaleWarmupDifficulty(rawValue: difficultyRaw) ?? .初级
@@ -64,33 +59,12 @@ struct ScaleWarmupSessionView: View {
                 }
                 .appCard()
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("计时")
-                        .appSectionTitle()
-                    Text(formatDuration(elapsedSeconds))
-                        .font(.system(size: 44, weight: .semibold, design: .rounded))
-                        .foregroundStyle(SwiftAppTheme.text)
-                        .monospacedDigit()
-                        .frame(maxWidth: .infinity)
-
-                    HStack(spacing: 12) {
-                        Button("开始") { start() }
-                            .appPrimaryButton()
-                            .disabled(running)
-
-                        Button("暂停") { pause() }
-                            .appSecondaryButton()
-                            .disabled(!running)
-
-                        Button("结束") { finishTapped() }
-                            .buttonStyle(.bordered)
-                            .tint(SwiftAppTheme.brandSoft)
-                    }
-                }
-                .appCard()
-
                 Button("下一组") { nextDrill() }
                     .appSecondaryButton()
+                    .frame(maxWidth: .infinity)
+
+                Button("保存记录") { showFinishSheet = true }
+                    .appPrimaryButton()
                     .frame(maxWidth: .infinity)
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -116,10 +90,6 @@ struct ScaleWarmupSessionView: View {
                 }
                 .accessibilityLabel("练习设置")
             }
-        }
-        .onReceive(ticker) { _ in
-            guard running else { return }
-            elapsedSeconds += 1
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -158,9 +128,6 @@ struct ScaleWarmupSessionView: View {
                 }
             }
         }
-        .alert("先开始练习再结束哦", isPresented: $showNeedStartHint) {
-            Button("知道了", role: .cancel) {}
-        }
         .alert("保存失败", isPresented: Binding(get: { savingError != nil }, set: { if !$0 { savingError = nil } })) {
             Button("知道了", role: .cancel) {}
         } message: {
@@ -183,30 +150,12 @@ struct ScaleWarmupSessionView: View {
         }
         .appPageBackground()
         .onAppear {
+            openedAt = Date()
             reshuffleDrill(excluding: nil)
         }
         .onChange(of: difficultyRaw) { _, _ in
             reshuffleDrill(excluding: nil)
         }
-    }
-
-    private func start() {
-        guard !running else { return }
-        startedAt = startedAt ?? Date()
-        running = true
-    }
-
-    private func pause() {
-        running = false
-    }
-
-    private func finishTapped() {
-        guard elapsedSeconds > 0 else {
-            showNeedStartHint = true
-            return
-        }
-        pause()
-        showFinishSheet = true
     }
 
     private func nextDrill() {
@@ -224,13 +173,12 @@ struct ScaleWarmupSessionView: View {
 
     @MainActor
     private func save(result: PracticeFinishResult) async {
-        guard let startedAt else { return }
         do {
             try await store.saveSession(
                 task: task,
-                startedAt: startedAt,
+                startedAt: openedAt,
                 endedAt: Date(),
-                durationSeconds: elapsedSeconds,
+                durationSeconds: 0,
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
@@ -245,11 +193,4 @@ struct ScaleWarmupSessionView: View {
             savingError = String(describing: error)
         }
     }
-}
-
-private func formatDuration(_ seconds: Int) -> String {
-    let s = max(0, seconds)
-    let m = String(format: "%02d", s / 60)
-    let r = String(format: "%02d", s % 60)
-    return "\(m):\(r)"
 }
