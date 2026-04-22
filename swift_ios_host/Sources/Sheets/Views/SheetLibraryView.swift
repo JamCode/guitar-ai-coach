@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import Core
+import Practice
 import UIKit
 
 struct SheetLibraryView: View {
@@ -255,14 +256,22 @@ private struct SheetDraftView: View {
 private struct SheetDetailView: View {
     let entry: SheetEntry
     let store: SheetLibraryStore
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var files: [URL] = []
     /// 预解码，避免切换沉浸/布局时反复 `UIImage(contentsOfFile:)` 造成掉帧。
     @State private var pageImages: [UIImage?] = []
     @State private var loading = true
-    @State private var startedAt = Date()
+    /// 当前这一段处于前台、且谱面已就绪的起算时刻；退后台时暂停累加。
+    @State private var foregroundSegmentStartedAt: Date?
+    /// 已累计的前台可读谱秒数（不含加载转圈、不含退后台）。
+    @State private var accumulatedForegroundSeconds: TimeInterval = 0
     /// 轻点谱面进入全屏阅读（隐藏导航栏、铺满可视区域）；再点一次恢复。
     @State private var immersiveReading = false
     private let practiceStore = PracticeLocalStore()
+
+    /// 至少多少秒才落一条记录，避免点进即返回产生噪声。
+    private static let minForegroundSecondsToRecord: TimeInterval = 3
 
     var body: some View {
         Group {
@@ -294,32 +303,55 @@ private struct SheetDetailView: View {
         .navigationTitle(entry.displayName)
         .toolbar(immersiveReading ? .hidden : .automatic, for: .navigationBar)
         .task {
-            startedAt = Date()
             await load()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .active:
+                resumeForegroundClockIfEligible()
+            case .inactive, .background:
+                pauseForegroundClock()
+            @unknown default:
+                pauseForegroundClock()
+            }
         }
         .onDisappear {
             immersiveReading = false
+            pauseForegroundClock()
+            let totalForeground = accumulatedForegroundSeconds
             Task {
+                let durationSeconds = Int(totalForeground.rounded(.down))
+                guard durationSeconds >= Int(Self.minForegroundSecondsToRecord) else { return }
                 let endedAt = Date()
-                let seconds = Int(endedAt.timeIntervalSince(startedAt))
-                if seconds >= 30 {
-                    try? await practiceStore.saveSession(
-                        task: kSheetPracticeTask,
-                        startedAt: startedAt,
-                        endedAt: endedAt,
-                        durationSeconds: seconds,
-                        completed: true,
-                        difficulty: 3,
-                        note: "曲谱：\(entry.displayName)",
-                        progressionId: nil,
-                        musicKey: nil,
-                        complexity: nil,
-                        rhythmPatternId: nil,
-                        scaleWarmupDrillId: nil
-                    )
-                }
+                let startedAt = endedAt.addingTimeInterval(-Double(durationSeconds))
+                try? await practiceStore.saveSession(
+                    task: kSheetPracticeTask,
+                    startedAt: startedAt,
+                    endedAt: endedAt,
+                    durationSeconds: durationSeconds,
+                    completed: true,
+                    difficulty: 3,
+                    note: "曲谱：\(entry.displayName)（\(entry.pageCount) 页）",
+                    progressionId: nil,
+                    musicKey: nil,
+                    complexity: nil,
+                    rhythmPatternId: nil,
+                    scaleWarmupDrillId: nil
+                )
             }
         }
+    }
+
+    private func pauseForegroundClock() {
+        guard let start = foregroundSegmentStartedAt else { return }
+        accumulatedForegroundSeconds += Date().timeIntervalSince(start)
+        foregroundSegmentStartedAt = nil
+    }
+
+    private func resumeForegroundClockIfEligible() {
+        guard !loading, !files.isEmpty else { return }
+        guard foregroundSegmentStartedAt == nil else { return }
+        foregroundSegmentStartedAt = Date()
     }
 
     private func load() async {
@@ -328,6 +360,9 @@ private struct SheetDetailView: View {
         files = urls
         pageImages = urls.map { UIImage(contentsOfFile: $0.path) }
         loading = false
+        if scenePhase == .active {
+            resumeForegroundClockIfEligible()
+        }
     }
 
     private static let immersiveSpring = Animation.spring(response: 0.32, dampingFraction: 0.94)
