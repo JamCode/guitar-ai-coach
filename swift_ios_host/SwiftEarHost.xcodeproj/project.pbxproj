@@ -67,6 +67,7 @@
 		FB1ABC2AB69553569EE0FA33 /* TranscriptionWaveformService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7311799DB975BB28A9DA4E69 /* TranscriptionWaveformService.swift */; };
 		FC88A8FEEF6BF4F2A31DCA4E /* OnnxChordRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B82436A8B052AAE01D046324 /* OnnxChordRecognizer.swift */; };
 		FF25AEF3B37D59AF2314A8E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 119222F862F03CC58F905D72 /* Assets.xcassets */; };
+		A8C3E9012F4B5D6E7A809B1C2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B9D4F0123A5C6E7F8091C2D3 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +84,7 @@
 		0F95F0F7B7389DBB8E409492 /* TranscriptionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionModels.swift; sourceTree = "<group>"; };
 		117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftEarHostApp.swift; sourceTree = "<group>"; };
 		119222F862F03CC58F905D72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B9D4F0123A5C6E7F8091C2D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1197509EA1DAFB3E6F4E6004 /* TranscriptionImportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionImportServiceTests.swift; sourceTree = "<group>"; };
 		1BC3FAF5DB303FC85D919D9E /* TranscriptionPlayerComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionPlayerComponents.swift; sourceTree = "<group>"; };
 		1DCFAFA1FA93AD8B45C64E55 /* onnxruntime-swift-package-manager */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "onnxruntime-swift-package-manager"; path = "LocalPackages/onnxruntime-swift-package-manager"; sourceTree = SOURCE_ROOT; };
@@ -332,6 +334,7 @@
 			isa = PBXGroup;
 			children = (
 				119222F862F03CC58F905D72 /* Assets.xcassets */,
+				B9D4F0123A5C6E7F8091C2D3 /* PrivacyInfo.xcprivacy */,
 				117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */,
 				4203DCF495DEA7E31C4E9B7D /* Practice */,
 				B541EFF39D54B268F0C153E8 /* Sheets */,
@@ -453,6 +456,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FF25AEF3B37D59AF2314A8E7 /* Assets.xcassets in Resources */,
+				A8C3E9012F4B5D6E7A809B1C2 /* PrivacyInfo.xcprivacy in Resources */,
 				022B60F274BD20FF1177226F /* consonance_ace.onnx in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -568,9 +572,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
 				INFOPLIST_KEY_CFBundleName = "AI吉他";
-				INFOPLIST_KEY_NSCameraUsageDescription = "需要使用相机拍摄曲谱图片。";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麦克风用于视唱训练与调音识别。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册以导入曲谱图片。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册以导入曲谱图片或视频。";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -731,9 +735,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI吉他";
 				INFOPLIST_KEY_CFBundleName = "AI吉他";
-				INFOPLIST_KEY_NSCameraUsageDescription = "需要使用相机拍摄曲谱图片。";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麦克风用于视唱训练与调音识别。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册以导入曲谱图片。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册以导入曲谱图片或视频。";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
