@@ -3,6 +3,12 @@ import Core
 import Ear
 import Practice
 
+/// 练习首页模块：产品要求暂时隐藏，恢复时改为 `true`。
+private enum PracticeLandingVisibility {
+    static let showTodayRecommendedTraining = false
+    static let showAllTrainingItemsLink = false
+}
+
 /// 练习模块首页：突出「今日训练」题单，并保留专项快速入口。
 struct PracticeLandingView: View {
     @StateObject private var vm = PracticeLandingViewModel()
@@ -46,7 +52,9 @@ struct PracticeLandingView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                todayTrainingCard
+                if PracticeLandingVisibility.showTodayRecommendedTraining {
+                    todayTrainingCard
+                }
 
                 Text("快速开始")
                     .appSectionTitle()
@@ -66,22 +74,24 @@ struct PracticeLandingView: View {
                     }
                 }
 
-                NavigationLink {
-                    TabBarHiddenContainer {
-                        PracticeTrainingCatalogView()
+                if PracticeLandingVisibility.showAllTrainingItemsLink {
+                    NavigationLink {
+                        TabBarHiddenContainer {
+                            PracticeTrainingCatalogView()
+                        }
+                    } label: {
+                        HStack {
+                            Text("全部训练项目")
+                                .font(.subheadline)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
                     }
-                } label: {
-                    HStack {
-                        Text("全部训练项目")
-                            .font(.subheadline)
-                            .foregroundStyle(SwiftAppTheme.muted)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(SwiftAppTheme.muted)
-                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(SwiftAppTheme.pagePadding)
         }
