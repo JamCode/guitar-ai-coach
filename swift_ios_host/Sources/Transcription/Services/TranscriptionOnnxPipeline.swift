@@ -134,9 +134,63 @@ struct TranscriptionCQTFeatureExtractor {
     }
 
     private func normalize(_ samples: [Float]) -> [Float] {
-        let peak = samples.reduce(Float.zero) { max($0, abs($1)) }
-        guard peak > 0 else { return samples }
-        return samples.map { $0 / peak }
+        // 以绝对值第 99 百分位作为归一化参考，
+        // 避免偶发尖峰（鼓点 / 爆音 / 直流毛刺）把整段能量压扁，
+        // 继而导致 ONNX sigmoid 普遍拿不到阈值。
+        // 离线 48 例 benchmark 下对 triad root +8.3pp、progression root +4.2pp，
+        // 其它类别不回退，见 benchmarks/chord_bench/reports/ab_chunk_norm.md。
+        guard !samples.isEmpty else { return samples }
+        let scale = Self.absolutePercentile(samples, percentile: 0.99)
+        guard scale > 0 else { return samples }
+        return samples.map { max(-1.0, min(1.0, $0 / scale)) }
+    }
+
+    private static func absolutePercentile(_ samples: [Float], percentile: Double) -> Float {
+        // Quickselect（nth_element）求绝对值序列的百分位数。
+        // 避免 O(n log n) 全排序：每 20s chunk ≈ 441k 样本，全排序对 CPU 过重。
+        precondition(percentile >= 0.0 && percentile <= 1.0)
+        var abs_ = samples.map { abs($0) }
+        let n = abs_.count
+        let k = max(0, min(n - 1, Int((Double(n - 1) * percentile).rounded())))
+        return abs_.withUnsafeMutableBufferPointer { buffer in
+            nthElement(buffer, k: k)
+            return buffer[k]
+        }
+    }
+
+    private static func nthElement(_ buffer: UnsafeMutableBufferPointer<Float>, k: Int) {
+        // 迭代版 quickselect，Lomuto 分区，对存在大量重复值的音频样本也安全。
+        var lo = 0
+        var hi = buffer.count - 1
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2
+            // three-element median-of-three 作为 pivot，抗对已排序/近排序输入的退化
+            let pivot = Self.medianOfThree(buffer[lo], buffer[mid], buffer[hi])
+            var i = lo
+            var j = hi
+            while i <= j {
+                while buffer[i] < pivot { i += 1 }
+                while buffer[j] > pivot { j -= 1 }
+                if i <= j {
+                    buffer.swapAt(i, j)
+                    i += 1
+                    j -= 1
+                }
+            }
+            if k <= j { hi = j }
+            else if k >= i { lo = i }
+            else { return }
+        }
+    }
+
+    private static func medianOfThree(_ a: Float, _ b: Float, _ c: Float) -> Float {
+        if a < b {
+            if b < c { return b }
+            return a < c ? c : a
+        } else {
+            if a < c { return a }
+            return b < c ? c : b
+        }
     }
 
     private func padOrTrim(_ samples: [Float], to count: Int) -> [Float] {
