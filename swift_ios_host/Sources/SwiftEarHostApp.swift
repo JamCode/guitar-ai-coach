@@ -246,7 +246,7 @@ private struct ToolsTabView: View {
                     Text("帮助与反馈")
                         .font(.headline)
                         .foregroundStyle(SwiftAppTheme.text)
-                    Text("打开系统邮件发送反馈，主题已含版本号")
+                    Text("发邮件反馈")
                         .font(.subheadline)
                         .foregroundStyle(SwiftAppTheme.muted)
                         .lineLimit(2)
