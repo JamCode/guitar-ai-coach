@@ -9,7 +9,8 @@ public struct AppVersionInfo: Sendable {
     public let releaseChannel: String
     public let platformLabel: String
 
-    public var displayVersion: String { "v\(version) (\(buildNumber))" }
+    /// 仅用户可见的营销版本号（`CFBundleShortVersionString`），不含 build。
+    public var displayVersion: String { version }
 }
 
 public enum AppVersionInfoLoader {
@@ -32,7 +33,7 @@ public enum AppVersionInfoLoader {
 
     public static func copySummary(_ info: AppVersionInfo) {
 #if canImport(UIKit)
-        UIPasteboard.general.string = "AI吉他 \(info.displayVersion) / \(info.releaseChannel) / \(info.platformLabel)"
+        UIPasteboard.general.string = "AI吉他 \(info.version) (\(info.buildNumber)) / \(info.releaseChannel) / \(info.platformLabel)"
 #endif
     }
 }
