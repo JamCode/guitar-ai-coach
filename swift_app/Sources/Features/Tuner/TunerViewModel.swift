@@ -27,8 +27,19 @@ public final class TunerViewModel: ObservableObject {
     private let inTuneEnterCents: Double = 5
     /// 「已调准」切回「偏高/偏低」的退出阈值（带宽略宽于进入值，形成滞回）。
     private let inTuneExitCents: Double = 9
+    /// 连续帧一致性过滤：两次相邻基频帧若 cents 偏离超过此值，视为瞬态（拨弦 attack 或误识），
+    /// 当次不更新显示，下一帧确认后再生效。避免八度错带来的瞬时 ±1200 cent 跳变冲进平滑器。
+    private let consistencyWindowCents: Double = 80
+    /// 上一次接受的基频 Hz（用于连续帧一致性比较；仅跟踪已被视为可信的采样）。
+    private var lastAcceptedHz: Double?
+    /// 上一次被拒绝但被当作「候选」的基频 Hz。连续两帧都是同一候选（±窗口内）才正式接纳，
+    /// 这样既能过滤瞬态，也不会因为用户真的换了一下音就卡很久。
+    private var pendingCandidateHz: Double?
 
-    public init(audio: AudioEngineServing = AudioEngineService.shared, detector: PitchDetecting = TunerPitchDetector()) {
+    public init(
+        audio: AudioEngineServing = AudioEngineService.shared,
+        detector: PitchDetecting = TunerPitchDetector(config: .tunerGuitar)
+    ) {
         self.audio = audio
         self.detector = detector
     }
@@ -50,8 +61,11 @@ public final class TunerViewModel: ObservableObject {
             // 紧接着一次 `recomputeDisplayCents(resetSmoothing:)` 会把显示 cents 归零并复位「已调准」。
             frequencyHz = nil
             smoothedHz = nil
+            lastAcceptedHz = nil
+            pendingCandidateHz = nil
         }
         selectedStringIndex = i
+        detector.setTargetHz(targetHz)
         recomputeDisplayCents(resetSmoothing: true)
         guard let hz = targetHz else { return }
         let midi = GuitarStandardTuning.openStringMidis[i]
@@ -96,12 +110,16 @@ public final class TunerViewModel: ObservableObject {
 
     public func stop() {
         detector.stop()
+        detector.setTargetHz(nil)
         audio.stop()
         isListening = false
         statusMessage = "已停止监听"
+        lastAcceptedHz = nil
+        pendingCandidateHz = nil
     }
 
     public func updateFrequencySample(_ hz: Double) {
+        guard acceptSample(hz) else { return }
         frequencyHz = hz
         if let old = smoothedHz {
             smoothedHz = old * (1 - emaAlpha) + hz * emaAlpha
@@ -109,6 +127,36 @@ public final class TunerViewModel: ObservableObject {
             smoothedHz = hz
         }
         recomputeDisplayCents(resetSmoothing: false)
+    }
+
+    /// 连续帧一致性过滤：与上一次「已接受」的基频偏离过大时，先挂成 `pendingCandidateHz`；
+    /// 下一帧仍落在候选附近（同窗口内）才真正接纳。这样能压住拨弦 attack 或偶发八度错的瞬时跳变。
+    private func acceptSample(_ hz: Double) -> Bool {
+        guard hz > 0 else { return false }
+        guard let previous = lastAcceptedHz else {
+            // 首帧直接接纳：没有参考点时等 N 帧只会让用户看到「一直无反馈」。
+            lastAcceptedHz = hz
+            pendingCandidateHz = nil
+            return true
+        }
+        let deltaCents = abs(PitchMath.centsBetween(actualHz: hz, targetHz: previous))
+        if deltaCents <= consistencyWindowCents {
+            lastAcceptedHz = hz
+            pendingCandidateHz = nil
+            return true
+        }
+        if let candidate = pendingCandidateHz {
+            let candidateDelta = abs(PitchMath.centsBetween(actualHz: hz, targetHz: candidate))
+            if candidateDelta <= consistencyWindowCents {
+                // 连续两帧都落在远离旧值的同一簇：用户确实换了音，接纳新值并重置候选。
+                lastAcceptedHz = hz
+                pendingCandidateHz = nil
+                return true
+            }
+        }
+        // 孤立跳变：记录候选，等下一帧确认，本帧不走 UI 链路。
+        pendingCandidateHz = hz
+        return false
     }
 
     private func consume(_ result: PitchFrameResult) {
