@@ -100,6 +100,14 @@ public final class AudioEngineService: AudioEngineServing {
     private let sampler = AVAudioUnitSampler()
     private let guitarMixer = AVAudioMixerNode()
     private let guitarEQ = AVAudioUnitEQ(numberOfBands: 4)
+    /// P2: 动态压缩器，撑长音符尾音、均衡 velocity 层级落差，让音色更饱满圆润。
+    private let guitarCompressor = AVAudioUnitDynamicsProcessor()
+    /// P2: Slapback 延迟（30ms、0% feedback），模拟录音棚话筒早反射，增加声音纵深感。
+    private let guitarSlapback = AVAudioUnitDelay()
+    /// P3: Haas 伪立体声宽度延迟（22ms、0% feedback），在进入混响前引入时间扩散，
+    /// 使混响尾音产生更宽的立体声感知。注：AVAudioUnitDelay 对 L/R 施加相同延迟，
+    /// 宽度感来自直接信号与延迟信号混合后经混响处理所产生的频谱扩散，而非真正的双声道分离。
+    private let guitarHaas = AVAudioUnitDelay()
     private let guitarReverb = AVAudioUnitReverb()
     private var sampledGuitarLoaded = false
     private let samplerQueue = DispatchQueue(label: "guitar-ai-coach.audio.sampler-gate", qos: .userInitiated)
@@ -120,14 +128,21 @@ public final class AudioEngineService: AudioEngineServing {
         engine.attach(sampler)
         engine.attach(guitarMixer)
         engine.attach(guitarEQ)
+        engine.attach(guitarCompressor)
+        engine.attach(guitarSlapback)
+        engine.attach(guitarHaas)
         engine.attach(guitarReverb)
         engine.connect(player, to: engine.mainMixerNode, format: nil)
         for voice in pluckVoices {
             engine.connect(voice, to: guitarMixer, format: nil)
         }
+        // 信号链：sampler/pluck → mixer → EQ → compressor → slapback → haas → reverb → out
         engine.connect(sampler, to: guitarMixer, format: nil)
         engine.connect(guitarMixer, to: guitarEQ, format: nil)
-        engine.connect(guitarEQ, to: guitarReverb, format: nil)
+        engine.connect(guitarEQ, to: guitarCompressor, format: nil)
+        engine.connect(guitarCompressor, to: guitarSlapback, format: nil)
+        engine.connect(guitarSlapback, to: guitarHaas, format: nil)
+        engine.connect(guitarHaas, to: guitarReverb, format: nil)
         engine.connect(guitarReverb, to: engine.mainMixerNode, format: nil)
         configureGuitarToneChain()
     }
@@ -179,6 +194,27 @@ public final class AudioEngineService: AudioEngineServing {
 
     public var isSampledGuitarAvailable: Bool { sampledGuitarLoaded }
 
+    // MARK: - Testable effect-chain accessors (internal)
+
+    /// 压缩器触发阈值（dBFS），供单元测试断言参数合理性。
+    var compressorThreshold: Float { guitarCompressor.threshold }
+    /// 压缩器 attack 时间（秒）。
+    var compressorAttackTime: Double { guitarCompressor.attackTime }
+    /// 压缩器 release 时间（秒）。
+    var compressorReleaseTime: Double { guitarCompressor.releaseTime }
+    /// Slapback 延迟时间（秒）。
+    var slapbackDelayTime: Double { guitarSlapback.delayTime }
+    /// Slapback 反馈量（%）。
+    var slapbackFeedback: Float { guitarSlapback.feedback }
+    /// Slapback 干湿比（%）。
+    var slapbackWetDryMix: Float { guitarSlapback.wetDryMix }
+    /// Haas 伪立体声延迟时间（秒）。
+    var haasDelayTime: Double { guitarHaas.delayTime }
+    /// Haas 反馈量（%）。
+    var haasFeedback: Float { guitarHaas.feedback }
+    /// Haas 干湿比（%）。
+    var haasWetDryMix: Float { guitarHaas.wetDryMix }
+
     private func configureGuitarToneChain() {
         // sampler.volume 已回到 1.0（线性安全），在此把 mixer 增益补回至 1.0 维持原有主观响度。
         guitarMixer.outputVolume = 1.0
@@ -213,6 +249,29 @@ public final class AudioEngineService: AudioEngineServing {
         // plate 预设比 mediumRoom 更通透，更贴合原声木吉他录音感；wetDryMix 20 提供自然空间感。
         guitarReverb.loadFactoryPreset(.plate)
         guitarReverb.wetDryMix = 20
+
+        // P2: 压缩器 — 撑长音符尾音，均衡不同 velocity 层之间的动态落差。
+        // Attack 25ms 保留拨弦初始瞬态；Release 180ms 让音符自然延续；Ratio 3.5:1 温和压缩不失真。
+        guitarCompressor.threshold = -18        // dBFS
+        guitarCompressor.headRoom = 5          // dB — 保留瞬态余量
+        guitarCompressor.expansionRatio = 3.5  // 压缩比（AVAudioUnitDynamicsProcessor 用 expansionRatio 表达 ratio）
+        guitarCompressor.attackTime = 0.025    // 秒
+        guitarCompressor.releaseTime = 0.180   // 秒
+        guitarCompressor.masterGain = 2        // dB — 压缩后补偿增益
+
+        // P2: Slapback 延迟 — 30ms 单次早反射，模拟话筒与琴体之间的物理距离感。
+        // feedback = 0 确保只有一次反射，不产生回声堆叠。
+        guitarSlapback.delayTime = 0.030       // 秒
+        guitarSlapback.feedback = 0            // %
+        guitarSlapback.wetDryMix = 12          // % — 贴身影子，不喧宾夺主
+        guitarSlapback.lowPassCutoff = 12_000  // Hz — 削掉 slapback 的高频毛刺
+
+        // P3: Haas 伪立体声宽度 — 22ms 单次延迟，在混响前引入时间扩散。
+        // 直接信号与延迟信号混合后经 plate 混响处理，形成宽度感知（Haas 效应）。
+        guitarHaas.delayTime = 0.022           // 秒 — Haas 区间内（< 30ms）不产生回声感
+        guitarHaas.feedback = 0               // %
+        guitarHaas.wetDryMix = 18             // % — 适度宽度，保持单声道兼容性
+        guitarHaas.lowPassCutoff = 10_000     // Hz — 减少延迟副本的高频相位梳状效应
     }
 
     private func loadSampledGuitarIfNeeded() {

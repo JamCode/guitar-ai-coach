@@ -102,3 +102,76 @@ final class GuitarPlaybackHumanizerTests: XCTestCase {
         XCTAssertNotEqual(offsets[1], offsets[2], "negative and positive offset must differ")
     }
 }
+
+// MARK: - P2/P3 效果器参数合理性测试
+
+final class GuitarEffectChainTests: XCTestCase {
+
+    private var audio: AudioEngineService!
+
+    override func setUp() {
+        super.setUp()
+        audio = AudioEngineService()
+    }
+
+    // MARK: P2 压缩器
+
+    func testCompressorThresholdIsReasonable() {
+        // threshold 须在 -40~0 dBFS 的有效区间内，且不会过度压缩到无声。
+        let t = audio.compressorThreshold
+        XCTAssertLessThanOrEqual(t, -5, "threshold should attenuate signal, not be near 0 dBFS")
+        XCTAssertGreaterThanOrEqual(t, -40, "threshold too low — would silence most guitar notes")
+    }
+
+    func testCompressorAttackAndReleaseArePositive() {
+        XCTAssertGreaterThan(audio.compressorAttackTime, 0, "attack must be > 0")
+        XCTAssertGreaterThan(audio.compressorReleaseTime, 0, "release must be > 0")
+    }
+
+    func testCompressorAttackPreservesTransient() {
+        // Attack ≥ 15ms 才能让拨弦初始瞬态（pick attack）不被压掉。
+        XCTAssertGreaterThanOrEqual(audio.compressorAttackTime, 0.015,
+            "attack < 15ms will squash guitar pick transient")
+    }
+
+    // MARK: P2 Slapback 延迟
+
+    func testSlapbackDelayTimeIsInEarlyReflectionRange() {
+        // Slapback 须在 10~50ms 区间，才产生早反射感而不是明显回声。
+        let d = audio.slapbackDelayTime
+        XCTAssertGreaterThanOrEqual(d, 0.010, "slapback too short — inaudible")
+        XCTAssertLessThanOrEqual(d, 0.050, "slapback > 50ms becomes audible echo")
+    }
+
+    func testSlapbackFeedbackIsZero() {
+        // feedback = 0 确保只有单次反射，不堆叠回声。
+        XCTAssertEqual(audio.slapbackFeedback, 0, accuracy: 0.01,
+            "slapback feedback must be 0 — only one reflection allowed")
+    }
+
+    func testSlapbackWetDryMixIsSubtle() {
+        // 干湿比不应过大（> 30%），以免 slapback 喧宾夺主。
+        XCTAssertLessThanOrEqual(audio.slapbackWetDryMix, 30,
+            "slapback wet/dry > 30% will overwhelm the direct signal")
+    }
+
+    // MARK: P3 Haas 伪立体声宽度
+
+    func testHaasDelayTimeIsInHaasZone() {
+        // Haas 区间：1~30ms，超出则产生可感知的双声道回声而非宽度感。
+        let d = audio.haasDelayTime
+        XCTAssertGreaterThanOrEqual(d, 0.001, "Haas delay too short — no width effect")
+        XCTAssertLessThanOrEqual(d, 0.030, "Haas delay > 30ms produces echo, not width")
+    }
+
+    func testHaasFeedbackIsZero() {
+        XCTAssertEqual(audio.haasFeedback, 0, accuracy: 0.01,
+            "Haas feedback must be 0 — width effect relies on single delayed copy only")
+    }
+
+    func testHaasWetDryMixAllowsMonoCompatibility() {
+        // 干湿比不超过 30% 可保持单声道折叠时无明显梳状滤波。
+        XCTAssertLessThanOrEqual(audio.haasWetDryMix, 30,
+            "Haas wet/dry > 30% risks comb filtering on mono playback")
+    }
+}
