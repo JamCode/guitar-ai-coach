@@ -9,9 +9,10 @@
 # 依赖：Xcode 命令行工具（xcodebuild、xcrun simctl）、已安装的 iOS Simulator 运行时。
 #
 # OnnxRuntime：工程使用「本地路径」LocalPackages/onnxruntime-swift-package-manager（不随 git 提交）。
-# - 首次在本机准备：  ./bootstrap-onnx-local-package.sh
-# - 可选下载二进制 zip 以离线：  ./bootstrap-onnx-local-package.sh --with-zips
-# - 有 zip 时脚本会自动设置 ORT_POD_*；无 zip 时首次构建可能从 download.onnxruntime.ai 拉一次二进制。
+# - 不能稳定访问 GitHub：在有网机器准备好目录，U 盘拷到本机后：
+#     ./bootstrap-onnx-local-package.sh --from-dir <路径>
+#   详见 ./bootstrap-onnx-local-package.sh --help
+# - 有 .vendor 内两个 zip 时自动 ORT_POD_* 离线；否则首次构建可能访问 download.onnxruntime.ai。
 
 set -euo pipefail
 
@@ -52,9 +53,10 @@ DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostSimBuild-${USER}}"
 mkdir -p "${SPM_CLONES_DIR}"
 
 if [[ ! -f "${HOST_DIR}/LocalPackages/onnxruntime-swift-package-manager/Package.swift" ]]; then
-  echo "缺少本地 Onnx Swift 包（工程为本地引用，不会从 GitHub 拉源码）。" >&2
-  echo "请执行一次:  cd \"${HOST_DIR}\" && ./bootstrap-onnx-local-package.sh" >&2
-  echo "完全离线二进制可再加:  ./bootstrap-onnx-local-package.sh --with-zips" >&2
+  echo "缺少本地 Onnx Swift 包目录（不依赖 Xcode 每次访问 GitHub）。" >&2
+  echo "若本机访问 GitHub 不稳定，请用 U 盘/内网从有网机器拷贝整个 onnxruntime-swift-package-manager 后：" >&2
+  echo "  cd \"${HOST_DIR}\" && ./bootstrap-onnx-local-package.sh --from-dir <拷贝后的目录>" >&2
+  echo "或见:  ./bootstrap-onnx-local-package.sh --help" >&2
   exit 1
 fi
 # shellcheck disable=SC1091

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 由 run-simulator.sh / install-device.sh 在设置好 HOST_DIR 后 source。
 # 若本地包内已有 .vendor 下的 ORT zip，则设置 ORT_POD_*（相对 Package.swift 所在目录），避免再走 download.onnxruntime.ai。
+# zip 可来自 bootstrap --with-zips，或手动放入；也可用 bootstrap 的 ONNXRUNTIME_ZIPS_DIR 从别处复制。
 
 : "${HOST_DIR:?HOST_DIR must be set before sourcing onnx-local-env.sh}"
 
@@ -14,5 +15,5 @@ if [[ -f "${ORT_ZIP}" && -f "${ORT_EXT_ZIP}" ]]; then
   echo "==> OnnxRuntime：使用本地二进制 zip（ORT_POD_LOCAL_PATH 已设置）"
 else
   unset ORT_POD_LOCAL_PATH ORT_EXTENSIONS_POD_LOCAL_PATH 2>/dev/null || true
-  echo "==> OnnxRuntime：未检测到 .vendor 内 zip，将使用 Package.swift 默认 URL（首次需联网下载二进制）"
+  echo "==> OnnxRuntime：无 .vendor zip → 首次构建可能访问 download.onnxruntime.ai；离线请放入 ${PKG_DIR}/.vendor/ 或 bootstrap --with-zips"
 fi
