@@ -18,6 +18,7 @@ private struct TunerStatusCardBody: View {
     let rotationText: String?
     let cents: Double
     let meterActive: Bool
+    let isInTune: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -62,7 +63,7 @@ private struct TunerStatusCardBody: View {
 
             Spacer(minLength: 0)
 
-            MeterBar(cents: cents, active: meterActive)
+            MeterBar(cents: cents, active: meterActive, isInTune: isInTune)
                 .frame(height: 20)
         }
     }
@@ -102,7 +103,8 @@ public struct TunerView: View {
                     targetCaption: targetCaption,
                     rotationText: rotationHintText,
                     cents: viewModel.cents,
-                    meterActive: viewModel.frequencyHz != nil
+                    meterActive: viewModel.frequencyHz != nil,
+                    isInTune: viewModel.isInTune
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: statusCardEffectiveHeight, alignment: .topLeading)
@@ -198,11 +200,10 @@ public struct TunerView: View {
         guard viewModel.frequencyHz != nil else {
             return ("开始拨弦", "持续轻拨当前弦，观察红点是否居中", "只看红点是否回到中间区域", SwiftAppTheme.text)
         }
-        let cents = viewModel.cents
-        if abs(cents) <= 5 {
+        if viewModel.isInTune {
             return ("已调准", "保持当前旋钮位置即可", "已在中线附近，基本完成", SwiftAppTheme.dynamic(.green, .green))
         }
-        if cents < 0 {
+        if viewModel.cents < 0 {
             return ("偏低", "把音高调高一点（继续慢调）", "红点在左，慢慢拧紧一点", SwiftAppTheme.brand)
         }
         return ("偏高", "把音高调低一点（继续慢调）", "红点在右，轻微放松一点", SwiftAppTheme.brand)
@@ -210,10 +211,9 @@ public struct TunerView: View {
 
     private var rotationHintText: String? {
         guard let selectedIndex = viewModel.selectedStringIndex, viewModel.frequencyHz != nil else { return nil }
-        let cents = viewModel.cents
-        if abs(cents) <= 5 { return nil }
+        if viewModel.isInTune { return nil }
         let side = selectedIndex <= 2 ? "左侧旋钮" : "右侧旋钮"
-        if cents < 0 {
+        if viewModel.cents < 0 {
             return "操作建议（\(side)）：向拧紧方向小幅旋转约 1/8 圈；若红点离中线更远，立即反向。"
         }
         return "操作建议（\(side)）：向放松方向小幅旋转约 1/8 圈；若红点离中线更远，立即反向。"
@@ -274,11 +274,11 @@ public struct TunerView: View {
 private struct MeterBar: View {
     let cents: Double
     let active: Bool
+    let isInTune: Bool
 
     var body: some View {
         GeometryReader { geo in
-            let maxC = 50.0
-            let t = min(1.0, max(0.0, (cents + maxC) / (2.0 * maxC)))
+            let t = TunerMeterMetrics.normalizedPosition(for: cents)
             ZStack(alignment: .leading) {
                 Capsule().fill(SwiftAppTheme.surfaceSoft)
                 RoundedRectangle(cornerRadius: geo.size.height / 2, style: .continuous)
@@ -291,11 +291,14 @@ private struct MeterBar: View {
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 if active {
                     Capsule()
-                        .fill(abs(cents) <= 5 ? SwiftAppTheme.dynamic(.green, .green) : SwiftAppTheme.brand)
+                        .fill(isInTune ? SwiftAppTheme.dynamic(.green, .green) : SwiftAppTheme.brand)
                         .frame(width: 14)
                         .position(x: geo.size.width * t, y: geo.size.height / 2)
+                        .animation(.interpolatingSpring(stiffness: 220, damping: 24), value: cents)
+                        .animation(.easeInOut(duration: 0.18), value: isInTune)
                 }
             }
+            .animation(.easeInOut(duration: 0.15), value: active)
         }
     }
 }
