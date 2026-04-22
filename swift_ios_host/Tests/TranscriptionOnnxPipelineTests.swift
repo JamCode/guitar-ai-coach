@@ -58,6 +58,63 @@ final class TranscriptionOnnxPipelineTests: XCTestCase {
                              "spike should not flatten the rest of the chunk (old peak norm would)")
     }
 
+    // MARK: - Round 1: soft-thirds for {0,7} power-chord fallback
+
+    /// 工具：构造一帧 chord_probabilities，按 root-relative interval -> prob 设置。
+    private func chordProbs(rootIndex: Int, _ rel: [Int: Double]) -> [Double] {
+        var probs = [Double](repeating: 0, count: 12)
+        for (r, p) in rel {
+            probs[(rootIndex + r) % 12] = p
+        }
+        return probs
+    }
+
+    func testLabelDecoder_softCompletesMinorThirdWhenOnlyRootAndFifth() {
+        // Em: E(=0) 与 B(=7) 过 0.5，三度 G(rel=3) 只到 0.2，G#(rel=4) ~ 0.0
+        // 旧行为：intervals={0,7} -> "E5"
+        // 新行为：b3=0.20 vs maj3=0.02，winner>=0.15 且 winner/loser>2 -> 补 3 -> "Em"
+        let rootE = 4 // E
+        let probs = chordProbs(rootIndex: rootE, [0: 0.8, 7: 0.6, 3: 0.20, 4: 0.02])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootE, bassIndex: rootE,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "Em")
+    }
+
+    func testLabelDecoder_softCompletesMajorThirdWhenOnlyRootAndFifth() {
+        // E major 的镜像：maj3=G#(rel=4) 弱信号，b3=G(rel=3) 基本为 0
+        let rootE = 4
+        let probs = chordProbs(rootIndex: rootE, [0: 0.8, 7: 0.6, 4: 0.24, 3: 0.002])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootE, bassIndex: rootE,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "E")
+    }
+
+    func testLabelDecoder_keepsPowerChordWhenBothThirdsWeak() {
+        // 真正的 power chord：两个三度概率都极低 -> 保留 "5"
+        let rootA = 9
+        let probs = chordProbs(rootIndex: rootA, [0: 0.8, 7: 0.7, 3: 0.05, 4: 0.06])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootA, bassIndex: rootA,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "A5")
+    }
+
+    func testLabelDecoder_keepsPowerChordWhenThirdsAreAmbiguous() {
+        // 两个三度概率接近但都没过 0.5，比例不够（winner/loser < 2）-> 保留 "5"
+        let rootA = 9
+        let probs = chordProbs(rootIndex: rootA, [0: 0.8, 7: 0.7, 3: 0.28, 4: 0.20])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootA, bassIndex: rootA,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "A5")
+    }
+
     func testLabelDecoder_mergesCommonChordFrames() {
         let cMajor = [1.0, 0, 0, 0, 1.0, 0, 0, 1.0, 0, 0, 0, 0]
         let gMajor = [0, 0, 1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 1.0]

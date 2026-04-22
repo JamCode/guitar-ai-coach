@@ -319,6 +319,24 @@ enum OnnxChordLabelDecoder {
             intervals.insert(7)
         }
 
+        // Round 1: 仅当 intervals 只有 {0,7}（power chord）时，软补三度。
+        // 动机：模型对 major/minor 的三度音级 sigmoid 有时刚好不过 0.5，
+        // 导致 intervals 只剩 {0,7} 被错误判成 "5"（如 Em → E5）。
+        // 判据：比较 (root+3) 和 (root+4) 的概率：
+        //   - 胜者 >= softMin               （不低到完全没响应）
+        //   - 胜者 >= softRatio * 败者      （明显偏向一方，避免真 power chord 误补）
+        if intervals == Set<Int>([0, 7]) {
+            let b3 = chordProbabilities[(rootIndex + 3) % 12]
+            let maj3 = chordProbabilities[(rootIndex + 4) % 12]
+            let softMin = 0.15
+            let softRatio = 2.0
+            let winner = max(b3, maj3)
+            let loser = min(b3, maj3)
+            if winner >= softMin, winner >= softRatio * max(loser, 1e-6) {
+                intervals.insert(maj3 >= b3 ? 4 : 3)
+            }
+        }
+
         let rootName = noteNames[rootIndex]
         let suffix = classifyChordSuffix(intervals: intervals)
         let base: String

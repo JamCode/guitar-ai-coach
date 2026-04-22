@@ -76,8 +76,9 @@ NORMALIZE_MODES = {
     "rms_hardclip",   # RMS 归一化到目标响度 + 硬 clip 到 ±1
 }
 
-# 默认与 Swift 保持一致：整段峰值归一化
-DEFAULT_NORMALIZE_MODE = "peak"
+# 默认跟随 Swift 当前 baseline：以绝对值第 99 百分位归一化 + 钳到 ±1。
+# 切回 "peak" 可复现 chunk-norm-p99 合入前的旧基线。
+DEFAULT_NORMALIZE_MODE = "peak_p99"
 
 _RMS_TARGET = 0.1
 
@@ -251,6 +252,23 @@ def decode_label(root_idx: int, bass_idx: int, chord_probs: np.ndarray,
 
     if (3 in intervals or 4 in intervals) and 7 not in intervals:
         intervals.add(7)
+
+    # Round 1: 仅当只有 {0,7}（power chord）时，软补三度。
+    # 动机：模型对 major/minor 的三度音级 sigmoid 经常刚好不过 0.5，
+    # 导致 intervals 只剩 {0,7} 被错误分类为 "5"（Em→E5 / E→E:(1) 等）。
+    # 判据：比较 chord_probs[(root+3)%12] 和 chord_probs[(root+4)%12]：
+    #   - 胜者 >= SOFT_MIN                 （不低到完全没响应）
+    #   - 胜者 >= SOFT_RATIO * 败者        （明显偏向一方，避免真 power chord 被误补）
+    # 满足以上两条才补。其它任何情况保留 {0,7} 继续判 "5"。
+    SOFT_MIN = 0.15
+    SOFT_RATIO = 2.0
+    if intervals == {0, 7}:
+        b3_score = float(chord_probs[(root_idx + 3) % 12])
+        maj3_score = float(chord_probs[(root_idx + 4) % 12])
+        winner = max(b3_score, maj3_score)
+        loser = min(b3_score, maj3_score)
+        if winner >= SOFT_MIN and winner >= SOFT_RATIO * max(loser, 1e-6):
+            intervals.add(4 if maj3_score >= b3_score else 3)
 
     root_name = NOTE_NAMES[root_idx]
     suffix = classify_chord_suffix(intervals)
