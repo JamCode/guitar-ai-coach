@@ -209,6 +209,11 @@ struct PracticeHomeView: View {
     }
 }
 
+/// 视唱训练入口：产品要求暂时从练耳列表与目录中隐藏，恢复时改为 `true`。
+private enum EarPracticeHubVisibility {
+    static let showSightSingingTraining = false
+}
+
 private extension View {
     /// 练习首页滚动区：与全站 `SwiftAppTheme.bg` 一致，随系统亮/暗色变化（不再强制纯白）。
     func practiceScrollPageBackground() -> some View {
@@ -244,12 +249,14 @@ private struct EarPracticeHubScreen: View {
                 PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
                     EarMcqSessionView(title: "和弦进行", bank: "B")
                 }
-                PracticeLinkCard(
-                    title: "视唱训练",
-                    subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
-                    icon: "mic"
-                ) {
-                    SightSingingSessionView()
+                if EarPracticeHubVisibility.showSightSingingTraining {
+                    PracticeLinkCard(
+                        title: "视唱训练",
+                        subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
+                        icon: "mic"
+                    ) {
+                        SightSingingSessionView()
+                    }
                 }
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -314,9 +321,11 @@ private struct PracticeTrainingCatalogView: View {
                 NavigationLink("和弦进行") {
                     TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B") }
                 }
-                NavigationLink("视唱训练") {
-                    TabBarHiddenContainer {
-                        SightSingingSessionView()
+                if EarPracticeHubVisibility.showSightSingingTraining {
+                    NavigationLink("视唱训练") {
+                        TabBarHiddenContainer {
+                            SightSingingSessionView()
+                        }
                     }
                 }
             }

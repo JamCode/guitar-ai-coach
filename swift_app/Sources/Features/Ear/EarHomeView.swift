@@ -1,6 +1,11 @@
 import SwiftUI
 import Core
 
+/// 视唱训练入口：与 iOS 练习宿主一致，暂时隐藏；恢复时改为 `true`。
+private enum EarHomeVisibility {
+    static let showSightSingingTraining = false
+}
+
 public struct EarHomeView: View {
     public init() {}
 
@@ -26,13 +31,15 @@ public struct EarHomeView: View {
                         subtitle: "常见流行进行 · 四选一 · 不限题量 · 揭示后指法图",
                         systemImage: "music.note.list"
                     ) { EarMcqSessionView(title: "和弦进行", bank: "B") }
-                    navCard(
-                        title: "视唱训练",
-                        subtitle: "立刻出题 · 右上角齿轮调音域/模式 · 设置自动保存",
-                        systemImage: "mic"
-                    ) {
-                        TabBarHiddenContainer {
-                            SightSingingSessionView(intervalPreview: IntervalTonePlayer())
+                    if EarHomeVisibility.showSightSingingTraining {
+                        navCard(
+                            title: "视唱训练",
+                            subtitle: "立刻出题 · 右上角齿轮调音域/模式 · 设置自动保存",
+                            systemImage: "mic"
+                        ) {
+                            TabBarHiddenContainer {
+                                SightSingingSessionView(intervalPreview: IntervalTonePlayer())
+                            }
                         }
                     }
                 }
