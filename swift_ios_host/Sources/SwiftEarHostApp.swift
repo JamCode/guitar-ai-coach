@@ -112,14 +112,6 @@ private struct RootTabView: View {
                 Label("扒歌", systemImage: "waveform.path.ecg")
             }
             .tag(3)
-
-            NavigationStack {
-                ProfileHomeView()
-            }
-            .tabItem {
-                Label("我的", systemImage: "person")
-            }
-            .tag(4)
         }
         .transaction { transaction in
             transaction.animation = nil
@@ -133,43 +125,107 @@ private struct ToolsTabView: View {
     private let gridGap: CGFloat = 8
     private let cardAspectRatio: CGFloat = 0.92
 
+    @State private var aboutVersionText: String = "--"
+
     var body: some View {
         let pad = gridEdgePadding
-        VStack(spacing: 0) {
-            VStack(spacing: gridGap) {
-                HStack(spacing: gridGap) {
-                    gridTile(
-                        title: "调音器",
-                        subtitle: "麦克风拾音与标准空弦目标",
-                        icon: "waveform"
-                    ) { TunerView() }
-                    gridTile(
-                        title: "吉他指板",
-                        subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
-                        icon: "square.grid.3x3"
-                    ) { FretboardView() }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(spacing: gridGap) {
+                    HStack(spacing: gridGap) {
+                        gridTile(
+                            title: "调音器",
+                            subtitle: "麦克风拾音与标准空弦目标",
+                            icon: "waveform"
+                        ) { TunerView() }
+                        gridTile(
+                            title: "吉他指板",
+                            subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
+                            icon: "square.grid.3x3"
+                        ) { FretboardView() }
+                    }
+
+                    HStack(spacing: gridGap) {
+                        gridTile(
+                            title: "和弦速查",
+                            subtitle: "离线可查构成音与常见把位",
+                            icon: "pianokeys"
+                        ) { ChordLookupView() }
+                        gridTile(
+                            title: "常用和弦",
+                            subtitle: "初/中/高分段·本地指法图速查",
+                            icon: "tablecells"
+                        ) { ChordChartView() }
+                    }
                 }
 
-                HStack(spacing: gridGap) {
-                    gridTile(
-                        title: "和弦速查",
-                        subtitle: "离线可查构成音与常见把位",
-                        icon: "pianokeys"
-                    ) { ChordLookupView() }
-                    gridTile(
-                        title: "常用和弦",
-                        subtitle: "初/中/高分段·本地指法图速查",
-                        icon: "tablecells"
-                    ) { ChordChartView() }
+                Text("应用与支持")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .padding(.top, 4)
+
+                VStack(spacing: 0) {
+                    toolsSupportRow(
+                        icon: "questionmark.circle",
+                        title: "帮助与反馈",
+                        subtitle: "常见问题、反馈说明与诊断日志"
+                    ) {
+                        HelpFeedbackView()
+                    }
+                    Divider()
+                        .overlay(SwiftAppTheme.line)
+                        .padding(.leading, 52)
+                    toolsSupportRow(
+                        icon: "info.circle",
+                        title: "关于与版本",
+                        subtitle: aboutVersionText
+                    ) {
+                        AppVersionView()
+                    }
                 }
+                .appCard()
             }
-
-            Spacer(minLength: 0)
+            .padding(pad)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(pad)
         .navigationTitle("工具")
         .appPageBackground()
+        .task {
+            aboutVersionText = AppVersionInfoLoader.load().displayVersion
+        }
+    }
+
+    private func toolsSupportRow<Destination: View>(
+        icon: String,
+        title: String,
+        subtitle: String,
+        @ViewBuilder destination: @escaping () -> Destination
+    ) -> some View {
+        NavigationLink {
+            TabBarHiddenContainer { destination() }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .frame(width: 24)
+                    .foregroundStyle(SwiftAppTheme.brand)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(SwiftAppTheme.text)
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 
     private func gridTile<Destination: View>(
