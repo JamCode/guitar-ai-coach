@@ -67,6 +67,7 @@ private struct RootTabView: View {
     /// 练习为首位 Tab，首屏即挂载真实页面，避免占位与标题闪动。
     @State private var practiceTabMounted: Bool = true
     @StateObject private var sheetLibraryVM = SheetLibraryViewModel()
+    @State private var didScheduleAudioWarmup = false
     
     /// 自定义 Tab 选择绑定：切到「练习」时在同一事务内先完成挂载，
     /// 避免先显示占位页再切到真实页面造成导航标题闪动。
@@ -130,6 +131,11 @@ private struct RootTabView: View {
         }
         .transaction { transaction in
             transaction.animation = nil
+        }
+        .task {
+            guard !didScheduleAudioWarmup else { return }
+            didScheduleAudioWarmup = true
+            AudioStartupWarmup.shared.scheduleIfNeeded()
         }
     }
 }

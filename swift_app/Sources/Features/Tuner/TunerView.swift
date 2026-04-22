@@ -152,6 +152,7 @@ public struct TunerView: View {
         .navigationTitle("调音器")
         .appPageBackground()
         .onAppear {
+            AudioStartupWarmup.shared.scheduleIfNeeded()
             if !viewModel.isListening {
                 viewModel.statusMessage = "轻点下方弦钮开始调音"
             }
