@@ -56,21 +56,52 @@ struct PracticeLandingView: View {
                     todayTrainingCard
                 }
 
-                Text("快速开始")
+                PracticeRecentSummaryCard(sessions: vm.sessions)
+
+                Text("视唱练耳")
                     .appSectionTitle()
 
-                HStack(spacing: 10) {
-                    quickStartCard(
-                        title: "视唱练耳",
-                        subtitle: "初级"
-                    ) {
-                        EarPracticeHubScreen()
+                PracticeLinkCard(title: "音程识别", subtitle: "两音上行、四选一", icon: "play.circle") {
+                    ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
+                        IntervalEarView()
                     }
-                    quickStartCard(
-                        title: "练琴",
-                        subtitle: "初级"
+                }
+                PracticeLinkCard(
+                    title: "和弦听辨",
+                    subtitle: "大三 / 小三 / 属七 · 题库离线 · 吉他采样合成",
+                    icon: "pianokeys"
+                ) {
+                    ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
+                        EarMcqSessionView(title: "和弦听辨", bank: "A")
+                    }
+                }
+                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
+                    ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
+                        EarMcqSessionView(title: "和弦进行", bank: "B")
+                    }
+                }
+                if EarPracticeHubVisibility.showSightSingingTraining {
+                    PracticeLinkCard(
+                        title: "视唱训练",
+                        subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
+                        icon: "mic"
                     ) {
-                        GuitarPracticeHubScreen()
+                        ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
+                            SightSingingSessionView()
+                        }
+                    }
+                }
+
+                Text("练琴")
+                    .appSectionTitle()
+
+                ForEach(kDefaultPracticeTasks) { task in
+                    PracticeLinkCard(
+                        title: task.name,
+                        subtitle: task.description,
+                        icon: practiceHomeIcon(for: task.id)
+                    ) {
+                        PracticeTaskRouterScreen(task: task)
                     }
                 }
 
@@ -97,6 +128,15 @@ struct PracticeLandingView: View {
         }
         .practiceScrollPageBackground()
         .refreshable { await vm.refresh(blockingUI: false) }
+    }
+
+    private func practiceHomeIcon(for taskId: String) -> String {
+        switch taskId {
+        case "chord-switch": return "guitars"
+        case "rhythm-strum": return "waveform"
+        case "scale-walk": return "hand.raised.fingers.spread"
+        default: return "music.note.list"
+        }
     }
 
     private var todayTrainingCard: some View {
@@ -183,32 +223,60 @@ struct PracticeLandingView: View {
         )
         .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
     }
+}
 
-    private func quickStartCard<Destination: View>(
-        title: String,
-        subtitle: String,
-        @ViewBuilder destination: @escaping () -> Destination
-    ) -> some View {
-        NavigationLink(destination: TabBarHiddenContainer { destination() }) {
-            VStack(alignment: .leading, spacing: 6) {
-                Image(systemName: title == "练琴" ? "guitars" : "music.quarternote.3")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(SwiftAppTheme.brand)
-
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(SwiftAppTheme.text)
-                    .lineLimit(1)
-
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(SwiftAppTheme.muted)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .appCard()
+private enum PracticeHomeCopy {
+    static func rollingSummaryLine(sessionCount: Int, totalSeconds: Int) -> String {
+        let minutes = max(0, totalSeconds) / 60
+        let hours = minutes / 60
+        let rem = minutes % 60
+        let durationZh: String
+        if hours > 0 {
+            durationZh = rem > 0 ? "\(hours)小时\(rem)分钟" : "\(hours)小时"
+        } else {
+            durationZh = "\(minutes)分钟"
         }
-        .buttonStyle(.plain)
+        return "近7天 · \(sessionCount)次 · 共\(durationZh)"
+    }
+
+    static func lastPracticeLine(endedAt: Date?, now: Date = Date()) -> String {
+        guard let endedAt else { return "还没有练习记录" }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "zh_CN")
+        f.dateFormat = "M月d日 HH:mm"
+        if Calendar(identifier: .gregorian).isDate(endedAt, inSameDayAs: now) {
+            let time = DateFormatter()
+            time.locale = f.locale
+            time.dateFormat = "HH:mm"
+            return "上次练习：今天 \(time.string(from: endedAt))"
+        }
+        return "上次练习：\(f.string(from: endedAt))"
+    }
+}
+
+private struct PracticeRecentSummaryCard: View {
+    let sessions: [PracticeSession]
+
+    var body: some View {
+        let now = Date()
+        let stats = computeRollingSevenDayPracticeStats(sessions, now: now)
+        let last = latestCompletedPracticeEndedAt(sessions)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(PracticeHomeCopy.rollingSummaryLine(sessionCount: stats.sessionCount, totalSeconds: stats.totalDurationSeconds))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.text)
+            Text(PracticeHomeCopy.lastPracticeLine(endedAt: last, now: now))
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(SwiftAppTheme.surfaceSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(SwiftAppTheme.line, lineWidth: 1)
+        )
     }
 }
 
