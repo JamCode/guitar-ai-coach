@@ -8,9 +8,10 @@
 #
 # 依赖：Xcode 命令行工具（xcodebuild、xcrun simctl）、已安装的 iOS Simulator 运行时。
 #
-# OnnxRuntime：Xcode 工程已引用 GitHub 上的 microsoft/onnxruntime-swift-package-manager（固定版本）。
-# 首次解析 / 编译需能访问 GitHub 与 https://download.onnxruntime.ai（以下载 ORT 二进制 zip）。
-# 若需完全离线构建，可自行准备 LocalPackages 并改回 Xcode 中的本地 package 引用（见仓库历史）。
+# OnnxRuntime：工程使用「本地路径」LocalPackages/onnxruntime-swift-package-manager（不随 git 提交）。
+# - 首次在本机准备：  ./bootstrap-onnx-local-package.sh
+# - 可选下载二进制 zip 以离线：  ./bootstrap-onnx-local-package.sh --with-zips
+# - 有 zip 时脚本会自动设置 ORT_POD_*；无 zip 时首次构建可能从 download.onnxruntime.ai 拉一次二进制。
 
 set -euo pipefail
 
@@ -50,6 +51,15 @@ DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostSimBuild-${USER}}"
 
 mkdir -p "${SPM_CLONES_DIR}"
 
+if [[ ! -f "${HOST_DIR}/LocalPackages/onnxruntime-swift-package-manager/Package.swift" ]]; then
+  echo "缺少本地 Onnx Swift 包（工程为本地引用，不会从 GitHub 拉源码）。" >&2
+  echo "请执行一次:  cd \"${HOST_DIR}\" && ./bootstrap-onnx-local-package.sh" >&2
+  echo "完全离线二进制可再加:  ./bootstrap-onnx-local-package.sh --with-zips" >&2
+  exit 1
+fi
+# shellcheck disable=SC1091
+source "${HOST_DIR}/scripts/onnx-local-env.sh"
+
 echo "==> 打开 Simulator"
 open -a Simulator 2>/dev/null || true
 
@@ -61,15 +71,6 @@ echo "    SPM 克隆缓存: ${SPM_CLONES_DIR}"
 # 只清编译产物，保留本 DerivedData 内已解析的包状态；SPM 仓库本体在 SPM_CLONES_DIR。
 rm -rf "${DERIVED}/Build"
 mkdir -p "${DERIVED}"
-echo "==> 解析 Swift Package 依赖（含远程 onnxruntime）"
-xcodebuild \
-  -project "${PROJECT}" \
-  -scheme "${SCHEME}" \
-  -configuration Debug \
-  -destination "platform=iOS Simulator,id=${UDID}" \
-  -derivedDataPath "${DERIVED}" \
-  -clonedSourcePackagesDirPath "${SPM_CLONES_DIR}" \
-  -resolvePackageDependencies
 xcodebuild \
   -project "${PROJECT}" \
   -scheme "${SCHEME}" \

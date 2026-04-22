@@ -21,6 +21,9 @@
 #
 # 说明：首次安装可能需在手机上「设置 → 通用 → VPN与设备管理」信任开发者证书。
 #
+# OnnxRuntime 为本地 Swift 包（LocalPackages/…），与模拟器脚本共用同一工程配置；真机无需再改 ONNX。
+# 本机准备：  ./bootstrap-onnx-local-package.sh  可选  --with-zips
+#
 # Team ID 在哪里看（10 位字母数字）：
 #   • Xcode → Settings（或 Preferences）→ Accounts → 选中左侧 Apple ID → 右侧 Team 名称后面括号里
 #   • 或浏览器打开 https://developer.apple.com/account → Membership → Team ID
@@ -173,6 +176,13 @@ if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
   echo "或 https://developer.apple.com/account → Membership。" >&2
   exit 1
 fi
+
+if [[ ! -f "${HOST_DIR}/LocalPackages/onnxruntime-swift-package-manager/Package.swift" ]]; then
+  echo "缺少本地 Onnx Swift 包。请执行:  cd \"${HOST_DIR}\" && ./bootstrap-onnx-local-package.sh" >&2
+  exit 1
+fi
+# shellcheck disable=SC1091
+source "${HOST_DIR}/scripts/onnx-local-env.sh"
 
 DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostDeviceBuild-${USER}}"
 echo "==> xcodebuild（${CONFIGURATION} / generic iOS）→ ${DERIVED}"

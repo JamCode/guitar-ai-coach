@@ -1,2 +1,4 @@
 .derivedData/
 xcuserdata/
+# 本地克隆的 ONNX Swift 包（见 bootstrap-onnx-local-package.sh）；不提交以减小仓库体积
+LocalPackages/onnxruntime-swift-package-manager/
