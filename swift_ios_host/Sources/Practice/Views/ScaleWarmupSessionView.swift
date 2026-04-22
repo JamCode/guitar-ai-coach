@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Practice
 
 /// 爬格子热身：随机题卡 + 练习顺序说明 + 带编号指板示意；难度在齿轮内选择。不含页面内计时器。
 struct ScaleWarmupSessionView: View {
@@ -197,6 +198,7 @@ struct ScaleWarmupSessionView: View {
         do {
             let endedAt = Date()
             let durationSeconds = max(0, Int(endedAt.timeIntervalSince(openedAt)))
+            guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
             try await store.saveSession(
                 task: task,
                 startedAt: openedAt,

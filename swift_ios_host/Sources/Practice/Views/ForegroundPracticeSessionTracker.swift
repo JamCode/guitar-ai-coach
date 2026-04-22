@@ -2,10 +2,6 @@ import SwiftUI
 import Core
 import Practice
 
-private enum ForegroundPracticeSessionMinimum {
-    static let secondsToRecord: TimeInterval = 3
-}
-
 /// 包裹子页面：在用户停留期间按 **前台** 时间累加，离开时写入 `PracticeLocalStore`（与「我的谱」详情一致语义）。
 struct ForegroundPracticeSessionTracker<Content: View>: View {
     let task: PracticeTask
@@ -42,7 +38,7 @@ struct ForegroundPracticeSessionTracker<Content: View>: View {
                 pauseForegroundClock()
                 guard didAppear else { return }
                 let durationSeconds = Int(accumulatedForegroundSeconds.rounded(.down))
-                guard durationSeconds >= Int(ForegroundPracticeSessionMinimum.secondsToRecord) else { return }
+                guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
                 Task {
                     let endedAt = Date()
                     let startedAt = endedAt.addingTimeInterval(-Double(durationSeconds))

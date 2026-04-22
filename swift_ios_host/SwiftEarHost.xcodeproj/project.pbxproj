@@ -68,6 +68,7 @@
 		FC88A8FEEF6BF4F2A31DCA4E /* OnnxChordRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B82436A8B052AAE01D046324 /* OnnxChordRecognizer.swift */; };
 		FF25AEF3B37D59AF2314A8E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 119222F862F03CC58F905D72 /* Assets.xcassets */; };
 		A8C3E9012F4B5D6E7A809B1C2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B9D4F0123A5C6E7F8091C2D3 /* PrivacyInfo.xcprivacy */; };
+		C9A1B2D34E5F6789012345AA1 /* Practice in Frameworks for SwiftEarHostTests */ = {isa = PBXBuildFile; productRef = 7E47E8DA8FA41566235B9ED9 /* Practice */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -153,6 +154,14 @@
 				1C78E5853E20B93F79B3421E /* Ear in Frameworks */,
 				EE8F0E2991EB41875CAF9588 /* Practice in Frameworks */,
 				BC053B1E5E74AF884B735DB8 /* onnxruntime in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C9A1B2D34E5F6789012345AA2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C9A1B2D34E5F6789012345AA1 /* Practice in Frameworks for SwiftEarHostTests */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -374,6 +383,7 @@
 			buildConfigurationList = 73F8E0276CD0D4A8971E40C6 /* Build configuration list for PBXNativeTarget "SwiftEarHostTests" */;
 			buildPhases = (
 				37648361151BD6EDC9B10D43 /* Sources */,
+				C9A1B2D34E5F6789012345AA2 /* Frameworks */,
 				DCEFC37DEEBA6F3A4F889285 /* Resources */,
 			);
 			buildRules = (
@@ -383,6 +393,7 @@
 			);
 			name = SwiftEarHostTests;
 			packageProductDependencies = (
+				7E47E8DA8FA41566235B9ED9 /* Practice */,
 			);
 			productName = SwiftEarHostTests;
 			productReference = 40962FBB227FF51EC6BCDD77 /* SwiftEarHostTests.xctest */;

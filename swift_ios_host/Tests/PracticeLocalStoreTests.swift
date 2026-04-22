@@ -1,4 +1,5 @@
 import XCTest
+import Practice
 @testable import SwiftEarHost
 
 final class PracticeLocalStoreTests: XCTestCase {
@@ -161,6 +162,63 @@ final class PracticeLocalStoreTests: XCTestCase {
         let stats = computeRollingSevenDayPracticeStats(sessions, now: now)
         XCTAssertEqual(stats.sessionCount, 1)
         XCTAssertEqual(stats.totalDurationSeconds, 120)
+    }
+
+    func testSaveSession_belowMinForegroundSeconds_doesNotPersist() async throws {
+        let suite = "practice_store_min_gate_\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            XCTFail("suite defaults")
+            return
+        }
+        defaults.removePersistentDomain(forName: suite)
+        let store = PracticeLocalStore(defaults: defaults)
+        let task = PracticeTask(id: "t", name: "T", targetMinutes: 1, description: "")
+        try await store.saveSession(
+            task: task,
+            startedAt: Date(),
+            endedAt: Date(),
+            durationSeconds: PracticeRecordingPolicy.minForegroundSecondsToPersist - 1,
+            completed: true,
+            difficulty: 3,
+            note: nil,
+            progressionId: nil,
+            musicKey: nil,
+            complexity: nil,
+            rhythmPatternId: nil,
+            scaleWarmupDrillId: nil
+        )
+        let sessions = try await store.loadSessions()
+        XCTAssertEqual(sessions.count, 0)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testSaveSession_atMinForegroundSeconds_persists() async throws {
+        let suite = "practice_store_min_ok_\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            XCTFail("suite defaults")
+            return
+        }
+        defaults.removePersistentDomain(forName: suite)
+        let store = PracticeLocalStore(defaults: defaults)
+        let task = PracticeTask(id: "t2", name: "T2", targetMinutes: 1, description: "")
+        try await store.saveSession(
+            task: task,
+            startedAt: Date(),
+            endedAt: Date(),
+            durationSeconds: PracticeRecordingPolicy.minForegroundSecondsToPersist,
+            completed: true,
+            difficulty: 3,
+            note: nil,
+            progressionId: nil,
+            musicKey: nil,
+            complexity: nil,
+            rhythmPatternId: nil,
+            scaleWarmupDrillId: nil
+        )
+        let sessions = try await store.loadSessions()
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions.first?.durationSeconds, PracticeRecordingPolicy.minForegroundSecondsToPersist)
+        defaults.removePersistentDomain(forName: suite)
     }
 
     func testLatestCompletedPracticeEndedAt_picksMaxEndedAtAmongCompleted() {

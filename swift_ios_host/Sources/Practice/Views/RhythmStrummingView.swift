@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Practice
 
 /// 节奏扫弦练习：按内置常用扫弦型展示 4/4 八分网格图示；可选保存记录（对齐 Flutter）。
 struct RhythmStrummingView: View {
@@ -196,6 +197,7 @@ struct RhythmStrummingView: View {
         do {
             let endedAt = Date()
             let durationSeconds = max(0, Int(endedAt.timeIntervalSince(openedAt)))
+            guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
             try await store.saveSession(
                 task: task,
                 startedAt: openedAt,

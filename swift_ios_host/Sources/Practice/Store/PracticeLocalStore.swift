@@ -1,4 +1,5 @@
 import Foundation
+import Practice
 
 /// 练习记录本地仓库：所有数据仅保存到本机 UserDefaults（对齐 Flutter `PracticeLocalStore`）。
 final class PracticeLocalStore: PracticeSessionStore {
@@ -33,6 +34,7 @@ final class PracticeLocalStore: PracticeSessionStore {
         rhythmPatternId: String?,
         scaleWarmupDrillId: String?
     ) async throws {
+        guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
         var sessions = try await loadSessions()
         let session = PracticeSession(
             id: UUID().uuidString,
