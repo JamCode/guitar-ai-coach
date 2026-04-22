@@ -8,8 +8,9 @@
 #
 # 依赖：Xcode 命令行工具（xcodebuild、xcrun simctl）、已安装的 iOS Simulator 运行时。
 #
-# 默认离线构建：OnnxRuntime 使用本地 package + 本地二进制 zip，不依赖 GitHub/外网。
-# 若首次初始化本地包，请先把 `LocalPackages/onnxruntime-swift-package-manager` 准备好。
+# OnnxRuntime：Xcode 工程已引用 GitHub 上的 microsoft/onnxruntime-swift-package-manager（固定版本）。
+# 首次解析 / 编译需能访问 GitHub 与 https://download.onnxruntime.ai（以下载 ORT 二进制 zip）。
+# 若需完全离线构建，可自行准备 LocalPackages 并改回 Xcode 中的本地 package 引用（见仓库历史）。
 
 set -euo pipefail
 
@@ -18,12 +19,6 @@ REPO_ROOT="$(cd "${HOST_DIR}/.." && pwd)"
 PROJECT="${HOST_DIR}/SwiftEarHost.xcodeproj"
 SCHEME="SwiftEarHost"
 BUNDLE_ID="com.wanghan.guitarhelper"
-LOCAL_ORT_PACKAGE_DIR="${HOST_DIR}/LocalPackages/onnxruntime-swift-package-manager"
-LOCAL_ORT_POD_REL=".vendor/pod-archive-onnxruntime-c-1.24.2.zip"
-LOCAL_ORT_EXT_POD_REL=".vendor/pod-archive-onnxruntime-extensions-c-0.13.0.zip"
-LOCAL_ORT_POD_ABS="${LOCAL_ORT_PACKAGE_DIR}/${LOCAL_ORT_POD_REL}"
-LOCAL_ORT_EXT_POD_ABS="${LOCAL_ORT_PACKAGE_DIR}/${LOCAL_ORT_EXT_POD_REL}"
-
 # 与 DerivedData 分开存放，避免每次删 /tmp 下 Derived 时把已拉取的 SPM 仓库一并删掉。
 SPM_CLONES_DIR="${SPM_CLONES_DIR:-${HOME}/Library/Caches/SwiftEarHost-spm-repos}"
 
@@ -55,23 +50,6 @@ DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostSimBuild-${USER}}"
 
 mkdir -p "${SPM_CLONES_DIR}"
 
-if [[ ! -d "${LOCAL_ORT_PACKAGE_DIR}" ]]; then
-  echo "缺少本地 OnnxRuntime 包目录: ${LOCAL_ORT_PACKAGE_DIR}" >&2
-  echo "请先准备 LocalPackages/onnxruntime-swift-package-manager 后再运行。" >&2
-  exit 1
-fi
-if [[ ! -f "${LOCAL_ORT_POD_ABS}" || ! -f "${LOCAL_ORT_EXT_POD_ABS}" ]]; then
-  echo "缺少本地 OnnxRuntime 二进制 zip。" >&2
-  echo "期望存在：" >&2
-  echo "  ${LOCAL_ORT_POD_ABS}" >&2
-  echo "  ${LOCAL_ORT_EXT_POD_ABS}" >&2
-  exit 1
-fi
-
-# 这两个环境变量由 onnxruntime-swift-package-manager/Package.swift 读取，且要求相对包根目录。
-export ORT_POD_LOCAL_PATH="${LOCAL_ORT_POD_REL}"
-export ORT_EXTENSIONS_POD_LOCAL_PATH="${LOCAL_ORT_EXT_POD_REL}"
-
 echo "==> 打开 Simulator"
 open -a Simulator 2>/dev/null || true
 
@@ -83,13 +61,21 @@ echo "    SPM 克隆缓存: ${SPM_CLONES_DIR}"
 # 只清编译产物，保留本 DerivedData 内已解析的包状态；SPM 仓库本体在 SPM_CLONES_DIR。
 rm -rf "${DERIVED}/Build"
 mkdir -p "${DERIVED}"
+echo "==> 解析 Swift Package 依赖（含远程 onnxruntime）"
 xcodebuild \
   -project "${PROJECT}" \
   -scheme "${SCHEME}" \
   -configuration Debug \
   -destination "platform=iOS Simulator,id=${UDID}" \
   -derivedDataPath "${DERIVED}" \
-  -disableAutomaticPackageResolution \
+  -clonedSourcePackagesDirPath "${SPM_CLONES_DIR}" \
+  -resolvePackageDependencies
+xcodebuild \
+  -project "${PROJECT}" \
+  -scheme "${SCHEME}" \
+  -configuration Debug \
+  -destination "platform=iOS Simulator,id=${UDID}" \
+  -derivedDataPath "${DERIVED}" \
   -clonedSourcePackagesDirPath "${SPM_CLONES_DIR}" \
   build
 

@@ -7,7 +7,8 @@ packages:
   GuitarAICoach:
     path: ../swift_app
   OnnxRuntime:
-    path: LocalPackages/onnxruntime-swift-package-manager
+    url: https://github.com/microsoft/onnxruntime-swift-package-manager
+    version: 1.24.2
 targets:
   SwiftEarHost:
     type: application
@@ -26,8 +27,8 @@ targets:
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_NSMicrophoneUsageDescription: 需要麦克风用于视唱训练与调音识别。
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 需要访问相册以导入曲谱图片。
-        INFOPLIST_KEY_NSCameraUsageDescription: 需要使用相机拍摄曲谱图片。
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 需要访问相册以导入曲谱图片或视频。
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: false
         SWIFT_VERSION: 5.10
     dependencies:
       - package: GuitarAICoach
