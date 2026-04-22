@@ -25,49 +25,51 @@ struct ChordPracticeSessionView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("本组练习")
-                        .font(.subheadline.weight(.semibold))
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Text("本组练习")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                        Spacer()
+                        Text(exercise.difficulty.rawValue)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.brand)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(SwiftAppTheme.brandSoft)
+                            .clipShape(Capsule())
+                    }
+
+                    Text(practiceKeyDescriptionLine)
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    // 题面变长（高级和弦更多、提示文案更长）时允许页面纵向滚动，
+                    // 避免 `aspectRatio(..., .fit)` 的指法图区为适配可用高度而整体缩小。
+                    ChordPracticeDiagramStrip(chordSymbols: exercise.flattenedChords)
+
+                    Text(exercise.bpmHintZh)
+                        .font(.caption)
                         .foregroundStyle(SwiftAppTheme.muted)
-                    Spacer()
-                    Text(exercise.difficulty.rawValue)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(SwiftAppTheme.brand)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(SwiftAppTheme.brandSoft)
-                        .clipShape(Capsule())
+                        .padding(.top, 4)
+
+                    Text(exercise.promptZh)
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .lineSpacing(4)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button("下一组") { advanceToNextGroup() }
+                        .appSecondaryButton()
+                        .frame(maxWidth: .infinity)
                 }
-
-                Text(practiceKeyDescriptionLine)
-                    .font(.caption)
-                    .foregroundStyle(SwiftAppTheme.text)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                ChordPracticeDiagramStrip(chordSymbols: exercise.flattenedChords)
-
-                Text(exercise.bpmHintZh)
-                    .font(.caption)
-                    .foregroundStyle(SwiftAppTheme.muted)
-                    .padding(.top, 4)
-
-                Text(exercise.promptZh)
-                    .font(.caption)
-                    .foregroundStyle(SwiftAppTheme.text)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button("下一组") { advanceToNextGroup() }
-                    .appSecondaryButton()
-                    .frame(maxWidth: .infinity)
+                .appCard()
             }
-            .appCard()
-
-            Spacer()
+            .padding(SwiftAppTheme.pagePadding)
         }
-        .padding(SwiftAppTheme.pagePadding)
         .navigationTitle("和弦切换练习")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
