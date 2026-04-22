@@ -1,10 +1,23 @@
 import SwiftUI
+import UIKit
 import Tuner
 import Fretboard
 import Chords
 import ChordChart
 import Profile
 import Core
+
+/// 「帮助与反馈」默认收件人；发版前请改为可收信地址。
+/// 若 Xcode Target → Info 增加自定义键 **`AIGuitarFeedbackEmail`**（String），将优先使用该值。
+private let kFeedbackMailRecipient = "support@guitar-ai-coach.app"
+
+private func resolvedFeedbackRecipient() -> String {
+    if let raw = Bundle.main.object(forInfoDictionaryKey: "AIGuitarFeedbackEmail") as? String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+    }
+    return kFeedbackMailRecipient
+}
 
 @main
 struct SwiftEarHostApp: App {
@@ -126,6 +139,7 @@ private struct ToolsTabView: View {
     private let cardAspectRatio: CGFloat = 0.92
 
     @State private var aboutVersionText: String = "--"
+    @State private var showMailOpenFailed = false
 
     var body: some View {
         let pad = gridEdgePadding
@@ -165,13 +179,7 @@ private struct ToolsTabView: View {
                     .padding(.top, 4)
 
                 VStack(spacing: 0) {
-                    toolsSupportRow(
-                        icon: "questionmark.circle",
-                        title: "帮助与反馈",
-                        subtitle: "常见问题、反馈说明与诊断日志"
-                    ) {
-                        HelpFeedbackView()
-                    }
+                    toolsSupportFeedbackMailRow()
                     Divider()
                         .overlay(SwiftAppTheme.line)
                         .padding(.leading, 52)
@@ -193,6 +201,65 @@ private struct ToolsTabView: View {
         .task {
             aboutVersionText = AppVersionInfoLoader.load().displayVersion
         }
+        .alert("无法打开邮件", isPresented: $showMailOpenFailed) {
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text("请确认本机已安装「邮件」并已登录邮箱账户；或复制反馈内容通过其他方式发送。")
+        }
+    }
+
+    private func makeFeedbackMailURL() -> URL? {
+        let addr = resolvedFeedbackRecipient().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !addr.isEmpty else { return nil }
+        let info = AppVersionInfoLoader.load()
+        let subject = "AI吉他反馈（\(info.displayVersion)）"
+        let body = "请描述问题、复现步骤或建议：\n\n"
+        var c = URLComponents()
+        c.scheme = "mailto"
+        c.path = addr
+        c.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body),
+        ]
+        return c.url
+    }
+
+    private func toolsSupportFeedbackMailRow() -> some View {
+        Button {
+            guard let url = makeFeedbackMailURL() else {
+                showMailOpenFailed = true
+                return
+            }
+            UIApplication.shared.open(url, options: [:]) { success in
+                if !success {
+                    Task { @MainActor in
+                        showMailOpenFailed = true
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "questionmark.circle")
+                    .frame(width: 24)
+                    .foregroundStyle(SwiftAppTheme.brand)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("帮助与反馈")
+                        .font(.headline)
+                        .foregroundStyle(SwiftAppTheme.text)
+                    Text("打开系统邮件发送反馈，主题已含版本号")
+                        .font(.subheadline)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 
     private func toolsSupportRow<Destination: View>(
