@@ -62,8 +62,10 @@ struct SwiftEarHostApp: App {
 }
 
 private struct RootTabView: View {
+    /// Tab 顺序：练习(0) → 我的谱(1) → 扒歌(2) → 工具(3)。默认落在「练习」。
     @State private var selectedTab: Int = 0
-    @State private var practiceTabMounted: Bool = false
+    /// 练习为首位 Tab，首屏即挂载真实页面，避免占位与标题闪动。
+    @State private var practiceTabMounted: Bool = true
     @StateObject private var sheetLibraryVM = SheetLibraryViewModel()
     
     /// 自定义 Tab 选择绑定：切到「练习」时在同一事务内先完成挂载，
@@ -76,7 +78,7 @@ private struct RootTabView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    if newValue == 1 {
+                    if newValue == 0 {
                         practiceTabMounted = true
                     }
                     selectedTab = newValue
@@ -87,14 +89,6 @@ private struct RootTabView: View {
 
     var body: some View {
         TabView(selection: tabSelection) {
-            NavigationStack {
-                ToolsTabView()
-            }
-            .tabItem {
-                Label("工具", systemImage: "wrench.and.screwdriver")
-            }
-            .tag(0)
-
             NavigationStack {
                 if practiceTabMounted {
                     PracticeHomeView()
@@ -108,7 +102,7 @@ private struct RootTabView: View {
             .tabItem {
                 Label("练习", systemImage: "figure.strengthtraining.traditional")
             }
-            .tag(1)
+            .tag(0)
 
             NavigationStack {
                 SheetLibraryView(vm: sheetLibraryVM)
@@ -116,13 +110,21 @@ private struct RootTabView: View {
             .tabItem {
                 Label("我的谱", systemImage: "music.note.list")
             }
-            .tag(2)
+            .tag(1)
 
             NavigationStack {
                 TranscriptionHomeView()
             }
             .tabItem {
                 Label("扒歌", systemImage: "waveform.path.ecg")
+            }
+            .tag(2)
+
+            NavigationStack {
+                ToolsTabView()
+            }
+            .tabItem {
+                Label("工具", systemImage: "wrench.and.screwdriver")
             }
             .tag(3)
         }
