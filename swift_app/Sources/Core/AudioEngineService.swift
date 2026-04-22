@@ -101,6 +101,7 @@ public final class AudioEngineService: AudioEngineServing {
     private let guitarReverb = AVAudioUnitReverb()
     private var sampledGuitarLoaded = false
     private let samplerQueue = DispatchQueue(label: "guitar-ai-coach.audio.sampler-gate", qos: .userInitiated)
+    private let stateLock = NSLock()
     private var started = false
 
     public init(quality: AudioQualityBaseline = AudioQualityBaseline()) {
@@ -126,15 +127,14 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
     public func start() throws {
-        guard !started else { return }
-        try configureSession()
-        try engine.start()
-        started = true
-        quality.markStart()
-        loadSampledGuitarIfNeeded()
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        try startLocked(activateSession: true)
     }
 
     public func stop() {
+        stateLock.lock()
+        defer { stateLock.unlock() }
         guard started else { return }
         player.stop()
         for voice in pluckVoices {
@@ -146,6 +146,14 @@ public final class AudioEngineService: AudioEngineServing {
         quality.markStop()
     }
 
+    /// 仅为首播预热播放图与 SF2，不激活 app 级录音会话，避免应用启动即抢占音频焦点。
+    public func prepareForPlaybackWarmup() {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        engine.prepare()
+        loadSampledGuitarIfNeeded()
+    }
+
     /// After `AVAudioEngine.stop()`, any state that assumes the graph is running must be cleared so the next `start()`
     /// rebuilds it. Add new flags here if they describe sampler / node readiness tied to a running engine.
     private func invalidateGraphDependentPlaybackState() {
@@ -153,7 +161,7 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
     public func stopSampledGuitarNotes(midis: [Int]) {
-        guard started else { return }
+        guard isStarted else { return }
         samplerQueue.sync { [weak self] in
             guard let self else { return }
             for raw in midis {
@@ -164,13 +172,23 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
     public func stopPluckedGuitarVoices() {
-        guard started else { return }
+        guard isStarted else { return }
         for voice in pluckVoices {
             voice.stop()
         }
     }
 
-    public var isSampledGuitarAvailable: Bool { sampledGuitarLoaded }
+    private var isStarted: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return started
+    }
+
+    public var isSampledGuitarAvailable: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return sampledGuitarLoaded
+    }
 
     private func configureGuitarToneChain() {
         guitarMixer.outputVolume = 0.92
@@ -224,15 +242,33 @@ public final class AudioEngineService: AudioEngineServing {
         }
     }
 
+    private func startLocked(activateSession: Bool) throws {
+        guard !started else { return }
+        if activateSession {
+            try configureSession()
+        }
+        engine.prepare()
+        try engine.start()
+        started = true
+        if activateSession {
+            quality.markStart()
+        }
+        loadSampledGuitarIfNeeded()
+    }
+
+    private func ensureStarted() throws {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        try startLocked(activateSession: true)
+    }
+
     public func playSampledGuitarNote(
         midi: Int,
         velocity: UInt8 = 100,
         gateDurationSec: Double = 1.2
     ) throws {
-        if !started {
-            try start()
-        }
-        guard sampledGuitarLoaded else {
+        try ensureStarted()
+        guard isSampledGuitarAvailable else {
             // 降级到算法拨弦，保证始终有声。
             let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
             try playPluckedGuitarString(frequencyHz: frequency, durationSec: max(0.9, gateDurationSec + 0.6))
@@ -260,15 +296,13 @@ public final class AudioEngineService: AudioEngineServing {
         gateDurationSec: Double = 1.35,
         stringStaggerSec: Double = 0.014
     ) throws {
-        if !started {
-            try start()
-        }
+        try ensureStarted()
         let notes = midis.filter { $0 >= 0 && $0 <= 127 }
         guard !notes.isEmpty else { return }
         let start = DispatchTime.now().uptimeNanoseconds
         let stagger = max(0, stringStaggerSec)
 
-        guard sampledGuitarLoaded else {
+        guard isSampledGuitarAvailable else {
             for midi in notes {
                 let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
                 let shapedGate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi)
@@ -298,9 +332,7 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
     public func playSine(frequencyHz: Double, durationSec: Double = 0.25) throws {
-        if !started {
-            try start()
-        }
+        try ensureStarted()
         // 必须与 `AVAudioPlayerNode` 连到 `mainMixerNode` 后的实际 PCM 格式一致，
         // 否则 `scheduleBuffer` 在常见硬件采样率（如 48kHz）下可能直接崩溃。
         let format = player.outputFormat(forBus: 0)
@@ -336,11 +368,11 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
     public func playPluckedGuitarString(frequencyHz: Double, durationSec: Double = 1.75) throws {
-        if !started {
-            try start()
-        }
+        try ensureStarted()
+        stateLock.lock()
         let voice = pluckVoices[nextPluckVoice % pluckVoices.count]
         nextPluckVoice += 1
+        stateLock.unlock()
         let format = voice.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
             quality.markUnderrun()

@@ -2,6 +2,17 @@ import XCTest
 @testable import Core
 
 final class AudioStartupWarmupTests: XCTestCase {
+    func testPrepareForPlaybackWarmupDoesNotCountAsAudioStart() {
+        let quality = AudioQualityBaseline()
+        let audio = AudioEngineService(quality: quality)
+
+        audio.prepareForPlaybackWarmup()
+
+        let snapshot = quality.snapshot()
+        XCTAssertEqual(snapshot.startCount, 0, "Warmup should preload playback resources without activating the audio session.")
+        audio.stop()
+    }
+
     func testScheduleIfNeededRunsWarmupOnlyOnce() {
         let queue = DispatchQueue(label: "guitar-ai-coach.audio-startup-warmup-tests")
         let lock = NSLock()

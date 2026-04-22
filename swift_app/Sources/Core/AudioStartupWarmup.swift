@@ -15,7 +15,7 @@ public final class AudioStartupWarmup: @unchecked Sendable {
             qos: .userInitiated
         ),
         warmup: @escaping @Sendable () -> Void = {
-            try? AudioEngineService.shared.start()
+            AudioEngineService.shared.prepareForPlaybackWarmup()
         }
     ) {
         self.queue = queue
