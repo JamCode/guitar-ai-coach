@@ -127,5 +127,69 @@ final class PracticeLocalStoreTests: XCTestCase {
 
         XCTAssertEqual(computeStreakDays(sessions, now: now), 3)
     }
+
+    func testRollingSevenDayStats_includesSixCalendarDaysBackFromStartOfToday() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = ISO8601DateFormatter().date(from: "2026-01-08T12:00:00Z")!
+        let inside = cal.date(byAdding: .day, value: -6, to: cal.startOfDay(for: now))!.addingTimeInterval(3600)
+        let outside = cal.date(byAdding: .day, value: -7, to: cal.startOfDay(for: now))!.addingTimeInterval(3600)
+
+        let sessions: [PracticeSession] = [
+            PracticeSession(
+                id: "in", taskId: "x", taskName: "x",
+                startedAt: inside.addingTimeInterval(-10), endedAt: inside,
+                durationSeconds: 120, completed: true, difficulty: 3,
+                note: nil, progressionId: nil, musicKey: nil, complexity: nil,
+                rhythmPatternId: nil, scaleWarmupDrillId: nil
+            ),
+            PracticeSession(
+                id: "out", taskId: "x", taskName: "x",
+                startedAt: outside.addingTimeInterval(-10), endedAt: outside,
+                durationSeconds: 999, completed: true, difficulty: 3,
+                note: nil, progressionId: nil, musicKey: nil, complexity: nil,
+                rhythmPatternId: nil, scaleWarmupDrillId: nil
+            ),
+            PracticeSession(
+                id: "incomplete", taskId: "x", taskName: "x",
+                startedAt: now.addingTimeInterval(-20), endedAt: now,
+                durationSeconds: 60, completed: false, difficulty: 3,
+                note: nil, progressionId: nil, musicKey: nil, complexity: nil,
+                rhythmPatternId: nil, scaleWarmupDrillId: nil
+            ),
+        ]
+
+        let stats = computeRollingSevenDayPracticeStats(sessions, now: now)
+        XCTAssertEqual(stats.sessionCount, 1)
+        XCTAssertEqual(stats.totalDurationSeconds, 120)
+    }
+
+    func testLatestCompletedPracticeEndedAt_picksMaxEndedAtAmongCompleted() {
+        let t1 = ISO8601DateFormatter().date(from: "2026-01-01T10:00:00Z")!
+        let t2 = ISO8601DateFormatter().date(from: "2026-01-02T10:00:00Z")!
+        let sessions: [PracticeSession] = [
+            PracticeSession(
+                id: "a", taskId: "x", taskName: "x",
+                startedAt: t1.addingTimeInterval(-1), endedAt: t1,
+                durationSeconds: 1, completed: true, difficulty: 3,
+                note: nil, progressionId: nil, musicKey: nil, complexity: nil,
+                rhythmPatternId: nil, scaleWarmupDrillId: nil
+            ),
+            PracticeSession(
+                id: "b", taskId: "x", taskName: "x",
+                startedAt: t2.addingTimeInterval(-1), endedAt: t2,
+                durationSeconds: 1, completed: false, difficulty: 3,
+                note: nil, progressionId: nil, musicKey: nil, complexity: nil,
+                rhythmPatternId: nil, scaleWarmupDrillId: nil
+            ),
+            PracticeSession(
+                id: "c", taskId: "x", taskName: "x",
+                startedAt: t2.addingTimeInterval(-1), endedAt: t2,
+                durationSeconds: 1, completed: true, difficulty: 3,
+                note: nil, progressionId: nil, musicKey: nil, complexity: nil,
+                rhythmPatternId: nil, scaleWarmupDrillId: nil
+            ),
+        ]
+        XCTAssertEqual(latestCompletedPracticeEndedAt(sessions), t2)
+    }
 }
 

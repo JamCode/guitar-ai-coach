@@ -132,6 +132,28 @@ func computeStreakDays(_ sessions: [PracticeSession], now: Date) -> Int {
     return streak
 }
 
+/// 从 `now` 所在自然日往前共 7 天（含当天）：`endedAt` ∈ [startOfDay(now − 6d), `now`]，且仅 `completed == true`。
+func computeRollingSevenDayPracticeStats(_ sessions: [PracticeSession], now: Date) -> (sessionCount: Int, totalDurationSeconds: Int) {
+    let calendar = Calendar(identifier: .gregorian)
+    let startOfToday = calendar.startOfDay(for: now)
+    guard let windowStart = calendar.date(byAdding: .day, value: -6, to: startOfToday) else {
+        return (0, 0)
+    }
+    var sessionCount = 0
+    var totalDurationSeconds = 0
+    for session in sessions where session.completed {
+        let ended = session.endedAt
+        guard ended >= windowStart, ended <= now else { continue }
+        sessionCount += 1
+        totalDurationSeconds += max(0, session.durationSeconds)
+    }
+    return (sessionCount, totalDurationSeconds)
+}
+
+func latestCompletedPracticeEndedAt(_ sessions: [PracticeSession]) -> Date? {
+    sessions.filter(\.completed).map(\.endedAt).max()
+}
+
 private func isSameDay(_ a: Date, _ b: Date) -> Bool {
     let calendar = Calendar(identifier: .gregorian)
     return calendar.isDate(a, inSameDayAs: b)
