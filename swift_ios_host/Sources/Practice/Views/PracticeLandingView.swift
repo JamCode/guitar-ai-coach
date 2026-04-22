@@ -247,17 +247,23 @@ private struct EarPracticeHubScreen: View {
                     .padding(.bottom, 4)
 
                 PracticeLinkCard(title: "音程识别", subtitle: "两音上行、四选一", icon: "play.circle") {
-                    IntervalEarView()
+                    ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
+                        IntervalEarView()
+                    }
                 }
                 PracticeLinkCard(
                     title: "和弦听辨",
                     subtitle: "大三 / 小三 / 属七 · 题库离线 · 吉他采样合成",
                     icon: "pianokeys"
                 ) {
-                    EarMcqSessionView(title: "和弦听辨", bank: "A")
+                    ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
+                        EarMcqSessionView(title: "和弦听辨", bank: "A")
+                    }
                 }
                 PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
-                    EarMcqSessionView(title: "和弦进行", bank: "B")
+                    ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
+                        EarMcqSessionView(title: "和弦进行", bank: "B")
+                    }
                 }
                 if EarPracticeHubVisibility.showSightSingingTraining {
                     PracticeLinkCard(
@@ -265,7 +271,9 @@ private struct EarPracticeHubScreen: View {
                         subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
                         icon: "mic"
                     ) {
-                        SightSingingSessionView()
+                        ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
+                            SightSingingSessionView()
+                        }
                     }
                 }
             }
@@ -324,17 +332,33 @@ private struct PracticeTrainingCatalogView: View {
     var body: some View {
         List {
             Section("视唱练耳") {
-                NavigationLink("音程识别") { TabBarHiddenContainer { IntervalEarView() } }
+                NavigationLink("音程识别") {
+                    TabBarHiddenContainer {
+                        ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
+                            IntervalEarView()
+                        }
+                    }
+                }
                 NavigationLink("和弦听辨") {
-                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦听辨", bank: "A") }
+                    TabBarHiddenContainer {
+                        ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
+                            EarMcqSessionView(title: "和弦听辨", bank: "A")
+                        }
+                    }
                 }
                 NavigationLink("和弦进行") {
-                    TabBarHiddenContainer { EarMcqSessionView(title: "和弦进行", bank: "B") }
+                    TabBarHiddenContainer {
+                        ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
+                            EarMcqSessionView(title: "和弦进行", bank: "B")
+                        }
+                    }
                 }
                 if EarPracticeHubVisibility.showSightSingingTraining {
                     NavigationLink("视唱训练") {
                         TabBarHiddenContainer {
-                            SightSingingSessionView()
+                            ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
+                                SightSingingSessionView()
+                            }
                         }
                     }
                 }
@@ -542,7 +566,13 @@ private struct PracticeTaskRouterScreen: View {
     var body: some View {
         switch task.id {
         case "chord-switch":
-            ChordPracticeSessionView()
+            if let chordTask = kDefaultPracticeTasks.first(where: { $0.id == "chord-switch" }) {
+                ForegroundPracticeSessionTracker(task: chordTask, note: nil) {
+                    ChordPracticeSessionView()
+                }
+            } else {
+                ChordPracticeSessionView()
+            }
         case "rhythm-strum":
             RhythmStrummingView(task: task, store: store)
         case "scale-walk":

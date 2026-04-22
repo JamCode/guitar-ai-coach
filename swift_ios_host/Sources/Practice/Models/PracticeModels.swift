@@ -38,6 +38,36 @@ let kSheetPracticeTask = PracticeTask(
     description: "打开曲谱阅读/跟练的时间计入今日练习。"
 )
 
+// MARK: - 视唱练耳（与练习 Tab 入口一致；写入本地练习记录）
+
+let kIntervalEarPracticeTask = PracticeTask(
+    id: "interval-ear",
+    name: "音程识别",
+    targetMinutes: 10,
+    description: "视唱练耳 · 音程四选一。"
+)
+
+let kEarChordMcqPracticeTask = PracticeTask(
+    id: "ear-chord-mcq",
+    name: "和弦听辨",
+    targetMinutes: 10,
+    description: "视唱练耳 · 和弦性质听辨。"
+)
+
+let kEarProgressionMcqPracticeTask = PracticeTask(
+    id: "ear-progression-mcq",
+    name: "和弦进行",
+    targetMinutes: 10,
+    description: "视唱练耳 · 和弦进行听辨。"
+)
+
+let kSightSingingPracticeTask = PracticeTask(
+    id: "sight-singing",
+    name: "视唱训练",
+    targetMinutes: 10,
+    description: "视唱练耳 · 跟唱/模唱。"
+)
+
 struct PracticeSummary: Equatable {
     let todayMinutes: Int
     let todaySessions: Int

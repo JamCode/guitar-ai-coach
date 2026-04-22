@@ -22,6 +22,7 @@
 		3F7ECEADD9B2D0F792444788 /* TranscriptionHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44471F8A97B071DF5D17B507 /* TranscriptionHistoryStore.swift */; };
 		40E1E6A7821DF10A52999D7D /* TranscriptionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BE06A17BD704314AB56BD2 /* TranscriptionHistoryView.swift */; };
 		419BD4626AB180A34C81D97D /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CE304DA9DC51C761E12AF3F /* FlowLayout.swift */; };
+		E600D7A81B3C4C5D6E7F8090 /* ForegroundPracticeSessionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F701E8B92A4C5D6E7F809112 /* ForegroundPracticeSessionTracker.swift */; };
 		482F6F903FB7DF1F60DC16A9 /* SheetLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760384F757B9ADBF5C5E2DB7 /* SheetLibraryView.swift */; };
 		493A486B3D6711B60958BDAD /* PracticeLocalStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */; };
 		4A01A95A6053A24A9234596E /* TranscriptionWaveformServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68059C23A81871F4A1111EE6 /* TranscriptionWaveformServiceTests.swift */; };
@@ -114,6 +115,7 @@
 		95FB8986AD18C574ADA77797 /* SwiftEarHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SwiftEarHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		99248B2B89EEEF58AC61A45E /* PracticeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeModels.swift; sourceTree = "<group>"; };
 		9CE304DA9DC51C761E12AF3F /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
+		F701E8B92A4C5D6E7F809112 /* ForegroundPracticeSessionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForegroundPracticeSessionTracker.swift; sourceTree = "<group>"; };
 		A3B18D0E46EFB063B53B059B /* TranscriptionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionEngineTests.swift; sourceTree = "<group>"; };
 		A4B6EE54B98314A51942ED04 /* TranscriptionOnnxPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionOnnxPipeline.swift; sourceTree = "<group>"; };
 		B5BE73BE481650BACC522D16 /* TranscriptionHistoryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryStoreTests.swift; sourceTree = "<group>"; };
@@ -242,6 +244,7 @@
 				4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */,
 				95326B0E05757D83577B0F63 /* ChordQuickReferenceSheet.swift */,
 				9CE304DA9DC51C761E12AF3F /* FlowLayout.swift */,
+				F701E8B92A4C5D6E7F809112 /* ForegroundPracticeSessionTracker.swift */,
 				66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */,
 				CAB32DA654CEABEB4AC3775B /* PracticeLandingView.swift */,
 				49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */,
@@ -492,6 +495,7 @@
 				7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */,
 				F8DF882624B2A38F4303EF98 /* ChordQuickReferenceSheet.swift in Sources */,
 				419BD4626AB180A34C81D97D /* FlowLayout.swift in Sources */,
+				E600D7A81B3C4C5D6E7F8090 /* ForegroundPracticeSessionTracker.swift in Sources */,
 				FC88A8FEEF6BF4F2A31DCA4E /* OnnxChordRecognizer.swift in Sources */,
 				D201453C3449669F76C49202 /* PracticeFinishDialog.swift in Sources */,
 				38E65678808AB3C07924C8F9 /* PracticeLandingView.swift in Sources */,

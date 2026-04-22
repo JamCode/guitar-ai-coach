@@ -194,11 +194,13 @@ struct RhythmStrummingView: View {
     @MainActor
     private func save(result: PracticeFinishResult) async {
         do {
+            let endedAt = Date()
+            let durationSeconds = max(0, Int(endedAt.timeIntervalSince(openedAt)))
             try await store.saveSession(
                 task: task,
                 startedAt: openedAt,
-                endedAt: Date(),
-                durationSeconds: 0,
+                endedAt: endedAt,
+                durationSeconds: durationSeconds,
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
