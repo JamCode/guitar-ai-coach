@@ -60,7 +60,8 @@ public final class TunerViewModel: ObservableObject {
             if audio.isSampledGuitarAvailable {
                 try audio.playSampledGuitarNote(midi: midi, velocity: 98, gateDurationSec: 1.28)
             } else {
-                try audio.playSine(frequencyHz: hz, durationSec: 0.22)
+                // 与 SF2 同源效果链：Karplus 拨弦经 guitarMixer→EQ→混响，避免 `playSine` 直挂 mainMixer 绕过音质链。
+                try audio.playPluckedGuitarString(frequencyHz: hz, durationSec: 1.15)
             }
         } catch {
             errorText = "参考音播放失败：\(error.localizedDescription)"

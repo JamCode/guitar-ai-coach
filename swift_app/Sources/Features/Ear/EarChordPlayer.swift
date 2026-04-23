@@ -96,8 +96,12 @@ public final class EarChordPlayer: EarChordPlaying {
                 nanoseconds: UInt64((Self.previewGateSec + Self.previewTailSec) * 1_000_000_000)
             )
         } else {
-            try audio.playSine(frequencyHz: Self.midiToHz(midi), durationSec: 0.35)
-            try await Task.sleep(nanoseconds: 400_000_000)
+            let hz = Self.midiToHz(midi)
+            let dur = max(0.9, Self.previewGateSec + Self.previewTailSec + 0.2)
+            try audio.playPluckedGuitarString(frequencyHz: hz, durationSec: dur)
+            try await Task.sleep(
+                nanoseconds: UInt64((Self.previewGateSec + Self.previewTailSec) * 1_000_000_000)
+            )
         }
     }
 
