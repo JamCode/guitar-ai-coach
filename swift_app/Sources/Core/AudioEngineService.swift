@@ -53,8 +53,9 @@ enum GuitarPlaybackHumanizer {
         } else {
             0
         }
-        let cyclicOffset = ((midi * 17) + (noteIndex ?? 0) * 13) % 5 - 2
-        return UInt8(max(1, min(127, baseValue + pitchBias + edgeBias + cyclicOffset)))
+        // 真随机 ±10% velocity 偏移（约 ±12 级），替代原来仅 ±2 的确定性循环偏移，消除机器感。
+        let randomOffset = Int.random(in: -13...13)
+        return UInt8(max(1, min(127, baseValue + pitchBias + edgeBias + randomOffset)))
     }
 
     static func gate(base: Double, midi: Int, noteIndex: Int? = nil, totalNotes: Int? = nil) -> Double {
@@ -77,7 +78,8 @@ enum GuitarPlaybackHumanizer {
 
     static func microDelay(noteIndex: Int, totalNotes: Int) -> Double {
         guard totalNotes > 1 else { return 0 }
-        return Double((noteIndex * 5 + totalNotes) % 3) * 0.0015
+        // 在基础扫弦间隔（stagger）之上叠加 0~2ms 的随机抖动，避免完全等间距的机械感。
+        return Double.random(in: 0...0.002)
     }
 }
 
@@ -97,11 +99,24 @@ public final class AudioEngineService: AudioEngineServing {
     private var nextPluckVoice = 0
     private let sampler = AVAudioUnitSampler()
     private let guitarMixer = AVAudioMixerNode()
-    private let guitarEQ = AVAudioUnitEQ(numberOfBands: 3)
+    private let guitarEQ = AVAudioUnitEQ(numberOfBands: 4)
+    /// P2: 动态压缩器，撑长音符尾音、均衡 velocity 层级落差，让音色更饱满圆润。
+    private let guitarCompressor = AVAudioUnitDynamicsProcessor()
+    /// P2: Slapback 延迟（30ms、0% feedback），模拟录音棚话筒早反射，增加声音纵深感。
+    private let guitarSlapback = AVAudioUnitDelay()
+    /// P3: Haas 伪立体声宽度延迟（22ms、0% feedback），在进入混响前引入时间扩散，
+    /// 使混响尾音产生更宽的立体声感知。注：AVAudioUnitDelay 对 L/R 施加相同延迟，
+    /// 宽度感来自直接信号与延迟信号混合后经混响处理所产生的频谱扩散，而非真正的双声道分离。
+    private let guitarHaas = AVAudioUnitDelay()
     private let guitarReverb = AVAudioUnitReverb()
     private var sampledGuitarLoaded = false
     private let samplerQueue = DispatchQueue(label: "guitar-ai-coach.audio.sampler-gate", qos: .userInitiated)
     private var started = false
+    /// Round-robin 计数器：每次触发单音或扫弦时递增，结合 masterTuning 微音高偏移模拟不同演奏角度的细微差异。
+    private var rrCounter: Int = 0
+    /// 三档微音高偏移（单位：cent），轮换顺序固定，覆盖 0 / -1.8 / +1.8 cent。
+    /// `internal` 可见度供单元测试验证数组内容，不对外暴露为 public API。
+    static let rrTuningOffsets: [Float] = [0, -1.8, 1.8]
 
     public init(quality: AudioQualityBaseline = AudioQualityBaseline()) {
         self.quality = quality
@@ -113,14 +128,21 @@ public final class AudioEngineService: AudioEngineServing {
         engine.attach(sampler)
         engine.attach(guitarMixer)
         engine.attach(guitarEQ)
+        engine.attach(guitarCompressor)
+        engine.attach(guitarSlapback)
+        engine.attach(guitarHaas)
         engine.attach(guitarReverb)
         engine.connect(player, to: engine.mainMixerNode, format: nil)
         for voice in pluckVoices {
             engine.connect(voice, to: guitarMixer, format: nil)
         }
+        // 信号链：sampler/pluck → mixer → EQ → compressor → slapback → haas → reverb → out
         engine.connect(sampler, to: guitarMixer, format: nil)
         engine.connect(guitarMixer, to: guitarEQ, format: nil)
-        engine.connect(guitarEQ, to: guitarReverb, format: nil)
+        engine.connect(guitarEQ, to: guitarCompressor, format: nil)
+        engine.connect(guitarCompressor, to: guitarSlapback, format: nil)
+        engine.connect(guitarSlapback, to: guitarHaas, format: nil)
+        engine.connect(guitarHaas, to: guitarReverb, format: nil)
         engine.connect(guitarReverb, to: engine.mainMixerNode, format: nil)
         configureGuitarToneChain()
     }
@@ -172,32 +194,84 @@ public final class AudioEngineService: AudioEngineServing {
 
     public var isSampledGuitarAvailable: Bool { sampledGuitarLoaded }
 
-    private func configureGuitarToneChain() {
-        guitarMixer.outputVolume = 0.92
+    // MARK: - Testable effect-chain accessors (internal)
 
-        let lowMidCut = guitarEQ.bands[0]
+    /// 压缩器触发阈值（dBFS），供单元测试断言参数合理性。
+    var compressorThreshold: Float { guitarCompressor.threshold }
+    /// 压缩器 attack 时间（秒）。
+    var compressorAttackTime: Double { guitarCompressor.attackTime }
+    /// 压缩器 release 时间（秒）。
+    var compressorReleaseTime: Double { guitarCompressor.releaseTime }
+    /// Slapback 延迟时间（秒）。
+    var slapbackDelayTime: Double { guitarSlapback.delayTime }
+    /// Slapback 反馈量（%）。
+    var slapbackFeedback: Float { guitarSlapback.feedback }
+    /// Slapback 干湿比（%）。
+    var slapbackWetDryMix: Float { guitarSlapback.wetDryMix }
+    /// Haas 伪立体声延迟时间（秒）。
+    var haasDelayTime: Double { guitarHaas.delayTime }
+    /// Haas 反馈量（%）。
+    var haasFeedback: Float { guitarHaas.feedback }
+    /// Haas 干湿比（%）。
+    var haasWetDryMix: Float { guitarHaas.wetDryMix }
+
+    private func configureGuitarToneChain() {
+        // sampler.volume 已回到 1.0（线性安全），在此把 mixer 增益补回至 1.0 维持原有主观响度。
+        guitarMixer.outputVolume = 1.0
+
+        // 高通：截掉 85 Hz 以下的低频噪底与基音低频成分，改善整体通透感。
+        let highPass = guitarEQ.bands[0]
+        highPass.filterType = .highPass
+        highPass.frequency = 85
+        highPass.bypass = false
+
+        let lowMidCut = guitarEQ.bands[1]
         lowMidCut.filterType = .parametric
         lowMidCut.frequency = 240
         lowMidCut.bandwidth = 0.8
         lowMidCut.gain = -3.0
         lowMidCut.bypass = false
 
-        let presenceBoost = guitarEQ.bands[1]
+        let presenceBoost = guitarEQ.bands[2]
         presenceBoost.filterType = .parametric
         presenceBoost.frequency = 3_200
         presenceBoost.bandwidth = 0.7
         presenceBoost.gain = 2.2
         presenceBoost.bypass = false
 
-        let airShelf = guitarEQ.bands[2]
+        let airShelf = guitarEQ.bands[3]
         airShelf.filterType = .highShelf
         airShelf.frequency = 7_200
         airShelf.bandwidth = 0.6
         airShelf.gain = 1.6
         airShelf.bypass = false
 
-        guitarReverb.loadFactoryPreset(.mediumRoom)
-        guitarReverb.wetDryMix = 11
+        // plate 预设比 mediumRoom 更通透，更贴合原声木吉他录音感；wetDryMix 20 提供自然空间感。
+        guitarReverb.loadFactoryPreset(.plate)
+        guitarReverb.wetDryMix = 20
+
+        // P2: 压缩器 — 撑长音符尾音，均衡不同 velocity 层之间的动态落差。
+        // Attack 25ms 保留拨弦初始瞬态；Release 180ms 让音符自然延续；Ratio 3.5:1 温和压缩不失真。
+        guitarCompressor.threshold = -18        // dBFS
+        guitarCompressor.headRoom = 5          // dB — 保留瞬态余量
+        guitarCompressor.expansionRatio = 3.5  // 压缩比（AVAudioUnitDynamicsProcessor 用 expansionRatio 表达 ratio）
+        guitarCompressor.attackTime = 0.025    // 秒
+        guitarCompressor.releaseTime = 0.180   // 秒
+        guitarCompressor.masterGain = 2        // dB — 压缩后补偿增益
+
+        // P2: Slapback 延迟 — 30ms 单次早反射，模拟话筒与琴体之间的物理距离感。
+        // feedback = 0 确保只有一次反射，不产生回声堆叠。
+        guitarSlapback.delayTime = 0.030       // 秒
+        guitarSlapback.feedback = 0            // %
+        guitarSlapback.wetDryMix = 12          // % — 贴身影子，不喧宾夺主
+        guitarSlapback.lowPassCutoff = 12_000  // Hz — 削掉 slapback 的高频毛刺
+
+        // P3: Haas 伪立体声宽度 — 22ms 单次延迟，在混响前引入时间扩散。
+        // 直接信号与延迟信号混合后经 plate 混响处理，形成宽度感知（Haas 效应）。
+        guitarHaas.delayTime = 0.022           // 秒 — Haas 区间内（< 30ms）不产生回声感
+        guitarHaas.feedback = 0               // %
+        guitarHaas.wetDryMix = 18             // % — 适度宽度，保持单声道兼容性
+        guitarHaas.lowPassCutoff = 10_000     // Hz — 减少延迟副本的高频相位梳状效应
     }
 
     private func loadSampledGuitarIfNeeded() {
@@ -216,8 +290,8 @@ public final class AudioEngineService: AudioEngineServing {
                 bankMSB: melodicBankMSB,
                 bankLSB: bankLSB
             )
-            // 稍抬一点主观响度，采样包本身偏安静；`volume` 在当前平台未被弃用。
-            sampler.volume = 1.6
+            // 保持线性增益在 1.0 以内，避免超过混音器满量程产生数字过载失真。
+            sampler.volume = 1.0
             sampledGuitarLoaded = true
         } catch {
             sampledGuitarLoaded = false
@@ -241,9 +315,13 @@ public final class AudioEngineService: AudioEngineServing {
         let clampedMidi = UInt8(max(0, min(127, midi)))
         let shapedVelocity = GuitarPlaybackHumanizer.velocity(base: velocity, midi: midi)
         let gate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi)
+        let tuningOffset = AudioEngineService.rrTuningOffsets[rrCounter % AudioEngineService.rrTuningOffsets.count]
+        rrCounter += 1
         let start = DispatchTime.now().uptimeNanoseconds
         samplerQueue.sync { [weak self] in
             guard let self else { return }
+            // Round-robin 微音高：每次单音触发轮换 0 / -1.8 / +1.8 cent，模拟不同拨弦力度与角度带来的音色微差。
+            self.sampler.masterTuning = Double(tuningOffset)
             self.sampler.stopNote(clampedMidi, onChannel: 0)
             self.sampler.startNote(clampedMidi, withVelocity: shapedVelocity, onChannel: 0)
         }
@@ -258,7 +336,7 @@ public final class AudioEngineService: AudioEngineServing {
         midis: [Int],
         velocity: UInt8 = 88,
         gateDurationSec: Double = 1.35,
-        stringStaggerSec: Double = 0.014
+        stringStaggerSec: Double = 0.020
     ) throws {
         if !started {
             try start()
@@ -284,8 +362,11 @@ public final class AudioEngineService: AudioEngineServing {
             let note = UInt8(midi)
             let shapedVelocity = GuitarPlaybackHumanizer.velocity(base: velocity, midi: midi, noteIndex: i, totalNotes: notes.count)
             let shapedGate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi, noteIndex: i, totalNotes: notes.count)
+            // 每根弦独立取 round-robin 微音高，和弦内各音有微小音高差异，模拟真实演奏中的弦间色差。
+            let tuningOffset = AudioEngineService.rrTuningOffsets[(rrCounter + i) % AudioEngineService.rrTuningOffsets.count]
             samplerQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
                 guard let self else { return }
+                self.sampler.masterTuning = Double(tuningOffset)
                 self.sampler.stopNote(note, onChannel: 0)
                 self.sampler.startNote(note, withVelocity: shapedVelocity, onChannel: 0)
             }
@@ -293,6 +374,7 @@ public final class AudioEngineService: AudioEngineServing {
                 self?.sampler.stopNote(note, onChannel: 0)
             }
         }
+        rrCounter += notes.count
         let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
         quality.markCallback(renderCostMs: elapsedMs)
     }
