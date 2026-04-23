@@ -10,6 +10,8 @@ import Core
 /// 「帮助与反馈」默认收件人；发版前请改为可收信地址。
 /// 若 Xcode Target → Info 增加自定义键 **`AIGuitarFeedbackEmail`**（String），将优先使用该值。
 private let kFeedbackMailRecipient = "23766856@qq.com"
+/// 隐私政策公开页面；若链接变更，仅需修改此常量。
+private let kPrivacyPolicyURLString = "https://jamcode.github.io/wanle-guitar-privacy/"
 
 private func resolvedFeedbackRecipient() -> String {
     if let raw = Bundle.main.object(forInfoDictionaryKey: "AIGuitarFeedbackEmail") as? String {
@@ -148,6 +150,7 @@ private struct ToolsTabView: View {
 
     @State private var aboutVersionText: String = "--"
     @State private var showMailOpenFailed = false
+    @State private var showPrivacyPolicyOpenFailed = false
 
     var body: some View {
         let pad = gridEdgePadding
@@ -191,6 +194,10 @@ private struct ToolsTabView: View {
                     Divider()
                         .overlay(SwiftAppTheme.line)
                         .padding(.leading, 52)
+                    toolsSupportPrivacyPolicyRow()
+                    Divider()
+                        .overlay(SwiftAppTheme.line)
+                        .padding(.leading, 52)
                     toolsSupportRow(
                         icon: "info.circle",
                         title: "关于与版本",
@@ -213,6 +220,11 @@ private struct ToolsTabView: View {
             Button("知道了", role: .cancel) {}
         } message: {
             Text("请确认本机已安装「邮件」并已登录邮箱账户；或复制反馈内容通过其他方式发送。")
+        }
+        .alert("无法打开隐私政策", isPresented: $showPrivacyPolicyOpenFailed) {
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text("请检查网络连接后重试。")
         }
     }
 
@@ -261,6 +273,48 @@ private struct ToolsTabView: View {
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func makePrivacyPolicyURL() -> URL? {
+        URL(string: kPrivacyPolicyURLString)
+    }
+
+    private func toolsSupportPrivacyPolicyRow() -> some View {
+        Button {
+            guard let url = makePrivacyPolicyURL() else {
+                showPrivacyPolicyOpenFailed = true
+                return
+            }
+            UIApplication.shared.open(url, options: [:]) { success in
+                if !success {
+                    Task { @MainActor in
+                        showPrivacyPolicyOpenFailed = true
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "lock.shield")
+                    .frame(width: 24)
+                    .foregroundStyle(SwiftAppTheme.brand)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("隐私政策")
+                        .font(.headline)
+                        .foregroundStyle(SwiftAppTheme.text)
+                    Text("查看网页版隐私说明")
+                        .font(.subheadline)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "arrow.up.right.square")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(SwiftAppTheme.muted)
             }
