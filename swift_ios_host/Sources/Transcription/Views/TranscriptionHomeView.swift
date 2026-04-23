@@ -37,6 +37,13 @@ struct TranscriptionHomeView: View {
                                     .foregroundStyle(SwiftAppTheme.muted)
                             }
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task { await vm.delete(entry) }
+                            } label: {
+                                Label("删除", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
