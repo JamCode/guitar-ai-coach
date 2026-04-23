@@ -68,14 +68,14 @@ struct PracticeLandingView: View {
                 }
                 PracticeLinkCard(
                     title: "和弦听辨",
-                    subtitle: "大三 / 小三 / 属七 · 题库离线 · 吉他采样合成",
+                    subtitle: "大三 / 小三 / 属七 · 页内可选难度 · 题库离线 · 吉他采样合成",
                     icon: "pianokeys"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: "和弦听辨", bank: "A")
                     }
                 }
-                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
+                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 页内可选难度 · 不限题量 · 指法揭示", icon: "music.note.list") {
                     ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: "和弦进行", bank: "B")
                     }
@@ -321,14 +321,14 @@ private struct EarPracticeHubScreen: View {
                 }
                 PracticeLinkCard(
                     title: "和弦听辨",
-                    subtitle: "大三 / 小三 / 属七 · 题库离线 · 吉他采样合成",
+                    subtitle: "大三 / 小三 / 属七 · 页内可选难度 · 题库离线 · 吉他采样合成",
                     icon: "pianokeys"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: "和弦听辨", bank: "A")
                     }
                 }
-                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
+                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 页内可选难度 · 不限题量 · 指法揭示", icon: "music.note.list") {
                     ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: "和弦进行", bank: "B")
                     }

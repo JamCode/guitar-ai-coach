@@ -321,7 +321,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
             correctOptionKey: q.correctOptionKey,
             wasCorrect: ok,
             pageIndex: pageIndex,
-            chordDifficultyRaw: bank == "A" ? chordDifficulty.rawValue : nil
+            chordDifficultyRaw: bank == "A" ? chordDifficulty.rawValue : nil,
+            progressionDifficultyRaw: bank == "B" ? progressionDifficulty.rawValue : nil
         )
         revealed = true
         let store = historyStore

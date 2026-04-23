@@ -342,6 +342,35 @@ final class EarCoreTests: XCTestCase {
         XCTAssertEqual(n1, 4)
     }
 
+    func testEarMcqAttemptRecordCodableRoundTripWithProgressionDifficulty() throws {
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.sortedKeys]
+        enc.dateEncodingStrategy = .iso8601
+        let dec = JSONDecoder()
+        dec.dateDecodingStrategy = .iso8601
+        let original = EarMcqAttemptRecord(
+            bank: "B",
+            title: "和弦进行",
+            questionId: "q1",
+            questionType: "progression_recognition",
+            promptZh: "听和弦进行",
+            optionKeys: ["A", "B", "C", "D"],
+            optionLabels: ["a", "b", "c", "d"],
+            selectedIndex: 0,
+            selectedKey: "A",
+            correctOptionKey: "B",
+            wasCorrect: false,
+            pageIndex: 0,
+            chordDifficultyRaw: nil,
+            progressionDifficultyRaw: "高级"
+        )
+        let data = try enc.encode([original])
+        let back = try dec.decode([EarMcqAttemptRecord].self, from: data)
+        XCTAssertEqual(back.count, 1)
+        XCTAssertNil(back[0].chordDifficultyRaw)
+        XCTAssertEqual(back[0].progressionDifficultyRaw, "高级")
+    }
+
     func testSightSingingIntervalQuestionsAreAscendingPairs() async throws {
         let repo = LocalSightSingingRepository()
         let start = try await repo.startSession(
