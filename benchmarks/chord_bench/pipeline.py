@@ -64,11 +64,61 @@ _WINDOW = np.hanning(FFT_SIZE).astype(np.float32)  # 近似 vDSP `.hanningDenorm
 _SAMPLE_POINTS = make_sample_points()
 
 
-def _peak_normalize(samples: np.ndarray) -> np.ndarray:
-    peak = float(np.max(np.abs(samples))) if samples.size else 0.0
-    if peak <= 0:
+# -----------------------------------------------------------------------------
+# Chunk-level normalization variants (A/B 排查用)
+# -----------------------------------------------------------------------------
+
+NORMALIZE_MODES = {
+    "peak",           # Swift 现状：x / max(|x|)
+    "none",           # 完全不做整段归一化
+    "rms",            # RMS 归一化到目标响度 + tanh 软截
+    "peak_p99",       # 用第 99 百分位绝对值代替 max，去掉偶发尖峰
+    "rms_hardclip",   # RMS 归一化到目标响度 + 硬 clip 到 ±1
+}
+
+# 默认跟随 Swift 当前 baseline：以绝对值第 99 百分位归一化 + 钳到 ±1。
+# 切回 "peak" 可复现 chunk-norm-p99 合入前的旧基线。
+DEFAULT_NORMALIZE_MODE = "peak_p99"
+
+_RMS_TARGET = 0.1
+
+
+def _normalize_chunk(samples: np.ndarray, mode: str) -> np.ndarray:
+    if mode == "none" or samples.size == 0:
         return samples
-    return samples / peak
+
+    if mode == "peak":
+        peak = float(np.max(np.abs(samples)))
+        if peak <= 0:
+            return samples
+        return samples / peak
+
+    if mode == "peak_p99":
+        abs_x = np.abs(samples)
+        if not abs_x.any():
+            return samples
+        scale = float(np.percentile(abs_x, 99.0))
+        if scale <= 0:
+            scale = float(abs_x.max())
+        if scale <= 0:
+            return samples
+        return np.clip(samples / scale, -1.0, 1.0).astype(samples.dtype)
+
+    if mode == "rms":
+        rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
+        if rms <= 1e-9:
+            return samples
+        scaled = samples * (_RMS_TARGET / rms)
+        return np.tanh(scaled).astype(samples.dtype)
+
+    if mode == "rms_hardclip":
+        rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
+        if rms <= 1e-9:
+            return samples
+        scaled = samples * (_RMS_TARGET / rms)
+        return np.clip(scaled, -1.0, 1.0).astype(samples.dtype)
+
+    raise ValueError(f"unknown normalize mode: {mode}")
 
 
 def _pad_or_trim(samples: np.ndarray, length: int) -> np.ndarray:
@@ -81,9 +131,10 @@ def _pad_or_trim(samples: np.ndarray, length: int) -> np.ndarray:
     return out
 
 
-def extract_chunk(samples: np.ndarray, sample_rate: int = TARGET_SR) -> np.ndarray:
+def extract_chunk(samples: np.ndarray, sample_rate: int = TARGET_SR,
+                  normalize_mode: str = DEFAULT_NORMALIZE_MODE) -> np.ndarray:
     """返回 shape 为 [1, 1, binCount, frameCount] 的 float32 张量。"""
-    samples = _peak_normalize(samples.astype(np.float32))
+    samples = _normalize_chunk(samples.astype(np.float32), normalize_mode)
     samples_per_chunk = int(round(TARGET_SR * CHUNK_DURATION_SEC))
     padded = _pad_or_trim(samples, samples_per_chunk)
     frame_count = int(math.ceil(samples_per_chunk / HOP_LENGTH))
@@ -202,6 +253,23 @@ def decode_label(root_idx: int, bass_idx: int, chord_probs: np.ndarray,
     if (3 in intervals or 4 in intervals) and 7 not in intervals:
         intervals.add(7)
 
+    # Round 1: 仅当只有 {0,7}（power chord）时，软补三度。
+    # 动机：模型对 major/minor 的三度音级 sigmoid 经常刚好不过 0.5，
+    # 导致 intervals 只剩 {0,7} 被错误分类为 "5"（Em→E5 / E→E:(1) 等）。
+    # 判据：比较 chord_probs[(root+3)%12] 和 chord_probs[(root+4)%12]：
+    #   - 胜者 >= SOFT_MIN                 （不低到完全没响应）
+    #   - 胜者 >= SOFT_RATIO * 败者        （明显偏向一方，避免真 power chord 被误补）
+    # 满足以上两条才补。其它任何情况保留 {0,7} 继续判 "5"。
+    SOFT_MIN = 0.15
+    SOFT_RATIO = 2.0
+    if intervals == {0, 7}:
+        b3_score = float(chord_probs[(root_idx + 3) % 12])
+        maj3_score = float(chord_probs[(root_idx + 4) % 12])
+        winner = max(b3_score, maj3_score)
+        loser = min(b3_score, maj3_score)
+        if winner >= SOFT_MIN and winner >= SOFT_RATIO * max(loser, 1e-6):
+            intervals.add(4 if maj3_score >= b3_score else 3)
+
     root_name = NOTE_NAMES[root_idx]
     suffix = classify_chord_suffix(intervals)
     if suffix is not None:
@@ -312,7 +380,8 @@ def _sigmoid(x: np.ndarray) -> np.ndarray:
 
 
 def run_onnx(session: ort.InferenceSession, samples: np.ndarray,
-             source_sr: float) -> List[RawChordFrame]:
+             source_sr: float,
+             normalize_mode: str = DEFAULT_NORMALIZE_MODE) -> List[RawChordFrame]:
     normalized = resample_to_22050(samples, source_sr)
     if len(normalized) == 0:
         return []
@@ -336,7 +405,8 @@ def run_onnx(session: ort.InferenceSession, samples: np.ndarray,
         if actual_duration_ms <= 0:
             continue
 
-        feat = extract_chunk(chunk, TARGET_SR).astype(np.float32)
+        feat = extract_chunk(chunk, TARGET_SR,
+                             normalize_mode=normalize_mode).astype(np.float32)
         out = session.run(
             ["root_logits", "bass_logits", "chord_logits"],
             {input_name: feat},
@@ -406,8 +476,9 @@ def _chord_root(chord: str) -> str:
 # =============================================================================
 
 def recognize(session: ort.InferenceSession, samples: np.ndarray,
-              source_sr: float):
-    raw = run_onnx(session, samples, source_sr)
+              source_sr: float,
+              normalize_mode: str = DEFAULT_NORMALIZE_MODE):
+    raw = run_onnx(session, samples, source_sr, normalize_mode=normalize_mode)
     if not raw:
         return {
             "segments": [],

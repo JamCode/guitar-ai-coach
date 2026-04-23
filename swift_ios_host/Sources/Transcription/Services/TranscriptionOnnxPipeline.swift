@@ -134,9 +134,63 @@ struct TranscriptionCQTFeatureExtractor {
     }
 
     private func normalize(_ samples: [Float]) -> [Float] {
-        let peak = samples.reduce(Float.zero) { max($0, abs($1)) }
-        guard peak > 0 else { return samples }
-        return samples.map { $0 / peak }
+        // 以绝对值第 99 百分位作为归一化参考，
+        // 避免偶发尖峰（鼓点 / 爆音 / 直流毛刺）把整段能量压扁，
+        // 继而导致 ONNX sigmoid 普遍拿不到阈值。
+        // 离线 48 例 benchmark 下对 triad root +8.3pp、progression root +4.2pp，
+        // 其它类别不回退，见 benchmarks/chord_bench/reports/ab_chunk_norm.md。
+        guard !samples.isEmpty else { return samples }
+        let scale = Self.absolutePercentile(samples, percentile: 0.99)
+        guard scale > 0 else { return samples }
+        return samples.map { max(-1.0, min(1.0, $0 / scale)) }
+    }
+
+    private static func absolutePercentile(_ samples: [Float], percentile: Double) -> Float {
+        // Quickselect（nth_element）求绝对值序列的百分位数。
+        // 避免 O(n log n) 全排序：每 20s chunk ≈ 441k 样本，全排序对 CPU 过重。
+        precondition(percentile >= 0.0 && percentile <= 1.0)
+        var abs_ = samples.map { abs($0) }
+        let n = abs_.count
+        let k = max(0, min(n - 1, Int((Double(n - 1) * percentile).rounded())))
+        return abs_.withUnsafeMutableBufferPointer { buffer in
+            nthElement(buffer, k: k)
+            return buffer[k]
+        }
+    }
+
+    private static func nthElement(_ buffer: UnsafeMutableBufferPointer<Float>, k: Int) {
+        // 迭代版 quickselect，Lomuto 分区，对存在大量重复值的音频样本也安全。
+        var lo = 0
+        var hi = buffer.count - 1
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2
+            // three-element median-of-three 作为 pivot，抗对已排序/近排序输入的退化
+            let pivot = Self.medianOfThree(buffer[lo], buffer[mid], buffer[hi])
+            var i = lo
+            var j = hi
+            while i <= j {
+                while buffer[i] < pivot { i += 1 }
+                while buffer[j] > pivot { j -= 1 }
+                if i <= j {
+                    buffer.swapAt(i, j)
+                    i += 1
+                    j -= 1
+                }
+            }
+            if k <= j { hi = j }
+            else if k >= i { lo = i }
+            else { return }
+        }
+    }
+
+    private static func medianOfThree(_ a: Float, _ b: Float, _ c: Float) -> Float {
+        if a < b {
+            if b < c { return b }
+            return a < c ? c : a
+        } else {
+            if a < c { return a }
+            return b < c ? c : b
+        }
     }
 
     private func padOrTrim(_ samples: [Float], to count: Int) -> [Float] {
@@ -263,6 +317,24 @@ enum OnnxChordLabelDecoder {
 
         if (intervals.contains(3) || intervals.contains(4)), !intervals.contains(7) {
             intervals.insert(7)
+        }
+
+        // Round 1: 仅当 intervals 只有 {0,7}（power chord）时，软补三度。
+        // 动机：模型对 major/minor 的三度音级 sigmoid 有时刚好不过 0.5，
+        // 导致 intervals 只剩 {0,7} 被错误判成 "5"（如 Em → E5）。
+        // 判据：比较 (root+3) 和 (root+4) 的概率：
+        //   - 胜者 >= softMin               （不低到完全没响应）
+        //   - 胜者 >= softRatio * 败者      （明显偏向一方，避免真 power chord 误补）
+        if intervals == Set<Int>([0, 7]) {
+            let b3 = chordProbabilities[(rootIndex + 3) % 12]
+            let maj3 = chordProbabilities[(rootIndex + 4) % 12]
+            let softMin = 0.15
+            let softRatio = 2.0
+            let winner = max(b3, maj3)
+            let loser = min(b3, maj3)
+            if winner >= softMin, winner >= softRatio * max(loser, 1e-6) {
+                intervals.insert(maj3 >= b3 ? 4 : 3)
+            }
         }
 
         let rootName = noteNames[rootIndex]
