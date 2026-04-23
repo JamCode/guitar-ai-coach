@@ -95,9 +95,6 @@ struct SheetLibraryView: View {
                             Text("\(entry.pageCount) 页 · \(dateText(entry.addedAtMs))")
                                 .font(.caption)
                                 .foregroundStyle(SwiftAppTheme.muted)
-                            Text("状态：\(entry.parseStatus)")
-                                .font(.caption2)
-                                .foregroundStyle(SwiftAppTheme.muted)
                         }
                         Spacer()
                         Image(systemName: "chevron.right").foregroundStyle(SwiftAppTheme.muted)
