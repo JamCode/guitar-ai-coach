@@ -7,15 +7,18 @@ public enum EarProgressionMcqDifficulty: String, Sendable, CaseIterable, Codable
     case 高级
 }
 
-/// 规则生成和弦进行四选一题（不读 `ear_seed` Bank B）。
+/// 程序化生成和弦进行四选一题（不读 `ear_seed` Bank B）。
+/// 和声由 `EarProgressionHarmonyEngine` 按功能层 + 评分加权步进生成，再校验吉他可弹性。
 public enum EarProgressionProceduralGenerator {
-    private static let romanTokens = ["I", "ii", "iii", "IV", "V", "vi"]
+    private static let romanTokens = ["I", "ii", "iii", "IV", "V", "vi", "V7", "ii7", "vi7", "bVI", "bIII", "iv", "(V/ii)", "(V/vi)"]
 
-    private static let templatesByN: [Int: [String]] = [
-        3: ["ii-V-I", "I-IV-V", "vi-IV-I", "I-V-vi", "IV-V-I"],
-        4: ["I-V-vi-IV", "vi-IV-I-V", "I-vi-IV-V", "I-IV-V-I", "ii-V-I-IV"],
-        5: ["I-vi-IV-V-I", "ii-V-I-vi-IV", "I-IV-vi-V-I", "vi-IV-I-V-vi", "I-V-vi-IV-I"],
-    ]
+    private static func length(for difficulty: EarProgressionMcqDifficulty) -> Int {
+        switch difficulty {
+        case .初级: return 3
+        case .中级: return 4
+        case .高级: return 5
+        }
+    }
 
     public static func keys(for difficulty: EarProgressionMcqDifficulty) -> [String] {
         switch difficulty {
@@ -32,15 +35,9 @@ public enum EarProgressionProceduralGenerator {
         difficulty: EarProgressionMcqDifficulty,
         using rng: inout some RandomNumberGenerator
     ) -> EarBankItem {
-        let n: Int
-        switch difficulty {
-        case .初级: n = 3
-        case .中级: n = 4
-        case .高级: n = 5
-        }
+        let n = length(for: difficulty)
         let keys = Self.keys(for: difficulty)
-        let templates = Self.templatesByN[n] ?? ["I-IV-V"]
-        let playable = firstPlayableCandidate(keys: keys, templates: templates, n: n, using: &rng)
+        let playable = firstPlayableProgression(difficulty: difficulty, keys: keys, n: n, using: &rng)
         let musicKey = playable.musicKey
         let progressionRoman = playable.progressionRoman
         let wrong = makeWrongLabels(correct: progressionRoman, n: n, using: &rng)
@@ -61,31 +58,43 @@ public enum EarProgressionProceduralGenerator {
         )
     }
 
-    private static func firstPlayableCandidate(
+    /// 供单测/调试复用；实现委托给 `EarProgressionPlayback`。
+    public static func isProgressionPlayable(musicKey: String, progressionRoman: String) -> Bool {
+        EarProgressionPlayback.isProgressionPlayable(musicKey: musicKey, progressionRoman: progressionRoman)
+    }
+
+    private static func firstPlayableProgression(
+        difficulty: EarProgressionMcqDifficulty,
         keys: [String],
-        templates: [String],
         n: Int,
         using rng: inout some RandomNumberGenerator
     ) -> (musicKey: String, progressionRoman: String) {
-        for _ in 0 ..< 64 {
-            let musicKey = keys.randomElement(using: &rng)!
-            let progressionRoman = templates.randomElement(using: &rng)!
-            if isPlayable(musicKey: musicKey, progressionRoman: progressionRoman) {
-                return (musicKey, progressionRoman)
-            }
-        }
-
-        for musicKey in keys {
-            for progressionRoman in templates {
-                if isPlayable(musicKey: musicKey, progressionRoman: progressionRoman) {
-                    return (musicKey, progressionRoman)
+        for _ in 0 ..< 48 {
+            let line = EarProgressionHarmonyEngine.generateProgressionRoman(
+                difficulty: difficulty,
+                length: n,
+                using: &rng
+            )
+            for _ in 0 ..< min(24, keys.count * 4) {
+                let musicKey = keys.randomElement(using: &rng)!
+                if isProgressionPlayable(musicKey: musicKey, progressionRoman: line) {
+                    return (musicKey, line)
                 }
             }
         }
-
-        preconditionFailure(
-            "could not find playable progression for n=\(n); keys=\(keys); templates=\(templates)"
+        let line = EarProgressionHarmonyEngine.generateProgressionRoman(
+            difficulty: difficulty,
+            length: n,
+            using: &rng
         )
+        for musicKey in keys where isProgressionPlayable(musicKey: musicKey, progressionRoman: line) {
+            return (musicKey, line)
+        }
+        let safe = n <= 4 ? "I-IV-V-I" : "I-vi-IV-V-I"
+        for musicKey in keys where isProgressionPlayable(musicKey: musicKey, progressionRoman: safe) {
+            return (musicKey, safe)
+        }
+        preconditionFailure("could not find playable progression for n=\(n); keys=\(keys)")
     }
 
     private static func stubItem(musicKey: String, progressionRoman: String) -> EarBankItem {
@@ -103,11 +112,6 @@ public enum EarProgressionProceduralGenerator {
             hintZh: nil,
             playbackFretsSixToOne: nil
         )
-    }
-
-    private static func isPlayable(musicKey: String, progressionRoman: String) -> Bool {
-        let probe = stubItem(musicKey: musicKey, progressionRoman: progressionRoman)
-        return EarProgressionPlayback.playbackFretsSequence(for: probe) != nil
     }
 
     private static func hintZh(for difficulty: EarProgressionMcqDifficulty) -> String {
@@ -140,15 +144,22 @@ public enum EarProgressionProceduralGenerator {
         n: Int,
         using rng: inout some RandomNumberGenerator
     ) -> [String] {
-        var pool = (templatesByN[n] ?? []).filter { $0 != correct }
-        pool.shuffle(using: &rng)
         var out: [String] = []
-        for p in pool where out.count < 3 {
-            if !out.contains(p) { out.append(p) }
+        var guardRng = 0
+        while out.count < 3 && guardRng < 400 {
+            guardRng += 1
+            let alt = EarProgressionHarmonyEngine.generateProgressionRoman(
+                difficulty: .中级,
+                length: n,
+                using: &rng
+            )
+            if alt != correct, !out.contains(alt), EarPlaybackMidi.romanNumeralSegmentCount(alt) == n {
+                out.append(alt)
+            }
         }
-        var attempts = 0
-        while out.count < 3 && attempts < 300 {
-            attempts += 1
+        var mutAttempts = 0
+        while out.count < 3 && mutAttempts < 500 {
+            mutAttempts += 1
             if let m = randomMutant(from: correct, using: &rng),
                m != correct,
                !out.contains(m),
@@ -159,7 +170,7 @@ public enum EarProgressionProceduralGenerator {
         }
         precondition(
             out.count == 3,
-            "could not build 3 distractors for correct=\(correct) n=\(n); extend templates or mutator"
+            "could not build 3 distractors for correct=\(correct) n=\(n)"
         )
         return out
     }

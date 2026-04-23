@@ -27,4 +27,23 @@ public enum EarProgressionPlayback {
         }
         return out.isEmpty ? nil : out
     }
+
+    /// 是否能在本地离线表上解析出整条进行的 6 弦指法（任一和弦失败则整题不可用）。
+    public static func isProgressionPlayable(musicKey: String, progressionRoman: String) -> Bool {
+        let probe = EarBankItem(
+            id: "stub",
+            mode: "B",
+            questionType: "progression_recognition",
+            promptZh: "",
+            options: [EarMcqOption(key: "A", label: progressionRoman)],
+            correctOptionKey: "A",
+            root: nil,
+            targetQuality: nil,
+            musicKey: musicKey,
+            progressionRoman: progressionRoman,
+            hintZh: nil,
+            playbackFretsSixToOne: nil
+        )
+        return playbackFretsSequence(for: probe) != nil
+    }
 }
