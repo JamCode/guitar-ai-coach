@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		020261C81561A71027762423 /* TranscriptionOnnxPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72F7C365CDB548D48D837DA /* TranscriptionOnnxPipelineTests.swift */; };
+		E607182934A5B6C7D8E9F0A1D /* FirstLaunchTourStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F607182934A5B6C7D8E9F0A1B /* FirstLaunchTourStorageTests.swift */; };
 		022B60F274BD20FF1177226F /* consonance_ace.onnx in Resources */ = {isa = PBXBuildFile; fileRef = 4E88D873D9F1B077821D23E7 /* consonance_ace.onnx */; };
 		130405B9938C20700331201D /* TodayRecommendationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECEFC296F96FEFDB9F5197B3 /* TodayRecommendationPlanner.swift */; };
 		199017B0431550D165BCA0B3 /* TranscriptionProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204B9222505DBB4250713D86 /* TranscriptionProcessingView.swift */; };
@@ -27,6 +28,8 @@
 		493A486B3D6711B60958BDAD /* PracticeLocalStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */; };
 		4A01A95A6053A24A9234596E /* TranscriptionWaveformServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68059C23A81871F4A1111EE6 /* TranscriptionWaveformServiceTests.swift */; };
 		4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */; };
+		A1F203E405D60728494A5B6C /* FirstLaunchTourView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E304F5061708594A5B6C7D /* FirstLaunchTourView.swift */; };
+		C3D405E61718296A5B7C8D9E /* Core in Frameworks */ = {isa = PBXBuildFile; productRef = D4E506F718293A6B7C8D9E0F /* Core */; };
 		566E75613410B952C4E68533 /* TranscriptionHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2396A158BEE17BFE3AF2BADA /* TranscriptionHomeView.swift */; };
 		58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */; };
 		C5049DEB0D1F775F285D6A28 /* ScaleWarmupDrill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E48D67A8D42B33749EC04E /* ScaleWarmupDrill.swift */; };
@@ -84,6 +87,7 @@
 /* Begin PBXFileReference section */
 		0F95F0F7B7389DBB8E409492 /* TranscriptionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionModels.swift; sourceTree = "<group>"; };
 		117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftEarHostApp.swift; sourceTree = "<group>"; };
+		B2E304F5061708594A5B6C7D /* FirstLaunchTourView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchTourView.swift; sourceTree = "<group>"; };
 		119222F862F03CC58F905D72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1DCFAFA1FA93AD8B45C64E55 /* onnxruntime-swift-package-manager */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "onnxruntime-swift-package-manager"; path = "LocalPackages/onnxruntime-swift-package-manager"; sourceTree = SOURCE_ROOT; };
 		B9D4F0123A5C6E7F8091C2D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -134,6 +138,7 @@
 		DD4498E65917DC2E2FA2DB69 /* PracticeSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeSessionStore.swift; sourceTree = "<group>"; };
 		DEAA48FC7903A0CA365BBE2E /* TodayRecommendationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRecommendationModels.swift; sourceTree = "<group>"; };
 		E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLocalStoreTests.swift; sourceTree = "<group>"; };
+		F607182934A5B6C7D8E9F0A1B /* FirstLaunchTourStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstLaunchTourStorageTests.swift; sourceTree = "<group>"; };
 		E5BE06A17BD704314AB56BD2 /* TranscriptionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryView.swift; sourceTree = "<group>"; };
 		ECEFC296F96FEFDB9F5197B3 /* TodayRecommendationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRecommendationPlanner.swift; sourceTree = "<group>"; };
 		ED26ADC8718FF56C0BB6B4EF /* TodayRecommendationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRecommendationListView.swift; sourceTree = "<group>"; };
@@ -146,6 +151,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C3D405E61718296A5B7C8D9E /* Core in Frameworks */,
 				E69983D149243B7A6D946061 /* Tuner in Frameworks */,
 				6C61AD5387584DE05CBAEEFC /* Fretboard in Frameworks */,
 				F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */,
@@ -192,6 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */,
+				F607182934A5B6C7D8E9F0A1B /* FirstLaunchTourStorageTests.swift */,
 				E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */,
 				FB009ADEB470D6167573E47E /* SheetsStoreAndParserTests.swift */,
 				3A8A952097B1432FE113B90E /* StrummingPatternGeneratorTests.swift */,
@@ -344,6 +351,7 @@
 			children = (
 				119222F862F03CC58F905D72 /* Assets.xcassets */,
 				B9D4F0123A5C6E7F8091C2D3 /* PrivacyInfo.xcprivacy */,
+				B2E304F5061708594A5B6C7D /* FirstLaunchTourView.swift */,
 				117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */,
 				4203DCF495DEA7E31C4E9B7D /* Practice */,
 				B541EFF39D54B268F0C153E8 /* Sheets */,
@@ -413,6 +421,7 @@
 			);
 			name = SwiftEarHost;
 			packageProductDependencies = (
+				D4E506F718293A6B7C8D9E0F /* Core */,
 				D68C530C664DD0805DDA1187 /* Tuner */,
 				680D96401F590C260C21FB94 /* Fretboard */,
 				231960F99C0DA8778FB6E8A8 /* Chords */,
@@ -487,6 +496,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E607182934A5B6C7D8E9F0A1D /* FirstLaunchTourStorageTests.swift in Sources */,
 				493A486B3D6711B60958BDAD /* PracticeLocalStoreTests.swift in Sources */,
 				1D79CC2FD290C774E1D86265 /* SheetsStoreAndParserTests.swift in Sources */,
 				B922D6E8B22060CC2AF8206E /* StrummingPatternGeneratorTests.swift in Sources */,
@@ -527,6 +537,7 @@
 				93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */,
 				58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */,
 				C5049DEB0D1F775F285D6A28 /* ScaleWarmupDrill.swift in Sources */,
+				A1F203E405D60728494A5B6C /* FirstLaunchTourView.swift in Sources */,
 				4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */,
 				38A6C604DFC07C237B556CD5 /* TodayRecommendationListView.swift in Sources */,
 				859A9E07A72362A83CC2D81D /* TodayRecommendationModels.swift in Sources */,
@@ -808,6 +819,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		D4E506F718293A6B7C8D9E0F /* Core */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Core;
+		};
 		21929BB5D4BC54C7C1690129 /* Profile */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Profile;
