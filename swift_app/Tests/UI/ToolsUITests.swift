@@ -6,9 +6,11 @@ import XCTest
 @testable import Profile
 @testable import Ear
 @testable import Practice
+import Metronome
 
 final class ToolsUITests: XCTestCase {
     func testViewsCanBeConstructed() {
+        _ = MetronomeView()
         _ = TunerView()
         _ = FretboardView()
         _ = ChordLookupView()

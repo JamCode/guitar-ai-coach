@@ -17,7 +17,8 @@ let package = Package(
         .library(name: "ChordChart", targets: ["ChordChart"]),
         .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Ear", targets: ["Ear"]),
-        .library(name: "Practice", targets: ["Practice"])
+        .library(name: "Practice", targets: ["Practice"]),
+        .library(name: "Metronome", targets: ["Metronome"])
     ],
     targets: [
         .executableTarget(
@@ -29,7 +30,8 @@ let package = Package(
                 "Chords",
                 "ChordChart",
                 "Ear",
-                "Practice"
+                "Practice",
+                "Metronome"
             ],
             path: "Sources/App"
         ),
@@ -80,19 +82,24 @@ let package = Package(
             dependencies: ["Core", "Fretboard", "Chords", "ChordChart"],
             path: "Sources/Features/Practice"
         ),
+        .target(
+            name: "Metronome",
+            dependencies: ["Core"],
+            path: "Sources/Features/Metronome"
+        ),
         .testTarget(
             name: "GuitarAICoachUnitTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice", "Metronome"],
             path: "Tests/Unit"
         ),
         .testTarget(
             name: "GuitarAICoachIntegrationTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice", "Metronome"],
             path: "Tests/Integration"
         ),
         .testTarget(
             name: "GuitarAICoachUITests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice", "Metronome"],
             path: "Tests/UI"
         )
     ]

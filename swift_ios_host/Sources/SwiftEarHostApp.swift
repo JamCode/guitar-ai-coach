@@ -5,6 +5,7 @@ import Fretboard
 import Chords
 import ChordChart
 import Profile
+import Metronome
 import Core
 
 /// 「帮助与反馈」默认收件人；发版前请改为可收信地址。
@@ -156,32 +157,37 @@ private struct ToolsTabView: View {
         let pad = gridEdgePadding
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                VStack(spacing: gridGap) {
-                    HStack(spacing: gridGap) {
-                        gridTile(
-                            title: "调音器",
-                            subtitle: "麦克风拾音与标准空弦目标",
-                            icon: "waveform"
-                        ) { TunerView() }
-                        gridTile(
-                            title: "吉他指板",
-                            subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
-                            icon: "square.grid.3x3"
-                        ) { FretboardView() }
-                    }
-
-                    HStack(spacing: gridGap) {
-                        gridTile(
-                            title: "和弦速查",
-                            subtitle: "离线可查构成音与常见把位",
-                            icon: "pianokeys"
-                        ) { ChordLookupView() }
-                        gridTile(
-                            title: "常用和弦",
-                            subtitle: "初/中/高分段·本地指法图速查",
-                            icon: "tablecells"
-                        ) { ChordChartView() }
-                    }
+                let toolColumns = [
+                    GridItem(.flexible(), spacing: gridGap),
+                    GridItem(.flexible(), spacing: gridGap),
+                ]
+                LazyVGrid(columns: toolColumns, spacing: gridGap) {
+                    gridTile(
+                        title: "节拍器",
+                        subtitle: "BPM·拍号·独立练习节拍",
+                        icon: "metronome"
+                    ) { MetronomeView() }
+                    gridTile(
+                        title: "调音器",
+                        subtitle: "麦克风拾音与标准空弦目标",
+                        icon: "waveform"
+                    ) { TunerView() }
+                    gridTile(
+                        title: "吉他指板",
+                        subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
+                        icon: "square.grid.3x3"
+                    ) { FretboardView() }
+                    gridTile(
+                        title: "和弦速查",
+                        subtitle: "离线可查构成音与常见把位",
+                        icon: "pianokeys"
+                    ) { ChordLookupView() }
+                    gridTile(
+                        title: "常用和弦",
+                        subtitle: "初/中/高分段·本地指法图速查",
+                        icon: "tablecells"
+                    ) { ChordChartView() }
+                    .gridCellColumns(2)
                 }
 
                 Text("应用与支持")
