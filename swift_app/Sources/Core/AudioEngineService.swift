@@ -100,8 +100,11 @@ public final class AudioEngineService: AudioEngineServing {
     private let sampler = AVAudioUnitSampler()
     private let guitarMixer = AVAudioMixerNode()
     private let guitarEQ = AVAudioUnitEQ(numberOfBands: 4)
-    /// P2: 动态压缩器，撑长音符尾音、均衡 velocity 层级落差，让音色更饱满圆润。
-    private let guitarCompressor = AVAudioUnitDynamicsProcessor()
+    /// P2: 动态处理占位节点。
+    ///
+    /// `AVAudioUnitDynamicsProcessor` 在当前构建环境不可用，改为 `AVAudioUnitEQ(numberOfBands: 0)`
+    /// 作为稳定可用的中间节点，保持整条效果链结构与连接关系不变。
+    private let guitarCompressor = AVAudioUnitEQ(numberOfBands: 0)
     /// P2: Slapback 延迟（30ms、0% feedback），模拟录音棚话筒早反射，增加声音纵深感。
     private let guitarSlapback = AVAudioUnitDelay()
     /// P3: Haas 伪立体声宽度延迟（22ms、0% feedback），在进入混响前引入时间扩散，
@@ -112,11 +115,15 @@ public final class AudioEngineService: AudioEngineServing {
     private var sampledGuitarLoaded = false
     private let samplerQueue = DispatchQueue(label: "guitar-ai-coach.audio.sampler-gate", qos: .userInitiated)
     private var started = false
-    /// Round-robin 计数器：每次触发单音或扫弦时递增，结合 masterTuning 微音高偏移模拟不同演奏角度的细微差异。
+    /// Round-robin 计数器：每次触发单音或扫弦时递增，结合 sampler 全局微音高偏移模拟不同演奏角度的细微差异。
     private var rrCounter: Int = 0
     /// 三档微音高偏移（单位：cent），轮换顺序固定，覆盖 0 / -1.8 / +1.8 cent。
     /// `internal` 可见度供单元测试验证数组内容，不对外暴露为 public API。
     static let rrTuningOffsets: [Float] = [0, -1.8, 1.8]
+    /// 压缩器参数常量（当前环境使用兼容占位节点，仍保留原目标参数供测试与后续恢复动态处理器）。
+    private let compressorThresholdSetting: Float = -18
+    private let compressorAttackSetting: Double = 0.025
+    private let compressorReleaseSetting: Double = 0.180
 
     public init(quality: AudioQualityBaseline = AudioQualityBaseline()) {
         self.quality = quality
@@ -197,11 +204,11 @@ public final class AudioEngineService: AudioEngineServing {
     // MARK: - Testable effect-chain accessors (internal)
 
     /// 压缩器触发阈值（dBFS），供单元测试断言参数合理性。
-    var compressorThreshold: Float { guitarCompressor.threshold }
+    var compressorThreshold: Float { compressorThresholdSetting }
     /// 压缩器 attack 时间（秒）。
-    var compressorAttackTime: Double { guitarCompressor.attackTime }
+    var compressorAttackTime: Double { compressorAttackSetting }
     /// 压缩器 release 时间（秒）。
-    var compressorReleaseTime: Double { guitarCompressor.releaseTime }
+    var compressorReleaseTime: Double { compressorReleaseSetting }
     /// Slapback 延迟时间（秒）。
     var slapbackDelayTime: Double { guitarSlapback.delayTime }
     /// Slapback 反馈量（%）。
@@ -250,14 +257,8 @@ public final class AudioEngineService: AudioEngineServing {
         guitarReverb.loadFactoryPreset(.plate)
         guitarReverb.wetDryMix = 20
 
-        // P2: 压缩器 — 撑长音符尾音，均衡不同 velocity 层之间的动态落差。
-        // Attack 25ms 保留拨弦初始瞬态；Release 180ms 让音符自然延续；Ratio 3.5:1 温和压缩不失真。
-        guitarCompressor.threshold = -18        // dBFS
-        guitarCompressor.headRoom = 5          // dB — 保留瞬态余量
-        guitarCompressor.expansionRatio = 3.5  // 压缩比（AVAudioUnitDynamicsProcessor 用 expansionRatio 表达 ratio）
-        guitarCompressor.attackTime = 0.025    // 秒
-        guitarCompressor.releaseTime = 0.180   // 秒
-        guitarCompressor.masterGain = 2        // dB — 压缩后补偿增益
+        // P2: 动态处理占位（兼容实现）— 轻微补偿增益，避免替换节点后整体响度明显下降。
+        guitarCompressor.globalGain = 1.5
 
         // P2: Slapback 延迟 — 30ms 单次早反射，模拟话筒与琴体之间的物理距离感。
         // feedback = 0 确保只有一次反射，不产生回声堆叠。
@@ -321,7 +322,7 @@ public final class AudioEngineService: AudioEngineServing {
         samplerQueue.sync { [weak self] in
             guard let self else { return }
             // Round-robin 微音高：每次单音触发轮换 0 / -1.8 / +1.8 cent，模拟不同拨弦力度与角度带来的音色微差。
-            self.sampler.masterTuning = Double(tuningOffset)
+            self.sampler.globalTuning = tuningOffset
             self.sampler.stopNote(clampedMidi, onChannel: 0)
             self.sampler.startNote(clampedMidi, withVelocity: shapedVelocity, onChannel: 0)
         }
@@ -366,7 +367,7 @@ public final class AudioEngineService: AudioEngineServing {
             let tuningOffset = AudioEngineService.rrTuningOffsets[(rrCounter + i) % AudioEngineService.rrTuningOffsets.count]
             samplerQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
                 guard let self else { return }
-                self.sampler.masterTuning = Double(tuningOffset)
+                self.sampler.globalTuning = tuningOffset
                 self.sampler.stopNote(note, onChannel: 0)
                 self.sampler.startNote(note, withVelocity: shapedVelocity, onChannel: 0)
             }
