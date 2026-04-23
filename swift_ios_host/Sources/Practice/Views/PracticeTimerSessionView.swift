@@ -16,7 +16,6 @@ struct PracticeTimerSessionView: View {
     @State private var noteText: String = ""
 
     @State private var showNeedStartHint: Bool = false
-    @State private var showMinDurationHint: Bool = false
     @State private var savingError: String?
     @State private var savedToast: Bool = false
 
@@ -73,12 +72,6 @@ struct PracticeTimerSessionView: View {
         .alert("先开始练习再结束哦", isPresented: $showNeedStartHint) {
             Button("知道了", role: .cancel) {}
         }
-        .alert(
-            "至少练习 \(PracticeRecordingPolicy.minForegroundSecondsToPersist) 秒才会记入练习统计",
-            isPresented: $showMinDurationHint
-        ) {
-            Button("知道了", role: .cancel) {}
-        }
         .alert("保存失败", isPresented: Binding(get: { savingError != nil }, set: { if !$0 { savingError = nil } })) {
             Button("知道了", role: .cancel) {}
         } message: {
@@ -118,7 +111,7 @@ struct PracticeTimerSessionView: View {
             return
         }
         guard elapsedSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else {
-            showMinDurationHint = true
+            pause()
             return
         }
         pause()
