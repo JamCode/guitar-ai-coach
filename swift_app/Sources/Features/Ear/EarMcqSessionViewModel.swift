@@ -24,15 +24,18 @@ public final class EarMcqSessionViewModel: ObservableObject {
     /// `bank == "B"` 且有上限时预生成 `maxQuestions` 道程序化题；无上限时每题现算。
     public let maxQuestions: Int?
 
-    /// 仅 `bank == "A"`（和弦听辨）时使用：程序化出题难度。
-    public let chordDifficulty: EarChordMcqDifficulty
-    /// 仅 `bank == "B"`（和弦进行）时使用：程序化出题难度。
-    public let progressionDifficulty: EarProgressionMcqDifficulty
+    /// 仅 `bank == "A"`（和弦听辨）时使用：程序化出题难度；未揭示前可 `setChordDifficultyIfChanged`。
+    @Published public private(set) var chordDifficulty: EarChordMcqDifficulty
+    /// 仅 `bank == "B"`（和弦进行）时使用：程序化出题难度；未揭示前可 `setProgressionDifficultyIfChanged`。
+    @Published public private(set) var progressionDifficulty: EarProgressionMcqDifficulty
 
     private let loader: EarSeedLoader
     private let player: EarChordPlaying
     private let historyStore: any EarMcqHistoryStoring
     private var chordRng = SystemRandomNumberGenerator()
+    private var playTask: Task<Void, Never>?
+    /// 与 `playCurrent` / `cancelPlayback` 配合，避免旧任务的 `defer` 误清 `isPlaybackInProgress`。
+    private var playGeneration = 0
     /// 非 Bank B 时仍用于 `ear_seed` 抽题；Bank B 程序化后不再使用。
     private var bankBSourcePool: [EarBankItem] = []
     private var bankBDealingQueue: [EarBankItem] = []
@@ -57,6 +60,75 @@ public final class EarMcqSessionViewModel: ObservableObject {
         self.loader = loader
         self.player = player
         self.historyStore = historyStore
+    }
+
+    /// 离开页面或切换难度时打断试听。
+    public func cancelPlayback() {
+        playGeneration += 1
+        playTask?.cancel()
+        playTask = nil
+        isPlaybackInProgress = false
+        player.cancelChordPlayback()
+    }
+
+    /// `bank == "A"` 且本题未揭示时切换难度并重出一题（有题量上限时同时重生成剩余题）。
+    public func setChordDifficultyIfChanged(_ newValue: EarChordMcqDifficulty) {
+        guard bank == "A" else { return }
+        guard newValue != chordDifficulty else { return }
+        guard !revealed else { return }
+        cancelPlayback()
+        chordDifficulty = newValue
+        selectedChoiceIndex = nil
+        if maxQuestions == nil {
+            let avoid = Self.chordAvoidPair(from: question)
+            installQuestion(EarChordMcqGenerator.makeQuestion(difficulty: chordDifficulty, avoid: avoid, using: &chordRng))
+        } else if !session.isEmpty, pageIndex < session.count {
+            let remaining = session.count - pageIndex
+            let tail = EarChordMcqGenerator.buildSession(count: remaining, difficulty: chordDifficulty, using: &chordRng)
+            session.replaceSubrange(pageIndex..., with: tail)
+            installQuestion(session[pageIndex])
+        }
+    }
+
+    /// `bank == "B"` 且本题未揭示时切换难度并重出一题（有题量上限时同时重生成剩余题）。
+    public func setProgressionDifficultyIfChanged(_ newValue: EarProgressionMcqDifficulty) {
+        guard bank == "B" else { return }
+        guard newValue != progressionDifficulty else { return }
+        guard !revealed else { return }
+        cancelPlayback()
+        progressionDifficulty = newValue
+        selectedChoiceIndex = nil
+        lastBankBSignature = nil
+        if maxQuestions == nil {
+            installQuestion(
+                Self.makeDistinctBankBQuestion(
+                    difficulty: progressionDifficulty,
+                    avoidSignatures: [],
+                    using: &chordRng
+                )
+            )
+            if let q = question {
+                lastBankBSignature = Self.bankBSignature(q)
+            }
+        } else if !session.isEmpty, pageIndex < session.count {
+            let remaining = session.count - pageIndex
+            var built: [EarBankItem] = []
+            var seen = Set<String>()
+            built.reserveCapacity(remaining)
+            while built.count < remaining {
+                let q = Self.makeDistinctBankBQuestion(
+                    difficulty: progressionDifficulty,
+                    avoidSignatures: seen,
+                    using: &chordRng
+                )
+                let sig = Self.bankBSignature(q)
+                seen.insert(sig)
+                built.append(q)
+            }
+            session.replaceSubrange(pageIndex..., with: built)
+            installQuestion(session[pageIndex])
+            lastBankBSignature = Self.bankBSignature(session[pageIndex])
+        }
     }
 
     public var hasSessionCap: Bool { maxQuestions != nil }
@@ -178,28 +250,41 @@ public final class EarMcqSessionViewModel: ObservableObject {
         }
     }
 
-    public func playCurrent() async {
-        guard let q = question else { return }
-        guard !isPlaybackInProgress else { return }
-        isPlaybackInProgress = true
-        defer { isPlaybackInProgress = false }
-        do {
-            if q.mode == "B" || q.questionType == "progression_recognition" {
-                if let seq = EarProgressionPlayback.playbackFretsSequence(for: q), !seq.isEmpty {
-                    try await player.playProgressionFromFretsSixToOne(seq)
-                } else {
-                    try await player.playChordSequence(EarPlaybackMidi.forProgression(q))
+    public func playCurrent() {
+        playTask?.cancel()
+        playTask = nil
+        isPlaybackInProgress = false
+        playGeneration += 1
+        let gen = playGeneration
+        let work = Task { @MainActor in
+            guard let q = self.question else { return }
+            self.isPlaybackInProgress = true
+            defer {
+                if gen == self.playGeneration {
+                    self.isPlaybackInProgress = false
                 }
-            } else if let frets = q.playbackFretsSixToOne, frets.count == 6 {
-                try await player.playChordFromFretsSixToOne(frets)
-            } else {
-                try await player.playChordMidis(EarPlaybackMidi.forSingleChord(q))
             }
-            playError = nil
-            hasCompletedInitialAudition = true
-        } catch {
-            playError = "播放失败：\(error.localizedDescription)"
+            do {
+                if q.mode == "B" || q.questionType == "progression_recognition" {
+                    if let seq = EarProgressionPlayback.playbackFretsSequence(for: q), !seq.isEmpty {
+                        try await self.player.playProgressionFromFretsSixToOne(seq)
+                    } else {
+                        try await self.player.playChordSequence(EarPlaybackMidi.forProgression(q))
+                    }
+                } else if let frets = q.playbackFretsSixToOne, frets.count == 6 {
+                    try await self.player.playChordFromFretsSixToOne(frets)
+                } else {
+                    try await self.player.playChordMidis(EarPlaybackMidi.forSingleChord(q))
+                }
+                self.playError = nil
+                self.hasCompletedInitialAudition = true
+            } catch is CancellationError {
+                self.player.cancelChordPlayback()
+            } catch {
+                self.playError = "播放失败：\(error.localizedDescription)"
+            }
         }
+        playTask = work
     }
 
     public func playPreviewNote(midi: Int) async {

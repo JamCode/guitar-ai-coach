@@ -7,6 +7,14 @@ public enum EarProgressionMcqDifficulty: String, Sendable, CaseIterable, Codable
     case 高级
 }
 
+public extension EarProgressionMcqDifficulty {
+    static let helpText: [EarProgressionMcqDifficulty: String] = [
+        .初级: "常见终止与正格进行",
+        .中级: "流行主副歌常见进行",
+        .高级: "较长进行，注意听低音与功能",
+    ]
+}
+
 /// 规则生成和弦进行四选一题（不读 `ear_seed` Bank B）。
 public enum EarProgressionProceduralGenerator {
     private static let romanTokens = ["I", "ii", "iii", "IV", "V", "vi"]
@@ -56,7 +64,7 @@ public enum EarProgressionProceduralGenerator {
             targetQuality: nil,
             musicKey: musicKey,
             progressionRoman: progressionRoman,
-            hintZh: hintZh(for: difficulty),
+            hintZh: EarProgressionMcqDifficulty.helpText[difficulty],
             playbackFretsSixToOne: nil
         )
     }
@@ -108,17 +116,6 @@ public enum EarProgressionProceduralGenerator {
     private static func isPlayable(musicKey: String, progressionRoman: String) -> Bool {
         let probe = stubItem(musicKey: musicKey, progressionRoman: progressionRoman)
         return EarProgressionPlayback.playbackFretsSequence(for: probe) != nil
-    }
-
-    private static func hintZh(for difficulty: EarProgressionMcqDifficulty) -> String {
-        switch difficulty {
-        case .初级:
-            return "常见终止与正格进行"
-        case .中级:
-            return "流行主副歌常见进行"
-        case .高级:
-            return "较长进行，注意听低音与功能"
-        }
     }
 
     private static func shuffleOptions(

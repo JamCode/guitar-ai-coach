@@ -34,6 +34,8 @@ public protocol AudioEngineServing: AnyObject {
     ) throws
     /// 立刻对指定 MIDI 发送 `noteOff`（同一 `AVAudioUnitSampler` 通道），用于打断练耳「两音间隔」等可取消播放。
     func stopSampledGuitarNotes(midis: [Int])
+    /// 对 0...127 全通道发送 `noteOff`，用于打断长和弦 / 进行试听（不依赖当时具体 MIDI 集合）。
+    func stopAllSampledGuitarNotes()
     /// 立刻停止所有 Karplus–Strong 拨弦节点上的已调度缓冲（与采样轨独立）。
     func stopPluckedGuitarVoices()
 }
@@ -188,6 +190,16 @@ public final class AudioEngineService: AudioEngineServing {
             for raw in midis {
                 let clamped = UInt8(max(0, min(127, raw)))
                 self.sampler.stopNote(clamped, onChannel: 0)
+            }
+        }
+    }
+
+    public func stopAllSampledGuitarNotes() {
+        guard started else { return }
+        samplerQueue.sync { [weak self] in
+            guard let self else { return }
+            for raw in 0 ... 127 {
+                self.sampler.stopNote(UInt8(raw), onChannel: 0)
             }
         }
     }
