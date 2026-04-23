@@ -270,6 +270,23 @@ def decode_label(root_idx: int, bass_idx: int, chord_probs: np.ndarray,
         if winner >= SOFT_MIN and winner >= SOFT_RATIO * max(loser, 1e-6):
             intervals.add(4 if maj3_score >= b3_score else 3)
 
+    # Round 3: 仅 {0} -> 退化 X:(1)；同 Round1 软三度，再补 7 成三和弦（不改阈值）。
+    if intervals == {0}:
+        b3_score = float(chord_probs[(root_idx + 3) % 12])
+        maj3_score = float(chord_probs[(root_idx + 4) % 12])
+        winner = max(b3_score, maj3_score)
+        loser = min(b3_score, maj3_score)
+        if winner >= SOFT_MIN and winner >= SOFT_RATIO * max(loser, 1e-6):
+            if maj3_score >= b3_score:
+                intervals.add(4)
+            else:
+                intervals.add(3)
+            intervals.add(7)
+
+    # Round 3 保底：intervals 仍只剩 {0} 时降级为 "N"（与 Swift 对齐）。
+    if intervals == {0}:
+        return "N"
+
     root_name = NOTE_NAMES[root_idx]
     suffix = classify_chord_suffix(intervals)
     if suffix is not None:
@@ -280,6 +297,10 @@ def decode_label(root_idx: int, bass_idx: int, chord_probs: np.ndarray,
 
     if bass_idx == 12 or bass_idx == root_idx:
         return base
+    # Round 2: 大/小三和弦 + slash 为根上纯五度 -> 误加 slash，与根位标签对齐（Am/E、Bm/F#、C/G 等）
+    if suffix is not None and (suffix == "" or suffix == "m"):
+        if bass_idx == (root_idx + 7) % 12:
+            return base
     return f"{base}/{NOTE_NAMES[bass_idx]}"
 
 
@@ -290,17 +311,54 @@ class RawChordFrame:
     chord: str
 
 
-def _remove_short_frames(frames: List[RawChordFrame], min_duration_ms: int) -> List[RawChordFrame]:
-    filtered: List[RawChordFrame] = []
+def _bridge_same_name_segments(frames: List[RawChordFrame],
+                               max_gap_ms: int) -> List[RawChordFrame]:
+    # Round 5 一部分：跨 N 缝同名段桥接（与 Swift bridgeSameNameSegments 对齐）。
+    result: List[RawChordFrame] = []
     for frame in frames:
-        duration = frame.end_ms - frame.start_ms
-        if duration < min_duration_ms:
-            if filtered:
-                last = filtered[-1]
-                filtered[-1] = RawChordFrame(last.start_ms, frame.end_ms, last.chord)
+        if result and result[-1].chord == frame.chord \
+                and frame.start_ms - result[-1].end_ms <= max_gap_ms:
+            last = result[-1]
+            result[-1] = RawChordFrame(last.start_ms, frame.end_ms, last.chord)
         else:
-            filtered.append(frame)
-    return filtered
+            result.append(frame)
+    return result
+
+
+def _remove_short_frames(frames: List[RawChordFrame],
+                         min_duration_ms: int) -> List[RawChordFrame]:
+    # Round 5 另一部分：短段双向吸附（与 Swift removeShortFrames 对齐）。
+    pending = list(frames)
+    result: List[RawChordFrame] = []
+    i = 0
+    while i < len(pending):
+        frame = pending[i]
+        duration = frame.end_ms - frame.start_ms
+        if duration >= min_duration_ms:
+            result.append(frame)
+            i += 1
+            continue
+        prev = result[-1] if result else None
+        nxt = pending[i + 1] if i + 1 < len(pending) else None
+        if prev is None and nxt is not None:
+            pending[i + 1] = RawChordFrame(frame.start_ms, nxt.end_ms, nxt.chord)
+        elif prev is not None and nxt is None:
+            result[-1] = RawChordFrame(prev.start_ms, frame.end_ms, prev.chord)
+        elif prev is not None and nxt is not None:
+            prev_same = prev.chord == frame.chord
+            next_same = nxt.chord == frame.chord
+            if prev_same and not next_same:
+                absorb_next = False
+            elif not prev_same and next_same:
+                absorb_next = True
+            else:
+                absorb_next = (nxt.end_ms - nxt.start_ms) > (prev.end_ms - prev.start_ms)
+            if absorb_next:
+                pending[i + 1] = RawChordFrame(frame.start_ms, nxt.end_ms, nxt.chord)
+            else:
+                result[-1] = RawChordFrame(prev.start_ms, frame.end_ms, prev.chord)
+        i += 1
+    return result
 
 
 def decode_frames(root_indices: List[int], bass_indices: List[int],
@@ -338,7 +396,8 @@ def decode_frames(root_indices: List[int], bass_indices: List[int],
     ))
 
     merged = [f for f in merged if f.chord != "N"]
-    return _remove_short_frames(merged, min_duration_ms)
+    bridged = _bridge_same_name_segments(merged, max_gap_ms=min_duration_ms)
+    return _remove_short_frames(bridged, min_duration_ms)
 
 
 # =============================================================================

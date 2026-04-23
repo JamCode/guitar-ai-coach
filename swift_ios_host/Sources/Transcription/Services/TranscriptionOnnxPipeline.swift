@@ -293,7 +293,10 @@ enum OnnxChordLabelDecoder {
         )
 
         return removeShortFrames(
-            merged.filter { $0.chord != "N" },
+            bridgeSameNameSegments(
+                merged.filter { $0.chord != "N" },
+                maxGapMs: minDurationMs
+            ),
             minDurationMs: minDurationMs
         )
     }
@@ -337,6 +340,31 @@ enum OnnxChordLabelDecoder {
             }
         }
 
+        // Round 3: 仅余根音 {0} 时落在退化串 X:(1)；用与 Round1 相同软三度 + 五度补成三和弦，不再输出 (1)。
+        if intervals == Set<Int>([0]) {
+            let b3 = chordProbabilities[(rootIndex + 3) % 12]
+            let maj3 = chordProbabilities[(rootIndex + 4) % 12]
+            let softMin = 0.15
+            let softRatio = 2.0
+            let winner = max(b3, maj3)
+            let loser = min(b3, maj3)
+            if winner >= softMin, winner >= softRatio * max(loser, 1e-6) {
+                if maj3 >= b3 {
+                    intervals.insert(4)
+                } else {
+                    intervals.insert(3)
+                }
+                intervals.insert(7)
+            }
+        }
+
+        // Round 3 保底：仍然只有根、无法判断品质时不输出 "X:(1)" / "X:(1)/Y"。
+        // 返回 "N"，由 decodeFrames 里的 N 过滤与 removeShortFrames 合并到相邻段，
+        // 不虚构大/小三和弦品质，也避免把 power-chord 外的退化字符串泄漏到 UI。
+        if intervals == Set<Int>([0]) {
+            return "N"
+        }
+
         let rootName = noteNames[rootIndex]
         let suffix = classifyChordSuffix(intervals: intervals)
         let base: String
@@ -352,6 +380,14 @@ enum OnnxChordLabelDecoder {
 
         guard bassIndex != 12, bassIndex != rootIndex else {
             return base
+        }
+        // Round 2: 大/小三和弦上误加的 slash（低音实为根上纯五度，如 Am/E、Bm/F#、C/G），
+        // 与根位标签对齐，不保留 slash。
+        if let s = suffix, (s.isEmpty || s == "m") {
+            let perfectFifthIndex = (rootIndex + 7) % 12
+            if bassIndex == perfectFifthIndex {
+                return base
+            }
         }
         return "\(base)/\(noteNames[bassIndex])"
     }
@@ -380,25 +416,94 @@ enum OnnxChordLabelDecoder {
         return intervals.subtracting(required).isSubset(of: optional)
     }
 
-    private static func removeShortFrames(_ frames: [RawChordFrame], minDurationMs: Int) -> [RawChordFrame] {
+    // Round 5 一部分：跨 N 缝同名段桥接。
+    // 动机：Round 3 保底把退化帧变 N 被 filter 丢掉后，稳定和弦会被切成
+    // "A - 缝 - A" 三段；removeShortFrames 依赖 startMs==endMs 接续，跨不了缝。
+    // 仅当相邻两段 chord 完全相同且缝宽 <= maxGapMs 时合并，缝比 maxGapMs
+    // 还长就不认，避免跨越真实换和弦 / 长静音。
+    private static func bridgeSameNameSegments(
+        _ frames: [RawChordFrame],
+        maxGapMs: Int
+    ) -> [RawChordFrame] {
         guard !frames.isEmpty else { return [] }
-        var filtered: [RawChordFrame] = []
-
+        var result: [RawChordFrame] = []
         for frame in frames {
-            let duration = frame.endMs - frame.startMs
-            if duration < minDurationMs {
-                if let last = filtered.last {
-                    filtered[filtered.count - 1] = RawChordFrame(
-                        startMs: last.startMs,
-                        endMs: frame.endMs,
-                        chord: last.chord
-                    )
-                }
+            if let last = result.last,
+               last.chord == frame.chord,
+               frame.startMs - last.endMs <= maxGapMs {
+                result[result.count - 1] = RawChordFrame(
+                    startMs: last.startMs,
+                    endMs: frame.endMs,
+                    chord: last.chord
+                )
             } else {
-                filtered.append(frame)
+                result.append(frame)
             }
         }
+        return result
+    }
 
-        return filtered
+    // Round 5 另一部分：短段双向吸附。
+    // 原实现仅向前吸附，首段若短会被整段丢弃（triad-E / triad-Em 曾被抹空）。
+    // 新规则：
+    //   - 前无邻居 → 向后吸附（扩展 next.startMs 到短段 startMs，保留 next.chord）
+    //   - 后无邻居 → 向前吸附（扩展 prev.endMs，保留 prev.chord）
+    //   - 两侧都有 → 优先并入 chord 名相同的一侧；都相同/都不同时并入时长更长的一侧
+    //   - 两侧都无 → 丢弃（只可能是孤立超短段的退化输入）
+    private static func removeShortFrames(_ frames: [RawChordFrame], minDurationMs: Int) -> [RawChordFrame] {
+        guard !frames.isEmpty else { return [] }
+        var pending = frames
+        var result: [RawChordFrame] = []
+        var index = 0
+        while index < pending.count {
+            let frame = pending[index]
+            let duration = frame.endMs - frame.startMs
+            if duration >= minDurationMs {
+                result.append(frame)
+                index += 1
+                continue
+            }
+            let prev = result.last
+            let next: RawChordFrame? = (index + 1 < pending.count) ? pending[index + 1] : nil
+            if prev == nil, let nxt = next {
+                pending[index + 1] = RawChordFrame(
+                    startMs: frame.startMs,
+                    endMs: nxt.endMs,
+                    chord: nxt.chord
+                )
+            } else if let pv = prev, next == nil {
+                result[result.count - 1] = RawChordFrame(
+                    startMs: pv.startMs,
+                    endMs: frame.endMs,
+                    chord: pv.chord
+                )
+            } else if let pv = prev, let nxt = next {
+                let prevSame = pv.chord == frame.chord
+                let nextSame = nxt.chord == frame.chord
+                let absorbNext: Bool
+                if prevSame && !nextSame {
+                    absorbNext = false
+                } else if !prevSame && nextSame {
+                    absorbNext = true
+                } else {
+                    absorbNext = (nxt.endMs - nxt.startMs) > (pv.endMs - pv.startMs)
+                }
+                if absorbNext {
+                    pending[index + 1] = RawChordFrame(
+                        startMs: frame.startMs,
+                        endMs: nxt.endMs,
+                        chord: nxt.chord
+                    )
+                } else {
+                    result[result.count - 1] = RawChordFrame(
+                        startMs: pv.startMs,
+                        endMs: frame.endMs,
+                        chord: pv.chord
+                    )
+                }
+            }
+            index += 1
+        }
+        return result
     }
 }

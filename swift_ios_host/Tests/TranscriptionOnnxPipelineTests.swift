@@ -115,6 +115,68 @@ final class TranscriptionOnnxPipelineTests: XCTestCase {
         XCTAssertEqual(label, "A5")
     }
 
+    // MARK: - Round 2: strip redundant slash when bass is perfect fifth (triads)
+
+    func testLabelDecoder_stripsSlashWhenBassIsPerfectFifthOfTriad() {
+        // Am，低音为 E（根上纯五度）-> "Am" 而非 "Am/E"
+        let rootA = 9
+        let bassE = 4
+        let probs = chordProbs(rootIndex: rootA, [0: 0.8, 3: 0.6, 7: 0.7])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootA, bassIndex: bassE,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "Am")
+    }
+
+    func testLabelDecoder_stripsSlashForMajorTriadSecondInversion() {
+        // C，低音为 G（纯五度）-> "C" 而非 "C/G"
+        let rootC = 0
+        let bassG = 7
+        let probs = chordProbs(rootIndex: rootC, [0: 0.8, 4: 0.6, 7: 0.7])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootC, bassIndex: bassG,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "C")
+    }
+
+    func testLabelDecoder_keepsSlashWhenBassIsThird() {
+        // C/E：低音为大三度，不剥 slash
+        let rootC = 0
+        let bassE = 4
+        let probs = chordProbs(rootIndex: rootC, [0: 0.8, 4: 0.6, 7: 0.7])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootC, bassIndex: bassE,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "C/E")
+    }
+
+    // MARK: - Round 3: root-only {0} -> X:(1) recovery to triad
+
+    func testLabelDecoder_rootOnlyDegeneratesToMajorTriad() {
+        // 仅根过阈值 -> 原 X:(1)；软三度偏大调 -> "E"
+        let rootE = 4
+        let probs = chordProbs(rootIndex: rootE, [0: 0.8, 3: 0.02, 4: 0.24, 7: 0.02])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootE, bassIndex: rootE,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "E")
+    }
+
+    func testLabelDecoder_rootOnlyDegeneratesToMinorTriad() {
+        // 仅根过阈值；软三度偏小三 -> "Dm"
+        let rootD = 2
+        let probs = chordProbs(rootIndex: rootD, [0: 0.8, 3: 0.25, 4: 0.01, 7: 0.02])
+        let label = OnnxChordLabelDecoder.decodeLabel(
+            rootIndex: rootD, bassIndex: rootD,
+            chordProbabilities: probs, threshold: 0.5
+        )
+        XCTAssertEqual(label, "Dm")
+    }
+
     func testLabelDecoder_mergesCommonChordFrames() {
         let cMajor = [1.0, 0, 0, 0, 1.0, 0, 0, 1.0, 0, 0, 0, 0]
         let gMajor = [0, 0, 1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 1.0]

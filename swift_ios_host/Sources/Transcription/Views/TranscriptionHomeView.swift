@@ -1,12 +1,10 @@
 import SwiftUI
 import PhotosUI
-import UniformTypeIdentifiers
 import Core
 
 struct TranscriptionHomeView: View {
     @StateObject private var vm = TranscriptionHomeViewModel()
     @State private var selectedPhotoItem: PhotosPickerItem?
-    @State private var showingFileImporter = false
 
     var body: some View {
         List {
@@ -16,8 +14,6 @@ struct TranscriptionHomeView: View {
                         .frame(maxWidth: .infinity)
                 }
                     .appPrimaryButton()
-                Button("从文件导入") { showingFileImporter = true }
-                    .appSecondaryButton()
                 Text("支持 mp3 / m4a / wav / aac / mp4 / mov，单文件最长 6 分钟")
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
@@ -61,13 +57,6 @@ struct TranscriptionHomeView: View {
                 await vm.importPhotoItem(newValue)
                 selectedPhotoItem = nil
             }
-        }
-        .fileImporter(
-            isPresented: $showingFileImporter,
-            allowedContentTypes: [.audio, .movie],
-            allowsMultipleSelection: false
-        ) { result in
-            vm.handleFileImportResult(result.map { $0.first })
         }
         .sheet(item: $vm.processingState) { state in
             NavigationStack {
@@ -113,18 +102,6 @@ final class TranscriptionHomeViewModel: ObservableObject {
             try await historyStore.remove(id: entry.id)
             await reload()
         } catch {
-            alertMessage = error.localizedDescription
-            showingAlert = true
-        }
-    }
-
-    func handleFileImportResult(_ result: Result<URL?, Error>) {
-        switch result {
-        case let .success(.some(url)):
-            startImport(url: url, sourceType: .files, requiresSecurityScopedAccess: true)
-        case .success(.none):
-            break
-        case let .failure(error):
             alertMessage = error.localizedDescription
             showingAlert = true
         }
@@ -222,16 +199,44 @@ final class TranscriptionHomeViewModel: ObservableObject {
         }
         try Task.checkCancellation()
 
+        await onStep("导出音频")
+        let tempM4a = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("m4a")
+        defer {
+            try? FileManager.default.removeItem(at: tempM4a)
+        }
+        try await TranscriptionMediaDecoder.exportM4A(from: url, to: tempM4a)
+        try Task.checkCancellation()
+
+        let stem = (payload.fileName as NSString).deletingPathExtension
+        let displayFileName = stem.isEmpty ? "recording.m4a" : "\(stem).m4a"
+
         await onStep("整理结果")
-        return try await historyStore.saveResult(
-            sourceURL: url,
+        let entry = try await historyStore.saveResult(
+            sourceURL: tempM4a,
             sourceType: sourceType,
-            fileName: payload.fileName,
+            fileName: displayFileName,
             durationMs: payload.durationMs,
             originalKey: payload.originalKey,
             segments: payload.segments,
             waveform: payload.waveform
         )
+
+        if sourceType == .photoLibrary {
+            Self.removeTemporaryImportFileIfNeeded(at: url)
+        }
+        return entry
+    }
+
+    /// 相册导入时拷贝到 tmp 的整段视频，长期仅存 m4a 后可删除，避免双份大文件。
+    private static func removeTemporaryImportFileIfNeeded(at url: URL) {
+        let tmpRoot = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+        let resolved = url.resolvingSymlinksInPath()
+        let tmpPath = tmpRoot.path
+        let path = resolved.path
+        guard path == tmpPath || path.hasPrefix(tmpPath + "/") else { return }
+        try? FileManager.default.removeItem(at: resolved)
     }
 }
 

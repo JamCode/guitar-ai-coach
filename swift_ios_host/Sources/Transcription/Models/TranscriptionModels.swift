@@ -15,6 +15,7 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
     let id: String
     let sourceType: TranscriptionSourceType
     let fileName: String
+    /// 相对 `Documents` 的路径，如 `transcription_media/<uuid>.<ext>`；旧版本可能存绝对路径，读取时用 `TranscriptionMediaPathResolver`。
     let storedMediaPath: String
     let durationMs: Int
     let originalKey: String

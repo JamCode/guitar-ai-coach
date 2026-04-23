@@ -9,6 +9,7 @@
 # 依赖：Xcode 命令行工具（xcodebuild、xcrun simctl）、已安装的 iOS Simulator 运行时。
 #
 # OnnxRuntime：工程使用「本地路径」LocalPackages/onnxruntime-swift-package-manager（不随 git 提交）。
+# - bootstrap 成功后重复执行**不会**删本目录，除非对 bootstrap 显式加 --force，见 LocalPackages/README.md
 # - 不能稳定访问 GitHub：在有网机器准备好目录，U 盘拷到本机后：
 #     ./bootstrap-onnx-local-package.sh --from-dir <路径>
 #   详见 ./bootstrap-onnx-local-package.sh --help

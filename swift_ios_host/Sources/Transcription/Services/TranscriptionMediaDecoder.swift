@@ -97,4 +97,28 @@ enum TranscriptionMediaDecoder {
             sampleRate: sampleRate
         )
     }
+
+    /// 仅导出音轨为 M4A（AAC），用于长期存储，避免整段视频占空间。
+    static func exportM4A(from sourceURL: URL, to destinationURL: URL) async throws {
+        let asset = AVURLAsset(url: sourceURL)
+        guard let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
+            throw TranscriptionImportError.audioExportFailed
+        }
+        session.outputURL = destinationURL
+        session.outputFileType = .m4a
+        let fm = FileManager.default
+        if fm.fileExists(atPath: destinationURL.path) {
+            try fm.removeItem(at: destinationURL)
+        }
+
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            session.exportAsynchronously {
+                continuation.resume()
+            }
+        }
+
+        guard session.status == .completed else {
+            throw TranscriptionImportError.audioExportFailed
+        }
+    }
 }
