@@ -12,7 +12,7 @@ struct TranscriptionHistoryView: View {
                     TranscriptionResultView(entry: entry)
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.fileName)
+                        Text(entry.displayName)
                             .foregroundStyle(SwiftAppTheme.text)
                         Text("原调：\(entry.originalKey) · \(formatDate(entry.createdAtMs))")
                             .font(.caption)

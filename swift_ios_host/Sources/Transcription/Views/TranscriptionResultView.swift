@@ -23,7 +23,7 @@ struct TranscriptionResultView: View {
         let progress = entry.durationMs > 0 ? Double(vm.currentTimeMs) / Double(entry.durationMs) : 0
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(entry.fileName)
+                Text(entry.displayName)
                     .font(.headline)
                     .foregroundStyle(SwiftAppTheme.text)
                 Text("原调：\(entry.originalKey)")
