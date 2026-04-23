@@ -211,7 +211,9 @@ struct ScaleWarmupSessionView: View {
                 musicKey: nil,
                 complexity: nil,
                 rhythmPatternId: nil,
-                scaleWarmupDrillId: drill.id
+                scaleWarmupDrillId: drill.id,
+                earAnsweredCount: nil,
+                earCorrectCount: nil
             )
             savedToast = true
         } catch {

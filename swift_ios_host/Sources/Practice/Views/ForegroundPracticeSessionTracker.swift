@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Ear
 import Practice
 
 /// 包裹子页面：在用户停留期间按 **前台** 时间累加，离开时写入 `PracticeLocalStore`（与「我的谱」详情一致语义）。
@@ -42,6 +43,11 @@ struct ForegroundPracticeSessionTracker<Content: View>: View {
                 Task {
                     let endedAt = Date()
                     let startedAt = endedAt.addingTimeInterval(-Double(durationSeconds))
+                    let earCounts = await EarPracticeSessionStats.correctnessCountsInWindow(
+                        practiceTaskId: task.id,
+                        startedAt: startedAt,
+                        endedAt: endedAt
+                    )
                     try? await store.saveSession(
                         task: task,
                         startedAt: startedAt,
@@ -54,7 +60,9 @@ struct ForegroundPracticeSessionTracker<Content: View>: View {
                         musicKey: nil,
                         complexity: nil,
                         rhythmPatternId: nil,
-                        scaleWarmupDrillId: nil
+                        scaleWarmupDrillId: nil,
+                        earAnsweredCount: earCounts?.answered,
+                        earCorrectCount: earCounts?.correct
                     )
                 }
             }

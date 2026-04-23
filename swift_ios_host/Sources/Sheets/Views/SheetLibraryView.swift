@@ -335,7 +335,9 @@ private struct SheetDetailView: View {
                     musicKey: nil,
                     complexity: nil,
                     rhythmPatternId: nil,
-                    scaleWarmupDrillId: nil
+                    scaleWarmupDrillId: nil,
+                    earAnsweredCount: nil,
+                    earCorrectCount: nil
                 )
             }
         }

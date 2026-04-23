@@ -27,6 +27,15 @@ private struct TestLCG: RandomNumberGenerator {
 }
 
 final class EarCoreTests: XCTestCase {
+    func testEarPracticeSessionStatsNonEarTaskReturnsNil() async {
+        let r = await EarPracticeSessionStats.correctnessCountsInWindow(
+            practiceTaskId: "chord-switch",
+            startedAt: Date().addingTimeInterval(-3600),
+            endedAt: Date()
+        )
+        XCTAssertNil(r)
+    }
+
     func testIntervalGeneratorBuildsFourChoicesAndAscendingPair() {
         var rng = SystemRandomNumberGenerator()
         let q = IntervalQuestionGenerator.next(difficulty: .高级, using: &rng)

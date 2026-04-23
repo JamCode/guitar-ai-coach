@@ -509,6 +509,11 @@ private struct PracticeCalendarScreen: View {
                             Text("训练时长 \(PracticeSessionDisplay.duration(session.durationSeconds))")
                                 .font(.subheadline)
                                 .foregroundStyle(SwiftAppTheme.muted)
+                            if let earLine = PracticeSessionDisplay.earAccuracyLine(session) {
+                                Text(earLine)
+                                    .font(.subheadline)
+                                    .foregroundStyle(SwiftAppTheme.text)
+                            }
                         }
                         .appCard()
                     }
@@ -606,6 +611,14 @@ private final class PracticeLandingViewModel: ObservableObject {
 }
 
 private enum PracticeSessionDisplay {
+    /// 练耳任务：展示本次停留期间判题正确率（依赖 `ForegroundPracticeSessionTracker` 写入的计数）。
+    static func earAccuracyLine(_ session: PracticeSession) -> String? {
+        guard let answered = session.earAnsweredCount, let correct = session.earCorrectCount else { return nil }
+        guard answered > 0 else { return nil }
+        let pct = Int((Double(correct) / Double(answered) * 100).rounded())
+        return "练耳作答 \(answered) 题 · 答对 \(correct) · 正确率 \(pct)%"
+    }
+
     static func duration(_ seconds: Int) -> String {
         formatDuration(seconds)
     }
