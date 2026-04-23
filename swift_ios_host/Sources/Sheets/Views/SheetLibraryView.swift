@@ -271,7 +271,6 @@ private struct SheetDetailView: View {
     private let practiceStore = PracticeLocalStore()
 
     /// 至少多少秒才落一条记录，避免点进即返回产生噪声。
-    private static let minForegroundSecondsToRecord: TimeInterval = 3
 
     var body: some View {
         Group {
@@ -321,7 +320,7 @@ private struct SheetDetailView: View {
             let totalForeground = accumulatedForegroundSeconds
             Task {
                 let durationSeconds = Int(totalForeground.rounded(.down))
-                guard durationSeconds >= Int(Self.minForegroundSecondsToRecord) else { return }
+                guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
                 let endedAt = Date()
                 let startedAt = endedAt.addingTimeInterval(-Double(durationSeconds))
                 try? await practiceStore.saveSession(

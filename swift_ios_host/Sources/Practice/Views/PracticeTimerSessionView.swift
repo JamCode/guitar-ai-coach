@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Practice
 
 struct PracticeTimerSessionView: View {
     let task: PracticeTask
@@ -109,6 +110,10 @@ struct PracticeTimerSessionView: View {
             showNeedStartHint = true
             return
         }
+        guard elapsedSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else {
+            pause()
+            return
+        }
         pause()
         showFinishSheet = true
     }
@@ -116,6 +121,7 @@ struct PracticeTimerSessionView: View {
     @MainActor
     private func save(result: PracticeFinishResult) async {
         guard let startedAt else { return }
+        guard elapsedSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
         do {
             try await store.saveSession(
                 task: task,
