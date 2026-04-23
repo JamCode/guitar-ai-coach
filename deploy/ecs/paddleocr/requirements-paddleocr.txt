@@ -1,0 +1,12 @@
+# 与 Conda 环境 `paddleocr` 对齐：PaddleOCR 2.7 + PaddlePaddle 2.6（CPU，避免 3.x + PP-OCRv5 在部分机型上 oneDNN/PIR 报错）
+# 安装示例（在已激活的 conda 环境中）：
+#   python -m pip install -r requirements-paddleocr.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Paddle 官方 whl 仍建议从官方源安装：
+#   python -m pip install "paddlepaddle==2.6.2" -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+
+paddlepaddle==2.6.2
+paddleocr==2.7.0.3
+fastapi>=0.100
+uvicorn[standard]>=0.22
+python-multipart
+opencv-python-headless
