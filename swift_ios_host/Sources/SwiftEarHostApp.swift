@@ -220,7 +220,7 @@ private struct ToolsTabView: View {
         let addr = resolvedFeedbackRecipient().trimmingCharacters(in: .whitespacesAndNewlines)
         guard !addr.isEmpty else { return nil }
         let info = AppVersionInfoLoader.load()
-        let subject = "AI吉他反馈（\(info.displayVersion)）"
+        let subject = "玩乐吉他反馈（\(info.displayVersion)）"
         let body = "请描述问题、复现步骤或建议：\n\n"
         var c = URLComponents()
         c.scheme = "mailto"

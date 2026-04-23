@@ -235,7 +235,7 @@ public struct DiagnosticLogsView: View {
                     .appCard()
 
                     VStack(spacing: 8) {
-                        ShareLink(item: URL(fileURLWithPath: pathText), preview: SharePreview("AI吉他 诊断日志")) {
+                        ShareLink(item: URL(fileURLWithPath: pathText), preview: SharePreview("玩乐吉他 诊断日志")) {
                             Label("分享日志文件", systemImage: "square.and.arrow.up")
                                 .frame(maxWidth: .infinity)
                         }

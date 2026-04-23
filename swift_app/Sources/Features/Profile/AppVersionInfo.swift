@@ -33,7 +33,7 @@ public enum AppVersionInfoLoader {
 
     public static func copySummary(_ info: AppVersionInfo) {
 #if canImport(UIKit)
-        UIPasteboard.general.string = "AI吉他 \(info.version) (\(info.buildNumber)) / \(info.releaseChannel) / \(info.platformLabel)"
+        UIPasteboard.general.string = "玩乐吉他 \(info.version) (\(info.buildNumber)) / \(info.releaseChannel) / \(info.platformLabel)"
 #endif
     }
 }
