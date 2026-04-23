@@ -38,7 +38,7 @@ public final class EarChordPlayer: EarChordPlaying {
         try await voicing.playChordFretsAwaitable(frets)
     }
 
-    /// 和弦与和弦之间的额外空隙（进行内、MIDI 逐和弦 fallback 共用）。
+    /// 和弦与和弦之间的额外空隙（进行内与逐和弦序列共用）。
     private static let progressionBetweenChordGapNs: UInt64 = 70_000_000
 
     public func playProgressionFromFretsSixToOne(_ sequence: [[Int]]) async throws {
@@ -86,27 +86,14 @@ public final class EarChordPlayer: EarChordPlaying {
 
     public func playSinglePreview(midi: Int) async throws {
         try audio.start()
-        if audio.isSampledGuitarAvailable {
-            try audio.playSampledGuitarNote(
-                midi: midi,
-                velocity: Self.sampledVelocity,
-                gateDurationSec: Self.previewGateSec
-            )
-            try await Task.sleep(
-                nanoseconds: UInt64((Self.previewGateSec + Self.previewTailSec) * 1_000_000_000)
-            )
-        } else {
-            let hz = Self.midiToHz(midi)
-            let dur = max(0.9, Self.previewGateSec + Self.previewTailSec + 0.2)
-            try audio.playPluckedGuitarString(frequencyHz: hz, durationSec: dur)
-            try await Task.sleep(
-                nanoseconds: UInt64((Self.previewGateSec + Self.previewTailSec) * 1_000_000_000)
-            )
-        }
-    }
-
-    private static func midiToHz(_ midi: Int) -> Double {
-        440.0 * pow(2.0, Double(midi - 69) / 12.0)
+        try audio.playSampledGuitarNote(
+            midi: midi,
+            velocity: Self.sampledVelocity,
+            gateDurationSec: Self.previewGateSec
+        )
+        try await Task.sleep(
+            nanoseconds: UInt64((Self.previewGateSec + Self.previewTailSec) * 1_000_000_000)
+        )
     }
 
     /// 低→高排序、去重，便于扫弦与与 `AudioEngineService` 的 stagger 一致。

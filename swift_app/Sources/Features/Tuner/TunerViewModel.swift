@@ -53,16 +53,11 @@ public final class TunerViewModel: ObservableObject {
         }
         selectedStringIndex = i
         recomputeDisplayCents(resetSmoothing: true)
-        guard let hz = targetHz else { return }
+        guard targetHz != nil else { return }
         let midi = GuitarStandardTuning.openStringMidis[i]
         do {
             try audio.start()
-            if audio.isSampledGuitarAvailable {
-                try audio.playSampledGuitarNote(midi: midi, velocity: 98, gateDurationSec: 1.28)
-            } else {
-                // 与 SF2 同源效果链：Karplus 拨弦经 guitarMixer→EQ→混响，避免 `playSine` 直挂 mainMixer 绕过音质链。
-                try audio.playPluckedGuitarString(frequencyHz: hz, durationSec: 1.15)
-            }
+            try audio.playSampledGuitarNote(midi: midi, velocity: 98, gateDurationSec: 1.28)
         } catch {
             errorText = "参考音播放失败：\(error.localizedDescription)"
         }

@@ -9,21 +9,33 @@ public enum GuitarSoundBank {
     }
 }
 
+/// 正式包内随 `Bundle.module` 附带钢弦 SF2；若未加载成功，`playSampledGuitar*` 会抛出本错误，不再走算法拨弦降级。
+public enum AudioEngineError: Error, LocalizedError {
+    case steelStringSoundBankNotLoaded
+
+    public var errorDescription: String? {
+        switch self {
+        case .steelStringSoundBankNotLoaded:
+            return "钢弦吉他 SF2 音色未加载"
+        }
+    }
+}
+
 public protocol AudioEngineServing: AnyObject {
     var quality: AudioQualityBaseline { get }
     func start() throws
     func stop()
     func playSine(frequencyHz: Double, durationSec: Double) throws
-    /// 拨弦式衰减（Karplus–Strong），作为采样不可用时的降级实现。
+    /// 拨弦式衰减（Karplus–Strong）；与吉他试听分流，经 `guitarMixer` 效果链（回归/低层测试用）。
     func playPluckedGuitarString(frequencyHz: Double, durationSec: Double) throws
-    /// 采样吉他回放，优先走内置 SF2 + `AVAudioUnitSampler`。
+    /// 采样吉他回放：内置钢弦 SF2 + `AVAudioUnitSampler`；未加载时抛出 `AudioEngineError.steelStringSoundBankNotLoaded`。
     ///
     /// - Parameters:
     ///   - midi: 标准 MIDI 音高（如 A4 = 69）。
     ///   - velocity: 力度（1..127），影响采样包里 velocity layer 的触发。
     ///   - gateDurationSec: 从按下到松开的时长；松开后由 SF2 本身的 release envelope 提供自然尾音。
     func playSampledGuitarNote(midi: Int, velocity: UInt8, gateDurationSec: Double) throws
-    /// 当前是否已成功加载采样音色（用于上层决定是否需要 fallback）。
+    /// 是否已成功从 SF2 加载钢弦程序（供诊断与单元测试断言；功能层应直接调用 `playSampledGuitar*`）。
     var isSampledGuitarAvailable: Bool { get }
     /// 同时或略带扫弦感地播放一组 MIDI（和弦），使用与单音相同的 SF2 采样。
     func playSampledGuitarChord(
@@ -308,10 +320,7 @@ public final class AudioEngineService: AudioEngineServing {
             try start()
         }
         guard sampledGuitarLoaded else {
-            // 降级到算法拨弦，保证始终有声。
-            let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
-            try playPluckedGuitarString(frequencyHz: frequency, durationSec: max(0.9, gateDurationSec + 0.6))
-            return
+            throw AudioEngineError.steelStringSoundBankNotLoaded
         }
         let clampedMidi = UInt8(max(0, min(127, midi)))
         let shapedVelocity = GuitarPlaybackHumanizer.velocity(base: velocity, midi: midi)
@@ -348,14 +357,7 @@ public final class AudioEngineService: AudioEngineServing {
         let stagger = max(0, stringStaggerSec)
 
         guard sampledGuitarLoaded else {
-            for midi in notes {
-                let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
-                let shapedGate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi)
-                try? playPluckedGuitarString(frequencyHz: frequency, durationSec: max(0.95, shapedGate + 0.35))
-            }
-            let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
-            quality.markCallback(renderCostMs: elapsedMs)
-            return
+            throw AudioEngineError.steelStringSoundBankNotLoaded
         }
 
         for (i, midi) in notes.enumerated() {
