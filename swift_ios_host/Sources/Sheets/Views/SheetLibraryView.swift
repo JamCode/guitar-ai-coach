@@ -365,12 +365,43 @@ private struct SheetDetailView: View {
 
     @ViewBuilder
     private func sheetPage(image: UIImage?, pageIndex: Int, containerSize: CGSize) -> some View {
+        ZoomableSheetPage(
+            image: image,
+            pageIndex: pageIndex,
+            totalPages: pageImages.count,
+            containerSize: containerSize,
+            immersiveReading: $immersiveReading
+        )
+    }
+}
+
+private struct ZoomableSheetPage: View {
+    let image: UIImage?
+    let pageIndex: Int
+    let totalPages: Int
+    let containerSize: CGSize
+    @Binding var immersiveReading: Bool
+
+    @State private var currentScale: CGFloat = 1
+    @State private var baseScale: CGFloat = 1
+    @State private var currentOffset: CGSize = .zero
+    @State private var baseOffset: CGSize = .zero
+
+    private static let minScale: CGFloat = 1
+    private static let maxScale: CGFloat = 4
+    private static let immersiveSpring = Animation.spring(response: 0.32, dampingFraction: 0.94)
+
+    var body: some View {
         ZStack {
             if let img = image {
                 Image(uiImage: img)
                     .resizable()
                     .scaledToFit()
                     .frame(width: containerSize.width, height: containerSize.height)
+                    .scaleEffect(currentScale)
+                    .offset(currentOffset)
+                    .gesture(dragGesture)
+                    .simultaneousGesture(magnificationGesture)
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(SwiftAppTheme.surface)
@@ -384,14 +415,66 @@ private struct SheetDetailView: View {
                 immersiveReading.toggle()
             }
         }
-        .accessibilityHint("轻点以显示或隐藏标题栏")
+        .accessibilityHint("双指缩放谱面；轻点以显示或隐藏标题栏")
         .overlay(alignment: .bottom) {
-            Text("第 \(pageIndex) 页 · 共 \(pageImages.count) 页")
+            Text("第 \(pageIndex) 页 · 共 \(totalPages) 页")
                 .font(.caption)
                 .foregroundStyle(SwiftAppTheme.muted)
                 .padding(.bottom, 6)
                 .opacity(immersiveReading ? 0 : 1)
                 .allowsHitTesting(!immersiveReading)
         }
+    }
+
+    private var magnificationGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                let scaled = baseScale * value
+                currentScale = min(Self.maxScale, max(Self.minScale, scaled))
+                currentOffset = clampedOffset(baseOffset, for: currentScale)
+            }
+            .onEnded { _ in
+                baseScale = currentScale
+                if currentScale <= Self.minScale + 0.001 {
+                    baseScale = Self.minScale
+                    currentScale = Self.minScale
+                    baseOffset = .zero
+                    currentOffset = .zero
+                } else {
+                    baseOffset = clampedOffset(currentOffset, for: currentScale)
+                    currentOffset = baseOffset
+                }
+            }
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                guard currentScale > Self.minScale else { return }
+                let candidate = CGSize(
+                    width: baseOffset.width + value.translation.width,
+                    height: baseOffset.height + value.translation.height
+                )
+                currentOffset = clampedOffset(candidate, for: currentScale)
+            }
+            .onEnded { _ in
+                guard currentScale > Self.minScale else {
+                    baseOffset = .zero
+                    currentOffset = .zero
+                    return
+                }
+                baseOffset = clampedOffset(currentOffset, for: currentScale)
+                currentOffset = baseOffset
+            }
+    }
+
+    private func clampedOffset(_ offset: CGSize, for scale: CGFloat) -> CGSize {
+        guard scale > Self.minScale else { return .zero }
+        let maxX = (containerSize.width * (scale - 1)) / 2
+        let maxY = (containerSize.height * (scale - 1)) / 2
+        return CGSize(
+            width: min(max(offset.width, -maxX), maxX),
+            height: min(max(offset.height, -maxY), maxY)
+        )
     }
 }
