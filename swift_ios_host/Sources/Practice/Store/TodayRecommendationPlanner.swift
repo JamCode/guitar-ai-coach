@@ -1,3 +1,4 @@
+import Core
 import Ear
 import Foundation
 import Practice
@@ -248,29 +249,29 @@ struct TodayRecommendationPlanner {
     private func reasonText(for module: RecommendationModuleType, difficulty: RecommendationDifficultyLevel, records: [RecommendationHistoryRecord]) -> String {
         let count = recentRecords(for: module, records: records).count
         if count < 3 {
-            return "最近 7 天样本不足 3 次，默认从初级开始。"
+            return AppL10n.t("rec_reason_few_samples")
         }
-        return "最近 7 天共 \(count) 次相关训练，按完成率与稳定性推荐为\(difficulty.rawValue)。"
+        return String(format: AppL10n.t("rec_reason_enough"), count, difficulty.localizedName)
     }
 
     private func summaryText(for module: RecommendationModuleType, difficulty: RecommendationDifficultyLevel, payload: RecommendationPayload) -> String {
         switch payload {
         case let .intervalQuestion(question):
             let choices = question.choices.map(\.nameZh).joined(separator: " / ")
-            return "\(difficulty.rawValue) · 目标音程：\(question.answer.nameZh) · 选项：\(choices)"
+            return "\(difficulty.localizedName) · 目标音程：\(question.answer.nameZh) · 选项：\(choices)"
         case let .chordQuestion(question):
             let opts = question.options.map(\.label).joined(separator: " / ")
-            return "\(difficulty.rawValue) · \(question.promptZh) · 选项：\(opts)"
+            return "\(difficulty.localizedName) · \(question.promptZh) · 选项：\(opts)"
         case let .sightSingingConfig(pitchRange, includeAccidental, questionCount, exerciseKind):
             let accidental = includeAccidental ? "含升降号" : "不含升降号"
             let volume = questionCount <= 0 ? "不限题量" : "\(questionCount) 题"
-            return "\(difficulty.rawValue) · \(exerciseKind.titleZh) · 音域 \(pitchRange) · \(accidental) · \(volume)"
+            return "\(difficulty.localizedName) · \(exerciseKind.titleZh) · 音域 \(pitchRange) · \(accidental) · \(volume)"
         case let .chordSwitch(exercise):
-            return "\(difficulty.rawValue) · \(exercise.flattenedChords.joined(separator: " → ")) · \(exercise.bpmHintZh)"
+            return "\(difficulty.localizedName) · \(exercise.flattenedChords.joined(separator: " → ")) · \(exercise.bpmHintZh)"
         case let .scaleTraining(exercise):
-            return "\(difficulty.rawValue) · \(exercise.keyName) \(exercise.modeName) · \(exercise.patternName) · \(exercise.bpm) BPM"
+            return "\(difficulty.localizedName) · \(exercise.keyName) \(exercise.modeName) · \(exercise.patternName) · \(exercise.bpm) BPM"
         case let .traditionalCrawl(exercise):
-            return "\(difficulty.rawValue) · 起始 \(exercise.startFret) 品 · \(exercise.rounds) 轮 · \(exercise.bpm) BPM"
+            return "\(difficulty.localizedName) · 起始 \(exercise.startFret) 品 · \(exercise.rounds) 轮 · \(exercise.bpm) BPM"
         }
     }
 }
