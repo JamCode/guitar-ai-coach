@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-将 AppIcon 主图背景统一为纯 #FFFFFF，并从 1024 主图重采样生成各尺寸（避免多套 PNG 处理不一致）。
+AppIcon 处理：纯白底、去灰边/水印；保留红色琴身与黑色线稿。
 
-用法：在仓库根目录执行：
+- 默认：读取现有 Icon-App-1024x1024@1x.png，清洗后重采样到各尺寸。
+- 传入参考图路径时：先等比放入 1024×1024 白底，再清洗并写回主图与各尺寸。
+
+用法（仓库根目录）：
   python3 swift_ios_host/scripts/clean_app_icons.py
+  python3 swift_ios_host/scripts/clean_app_icons.py /path/to/new_icon.png
 """
 
 from __future__ import annotations
@@ -15,13 +19,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-# 亮于该亮度阈值的像素视为「背景/灰边/水印区」，改纯白；深色线条与抗锯齿低亮度保留
-LUMA_THRESHOLD = 222
-
-# 1024 主图经验值：原图大圆外缘在左右会残留浅灰线；这些列上无黑稿（无 lum<100），可整体刷白
-# 左：x=0..2 已是 #FF，x=3 为灰线；右：x>=887 为灰线（图稿最右暗像素在 x=886 及以左）
-STRIP_1024_LEFT = 4   # columns [0, STRIP_1024_LEFT) → 白
-STRIP_1024_RIGHT = 887  # columns [STRIP_1024_RIGHT, w) → 白
+# 旧版纯线稿图标：左右两列仅灰线、无墨稿时的切边列号（仅当 apply_rim_strips_if_safe 允许时生效）
+STRIP_1024_LEFT = 4
+STRIP_1024_RIGHT = 887
 
 SCRIPT = Path(__file__).resolve()
 DEFAULT_ICON_DIR = SCRIPT.parent.parent / "Sources" / "Assets.xcassets" / "AppIcon.appiconset"
@@ -31,29 +31,76 @@ def luma_key(r: np.ndarray, g: np.ndarray, b: np.ndarray) -> np.ndarray:
     return 0.299 * r + 0.587 * g + 0.114 * b
 
 
-def to_flat_white_rgba(pil: Image.Image) -> Image.Image:
-    im = pil.convert("RGBA")
-    arr = np.array(im, dtype=np.float32)
-    r, g, b, a = arr[..., 0], arr[..., 1], arr[..., 2], arr[..., 3]
+def fit_contain_on_white(src: Image.Image, size: int = 1024) -> Image.Image:
+    """等比缩放后居中放在白底正方形上（不拉伸变形）。"""
+    src = src.convert("RGBA")
+    w, h = src.size
+    if w <= 0 or h <= 0:
+        raise ValueError("invalid source size")
+    scale = min(size / w, size / h)
+    nw = max(1, int(round(w * scale)))
+    nh = max(1, int(round(h * scale)))
+    resized = src.resize((nw, nh), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (size, size), (255, 255, 255, 255))
+    x = (size - nw) // 2
+    y = (size - nh) // 2
+    canvas.paste(resized, (x, y), resized)
+    return canvas
+
+
+def clean_unified_rgba(arr: np.ndarray) -> np.ndarray:
+    """
+    彩色/黑白通用：浅灰边、纸色统一为白；保护红色琴身与深色线稿。
+    """
+    r = arr[:, :, 0].astype(np.float32)
+    g = arr[:, :, 1].astype(np.float32)
+    b = arr[:, :, 2].astype(np.float32)
     lum = luma_key(r, g, b)
-    mask = lum > LUMA_THRESHOLD
+    mx = np.maximum(np.maximum(r, g), b)
+    mn = np.minimum(np.minimum(r, g), b)
+    spread = mx - mn
+    # 琴身红：R 主导
+    is_red = (r > 82.0) & (r > g + 16.0) & (r > b + 16.0)
+    is_dark = lum < 108.0
+    # 浅灰杂边（含圆边灰线）、近白底
+    is_sludge = (spread < 36.0) & (lum > 150.0) & (lum < 252.0) & (~is_red) & (~is_dark)
+    is_paper = (lum > 242.0) & (~is_red) & (~is_dark)
     out = arr.copy()
-    out[mask, 0:3] = 255.0
-    return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8))
+    mask = is_sludge | is_paper
+    out[mask, 0:3] = 255
+    return out
 
 
-def strip_vertical_rim_greys_1024(pil: Image.Image) -> Image.Image:
-    """去掉大圆在左右外缘的浅灰圈线；仅对 1024 主图按列号处理，再经缩放作用到全尺寸。"""
-    arr = np.array(pil.convert("RGBA"), dtype=np.uint8)
+def apply_rim_strips_if_safe_1024(arr: np.ndarray) -> np.ndarray:
+    """
+    仅当左右边 6 列内没有深色线稿时，才做历史线稿图上的左右「去灰圈线」切条。
+    带整圈黑边或右侧有墨的新版彩图会整列变暗，此处自动跳过。
+    """
     h, w = arr.shape[:2]
     if w != 1024 or h != 1024:
-        return Image.fromarray(arr)
+        return arr
+    r = arr[:, :, 0].astype(np.float32)
+    g = arr[:, :, 1].astype(np.float32)
+    b = arr[:, :, 2].astype(np.float32)
+    lum = luma_key(r, g, b)
+    left = lum[:, :6]
+    right = lum[:, -6:]
+    if np.min(left) <= 115.0 or np.min(right) <= 115.0:
+        return arr
+    out = arr.copy()
     lo = min(STRIP_1024_LEFT, w)
     hi = min(STRIP_1024_RIGHT, w)
     if lo > 0:
-        arr[:, :lo, :3] = 255
+        out[:, :lo, :3] = 255
     if hi < w:
-        arr[:, hi:, :3] = 255
+        out[:, hi:, :3] = 255
+    return out
+
+
+def process_master(pil: Image.Image) -> Image.Image:
+    arr = np.array(pil.convert("RGBA"), dtype=np.uint8)
+    arr = clean_unified_rgba(arr)
+    arr = apply_rim_strips_if_safe_1024(arr)
     return Image.fromarray(arr)
 
 
@@ -64,21 +111,26 @@ def main() -> int:
         return 1
 
     master_path = base / "Icon-App-1024x1024@1x.png"
-    if not master_path.is_file():
-        print("Missing master:", master_path, file=sys.stderr)
-        return 1
+    if len(sys.argv) > 1:
+        src_path = Path(sys.argv[1]).expanduser()
+        if not src_path.is_file():
+            print("Source not found:", src_path, file=sys.stderr)
+            return 1
+        master = fit_contain_on_white(Image.open(src_path))
+        print("Loaded source:", src_path, "→ 1024×1024 (letterbox on white)")
+    else:
+        if not master_path.is_file():
+            print("Missing master:", master_path, file=sys.stderr)
+            return 1
+        master = Image.open(master_path).convert("RGBA")
+        if master.size != (1024, 1024):
+            print("Warning: expected 1024×1024 master, got", master.size)
 
-    master = Image.open(master_path).convert("RGBA")
-    if master.size != (1024, 1024):
-        print("Warning: expected 1024x1024 master, got", master.size)
-
-    cleaned_1024 = to_flat_white_rgba(master)
-    cleaned_1024 = strip_vertical_rim_greys_1024(cleaned_1024)
+    cleaned_1024 = process_master(master)
     cleaned_1024.save(master_path, format="PNG", optimize=True)
     print("Wrote", master_path)
 
-    pngs = sorted(base.glob("Icon-App-*.png"))
-    for p in pngs:
+    for p in sorted(base.glob("Icon-App-*.png")):
         if p.name == master_path.name:
             continue
         w, h = Image.open(p).size
