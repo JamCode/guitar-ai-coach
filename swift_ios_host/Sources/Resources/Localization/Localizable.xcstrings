@@ -2278,6 +2278,23 @@
           }
         }
       }
+    },
+    "transcribe_privacy_notice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio you import is processed and stored only on this device. It is not uploaded to our servers, and this feature does not include sharing. Recognition runs on-device. You are responsible for ensuring you have the right to use the audio. This notice is not legal advice."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「扒歌」所导入的音频仅在设备本机处理与保存，不会上传至我们的服务器，也不提供对外分享；和弦识别在本地完成。请确保你对所使用的音频享有合法使用权。本说明不构成法律意见。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

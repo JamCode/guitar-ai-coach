@@ -42,6 +42,14 @@ struct TranscriptionHomeView: View {
                     Text(LocalizedStringResource("transcribe_section_recent", bundle: .main))
                 }
             }
+
+            Section {
+                EmptyView()
+            } footer: {
+                Text(AppL10n.t("transcribe_privacy_notice"))
+                    .font(.caption2)
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
         }
         .navigationTitle(LocalizedStringResource("transcribe_screen_title", bundle: .main))
         .toolbar {

@@ -7,23 +7,29 @@ struct TranscriptionHistoryView: View {
 
     var body: some View {
         List {
-            ForEach(entries, id: \.id) { entry in
-                NavigationLink {
-                    TranscriptionResultView(entry: entry)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.fileName)
-                            .foregroundStyle(SwiftAppTheme.text)
-                        Text(String(format: AppL10n.t("transcribe_history_row_format"), entry.originalKey, formatDate(entry.createdAtMs)))
-                            .font(.caption)
-                            .foregroundStyle(SwiftAppTheme.muted)
+            Section {
+                ForEach(entries, id: \.id) { entry in
+                    NavigationLink {
+                        TranscriptionResultView(entry: entry)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(entry.fileName)
+                                .foregroundStyle(SwiftAppTheme.text)
+                            Text(String(format: AppL10n.t("transcribe_history_row_format"), entry.originalKey, formatDate(entry.createdAtMs)))
+                                .font(.caption)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
                     }
                 }
-            }
-            .onDelete { offsets in
-                for index in offsets {
-                    onDelete(entries[index])
+                .onDelete { offsets in
+                    for index in offsets {
+                        onDelete(entries[index])
+                    }
                 }
+            } footer: {
+                Text(AppL10n.t("transcribe_privacy_notice"))
+                    .font(.caption2)
+                    .foregroundStyle(SwiftAppTheme.muted)
             }
         }
         .navigationTitle(LocalizedStringResource("transcribe_history_title", bundle: .main))
