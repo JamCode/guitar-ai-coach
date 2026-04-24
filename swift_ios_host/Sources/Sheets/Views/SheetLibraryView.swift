@@ -22,10 +22,15 @@ struct SheetLibraryView: View {
                     Button(LocalizedStringResource("sheets_button_retry", bundle: .main)) { Task { await vm.reload() } }.appPrimaryButton()
                 }
             } else if vm.entries.isEmpty {
-                Text(LocalizedStringResource("sheets_empty_message", bundle: .main))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(SwiftAppTheme.muted)
-                    .padding()
+                VStack(alignment: .center, spacing: 16) {
+                    Text(LocalizedStringResource("sheets_empty_message", bundle: .main))
+                        .multilineTextAlignment(.center)
+                    Text(AppL10n.t("sheets_privacy_notice"))
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
             } else {
                 listView
             }
@@ -80,37 +85,43 @@ struct SheetLibraryView: View {
 
     private var listView: some View {
         List {
-            ForEach(vm.entries) { entry in
-                Button {
-                    vm.selectedEntry = entry
-                } label: {
-                    HStack(spacing: 12) {
-                        SheetCoverThumbnail(store: vm.store, entry: entry)
-                            .frame(width: 68, height: 68)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(entry.displayName)
-                                .foregroundStyle(SwiftAppTheme.text)
-                                .lineLimit(1)
-                            Text(String(format: AppL10n.t("sheets_list_meta_format"), Int64(entry.pageCount), dateText(entry.addedAtMs)))
-                                .font(.caption)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                            Text(String(format: AppL10n.t("sheets_status_line_format"), localizedSheetParseStatus(entry.parseStatus)))
-                                .font(.caption2)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(SwiftAppTheme.muted)
-                    }
-                }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        Task { await vm.remove(entry: entry) }
+            Section {
+                ForEach(vm.entries) { entry in
+                    Button {
+                        vm.selectedEntry = entry
                     } label: {
-                        Text(LocalizedStringResource("sheets_action_delete", bundle: .main))
+                        HStack(spacing: 12) {
+                            SheetCoverThumbnail(store: vm.store, entry: entry)
+                                .frame(width: 68, height: 68)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(entry.displayName)
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .lineLimit(1)
+                                Text(String(format: AppL10n.t("sheets_list_meta_format"), Int64(entry.pageCount), dateText(entry.addedAtMs)))
+                                    .font(.caption)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                                Text(String(format: AppL10n.t("sheets_status_line_format"), localizedSheetParseStatus(entry.parseStatus)))
+                                    .font(.caption2)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(SwiftAppTheme.muted)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            Task { await vm.remove(entry: entry) }
+                        } label: {
+                            Text(LocalizedStringResource("sheets_action_delete", bundle: .main))
+                        }
                     }
                 }
+            } footer: {
+                Text(AppL10n.t("sheets_privacy_notice"))
+                    .font(.caption2)
+                    .foregroundStyle(SwiftAppTheme.muted)
             }
         }
         .scrollContentBackground(.hidden)

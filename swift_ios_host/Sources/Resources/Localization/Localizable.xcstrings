@@ -2261,6 +2261,23 @@
           }
         }
       }
+    },
+    "sheets_privacy_notice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“My Sheets” keeps your music only on this device for personal practice. Nothing is uploaded to our servers, and this feature does not include sharing. You are responsible for ensuring you have the right to use the content you add. This notice is not legal advice or a copyright license."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「我的谱」仅将内容保存在本机，供你个人练琴与读谱；不会上传至我们的服务器，也不提供分享。请确保你对所保存的谱面享有合法使用权。本说明不构成法律意见或版权许可。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
