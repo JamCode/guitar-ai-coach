@@ -1,5 +1,18 @@
 # 阿里云 ECS 上的 PaddleOCR（歌谱图片 OCR）
 
+## 一键：在本机同步并完成安装（推荐）
+
+在**你本机能 SSH 进 ECS 的终端**里，进入本仓库后执行（私钥路径按实际修改）：
+
+```bash
+cd /path/to/guitar-ai-coach
+ECS_KEY="$HOME/Documents/guitar-ai-coach/my-ecs-key2.pem" ./deploy/ecs/paddleocr/push-and-setup.sh
+```
+
+脚本会：`rsync` 本目录 → `~/guitar-ai-coach/deploy/ecs/paddleocr/`、安装 **Paddle 2.6.2 + PaddleOCR 2.7**、做一次 OCR 冒烟、`nohup` 启动 `127.0.0.1:18081`，并 `curl /health`。
+
+若 Cursor/CI 环境无法 SSH（对端 reset），用上述本机命令即可接续完成。
+
 ## 环境约定
 
 - **Conda 环境名**：`paddleocr`（`~/miniconda3`）
