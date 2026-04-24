@@ -36,6 +36,10 @@ CRESCENT_TRIM_MIN_X = 100
 # 实色红（线稿仍为 1px 级黑边，由「非 free」自然保留）
 GUITAR_RED_RGB = (0xDC, 0x2C, 0x2A)
 
+# 仅排除「琴桥」小区域白底（三线托之间），不涂红。与下段琴身同属一连通域，用 1024 主图半开轴对齐 bbox。
+# 形式 [x0, x1) x [y0, y1)；若你改主图，用 Preview/像素拾色微调。
+BRIDGE_EXCLUDE_1024_X0X1Y0Y1 = (275, 422, 885, 934)
+
 SCRIPT = Path(__file__).resolve()
 DEFAULT_ICON_DIR = SCRIPT.parent.parent / "Sources" / "Assets.xcassets" / "AppIcon.appiconset"
 
@@ -123,6 +127,31 @@ def _guitar_red_mask(vis: np.ndarray) -> np.ndarray:
     return red
 
 
+def _bridge_exclusion_mask(h: int, w: int) -> np.ndarray:
+    """
+    与 BRIDGE_EXCLUDE_1024_* 对齐的布尔阵：True 表示「不填红（保持原底）」的琴桥区。
+    由 1024 参考尺寸按比例缩放到 (h, w)，圆角子图标与主图同构图。
+    """
+    x0, x1, y0, y1 = BRIDGE_EXCLUDE_1024_X0X1Y0Y1
+    if h == 1024 and w == 1024:
+        ex = np.zeros((h, w), dtype=bool)
+        ex[y0:y1, x0:x1] = True
+        return ex
+    sh, sw = 1024, 1024
+    ex = np.zeros((h, w), dtype=bool)
+    ax0 = int(x0 * w / sw)
+    ax1 = int(np.ceil(x1 * w / sw))
+    ay0 = int(y0 * h / sh)
+    ay1 = int(np.ceil(y1 * h / sh))
+    ax0 = max(0, min(ax0, w))
+    ax1 = max(0, min(ax1, w))
+    ay0 = max(0, min(ay0, h))
+    ay1 = max(0, min(ay1, h))
+    if ax1 > ax0 and ay1 > ay0:
+        ex[ay0:ay1, ax0:ax1] = True
+    return ex
+
+
 def color_guitar_body_red_rgba(pil: Image.Image) -> Image.Image:
     """
     将线稿吉他封闭区域内的白底填为红色，不改动黑线；依赖上游已做纯白压平 + 去灰边。
@@ -135,6 +164,8 @@ def color_guitar_body_red_rgba(pil: Image.Image) -> Image.Image:
     barrier = _dilated_line_barrier_luma(lum)
     vis, _n = _label_free_components(lum, barrier=barrier)
     mask = _guitar_red_mask(vis)
+    hh, ww = int(arr.shape[0]), int(arr.shape[1])
+    mask &= ~_bridge_exclusion_mask(hh, ww)
     out = arr.copy()
     rr, gg, bb = GUITAR_RED_RGB
     out[mask, 0] = rr
