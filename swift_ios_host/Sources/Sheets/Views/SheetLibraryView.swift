@@ -25,7 +25,7 @@ struct SheetLibraryView: View {
                 VStack(alignment: .center, spacing: 16) {
                     Text(LocalizedStringResource("sheets_empty_message", bundle: .main))
                         .multilineTextAlignment(.center)
-                    Text(AppL10n.t("sheets_privacy_notice"))
+                    Text(LocalizedStringResource("sheets_privacy_notice", bundle: .main))
                         .font(.caption)
                         .foregroundStyle(SwiftAppTheme.muted)
                         .multilineTextAlignment(.center)
@@ -119,7 +119,7 @@ struct SheetLibraryView: View {
                     }
                 }
             } footer: {
-                Text(AppL10n.t("sheets_privacy_notice"))
+                Text(LocalizedStringResource("sheets_privacy_notice", bundle: .main))
                     .font(.caption2)
                     .foregroundStyle(SwiftAppTheme.muted)
             }

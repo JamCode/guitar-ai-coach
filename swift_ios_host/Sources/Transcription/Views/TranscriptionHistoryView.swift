@@ -27,7 +27,7 @@ struct TranscriptionHistoryView: View {
                     }
                 }
             } footer: {
-                Text(AppL10n.t("transcribe_privacy_notice"))
+                Text(LocalizedStringResource("transcribe_privacy_notice", bundle: .main))
                     .font(.caption2)
                     .foregroundStyle(SwiftAppTheme.muted)
             }
