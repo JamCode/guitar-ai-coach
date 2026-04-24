@@ -1,5 +1,5 @@
-import Foundation
 import AVFoundation
+import Foundation
 
 public struct PitchDetectorConfig: Sendable {
     public var sampleRate: Double
@@ -100,7 +100,7 @@ public final class TunerPitchDetector: PitchDetecting {
     private func estimatePitch(samples: [Float]) -> PitchFrameResult {
         var x = samples.map(Double.init)
         let length = x.count
-        guard length >= 1024 else { return .silent(reason: "缓冲过短") }
+        guard length >= 1024 else { return .silent(reason: AppL10n.t("tuner_pd_buffer_short")) }
 
         let mean = x.reduce(0, +) / Double(length)
         var energy = 0.0
@@ -108,15 +108,15 @@ public final class TunerPitchDetector: PitchDetecting {
             x[i] -= mean
             energy += x[i] * x[i]
         }
-        if energy <= 1e-18 { return .silent(reason: "无能量") }
+        if energy <= 1e-18 { return .silent(reason: AppL10n.t("tuner_pd_no_energy")) }
 
         let rms = sqrt(energy / Double(length))
-        if rms < config.minRms { return .silent(reason: "音量过低") }
+        if rms < config.minRms { return .silent(reason: AppL10n.t("tuner_pd_quiet")) }
 
         let sr = analysisSampleRate
         let minLag = max(2, Int(sr / config.maxFrequency))
         let maxLag = min(length / 2 - 1, Int(ceil(sr / config.minFrequency)))
-        if minLag >= maxLag { return .rejected(reason: "滞后范围无效") }
+        if minLag >= maxLag { return .rejected(reason: AppL10n.t("tuner_pd_lag_invalid")) }
 
         var bestCorr = -Double.greatestFiniteMagnitude
         var bestLag = minLag
@@ -133,14 +133,14 @@ public final class TunerPitchDetector: PitchDetecting {
 
         let sorted = correlations.sorted()
         let median = sorted[sorted.count / 2]
-        if bestCorr < config.minPeakCorrelation { return .rejected(reason: "周期性不足") }
+        if bestCorr < config.minPeakCorrelation { return .rejected(reason: AppL10n.t("tuner_pd_periodic_weak")) }
         if median > 1e-6 && bestCorr < median * config.minPeakToMedianRatio {
-            return .rejected(reason: "峰值不突出")
+            return .rejected(reason: AppL10n.t("tuner_pd_peak_weak"))
         }
 
         let refinedLag = parabolicRefineLag(x: x, energy: energy, peakLag: bestLag, minLag: minLag, maxLag: maxLag)
         let hz = sr / refinedLag
-        if hz < config.minFrequency || hz > config.maxFrequency { return .rejected(reason: "频率越界") }
+        if hz < config.minFrequency || hz > config.maxFrequency { return .rejected(reason: AppL10n.t("tuner_pd_freq_out")) }
         return .pitch(frequencyHz: hz, peakCorrelation: bestCorr, rms: rms)
     }
 

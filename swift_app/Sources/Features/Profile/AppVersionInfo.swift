@@ -1,3 +1,4 @@
+import Core
 import Foundation
 #if canImport(UIKit)
 import UIKit
@@ -33,7 +34,14 @@ public enum AppVersionInfoLoader {
 
     public static func copySummary(_ info: AppVersionInfo) {
 #if canImport(UIKit)
-        UIPasteboard.general.string = "玩乐吉他 \(info.version) (\(info.buildNumber)) / \(info.releaseChannel) / \(info.platformLabel)"
+        UIPasteboard.general.string = String(
+            format: AppL10n.t("app_version_pasteboard_format"),
+            AppL10n.t("app_product_name"),
+            info.version,
+            info.buildNumber,
+            info.releaseChannel,
+            info.platformLabel
+        )
 #endif
     }
 }

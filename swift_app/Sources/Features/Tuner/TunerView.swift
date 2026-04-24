@@ -22,7 +22,7 @@ private struct TunerStatusCardBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("状态").appSectionTitle()
+            Text(LocalizedStringResource("tuner_section_status", bundle: .main)).appSectionTitle()
             Text(helper)
                 .foregroundStyle(SwiftAppTheme.muted)
                 .lineLimit(2)
@@ -46,7 +46,7 @@ private struct TunerStatusCardBody: View {
                         .foregroundStyle(SwiftAppTheme.muted)
                         .lineLimit(2)
                         .minimumScaleFactor(0.85)
-                    Text(String(format: "%+.0f cent", cents))
+                    Text(String(format: AppL10n.t("tuner_cents_format"), cents))
                         .foregroundStyle(SwiftAppTheme.brand)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,14 +74,11 @@ public struct TunerView: View {
     /// 由最坏文案在**当前内容宽度**下 `sizeThatFits` 得到的高度；随横向宽度变化可再增大，不缩小。
     @State private var statusCardMeasuredHeight: CGFloat = 0
 
-    private let strings: [TuningStringInfo] = [
-        .init(number: 6, hint: "最粗弦"),
-        .init(number: 5, hint: "次粗弦"),
-        .init(number: 4, hint: "中间偏粗"),
-        .init(number: 3, hint: "中间偏细"),
-        .init(number: 2, hint: "次细弦"),
-        .init(number: 1, hint: "最细弦")
-    ]
+    private var strings: [TuningStringInfo] {
+        [6, 5, 4, 3, 2, 1].map { n in
+            TuningStringInfo(number: n, hint: stringHint(n))
+        }
+    }
 
     public init() {}
 
@@ -112,8 +109,8 @@ public struct TunerView: View {
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("选择弦").appSectionTitle()
-                    Text("按琴头旋钮位置选择：点弦钮会播放该弦标准参考音；再轻拨同一根弦，对照表头指针调准。")
+                    Text(LocalizedStringResource("tuner_select_string", bundle: .main)).appSectionTitle()
+                    Text(LocalizedStringResource("tuner_howto_pick", bundle: .main))
                         .font(.caption)
                         .foregroundStyle(SwiftAppTheme.muted)
                     HStack {
@@ -134,7 +131,7 @@ public struct TunerView: View {
                         Spacer(minLength: 0)
                     }
                     .frame(maxWidth: .infinity)
-                    Text("不知道拧哪个琴钮时：先轻拨这根弦，再慢慢拧，观察红点是否回到中间。")
+                    Text(LocalizedStringResource("tuner_knob_unsure", bundle: .main))
                         .font(.caption)
                         .foregroundStyle(SwiftAppTheme.muted)
                 }
@@ -151,12 +148,12 @@ public struct TunerView: View {
                 recomputeStatusCardHeight(scrollContentWidth: width)
             }
         }
-        .navigationTitle("调音器")
+        .navigationTitle(Text(LocalizedStringResource("tuner_nav_title", bundle: .main)))
         .appPageBackground()
         .onAppear {
             AudioStartupWarmup.shared.scheduleIfNeeded()
             if !viewModel.isListening {
-                viewModel.statusMessage = "轻点下方弦钮开始调音"
+                viewModel.statusMessage = AppL10n.t("tuner_status_tap_string")
             }
         }
         .onDisappear {
@@ -174,6 +171,18 @@ public struct TunerView: View {
         return placeholder
     }
 
+    private func stringHint(_ stringNumber: Int) -> String {
+        switch stringNumber {
+        case 1: return AppL10n.t("tuner_hint_1")
+        case 2: return AppL10n.t("tuner_hint_2")
+        case 3: return AppL10n.t("tuner_hint_3")
+        case 4: return AppL10n.t("tuner_hint_4")
+        case 5: return AppL10n.t("tuner_hint_5")
+        case 6: return AppL10n.t("tuner_hint_6")
+        default: return ""
+        }
+    }
+
     private func recomputeStatusCardHeight(scrollContentWidth: CGFloat) {
         guard scrollContentWidth > 40 else { return }
         // `GeometryReader` 附在已加 `pagePadding` 的 VStack 上：先得到内容列宽，再扣 `appCard` 内边距。
@@ -188,35 +197,64 @@ public struct TunerView: View {
 
     private var targetCaption: String {
         guard let i = viewModel.selectedStringIndex, let hz = viewModel.targetHz else {
-            return "目标：请先选择弦"
+            return AppL10n.t("tuner_target_pick_first")
         }
-        return "目标：第 \(6 - i) 弦 · \(String(format: "%.2f Hz", hz))"
+        return String(
+            format: AppL10n.t("tuner_target_line_format"),
+            Int64(6 - i),
+            String(format: "%.2f", hz)
+        )
     }
 
     private var tuningGuidance: (title: String, detail: String, helper: String, color: Color) {
         guard viewModel.selectedStringIndex != nil else {
-            return ("先选弦", "点下方按钮选择要调的弦", "先点下面的弦号，再拨那根弦", SwiftAppTheme.text)
+            return (
+                AppL10n.t("tuner_state_need_title"),
+                AppL10n.t("tuner_state_need_detail"),
+                AppL10n.t("tuner_state_need_helper"),
+                SwiftAppTheme.text
+            )
         }
         guard viewModel.frequencyHz != nil else {
-            return ("开始拨弦", "持续轻拨当前弦，观察红点是否居中", "只看红点是否回到中间区域", SwiftAppTheme.text)
+            return (
+                AppL10n.t("tuner_state_pluck_title"),
+                AppL10n.t("tuner_state_pluck_detail"),
+                AppL10n.t("tuner_state_pluck_helper"),
+                SwiftAppTheme.text
+            )
         }
         if viewModel.isInTune {
-            return ("已调准", "保持当前旋钮位置即可", "已在中线附近，基本完成", SwiftAppTheme.dynamic(.green, .green))
+            return (
+                AppL10n.t("tuner_state_intune_title"),
+                AppL10n.t("tuner_state_intune_detail"),
+                AppL10n.t("tuner_state_intune_helper"),
+                SwiftAppTheme.dynamic(.green, .green)
+            )
         }
         if viewModel.cents < 0 {
-            return ("偏低", "把音高调高一点（继续慢调）", "红点在左，慢慢拧紧一点", SwiftAppTheme.brand)
+            return (
+                AppL10n.t("tuner_state_low_title"),
+                AppL10n.t("tuner_state_low_detail"),
+                AppL10n.t("tuner_state_low_helper"),
+                SwiftAppTheme.brand
+            )
         }
-        return ("偏高", "把音高调低一点（继续慢调）", "红点在右，轻微放松一点", SwiftAppTheme.brand)
+        return (
+            AppL10n.t("tuner_state_high_title"),
+            AppL10n.t("tuner_state_high_detail"),
+            AppL10n.t("tuner_state_high_helper"),
+            SwiftAppTheme.brand
+        )
     }
 
     private var rotationHintText: String? {
         guard let selectedIndex = viewModel.selectedStringIndex, viewModel.frequencyHz != nil else { return nil }
         if viewModel.isInTune { return nil }
-        let side = selectedIndex <= 2 ? "左侧旋钮" : "右侧旋钮"
+        let side = selectedIndex <= 2 ? AppL10n.t("tuner_knob_left") : AppL10n.t("tuner_knob_right")
         if viewModel.cents < 0 {
-            return "操作建议（\(side)）：向拧紧方向小幅旋转约 1/8 圈；若红点离中线更远，立即反向。"
+            return String(format: AppL10n.t("tuner_rot_tight_fmt"), side)
         }
-        return "操作建议（\(side)）：向放松方向小幅旋转约 1/8 圈；若红点离中线更远，立即反向。"
+        return String(format: AppL10n.t("tuner_rot_loose_fmt"), side)
     }
 
     private func headstockStringButton(index: Int) -> some View {
@@ -243,7 +281,7 @@ public struct TunerView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("第 \(stringInfo.number) 弦，\(stringInfo.hint)")
+        .accessibilityLabel(String(format: AppL10n.t("tuner_a11y_string_format"), Int64(stringInfo.number), stringInfo.hint))
     }
 
     private var headstockCenter: some View {
@@ -252,14 +290,14 @@ public struct TunerView: View {
                 .fill(SwiftAppTheme.surfaceSoft)
                 .frame(width: 92, height: 228)
             VStack(spacing: 8) {
-                Text("琴头")
+                Text(LocalizedStringResource("tuner_headstock", bundle: .main))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(SwiftAppTheme.muted)
                 Divider().frame(width: 56)
-                Text("6 → 1")
+                Text(LocalizedStringResource("tuner_6_to_1", bundle: .main))
                     .font(.caption2)
                     .foregroundStyle(SwiftAppTheme.muted)
-                Text("粗 → 细")
+                Text(LocalizedStringResource("tuner_thick_to_thin", bundle: .main))
                     .font(.caption2)
                     .foregroundStyle(SwiftAppTheme.muted)
             }

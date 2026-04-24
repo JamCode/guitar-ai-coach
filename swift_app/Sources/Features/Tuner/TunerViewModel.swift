@@ -9,7 +9,7 @@ public final class TunerViewModel: ObservableObject {
     @Published public var frequencyHz: Double?
     @Published public var smoothedHz: Double?
     @Published public var isListening = false
-    @Published public var statusMessage = "轻点下方弦钮开始调音"
+    @Published public var statusMessage = AppL10n.t("tuner_status_tap_string")
     @Published public var errorText: String?
     /// 指针/文案统一读取的「显示 cents」，经过 cents 维度的一阶低通平滑，避免 UI 硬跳。
     @Published public private(set) var cents: Double = 0
@@ -63,7 +63,7 @@ public final class TunerViewModel: ObservableObject {
                 try audio.playSine(frequencyHz: hz, durationSec: 0.22)
             }
         } catch {
-            errorText = "参考音播放失败：\(error.localizedDescription)"
+            errorText = String(format: AppL10n.t("tuner_error_ref_fmt"), error.localizedDescription)
         }
     }
 
@@ -87,10 +87,10 @@ public final class TunerViewModel: ObservableObject {
                 }
             }
             isListening = true
-            statusMessage = "监听中…"
+            statusMessage = AppL10n.t("tuner_listening")
             errorText = nil
         } catch {
-            errorText = "启动音频失败：\(error.localizedDescription)"
+            errorText = String(format: AppL10n.t("tuner_error_start_fmt"), error.localizedDescription)
         }
     }
 
@@ -98,7 +98,7 @@ public final class TunerViewModel: ObservableObject {
         detector.stop()
         audio.stop()
         isListening = false
-        statusMessage = "已停止监听"
+        statusMessage = AppL10n.t("tuner_stopped")
     }
 
     public func updateFrequencySample(_ hz: Double) {
@@ -115,7 +115,7 @@ public final class TunerViewModel: ObservableObject {
         switch result {
         case let .pitch(frequencyHz, _, rms):
             updateFrequencySample(frequencyHz)
-            statusMessage = "RMS \(String(format: "%.3f", rms)) · 已锁定基频"
+            statusMessage = String(format: AppL10n.t("tuner_status_locked_rms"), String(format: "%.3f", rms))
         case let .silent(reason):
             statusMessage = reason
         case let .rejected(reason):
