@@ -19,10 +19,10 @@ struct SheetLibraryView: View {
             } else if let error = vm.error {
                 VStack(spacing: 12) {
                     Text(error).foregroundStyle(SwiftAppTheme.muted)
-                    Button("重试") { Task { await vm.reload() } }.appPrimaryButton()
+                    Button(LocalizedStringResource("sheets_button_retry", bundle: .main)) { Task { await vm.reload() } }.appPrimaryButton()
                 }
             } else if vm.entries.isEmpty {
-                Text("暂无谱子。点击右上角 + 从相册多选；起名后保存到本地。")
+                Text(LocalizedStringResource("sheets_empty_message", bundle: .main))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .padding()
@@ -30,7 +30,7 @@ struct SheetLibraryView: View {
                 listView
             }
         }
-        .navigationTitle("我的谱")
+        .navigationTitle(LocalizedStringResource("sheets_screen_title", bundle: .main))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -38,7 +38,7 @@ struct SheetLibraryView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .accessibilityLabel("从相册添加")
+                .accessibilityLabel(LocalizedStringResource("sheets_a11y_add_from_album", bundle: .main))
             }
         }
         .photosPicker(
@@ -66,8 +66,8 @@ struct SheetLibraryView: View {
         }
         .appPageBackground()
         .refreshable { await vm.reload() }
-        .alert("提示", isPresented: Binding(get: { vm.toast != nil }, set: { _ in vm.toast = nil })) {
-            Button("知道了", role: .cancel) { vm.toast = nil }
+        .alert(LocalizedStringResource("common_notice_title", bundle: .main), isPresented: Binding(get: { vm.toast != nil }, set: { _ in vm.toast = nil })) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) { vm.toast = nil }
         } message: {
             Text(vm.toast ?? "")
         }
@@ -92,10 +92,10 @@ struct SheetLibraryView: View {
                             Text(entry.displayName)
                                 .foregroundStyle(SwiftAppTheme.text)
                                 .lineLimit(1)
-                            Text("\(entry.pageCount) 页 · \(dateText(entry.addedAtMs))")
+                            Text(String(format: AppL10n.t("sheets_list_meta_format"), Int64(entry.pageCount), dateText(entry.addedAtMs)))
                                 .font(.caption)
                                 .foregroundStyle(SwiftAppTheme.muted)
-                            Text("状态：\(entry.parseStatus)")
+                            Text(String(format: AppL10n.t("sheets_status_line_format"), localizedSheetParseStatus(entry.parseStatus)))
                                 .font(.caption2)
                                 .foregroundStyle(SwiftAppTheme.muted)
                         }
@@ -108,12 +108,19 @@ struct SheetLibraryView: View {
                     Button(role: .destructive) {
                         Task { await vm.remove(entry: entry) }
                     } label: {
-                        Text("删除")
+                        Text(LocalizedStringResource("sheets_action_delete", bundle: .main))
                     }
                 }
             }
         }
         .scrollContentBackground(.hidden)
+    }
+
+    private func localizedSheetParseStatus(_ raw: String) -> String {
+        let key = "sheet_status_\(raw)"
+        let out = AppL10n.t(key)
+        if out == key { return raw }
+        return out
     }
 
     private func dateText(_ ms: Int) -> String {

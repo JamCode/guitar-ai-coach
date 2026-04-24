@@ -1,0 +1,405 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "tab_practice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Practice" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "练习" } }
+      }
+    },
+    "tab_mine_sheets" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "My sheets" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "我的谱" } }
+      }
+    },
+    "tab_transcribe" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Transcribe" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "扒歌" } }
+      }
+    },
+    "tab_tools" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "工具" } }
+      }
+    },
+    "placeholder_practice_detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Practice data loads after you open this tab for the first time." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "首次进入该 Tab 后才会加载练习数据。" } }
+      }
+    },
+    "tools_nav_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "工具" } }
+      }
+    },
+    "section_app_support" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "App & support" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "应用与支持" } }
+      }
+    },
+    "tools_tuner_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tuner" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "调音器" } }
+      }
+    },
+    "tools_tuner_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mic input and standard open-string targets" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "麦克风拾音与标准空弦目标" } }
+      }
+    },
+    "tools_fretboard_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fretboard" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "吉他指板" } }
+      }
+    },
+    "tools_fretboard_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Vertical board, pitch labels, pluck preview, capo" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "竖向指板·音高标注·拨弦试听·变调夹" } }
+      }
+    },
+    "tools_chord_lookup_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chord lookup" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "和弦速查" } }
+      }
+    },
+    "tools_chord_lookup_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Offline chord tones and common shapes" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "离线可查构成音与常见把位" } }
+      }
+    },
+    "tools_chord_chart_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Common chords" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "常用和弦" } }
+      }
+    },
+    "tools_chord_chart_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Beginner / intermediate / advanced · local diagrams" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "初/中/高分段·本地指法图速查" } }
+      }
+    },
+    "about_version_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "About & version" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关于与版本" } }
+      }
+    },
+    "support_feedback_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Help & feedback" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "帮助与反馈" } }
+      }
+    },
+    "support_feedback_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Send email" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "发邮件反馈" } }
+      }
+    },
+    "support_privacy_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Privacy policy" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "隐私政策" } }
+      }
+    },
+    "support_privacy_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open the web policy" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "查看网页版隐私说明" } }
+      }
+    },
+    "alert_cannot_open_mail_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cannot open Mail" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法打开邮件" } }
+      }
+    },
+    "alert_cannot_open_mail_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please make sure Mail is installed and a mailbox is set up, or copy your feedback and send it another way." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请确认本机已安装「邮件」并已登录邮箱账户；或复制反馈内容通过其他方式发送。" } }
+      }
+    },
+    "alert_cannot_open_privacy_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cannot open privacy policy" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法打开隐私政策" } }
+      }
+    },
+    "alert_cannot_open_privacy_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please check your network and try again." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请检查网络连接后重试。" } }
+      }
+    },
+    "button_ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "知道了" } }
+      }
+    },
+    "feedback_mail_subject" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Wanle Guitar feedback (%@)" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "玩乐吉他反馈（%@）" } }
+      }
+    },
+    "feedback_mail_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please describe the issue, steps, or suggestions:\n\n" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请描述问题、复现步骤或建议：\n\n" } }
+      }
+    },
+    "common_notice_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notice" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "提示" } }
+      }
+    },
+    "transcribe_screen_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Transcribe" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "扒歌" } }
+      }
+    },
+    "transcribe_import_from_photos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Import from Photos" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "从相册导入" } }
+      }
+    },
+    "transcribe_import_from_files" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Import from Files" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "从文件导入" } }
+      }
+    },
+    "transcribe_formats_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Supports mp3 / m4a / wav / aac / mp4 / mov, up to 6 minutes per file" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "支持 mp3 / m4a / wav / aac / mp4 / mov，单文件最长 6 分钟" } }
+      }
+    },
+    "transcribe_section_recent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recent" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "最近历史" } }
+      }
+    },
+    "transcribe_original_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Original key: %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "原调：%@" } }
+      }
+    },
+    "transcribe_history_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Transcribe history" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "扒歌历史" } }
+      }
+    },
+    "transcribe_history_row_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Original key: %@ · %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "原调：%@ · %@" } }
+      }
+    },
+    "transcribe_toolbar_history" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "History" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "历史" } }
+      }
+    },
+    "transcribe_step_extract_audio" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Extracting audio" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "提取音轨" } }
+      }
+    },
+    "transcribe_step_recognize_chords" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recognizing chords (on device)" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本地识别和弦" } }
+      }
+    },
+    "transcribe_step_finalize" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Preparing result" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "整理结果" } }
+      }
+    },
+    "transcribe_playback_failed_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Playback failed" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "播放失败" } }
+      }
+    },
+    "transcribe_playback_missing_file" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The original media file is missing; playback is unavailable." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "原始媒体文件不存在，暂时无法播放。" } }
+      }
+    },
+    "transcribe_result_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Result" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "识别结果" } }
+      }
+    },
+    "transcribe_processing_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Processing" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在识别" } }
+      }
+    },
+    "transcribe_button_cancel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
+      }
+    },
+    "transcribe_error_audio_read_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not read audio from this file. Please try another file." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这个文件的音轨读取失败，请换一个文件再试" } }
+      }
+    },
+    "transcribe_error_chord_unstable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not detect chords reliably. Try a clearer recording." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这次没能稳定识别出和弦，换一个更清晰的文件再试试" } }
+      }
+    },
+    "sheets_screen_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "My sheets" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "我的谱" } }
+      }
+    },
+    "sheets_button_retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试" } }
+      }
+    },
+    "sheets_empty_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No sheets yet. Tap + to add images from Photos; name the set and they are saved on device." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无谱子。点击右上角 + 从相册多选；起名后保存到本地。" } }
+      }
+    },
+    "sheets_a11y_add_from_album" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add from photo library" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "从相册添加" } }
+      }
+    },
+    "sheets_list_meta_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld pages · %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld 页 · %@" } }
+      }
+    },
+    "sheets_status_line_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Status: %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "状态：%@" } }
+      }
+    },
+    "sheets_action_delete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除" } }
+      }
+    },
+    "sheet_status_rawOnly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not parsed" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "仅原图" } }
+      }
+    },
+    "sheet_status_draft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Draft" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "草稿" } }
+      }
+    },
+    "sheet_status_ready" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ready" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已就绪" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

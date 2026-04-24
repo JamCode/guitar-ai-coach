@@ -14,7 +14,7 @@ struct TranscriptionHistoryView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(entry.fileName)
                             .foregroundStyle(SwiftAppTheme.text)
-                        Text("原调：\(entry.originalKey) · \(formatDate(entry.createdAtMs))")
+                        Text(String(format: AppL10n.t("transcribe_history_row_format"), entry.originalKey, formatDate(entry.createdAtMs)))
                             .font(.caption)
                             .foregroundStyle(SwiftAppTheme.muted)
                     }
@@ -26,7 +26,7 @@ struct TranscriptionHistoryView: View {
                 }
             }
         }
-        .navigationTitle("扒歌历史")
+        .navigationTitle(LocalizedStringResource("transcribe_history_title", bundle: .main))
         .appPageBackground()
     }
 

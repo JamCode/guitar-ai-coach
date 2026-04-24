@@ -12,19 +12,19 @@ struct TranscriptionHomeView: View {
         List {
             Section {
                 PhotosPicker(selection: $selectedPhotoItem, matching: .videos) {
-                    Text("从相册导入")
+                    Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
                         .frame(maxWidth: .infinity)
                 }
                     .appPrimaryButton()
-                Button("从文件导入") { showingFileImporter = true }
+                Button(LocalizedStringResource("transcribe_import_from_files", bundle: .main)) { showingFileImporter = true }
                     .appSecondaryButton()
-                Text("支持 mp3 / m4a / wav / aac / mp4 / mov，单文件最长 6 分钟")
+                Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
             }
 
             if !vm.recentHistory.isEmpty {
-                Section("最近历史") {
+                Section {
                     ForEach(vm.recentHistory.prefix(3), id: \.id) { entry in
                         NavigationLink {
                             TranscriptionResultView(entry: entry)
@@ -32,20 +32,22 @@ struct TranscriptionHomeView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(entry.fileName)
                                     .foregroundStyle(SwiftAppTheme.text)
-                                Text("原调：\(entry.originalKey)")
+                                Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
                                     .font(.caption)
                                     .foregroundStyle(SwiftAppTheme.muted)
                             }
                         }
                     }
+                } header: {
+                    Text(LocalizedStringResource("transcribe_section_recent", bundle: .main))
                 }
             }
         }
-        .navigationTitle("扒歌")
+        .navigationTitle(LocalizedStringResource("transcribe_screen_title", bundle: .main))
         .toolbar {
             if !vm.recentHistory.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink("历史") {
+                    NavigationLink(LocalizedStringResource("transcribe_toolbar_history", bundle: .main)) {
                         TranscriptionHistoryView(entries: vm.recentHistory) { entry in
                             Task { await vm.delete(entry) }
                         }
@@ -81,8 +83,8 @@ struct TranscriptionHomeView: View {
         .navigationDestination(item: $vm.selectedEntry) { entry in
             TranscriptionResultView(entry: entry)
         }
-        .alert("提示", isPresented: $vm.showingAlert) {
-            Button("知道了", role: .cancel) {}
+        .alert(LocalizedStringResource("common_notice_title", bundle: .main), isPresented: $vm.showingAlert) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) {}
         } message: {
             Text(vm.alertMessage)
         }
@@ -137,7 +139,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
             }
             startImport(url: file.url, sourceType: .photoLibrary, requiresSecurityScopedAccess: false)
         } catch {
-            alertMessage = (error as? LocalizedError)?.errorDescription ?? "这个文件的音轨读取失败，请换一个文件再试"
+            alertMessage = (error as? LocalizedError)?.errorDescription ?? AppL10n.t("transcribe_error_audio_read_failed")
             showingAlert = true
         }
     }
@@ -151,7 +153,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
     private func startImport(url: URL, sourceType: TranscriptionSourceType, requiresSecurityScopedAccess: Bool) {
         currentTask?.cancel()
         let fileName = url.lastPathComponent
-        processingState = TranscriptionProcessingState(fileName: fileName, stepText: "提取音轨")
+        processingState = TranscriptionProcessingState(fileName: fileName, stepText: "transcribe_step_extract_audio")
         let historyStore = self.historyStore
 
         currentTask = Task { [weak self] in
@@ -181,7 +183,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     self.processingState = nil
-                    self.alertMessage = (error as? LocalizedError)?.errorDescription ?? "这次没能稳定识别出和弦，换一个更清晰的文件再试试"
+                    self.alertMessage = (error as? LocalizedError)?.errorDescription ?? AppL10n.t("transcribe_error_chord_unstable")
                     self.showingAlert = true
                 }
             }
@@ -206,11 +208,11 @@ final class TranscriptionHomeViewModel: ObservableObject {
         try TranscriptionImportService.validate(fileName: url.lastPathComponent, durationMs: durationMs)
         try Task.checkCancellation()
 
-        await onStep("提取音轨")
+        await onStep("transcribe_step_extract_audio")
         let decoded = try await TranscriptionMediaDecoder.decode(url: url)
         try Task.checkCancellation()
 
-        await onStep("本地识别和弦")
+        await onStep("transcribe_step_recognize_chords")
         let payload = try await TranscriptionOrchestrator(recognizer: OnnxChordRecognizer()).recognize(
             fileName: decoded.fileName,
             durationMs: decoded.durationMs,
@@ -222,7 +224,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         }
         try Task.checkCancellation()
 
-        await onStep("整理结果")
+        await onStep("transcribe_step_finalize")
         return try await historyStore.saveResult(
             sourceURL: url,
             sourceType: sourceType,
