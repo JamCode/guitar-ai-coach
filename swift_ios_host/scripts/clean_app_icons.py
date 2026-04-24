@@ -3,7 +3,7 @@
 AppIcon 处理：纯白底、去灰边/水印；保留红色琴身与黑色线稿。
 
 - 默认：读取现有 Icon-App-1024x1024@1x.png，清洗后重采样到各尺寸。
-- 传入参考图路径时：先等比放入 1024×1024 白底，再清洗并写回主图与各尺寸。
+- 传入参考图路径时：先等比放入 1024×1024 白底，再按内容裁成居中正方形（去掉 L 形稿右侧多余白条），经清洗后写回主图与各尺寸。
 
 用法（仓库根目录）：
   python3 swift_ios_host/scripts/clean_app_icons.py
@@ -29,6 +29,43 @@ DEFAULT_ICON_DIR = SCRIPT.parent.parent / "Sources" / "Assets.xcassets" / "AppIc
 
 def luma_key(r: np.ndarray, g: np.ndarray, b: np.ndarray) -> np.ndarray:
     return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+# 认为「接近纸白」的阈值；低于此（任一路）即参与包围盒，用于裁掉 L 形框外多出来的单侧大白条
+NEAR_WHITE_FOR_BBOX = 252
+
+
+def balance_crop_to_square_then_resize(
+    pil: Image.Image, out_size: int = 1024
+) -> Image.Image:
+    """
+    按非白内容紧包围盒裁剪，再居中放入正方形白底，最后缩放到 out_size。
+
+    解决：原稿仅左/下有黑边时，右侧大面积留白在缩小后像「白色柱子」撑出视觉框的问题。
+    """
+    arr = np.array(pil.convert("RGBA"), dtype=np.uint8)
+    h0, w0 = arr.shape[:2]
+    r, g, b = arr[..., 0], arr[..., 1], arr[..., 2]
+    ink = (r < NEAR_WHITE_FOR_BBOX) | (g < NEAR_WHITE_FOR_BBOX) | (b < NEAR_WHITE_FOR_BBOX)
+    if not np.any(ink):
+        return pil.resize((out_size, out_size), Image.Resampling.LANCZOS)
+
+    ys, xs = np.where(ink)
+    pad = max(8, int(0.02 * max(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1)))
+    x0 = max(0, int(xs.min()) - pad)
+    y0 = max(0, int(ys.min()) - pad)
+    x1 = min(w0 - 1, int(xs.max()) + pad)
+    y1 = min(h0 - 1, int(ys.max()) + pad)
+    cropped = arr[y0 : y1 + 1, x0 : x1 + 1].copy()
+    ch, cw = cropped.shape[:2]
+    side = max(cw, ch)
+    square = np.zeros((side, side, 4), dtype=np.uint8)
+    square[:, :] = (255, 255, 255, 255)
+    ox = (side - cw) // 2
+    oy = (side - ch) // 2
+    square[oy : oy + ch, ox : ox + cw] = cropped
+    out = Image.fromarray(square)
+    return out.resize((out_size, out_size), Image.Resampling.LANCZOS)
 
 
 def fit_contain_on_white(src: Image.Image, size: int = 1024) -> Image.Image:
@@ -116,17 +153,20 @@ def main() -> int:
         if not src_path.is_file():
             print("Source not found:", src_path, file=sys.stderr)
             return 1
-        master = fit_contain_on_white(Image.open(src_path))
-        print("Loaded source:", src_path, "→ 1024×1024 (letterbox on white)")
+        stage = fit_contain_on_white(Image.open(src_path), size=1024)
+        print("Loaded source:", src_path, "→ letterbox 1024")
     else:
         if not master_path.is_file():
             print("Missing master:", master_path, file=sys.stderr)
             return 1
-        master = Image.open(master_path).convert("RGBA")
-        if master.size != (1024, 1024):
-            print("Warning: expected 1024×1024 master, got", master.size)
+        stage = Image.open(master_path).convert("RGBA")
+        if stage.size != (1024, 1024):
+            print("Warning: expected 1024×1024 master, got", stage.size)
 
-    cleaned_1024 = process_master(master)
+    # 先去灰边/统白，再按内容紧裁 + 居中正方（避免先裁后洗把右侧线稿当「杂边」刷掉）
+    worked = process_master(stage)
+    cleaned_1024 = balance_crop_to_square_then_resize(worked, out_size=1024)
+    print("→ cleaned, then content-balanced square → 1024 (fixes L-frame white pillar)")
     cleaned_1024.save(master_path, format="PNG", optimize=True)
     print("Wrote", master_path)
 
