@@ -1,0 +1,49 @@
+# 将 privacy-policy-pages/ 部署到本仓库 GitHub Pages（静态 HTML）
+# 首次需在仓库 Settings → Pages → Build: GitHub Actions 中启用。
+# 发布地址：https://<org>.github.io/guitar-ai-coach/ （与 wanle-guitar-privacy 独立仓不同，见 privacy-policy-pages/README.md）
+
+name: Deploy privacy policy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - cursor/swift-tools-tab-migration
+      - main
+      - master
+    paths:
+      - 'privacy-policy-pages/**'
+      - '.github/workflows/privacy-github-pages.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pages-privacy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: privacy-policy-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
