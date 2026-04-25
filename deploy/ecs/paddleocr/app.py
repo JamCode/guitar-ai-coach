@@ -11,9 +11,11 @@ from typing import Any
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
 from paddleocr import PaddleOCR
+
+from sheet_ocr_filter import filter_ocr_for_song
 
 # 在 import paddle 之后若仍遇 MKLDNN 问题可在外层环境变量中关闭，此处留常用键名
 os.environ.setdefault("FLAGS_enable_mkldnn", "0")
@@ -62,7 +64,18 @@ def health() -> dict[str, str]:
 
 
 @app.post("/ocr")
-async def ocr_image(file: UploadFile = File(...)) -> JSONResponse:
+async def ocr_image(
+    file: UploadFile = File(...),
+    content: str = Query(
+        "all",
+        description="all=全部 OCR 行；song=只保留可能的歌词+和弦行（后处理，过滤简谱/页眉等）",
+        pattern="^(all|song)$",
+    ),
+    include_raw: bool = Query(
+        False,
+        description="content=song 时是否同时返回原始 lines + full_text",
+    ),
+) -> JSONResponse:
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="请上传 image/* 图片（如歌谱页照片或截图）")
     data = await file.read()
@@ -82,6 +95,24 @@ async def ocr_image(file: UploadFile = File(...)) -> JSONResponse:
         )
     lines = _flatten_ocr(result)
     full_text = "\n".join(x["text"] for x in lines)
+    h, w = img.shape[0], img.shape[1]
+    if content == "song":
+        filtered = filter_ocr_for_song(lines, float(h))
+        out: dict[str, Any] = {
+            "ok": True,
+            "content": "song",
+            "image": {"height": h, "width": w},
+            "chord_lines": filtered["chord_lines"],
+            "lyric_lines": filtered["lyric_lines"],
+            "chord_tokens_flat": filtered["chord_tokens_flat"],
+            "dropped_jianpu_sample": filtered["dropped_jianpu_sample"],
+            "dropped_meta_sample": filtered["dropped_meta_sample"],
+            "note": filtered["note"],
+        }
+        if include_raw:
+            out["lines"] = lines
+            out["full_text"] = full_text
+        return JSONResponse(out)
     return JSONResponse(
         {
             "ok": True,

@@ -7,7 +7,21 @@
 - 健康检查：`https://wanghanai.xyz/paddleocr/health`
 - OCR 上传：`POST https://wanghanai.xyz/paddleocr/ocr`（`multipart/form-data` 字段名 `file`）
 
+**只要和弦+歌词（后处理，过滤简谱/页眉等）**：
+
+- `POST .../ocr?content=song`（与 `file` 同发）
+- 返回：`chord_lines`（OCR 能认出的英文和弦行）、`lyric_lines`（高概率中文句）、`chord_tokens_flat`、各 `dropped_*_sample` 便于调参
+- 需要原始行时加：`&include_raw=true`
+
+示例：
+
+```bash
+curl -sS -X POST "https://wanghanai.xyz/paddleocr/ocr?content=song" -F "file=@page.png;type=image/png" | python3 -m json.tool
+```
+
 Nginx 将 `/paddleocr/` 剥掉后转发到本机 `127.0.0.1:18081`（`proxy_pass` 配置见 `deploy/ecs/nginx/guitar-server.conf`）。
+
+**关于和弦**：谱顶英文和弦常因字号小或与六线贴在一起而**进不了 OCR 行**；`content=song` 只从**已有**文本里再筛。要提高和弦召回，可尝试更高分辨率、裁切**上半条**再识别，或乐谱专用模型（后续可迭代）。
 
 ## 一键：在本机同步并完成安装（推荐）
 
