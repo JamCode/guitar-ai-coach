@@ -170,6 +170,44 @@ final class EarCoreTests: XCTestCase {
     }
 
     @MainActor
+    func testIntervalEarSessionCanChangeDifficultyBeforeReveal() async {
+        let vm = IntervalEarSessionViewModel(
+            difficulty: .初级,
+            player: SilentIntervalTonePlayerForTests(),
+            historyStore: MockIntervalEarHistoryStore()
+        )
+        XCTAssertEqual(vm.difficulty, .初级)
+        XCTAssertEqual(vm.question?.difficulty, .初级)
+        vm.setDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.difficulty, .高级)
+        XCTAssertEqual(vm.question?.difficulty, .高级)
+        XCTAssertFalse(vm.revealed)
+        vm.setDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.difficulty, .高级)
+    }
+
+    @MainActor
+    func testIntervalEarSessionIgnoresDifficultyChangeAfterReveal() async throws {
+        let mock = MockIntervalEarHistoryStore()
+        let vm = IntervalEarSessionViewModel(
+            maxQuestions: 3,
+            difficulty: .初级,
+            player: SilentIntervalTonePlayerForTests(),
+            historyStore: mock
+        )
+        await vm.playPair()
+        guard let q = vm.question else {
+            XCTFail("missing question")
+            return
+        }
+        let wrongIdx = q.choices.firstIndex { $0.semitones != q.answer.semitones } ?? 0
+        vm.selectChoice(wrongIdx)
+        XCTAssertTrue(vm.revealed)
+        vm.setDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.difficulty, .初级)
+    }
+
+    @MainActor
     func testIntervalEarSubmitAppendsHistoryRecord() async throws {
         let mock = MockIntervalEarHistoryStore()
         let vm = IntervalEarSessionViewModel(

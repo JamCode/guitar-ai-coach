@@ -29,12 +29,22 @@ public struct IntervalEarView: View {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("说明").appSectionTitle()
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("听两个音，选择它们之间的音程。")
-                            .foregroundStyle(SwiftAppTheme.text)
-                        Self.difficultyInlineBadge(viewModel.difficulty)
+                    Text("听两个音，选择它们之间的音程。")
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Picker("难度", selection: difficultyBinding) {
+                        ForEach(IntervalEarDifficulty.allCases, id: \.self) { level in
+                            Text(level.rawValue).tag(level)
+                        }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .pickerStyle(.segmented)
+                    .disabled(viewModel.revealed)
+                    if let hint = IntervalEarDifficulty.helpText[viewModel.difficulty] {
+                        Text(hint)
+                            .font(.caption)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     Text("先播较低音，再播较高音；需要时可多次点击「播放」。")
                         .foregroundStyle(SwiftAppTheme.muted)
                     Text(viewModel.sessionStatsLine)
@@ -170,6 +180,13 @@ public struct IntervalEarView: View {
         }
     }
 
+    private var difficultyBinding: Binding<IntervalEarDifficulty> {
+        Binding(
+            get: { viewModel.difficulty },
+            set: { viewModel.setDifficultyIfChanged($0) }
+        )
+    }
+
     @ViewBuilder
     private func chromaticPillRow(midis: [Int], question: IntervalQuestion) -> some View {
         HStack(spacing: 6) {
@@ -199,18 +216,6 @@ public struct IntervalEarView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// 难度标签：跟在说明首句后，与正文同一视觉块。
-    private static func difficultyInlineBadge(_ difficulty: IntervalEarDifficulty) -> some View {
-        Text(difficulty.rawValue)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(SwiftAppTheme.muted)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(SwiftAppTheme.surfaceSoft)
-            .clipShape(Capsule())
-            .accessibilityLabel("难度 \(difficulty.rawValue)")
     }
 
     /// 科学音高记谱，如 MIDI 48 → `C3`（与播放顺序一致：先低后高）。

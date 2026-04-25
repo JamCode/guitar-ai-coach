@@ -1,3 +1,4 @@
+import Core
 import Foundation
 
 // Keep model fields aligned with Flutter `practice_models.dart`.
@@ -7,6 +8,13 @@ struct PracticeTask: Identifiable, Equatable {
     let name: String
     let targetMinutes: Int
     let description: String
+}
+
+extension PracticeTask {
+    fileprivate var catalogKeyPrefix: String { "task_\(id.replacingOccurrences(of: "-", with: "_"))" }
+
+    var localizedName: String { AppL10n.t("\(catalogKeyPrefix)_name") }
+    var localizedDescription: String { AppL10n.t("\(catalogKeyPrefix)_desc") }
 }
 
 /// Swift 侧统一维护一期内置任务，避免散落常量（对齐 Flutter `kDefaultPracticeTasks`）。

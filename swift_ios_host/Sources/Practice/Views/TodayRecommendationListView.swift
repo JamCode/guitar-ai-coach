@@ -134,7 +134,7 @@ struct TodayRecommendationListView: View {
             )
         case let .chordSwitch(exercise):
             GeneratedPracticeDetailView(
-                title: item.module.title,
+                title: item.module.localizedTitle,
                 summary: item.summary,
                 module: item.module,
                 lines: [
@@ -151,7 +151,7 @@ struct TodayRecommendationListView: View {
             )
         case let .scaleTraining(exercise):
             GeneratedPracticeDetailView(
-                title: item.module.title,
+                title: item.module.localizedTitle,
                 summary: item.summary,
                 module: item.module,
                 lines: [
@@ -169,7 +169,7 @@ struct TodayRecommendationListView: View {
             )
         case let .traditionalCrawl(exercise):
             GeneratedPracticeDetailView(
-                title: item.module.title,
+                title: item.module.localizedTitle,
                 summary: item.summary,
                 module: item.module,
                 lines: [
@@ -247,7 +247,7 @@ struct TodayRecommendationListView: View {
                 .foregroundStyle(SwiftAppTheme.brand)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.module.title)
+                Text(item.module.localizedTitle)
                     .font(.headline)
                     .foregroundStyle(SwiftAppTheme.text)
                 Text(item.summary)

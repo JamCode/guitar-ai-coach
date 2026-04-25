@@ -1,4 +1,5 @@
 import SwiftUI
+import Core
 import Tuner
 import Fretboard
 import Chords
@@ -16,8 +17,8 @@ public struct ToolsHomeView: View {
                     EarHomeView()
                 } label: {
                     toolsRow(
-                        title: "练耳",
-                        subtitle: "音程/和弦/视唱训练",
+                        title: AppL10n.t("tools_ear_title"),
+                        subtitle: AppL10n.t("tools_ear_subtitle"),
                         systemImage: "ear"
                     )
                 }
@@ -25,8 +26,8 @@ public struct ToolsHomeView: View {
                     TunerView()
                 } label: {
                     toolsRow(
-                        title: "调音器",
-                        subtitle: "麦克风拾音与标准空弦目标",
+                        title: AppL10n.t("tools_tuner_title"),
+                        subtitle: AppL10n.t("tools_tuner_subtitle"),
                         systemImage: "waveform"
                     )
                 }
@@ -34,8 +35,8 @@ public struct ToolsHomeView: View {
                     FretboardView()
                 } label: {
                     toolsRow(
-                        title: "吉他指板",
-                        subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
+                        title: AppL10n.t("tools_fretboard_title"),
+                        subtitle: AppL10n.t("tools_fretboard_subtitle"),
                         systemImage: "square.grid.3x3"
                     )
                 }
@@ -43,8 +44,8 @@ public struct ToolsHomeView: View {
                     TraditionalCrawlPracticeView()
                 } label: {
                     toolsRow(
-                        title: "爬格子",
-                        subtitle: "传统四指一格·推荐步骤与节拍建议",
+                        title: AppL10n.t("tools_crawl_title"),
+                        subtitle: AppL10n.t("tools_crawl_subtitle"),
                         systemImage: "hand.raised.fingers.spread"
                     )
                 }
@@ -52,8 +53,8 @@ public struct ToolsHomeView: View {
                     ScaleTrainingPracticeView()
                 } label: {
                     toolsRow(
-                        title: "音阶训练",
-                        subtitle: "大调/小调/五声·Mi/Sol/La 指型·自动出题",
+                        title: AppL10n.t("tools_scale_training_title"),
+                        subtitle: AppL10n.t("tools_scale_training_subtitle"),
                         systemImage: "music.note.list"
                     )
                 }
@@ -61,8 +62,8 @@ public struct ToolsHomeView: View {
                     ChordSwitchTrainingPracticeView()
                 } label: {
                     toolsRow(
-                        title: "和弦切换",
-                        subtitle: "开放/横按·分组节奏·BPM 自动组卷",
+                        title: AppL10n.t("tools_chord_switch_title"),
+                        subtitle: AppL10n.t("tools_chord_switch_subtitle"),
                         systemImage: "guitars"
                     )
                 }
@@ -70,8 +71,8 @@ public struct ToolsHomeView: View {
                     ChordLookupView()
                 } label: {
                     toolsRow(
-                        title: "和弦速查",
-                        subtitle: "离线可查构成音与常见把位",
+                        title: AppL10n.t("tools_chord_lookup_title"),
+                        subtitle: AppL10n.t("tools_chord_lookup_subtitle"),
                         systemImage: "pianokeys"
                     )
                 }
@@ -79,13 +80,13 @@ public struct ToolsHomeView: View {
                     ChordChartView()
                 } label: {
                     toolsRow(
-                        title: "常用和弦",
-                        subtitle: "按和弦类型分类·本地指法图速查",
+                        title: AppL10n.t("tools_chord_chart_title"),
+                        subtitle: AppL10n.t("tools_chord_chart_subtitle"),
                         systemImage: "tablecells"
                     )
                 }
             }
-            .navigationTitle("工具")
+            .navigationTitle(AppL10n.t("tools_nav_title"))
             .appNavigationBarChrome()
         }
     }

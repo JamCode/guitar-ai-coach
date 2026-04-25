@@ -1,4 +1,5 @@
 import Accelerate
+import Core
 import Foundation
 
 enum TranscriptionCQTFeatureExtractorError: LocalizedError {
@@ -7,7 +8,7 @@ enum TranscriptionCQTFeatureExtractorError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .fftUnavailable:
-            return "当前设备无法初始化音频频谱分析器"
+            return AppL10n.t("onnx_spectrum_unavailable")
         }
     }
 }

@@ -74,7 +74,7 @@ private struct ChordPracticeDiagramCell: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous)
                             .fill(SwiftAppTheme.surfaceSoft)
-                        Text("无本地指法")
+                        Text(AppL10n.t("chord_practice_not_found"))
                             .font(.system(size: max(9, metrics.columnWidth * 0.09)))
                             .multilineTextAlignment(.center)
                             .foregroundStyle(SwiftAppTheme.muted)
