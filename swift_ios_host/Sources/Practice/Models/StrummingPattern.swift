@@ -28,16 +28,33 @@ enum StrummingDifficulty: String, Codable, CaseIterable, Hashable {
     case 高级
 }
 
+enum StrummingSubdivision: String, Codable, Hashable {
+    case quarter
+    case eighth
+
+    var labelZh: String {
+        switch self {
+        case .quarter: "四分音符"
+        case .eighth: "八分音符"
+        }
+    }
+}
+
 struct StrummingPattern: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let name: String
     let subtitle: String
     let tip: String
     let difficulty: StrummingDifficulty
+    let timeSignature: String
+    let subdivision: StrummingSubdivision
+    let recommendedBPM: Int?
     /// 事件流（canonical）：按八分单位定义动作与时值，4/4 每小节应合计 8 单位。
     let events: [StrumActionEvent]
     /// 长度 8：`[1, &, 2, &, 3, &, 4, &]`。
     let cells: [StrumCellKind]
+    /// 与 `cells` 对齐的逐格步骤，供 UI 按 step 高亮。
+    let patternSteps: [StrumCellKind]
 }
 
 func expandStrumEventsToCells(_ events: [StrumActionEvent], totalUnits: Int = 8) -> [StrumCellKind] {
@@ -78,8 +95,12 @@ private func makePattern(
         subtitle: subtitle,
         tip: tip,
         difficulty: difficulty,
+        timeSignature: "4/4",
+        subdivision: .eighth,
+        recommendedBPM: nil,
         events: events,
-        cells: expandStrumEventsToCells(events, totalUnits: 8)
+        cells: expandStrumEventsToCells(events, totalUnits: 8),
+        patternSteps: expandStrumEventsToCells(events, totalUnits: 8)
     )
 }
 

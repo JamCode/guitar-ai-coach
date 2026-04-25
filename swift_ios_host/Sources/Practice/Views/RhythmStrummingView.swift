@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Metronome
 import Practice
 
 /// 节奏扫弦练习：按内置常用扫弦型展示 4/4 八分网格图示；可选保存记录（对齐 Flutter）。
@@ -20,8 +21,20 @@ struct RhythmStrummingView: View {
 
     @State private var savingError: String?
     @State private var savedToast: Bool = false
+    @StateObject private var metronomeVM = MetronomeViewModel()
+    @State private var currentStep: Int = 0
+    @State private var offbeatTask: Task<Void, Never>?
 
     private let beatLabels: [String] = ["1", "&", "2", "&", "3", "&", "4", "&"]
+    private let defaultRecommendedBPM = 72
+
+    private var recommendedBPM: Int {
+        pattern.recommendedBPM ?? defaultRecommendedBPM
+    }
+
+    private var subdivisionLabel: String {
+        pattern.subdivision.labelZh
+    }
 
     var body: some View {
         ScrollView {
@@ -53,10 +66,29 @@ struct RhythmStrummingView: View {
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("一小节（4/4，八分六线谱）")
+                    Text("一小节（\(pattern.timeSignature)，\(subdivisionLabel)六线谱）")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(SwiftAppTheme.text)
-                    StrummingTabStaffView(events: pattern.events, beatLabels: beatLabels)
+                    HStack(spacing: 10) {
+                        Button {
+                            toggleMetronome()
+                        } label: {
+                            Text(metronomeVM.transport == .running ? "⏸ 暂停" : "▶ 开始练习")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .appSecondaryButton()
+                        Text("\(recommendedBPM) BPM")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                        Text(subdivisionLabel)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                    }
+                    StrummingTabStaffView(
+                        patternSteps: pattern.patternSteps,
+                        beatLabels: beatLabels,
+                        currentStep: currentStep
+                    )
                 }
                 .appCard()
 
@@ -81,6 +113,7 @@ struct RhythmStrummingView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    stopAndResetPlayback()
                     showSettings = true
                 } label: {
                     Image(systemName: "gearshape")
@@ -138,7 +171,7 @@ struct RhythmStrummingView: View {
 
                 在该弦序下：↑ 表示下扫，↓ 表示上扫，· 表示空拍，× 表示拍弦/切音。
 
-                本页为 4/4 常用型，可与节拍器或歌曲一起练习；本期不含内置节拍器与音频。
+                本页支持内置节拍器跟练；可在六线谱标题下方开始/暂停。
                 """
             )
         }
@@ -171,15 +204,63 @@ struct RhythmStrummingView: View {
         .onChange(of: selectedDifficulty) { _, _ in
             nextPattern()
         }
+        .onChange(of: metronomeVM.currentBeatIndex) { _, beat in
+            guard beat != nil, metronomeVM.transport == .running else { return }
+            handleMetronomeBeatTick()
+        }
+        .onDisappear {
+            stopAndResetPlayback()
+        }
     }
 
     private func nextPattern() {
+        stopAndResetPlayback()
         var rng = SystemRandomNumberGenerator()
         pattern = StrummingPatternGenerator.nextPattern(
             difficulty: selectedDifficulty,
             excluding: pattern.id,
             using: &rng
         )
+    }
+
+    private func toggleMetronome() {
+        switch metronomeVM.transport {
+        case .running:
+            metronomeVM.pause()
+            offbeatTask?.cancel()
+            offbeatTask = nil
+        case .paused, .stopped:
+            if metronomeVM.transport == .stopped {
+                currentStep = 0
+            }
+            metronomeVM.setTimeSignature(.fourFour)
+            metronomeVM.setBPM(recommendedBPM)
+            metronomeVM.start()
+        }
+    }
+
+    private func handleMetronomeBeatTick() {
+        advanceStep()
+        guard pattern.subdivision == .eighth else { return }
+        offbeatTask?.cancel()
+        let halfBeatNs = UInt64((60.0 / Double(max(1, recommendedBPM)) * 0.5) * 1_000_000_000)
+        offbeatTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: halfBeatNs)
+            guard !Task.isCancelled, metronomeVM.transport == .running else { return }
+            advanceStep()
+        }
+    }
+
+    private func advanceStep() {
+        let count = max(1, pattern.patternSteps.count)
+        currentStep = (currentStep + 1) % count
+    }
+
+    private func stopAndResetPlayback() {
+        offbeatTask?.cancel()
+        offbeatTask = nil
+        metronomeVM.stop()
+        currentStep = 0
     }
 
     @MainActor
@@ -245,20 +326,12 @@ enum StrummingTabStaffGlyph: Equatable {
     }
 }
 
-private struct StrumDisplaySlot {
-    let glyph: StrummingTabStaffGlyph
-    let isPrimary: Bool
-}
-
 private struct StrummingTabStaffView: View {
-    let events: [StrumActionEvent]
+    let patternSteps: [StrumCellKind]
     let beatLabels: [String]
+    let currentStep: Int
     private let stringLabels = ["①", "②", "③", "④", "⑤", "⑥"]
-    private let totalUnits = 8
-
-    private var slots: [StrumDisplaySlot] {
-        makeDisplaySlots(from: events, totalUnits: totalUnits)
-    }
+    private var totalUnits: Int { max(1, patternSteps.count) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -268,7 +341,7 @@ private struct StrummingTabStaffView: View {
                 ForEach(0..<totalUnits, id: \.self) { i in
                     Text(beatLabels[i])
                         .font(.caption)
-                        .foregroundStyle(SwiftAppTheme.muted)
+                        .foregroundStyle(i == currentStep ? SwiftAppTheme.brand : SwiftAppTheme.muted)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -295,12 +368,14 @@ private struct StrummingTabStaffView: View {
 
                     HStack(spacing: 6) {
                         ForEach(0..<totalUnits, id: \.self) { i in
-                            let slot = slots[safe: i] ?? StrumDisplaySlot(glyph: .rest, isPrimary: true)
-                            Text(slot.isPrimary ? slot.glyph.symbol : "—")
-                                .font(.system(size: 24, weight: .semibold))
-                                .foregroundStyle(slot.isPrimary ? SwiftAppTheme.text : SwiftAppTheme.muted)
-                                .opacity(slot.isPrimary ? 1.0 : 0.7)
+                            let glyph = StrummingTabStaffGlyph.from(kind: patternSteps[safe: i] ?? .rest)
+                            let isActive = i == currentStep
+                            Text(glyph.symbol)
+                                .font(.system(size: isActive ? 27 : 24, weight: .semibold))
+                                .foregroundStyle(isActive ? SwiftAppTheme.brand : SwiftAppTheme.text)
+                                .scaleEffect(isActive ? 1.06 : 1.0)
                                 .frame(maxWidth: .infinity)
+                                .animation(.easeOut(duration: 0.12), value: currentStep)
                         }
                     }
                     .padding(.horizontal, 6)
@@ -316,27 +391,11 @@ private struct StrummingTabStaffView: View {
                 )
             }
 
-            Text("图例：↑ 下扫，↓ 上扫，· 空拍，× 拍弦；弦序为 ① 在上、⑥ 在下（最粗弦）。同一动作跨一拍时，首格显示动作，后续格显示延续占位。")
+            Text("图例：↑ 下扫，↓ 上扫，· 空拍，× 拍弦；弦序为 ① 在上、⑥ 在下（最粗弦）。")
                 .font(.caption)
                 .foregroundStyle(SwiftAppTheme.muted)
         }
     }
-}
-
-private func makeDisplaySlots(from events: [StrumActionEvent], totalUnits: Int) -> [StrumDisplaySlot] {
-    var slots: [StrumDisplaySlot] = []
-    for event in events {
-        guard event.units > 0 else { continue }
-        let glyph = StrummingTabStaffGlyph.from(action: event.kind)
-        slots.append(StrumDisplaySlot(glyph: glyph, isPrimary: true))
-        if event.units > 1 {
-            slots.append(contentsOf: Array(repeating: StrumDisplaySlot(glyph: glyph, isPrimary: false), count: event.units - 1))
-        }
-    }
-    if slots.count < totalUnits {
-        slots.append(contentsOf: Array(repeating: StrumDisplaySlot(glyph: .rest, isPrimary: true), count: totalUnits - slots.count))
-    }
-    return Array(slots.prefix(totalUnits))
 }
 
 private extension Array {
