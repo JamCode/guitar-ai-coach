@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# 基于当前仓库代码编译 SwiftEarHost，安装到 iOS 模拟器。
+# 基于当前仓库代码编译 SwiftEarHost，安装到 iOS 模拟器并启动。
 #
-# 重要（内购本地测试）：
-# - 命令行 `simctl launch` 无法稳定复现 Xcode Run Action 的 StoreKit 注入行为。
-# - 因此本脚本默认执行到「安装完成」后自动打开 Xcode 工程，提示用 Cmd+R 启动，
-#   以确保使用 StoreKitConfig.storekit（不弹真实 Apple ID）。
-# - 若只调普通功能，可传 --simctl-launch 强制直接启动（不推荐用于内购）。
+# 默认行为（推荐日常开发）：
+# - Debug + iOS Simulator 产物，安装后用 simctl 直接拉起 App（无需再开 Xcode 点 Run）。
+# - 「扒歌」在模拟器 Debug 下由 App 内 #if DEBUG + targetEnvironment(simulator) 自动绕过内购；
+#   真机 / Release / App Store 不受影响。
+#
+# StoreKit 本地配置文件（.storekit）联调：
+# - 命令行 xcodebuild 多数版本不支持 -storeKitConfiguration；若需 Xcode Run 注入 StoreKit，
+#   请使用：./run-simulator.sh --open-xcode
 #
 # 用法：
 #   ./run-simulator.sh
 #   SIMULATOR_UDID=<udid> ./run-simulator.sh
 #   ./run-simulator.sh --pull
-#   ./run-simulator.sh --simctl-launch      # 普通功能调试；内购可能走真实 App Store
+#   ./run-simulator.sh --open-xcode   # 仅构建安装后打开 Xcode，用 Cmd+R 跑 StoreKit 配置
 #
 # 依赖：xcodebuild、xcrun simctl、python3。
 
@@ -40,17 +43,22 @@ if [[ -z "${STOREKIT_CONFIG}" ]]; then
 fi
 
 DO_PULL=0
-DO_SIMCTL_LAUNCH=0
+# 默认直接 simctl 启动；仅 StoreKit Xcode 注入时用 --open-xcode
+DO_SIMCTL_LAUNCH=1
 for arg in "$@"; do
   case "${arg}" in
     --pull) DO_PULL=1 ;;
-    --simctl-launch) DO_SIMCTL_LAUNCH=1 ;;
+    --open-xcode) DO_SIMCTL_LAUNCH=0 ;;
+    --simctl-launch)
+      # 兼容旧参数：现为默认行为，可忽略
+      DO_SIMCTL_LAUNCH=1
+      ;;
     -h|--help)
-      sed -n '1,80p' "$0"
+      sed -n '1,90p' "$0"
       exit 0
       ;;
     *)
-      echo "未知参数: ${arg}（支持 --pull / --simctl-launch）" >&2
+      echo "未知参数: ${arg}（支持 --pull / --open-xcode）" >&2
       exit 1
       ;;
   esac
@@ -114,6 +122,7 @@ fi
 echo "==> 启动参数检查"
 echo "    Project: ${PROJECT}"
 echo "    Scheme: ${SCHEME}"
+echo "    Configuration: Debug（含 SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG）"
 echo "    Simulator UDID: ${UDID}"
 echo "    Bundle ID: ${BUNDLE_ID}"
 echo "    StoreKitConfig: ${STOREKIT_CONFIG}"
@@ -123,7 +132,8 @@ if xcodebuild -help 2>&1 | /usr/bin/python3 -c 'import sys; print("1" if "-store
   STOREKIT_FLAG_SUPPORTED=1
 fi
 echo "    xcodebuild -storeKitConfiguration supported: $([[ ${STOREKIT_FLAG_SUPPORTED} -eq 1 ]] && echo YES || echo NO)"
-echo "    Launch mode: $([[ ${DO_SIMCTL_LAUNCH} -eq 1 ]] && echo 'simctl (IAP not guaranteed)' || echo 'Xcode Cmd+R required for IAP')"
+echo "    Launch: $([[ ${DO_SIMCTL_LAUNCH} -eq 1 ]] && echo 'simctl（默认）' || echo '打开 Xcode（--open-xcode）')"
+echo "    扒歌内购：模拟器 Debug 包由 App 编译开关绕过；真机/Release 不绕过"
 
 echo "==> 打开 Simulator"
 open -a Simulator 2>/dev/null || true
@@ -131,7 +141,7 @@ open -a Simulator 2>/dev/null || true
 echo "==> 启动模拟器 ${UDID}（若已启动则忽略错误）"
 xcrun simctl boot "${UDID}" 2>/dev/null || true
 
-echo "==> xcodebuild（Debug / iphonesimulator, 带 StoreKitConfig）"
+echo "==> xcodebuild（Debug / iphonesimulator）"
 rm -rf "${DERIVED}/Build"
 mkdir -p "${DERIVED}"
 
@@ -146,8 +156,7 @@ if [[ "${STOREKIT_FLAG_SUPPORTED}" -eq 1 ]]; then
     -storeKitConfiguration "${STOREKIT_CONFIG}" \
     build
 else
-  echo "⚠️ 当前 xcodebuild 不支持 -storeKitConfiguration（命令行限制）。"
-  echo "⚠️ 将继续完成 build+install；内购测试必须在 Xcode 中 Cmd+R 才能走本地 StoreKit。"
+  echo "⚠️ 当前 xcodebuild 不支持 -storeKitConfiguration（命令行限制）；已跳过该参数。"
   xcodebuild \
     -project "${PROJECT}" \
     -scheme "${SCHEME}" \
@@ -169,16 +178,14 @@ xcrun simctl uninstall "${UDID}" "${BUNDLE_ID}" 2>/dev/null || true
 xcrun simctl install "${UDID}" "${APP}"
 
 if [[ "${DO_SIMCTL_LAUNCH}" -eq 1 ]]; then
-  echo "⚠️ 使用 simctl 直接启动（内购可能仍弹 Apple ID）：${BUNDLE_ID}"
+  echo "==> simctl 启动 ${BUNDLE_ID}"
   xcrun simctl launch --terminate-running-process "${UDID}" "${BUNDLE_ID}"
-  echo "完成（simctl 模式）。"
+  echo "完成。"
+  echo "提示：扒歌在「模拟器 + Debug」下会显示「模拟器调试：已绕过购买」并可直接从相册导入。"
   exit 0
 fi
 
 echo "==> 已完成构建与安装。"
-echo "==> 为确保 StoreKit 本地内购生效，请在 Xcode 中运行（Cmd+R）："
-echo "    1) 打开工程: ${PROJECT}"
-echo "    2) 选择模拟器 UDID: ${UDID}"
-echo "    3) 确认 Scheme Run > Options 绑定 ${STOREKIT_CONFIG}"
-echo "    4) 按 Cmd+R 启动"
+echo "==> 若需 Xcode Run 注入 StoreKit（.storekit），请 Cmd+R："
+echo "    工程: ${PROJECT}  ·  模拟器 UDID: ${UDID}"
 open -a Xcode "${PROJECT}" 2>/dev/null || true
