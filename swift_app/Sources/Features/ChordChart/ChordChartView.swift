@@ -7,7 +7,7 @@ private final class ChordChartAudioHolder: ObservableObject {
 }
 
 public struct ChordChartView: View {
-    @State private var expandedSections: Set<String> = [ChordChartData.sections.first?.id ?? ""]
+    @State private var expandedSections: Set<String> = []
     @StateObject private var chartAudio = ChordChartAudioHolder()
 
     public init() {}
