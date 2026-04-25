@@ -32,17 +32,24 @@ final class PurchaseManager: ObservableObject {
     }
 
     func loadProduct() async {
+        let requestedProductIDs = [Self.transcriptionProductId]
+        print("[StoreKit] loadProduct request productIDs=\(requestedProductIDs)")
         isFetchingProduct = true
         defer {
             isFetchingProduct = false
             productFetchCompleted = true
         }
         do {
-            let list = try await Product.products(for: [Self.transcriptionProductId])
+            let list = try await Product.products(for: requestedProductIDs)
+            print("[StoreKit] loadProduct response count=\(list.count)")
+            for item in list {
+                print("[StoreKit] product id=\(item.id), price=\(item.displayPrice)")
+            }
             product = list.first
             lastErrorMessage = nil
         } catch {
             product = nil
+            print("[StoreKit] loadProduct error=\(error.localizedDescription)")
             lastErrorMessage = error.localizedDescription
         }
     }
@@ -97,6 +104,7 @@ final class PurchaseManager: ObservableObject {
             lastErrorMessage = "无法加载内购产品，请检查网络后重试。"
             return
         }
+        print("[StoreKit] purchase start productID=\(product.id), price=\(product.displayPrice)")
         do {
             let res = try await product.purchase()
             switch res {
@@ -110,14 +118,17 @@ final class PurchaseManager: ObservableObject {
                     lastErrorMessage = "交易验证失败，请重试或联系支持。"
                 }
             case .userCancelled:
+                print("[StoreKit] purchase userCancelled")
                 lastErrorMessage = nil
                 break
             case .pending:
+                print("[StoreKit] purchase pending")
                 lastErrorMessage = "交易处理中，可稍后在系统设置中查看或点击「恢复购买」。"
             @unknown default:
                 break
             }
         } catch {
+            print("[StoreKit] purchase error=\(error.localizedDescription)")
             if (error as? SKError)?.code == .paymentCancelled {
                 lastErrorMessage = nil
             } else {
@@ -137,4 +148,5 @@ final class PurchaseManager: ObservableObject {
             lastErrorMessage = error.localizedDescription
         }
     }
+
 }

@@ -90,9 +90,14 @@ if [[ ! -d "${APP}" ]]; then
 fi
 
 echo "==> 安装到模拟器"
+echo "==> 卸载旧版本（若存在）"
+xcrun simctl uninstall "${UDID}" "${BUNDLE_ID}" 2>/dev/null || true
 xcrun simctl install "${UDID}" "${APP}"
 
 echo "==> 启动 ${BUNDLE_ID}"
-xcrun simctl launch "${UDID}" "${BUNDLE_ID}"
+# 关键：simctl 直接启动不会应用 Xcode Scheme 的 StoreKit Run 配置。
+# 这里通过 SKTestSession + 环境变量强制启用本地 StoreKitConfig（文件名不带扩展名）。
+SIMCTL_CHILD_STOREKIT_CONFIG_NAME="StoreKitConfig" \
+  xcrun simctl launch --terminate-running-process "${UDID}" "${BUNDLE_ID}"
 
 echo "完成。若窗口未在前台，请手动切到 Simulator。"
