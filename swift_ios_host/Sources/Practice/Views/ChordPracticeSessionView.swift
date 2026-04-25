@@ -18,18 +18,13 @@ struct ChordPracticeSessionView: View {
     @State private var selectedTonic: String = ChordSwitchGenerator.defaultTonic
 
     @StateObject private var metronomeVM = MetronomeViewModel()
-    @State private var practicedBeatCount: Int = 0
-    @State private var currentChordIndex: Int = 0
-    @State private var beatAccumulator: Double = 0
+    @State private var metronomeBPM: Int = 60
+    @State private var selectedTimeSignature: MetronomeTimeSignature = .fourFour
 
     /// 练习页一行说明：本组和弦所在调性（与出题 `keyZh` 一致）。
     private var practiceKeyDescriptionLine: String {
         let t = ChordSwitchGenerator.parseTonicKey(from: exercise.keyZh)
         return "本组和弦为 \(exercise.keyZh) 的 \(t) 自然大调进行；和弦符号、指法与级数均相对该调。"
-    }
-
-    private var flattenedCount: Int {
-        max(1, exercise.flattenedChords.count)
     }
 
     private var recommendedBPM: Int {
@@ -46,18 +41,8 @@ struct ChordPracticeSessionView: View {
         return MetronomeConfig.clampBPM(candidate)
     }
 
-    private var beatsPerChordForPractice: Double {
-        let raw = exercise.beatsPerChord
-        return raw > 0 ? raw : 2
-    }
-
-    private var beatsPerChordLabel: String {
-        let raw = beatsPerChordForPractice
-        if abs(raw - raw.rounded()) < 1e-6 {
-            return "每和弦 \(Int(raw.rounded())) 拍"
-        }
-        return "每和弦 \(String(format: "%.1f", raw)) 拍"
-    }
+    private let bpmMin = 40
+    private let bpmMax = 220
 
     var body: some View {
         ScrollView {
@@ -84,33 +69,41 @@ struct ChordPracticeSessionView: View {
 
                     // 题面变长（高级和弦更多、提示文案更长）时允许页面纵向滚动，
                     // 避免 `aspectRatio(..., .fit)` 的指法图区为适配可用高度而整体缩小。
-                    ChordPracticeDiagramStrip(
-                        chordSymbols: exercise.flattenedChords,
-                        activeGlobalIndex: currentChordIndex
-                    )
+                    ChordPracticeDiagramStrip(chordSymbols: exercise.flattenedChords)
 
                     Text(exercise.bpmHintZh)
                         .font(.caption)
                         .foregroundStyle(SwiftAppTheme.muted)
                         .padding(.top, 4)
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("节拍器")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.text)
                         HStack(spacing: 10) {
+                            Button("-") { updateBPM(delta: -5) }
+                                .appSecondaryButton()
+                            Text("\(metronomeBPM) BPM")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(SwiftAppTheme.text)
+                                .frame(minWidth: 84, alignment: .center)
+                            Button("+") { updateBPM(delta: 5) }
+                                .appSecondaryButton()
+                            Spacer(minLength: 8)
                             Button {
                                 togglePracticeMetronome()
                             } label: {
-                                Text(metronomeVM.transport == .running ? "⏸ 暂停" : "▶ 开始节拍")
+                                Text(metronomeVM.transport == .running ? "⏸ 暂停" : "▶ 开始")
                                     .font(.subheadline.weight(.semibold))
-                                    .frame(maxWidth: .infinity)
                             }
                             .appSecondaryButton()
-                            Text("BPM \(recommendedBPM) · \(beatsPerChordLabel)")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(SwiftAppTheme.muted)
                         }
-                        Text("当前拍数 \(practicedBeatCount) · 当前和弦 #\(currentChordIndex + 1)")
-                            .font(.caption)
-                            .foregroundStyle(SwiftAppTheme.muted)
+                        Picker("拍号", selection: $selectedTimeSignature) {
+                            Text("4/4").tag(MetronomeTimeSignature.fourFour)
+                            Text("3/4").tag(MetronomeTimeSignature.threeFour)
+                            Text("6/8").tag(MetronomeTimeSignature.sixEight)
+                        }
+                        .pickerStyle(.segmented)
                         if let err = metronomeVM.errorMessage, !err.isEmpty {
                             Text(err)
                                 .font(.caption)
@@ -138,6 +131,7 @@ struct ChordPracticeSessionView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    stopMetronome()
                     showPracticeSettings = true
                 } label: {
                     Image(systemName: "gearshape")
@@ -145,12 +139,14 @@ struct ChordPracticeSessionView: View {
                 .accessibilityLabel("练习设置")
             }
         }
-        .onChange(of: metronomeVM.currentBeatIndex) { _, beat in
-            guard beat != nil, metronomeVM.transport == .running else { return }
-            handleMetronomeBeatTick()
+        .onAppear {
+            syncBPMFromExercise()
+        }
+        .onChange(of: selectedTimeSignature) { _, newValue in
+            metronomeVM.setTimeSignature(newValue)
         }
         .onDisappear {
-            metronomeVM.stop()
+            stopMetronome()
         }
         .sheet(isPresented: $showPracticeSettings) {
             NavigationStack {
@@ -185,8 +181,9 @@ struct ChordPracticeSessionView: View {
                     selectedTonic = ChordSwitchGenerator.parseTonicKey(from: exercise.keyZh)
                 }
                 .onChange(of: selectedTonic) { _, newValue in
+                    stopMetronome()
                     exercise = ChordSwitchGenerator.withTonic(exercise, to: newValue)
-                    resetPracticeProgress()
+                    syncBPMFromExercise()
                 }
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -207,44 +204,41 @@ struct ChordPracticeSessionView: View {
         )
     }
 
-    private func resetPracticeProgress() {
-        metronomeVM.stop()
-        practicedBeatCount = 0
-        currentChordIndex = 0
-        beatAccumulator = 0
-    }
-
-    private func handleMetronomeBeatTick() {
-        practicedBeatCount += 1
-        beatAccumulator += 1
-        let step = beatsPerChordForPractice
-        while beatAccumulator + 1e-9 >= step {
-            beatAccumulator -= step
-            currentChordIndex = (currentChordIndex + 1) % flattenedCount
-        }
-    }
-
     private func togglePracticeMetronome() {
         switch metronomeVM.transport {
         case .running:
             metronomeVM.pause()
         case .paused, .stopped:
-            if metronomeVM.transport == .stopped {
-                practicedBeatCount = 0
-                beatAccumulator = 0
-            }
-            metronomeVM.setBPM(recommendedBPM)
+            metronomeVM.setTimeSignature(selectedTimeSignature)
+            metronomeVM.setBPM(metronomeBPM)
             metronomeVM.start()
         }
     }
 
+    private func updateBPM(delta: Int) {
+        let next = max(bpmMin, min(bpmMax, metronomeBPM + delta))
+        guard next != metronomeBPM else { return }
+        metronomeBPM = next
+        metronomeVM.setBPM(metronomeBPM)
+    }
+
+    private func syncBPMFromExercise() {
+        metronomeBPM = max(bpmMin, min(bpmMax, recommendedBPM))
+        metronomeVM.setBPM(metronomeBPM)
+    }
+
+    private func stopMetronome() {
+        metronomeVM.stop()
+    }
+
     private func advanceToNextGroup() {
         var rng = SystemRandomNumberGenerator()
-        resetPracticeProgress()
+        stopMetronome()
         exercise = ChordSwitchGenerator.buildExercise(
             difficulty: selectedDifficulty,
             tonic: selectedTonic,
             using: &rng
         )
+        syncBPMFromExercise()
     }
 }
