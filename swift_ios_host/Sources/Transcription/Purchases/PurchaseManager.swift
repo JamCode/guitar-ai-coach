@@ -1,0 +1,125 @@
+import Foundation
+import StoreKit
+
+/// 扒歌功能（非消耗型内购）授权状态，使用 StoreKit 2。
+@MainActor
+final class PurchaseManager: ObservableObject {
+    static let shared = PurchaseManager()
+    static let transcriptionProductId = "com.wanghan.guitarhelper.transcription_unlock"
+
+    private static let userDefaultsUnlockedKey = "com.wanghan.guitarhelper.transcription_unlocked"
+
+    @Published private(set) var isUnlocked: Bool
+    @Published private(set) var product: Product?
+    @Published private(set) var isPurchaseInFlight = false
+    @Published var lastErrorMessage: String?
+
+    private var updatesTask: Task<Void, Never>?
+
+    private init() {
+        isUnlocked = UserDefaults.standard.bool(forKey: Self.userDefaultsUnlockedKey)
+        updatesTask = Task { [weak self] in
+            await self?.listenForTransactions()
+        }
+        Task { await refreshUnlockedState() }
+    }
+
+    deinit {
+        updatesTask?.cancel()
+    }
+
+    func loadProduct() async {
+        do {
+            let list = try await Product.products(for: [Self.transcriptionProductId])
+            product = list.first
+        } catch {
+            lastErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func hasActiveTranscriptionEntitlement(verification: VerificationResult<Transaction>) -> Bool {
+        if case .verified(let transaction) = verification {
+            guard transaction.productID == Self.transcriptionProductId else { return false }
+            return transaction.revocationDate == nil
+        }
+        return false
+    }
+
+    /// 以 `Transaction.currentEntitlements` 为权威，并回写 `UserDefaults` 加速冷启动读显示。
+    func refreshUnlockedState() async {
+        var found = false
+        for await result in Transaction.currentEntitlements {
+            if hasActiveTranscriptionEntitlement(verification: result) {
+                found = true
+                break
+            }
+        }
+        setUnlocked(found, persist: true)
+    }
+
+    private func setUnlocked(_ value: Bool, persist: Bool) {
+        isUnlocked = value
+        if persist {
+            UserDefaults.standard.set(value, forKey: Self.userDefaultsUnlockedKey)
+        }
+    }
+
+    private func listenForTransactions() async {
+        for await result in Transaction.updates {
+            guard hasActiveTranscriptionEntitlement(verification: result) else { continue }
+            if case .verified(let transaction) = result {
+                if transaction.revocationDate == nil {
+                    setUnlocked(true, persist: true)
+                } else {
+                    await refreshUnlockedState()
+                }
+                await transaction.finish()
+            }
+        }
+    }
+
+    func purchase() async {
+        isPurchaseInFlight = true
+        lastErrorMessage = nil
+        defer { isPurchaseInFlight = false }
+        if product == nil { await loadProduct() }
+        guard let product else {
+            lastErrorMessage = "无法加载内购产品，请检查网络后重试。"
+            return
+        }
+        do {
+            let res = try await product.purchase()
+            switch res {
+            case .success(let verification):
+                if case .verified(let transaction) = verification, transaction.productID == Self.transcriptionProductId {
+                    if transaction.revocationDate == nil {
+                        setUnlocked(true, persist: true)
+                    }
+                    await transaction.finish()
+                } else {
+                    lastErrorMessage = "交易验证失败，请重试或联系支持。"
+                }
+            case .userCancelled:
+                break
+            case .pending:
+                lastErrorMessage = "交易处理中，可稍后在系统设置中查看或点击「恢复购买」。"
+            @unknown default:
+                break
+            }
+        } catch {
+            lastErrorMessage = error.localizedDescription
+        }
+    }
+
+    func restore() async {
+        isPurchaseInFlight = true
+        lastErrorMessage = nil
+        defer { isPurchaseInFlight = false }
+        do {
+            try await AppStore.sync()
+            await refreshUnlockedState()
+        } catch {
+            lastErrorMessage = error.localizedDescription
+        }
+    }
+}

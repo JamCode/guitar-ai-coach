@@ -64,12 +64,26 @@ struct SwiftEarHostApp: App {
     var body: some Scene {
         WindowGroup {
             HostRootView()
+                .environmentObject(PurchaseManager.shared)
         }
     }
 }
 
-/// 根容器：首次启动展示导览，完成后不再出现。
+/// 设为 `true` 时恢复首次启动全屏导览；暂时关闭时直接进入主界面。
+private let kFirstLaunchTourEnabled = false
+
+/// 根容器：首次启动展示导览，完成后不再出现（受 `kFirstLaunchTourEnabled` 控制）。
 private struct HostRootView: View {
+    var body: some View {
+        if kFirstLaunchTourEnabled {
+            HostRootWithFirstLaunchTour()
+        } else {
+            RootTabView()
+        }
+    }
+}
+
+private struct HostRootWithFirstLaunchTour: View {
     @AppStorage(FirstLaunchTourStorage.completedKey) private var tourCompleted = false
 
     var body: some View {

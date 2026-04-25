@@ -1,23 +1,33 @@
 import SwiftUI
 import PhotosUI
-import UniformTypeIdentifiers
 import Core
 
 struct TranscriptionHomeView: View {
     @StateObject private var vm = TranscriptionHomeViewModel()
     @State private var selectedPhotoItem: PhotosPickerItem?
-    @State private var showingFileImporter = false
+    @State private var showingPurchase = false
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
     var body: some View {
         List {
             Section {
-                PhotosPicker(selection: $selectedPhotoItem, matching: .videos) {
-                    Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
-                        .frame(maxWidth: .infinity)
+                Group {
+                    if purchaseManager.isUnlocked {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .videos) {
+                            Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .appPrimaryButton()
+                    } else {
+                        Button {
+                            showingPurchase = true
+                        } label: {
+                            Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .appPrimaryButton()
+                    }
                 }
-                    .appPrimaryButton()
-                Button(LocalizedStringResource("transcribe_import_from_files", bundle: .main)) { showingFileImporter = true }
-                    .appSecondaryButton()
                 Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
@@ -55,22 +65,6 @@ struct TranscriptionHomeView: View {
         }
         .task { await vm.reload() }
         .appPageBackground()
-        .fileImporter(
-            isPresented: $showingFileImporter,
-            allowedContentTypes: [.audio, .movie, .mpeg4Movie, .mp3],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case let .success(urls):
-                if let first = urls.first {
-                    vm.handleFileImportResult(.success(first))
-                } else {
-                    vm.handleFileImportResult(.success(nil))
-                }
-            case let .failure(error):
-                vm.handleFileImportResult(.failure(error))
-            }
-        }
         .onChange(of: selectedPhotoItem) { _, newValue in
             guard let newValue else { return }
             Task {
@@ -105,6 +99,9 @@ struct TranscriptionHomeView: View {
             }
         } message: {
             Text("名称支持重复，后续历史和结果页会显示这个名字。")
+        }
+        .sheet(isPresented: $showingPurchase) {
+            PurchaseView()
         }
     }
 }
@@ -163,18 +160,6 @@ final class TranscriptionHomeViewModel: ObservableObject {
             try await historyStore.remove(id: entry.id)
             await reload()
         } catch {
-            alertMessage = error.localizedDescription
-            showingAlert = true
-        }
-    }
-
-    func handleFileImportResult(_ result: Result<URL?, Error>) {
-        switch result {
-        case let .success(.some(url)):
-            prepareImport(url: url, sourceType: .files, requiresSecurityScopedAccess: true)
-        case .success(.none):
-            break
-        case let .failure(error):
             alertMessage = error.localizedDescription
             showingAlert = true
         }
