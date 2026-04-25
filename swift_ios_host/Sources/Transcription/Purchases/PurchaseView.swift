@@ -1,7 +1,7 @@
 import SwiftUI
 import Core
 
-/// 扒歌买断解锁购页（`sheet` 呈现）。
+/// 扒歌买断解锁购买页（`sheet` 呈现）。文案与按钮格式面向 App Store 审核与截图。
 struct PurchaseView: View {
     @EnvironmentObject private var purchase: PurchaseManager
     @Environment(\.dismiss) private var dismiss
@@ -11,17 +11,17 @@ struct PurchaseView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("解锁扒歌功能")
+                        Text(AppL10n.t("purchase_sheet_title"))
                             .font(.title2.weight(.bold))
                             .foregroundStyle(SwiftAppTheme.text)
-                        Text("一次购买，永久使用")
+                        Text(AppL10n.t("purchase_sheet_subtitle"))
                             .font(.subheadline)
                             .foregroundStyle(SwiftAppTheme.muted)
                     }
                     VStack(alignment: .leading, spacing: 12) {
-                        featureLine("从音频识别和弦", icon: "waveform.badge.magnifyingglass")
-                        featureLine("支持常见视频格式", icon: "film")
-                        featureLine("本地处理，保护隐私", icon: "lock.shield")
+                        featureLine(AppL10n.t("purchase_sheet_feature_1"), icon: "waveform.badge.magnifyingglass")
+                        featureLine(AppL10n.t("purchase_sheet_feature_2"), icon: "film")
+                        featureLine(AppL10n.t("purchase_sheet_feature_3"), icon: "lock.shield")
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
@@ -31,36 +31,45 @@ struct PurchaseView: View {
                         RoundedRectangle(cornerRadius: SwiftAppTheme.cardRadius, style: .continuous)
                             .stroke(SwiftAppTheme.line, lineWidth: 1)
                     )
+                    if purchase.productFetchCompleted, purchase.product == nil, purchase.lastErrorMessage == nil {
+                        Text(AppL10n.t("purchase_sheet_product_unavailable"))
+                            .font(.footnote)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if let err = purchase.lastErrorMessage, !err.isEmpty {
                         Text(err)
                             .font(.footnote)
                             .foregroundStyle(.red)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    VStack(spacing: 12) {
+                    VStack(spacing: 14) {
                         Button {
                             Task { await purchase.purchase() }
                         } label: {
-                            if purchase.isPurchaseInFlight {
-                                HStack {
+                            HStack(spacing: 10) {
+                                if purchase.isFetchingProduct || purchase.isPurchaseInFlight {
                                     ProgressView()
-                                    Text("处理中…")
+                                        .tint(.white)
                                 }
-                            } else {
-                                Text("购买（\(primaryPriceText)）")
+                                Text(primaryButtonTitle)
+                                    .multilineTextAlignment(.center)
                             }
+                            .frame(maxWidth: .infinity)
                         }
                         .font(.headline)
-                        .frame(maxWidth: .infinity)
                         .appPrimaryButton()
-                        .disabled(purchase.isPurchaseInFlight)
+                        .disabled(isPrimaryPurchaseDisabled)
 
-                        Button("恢复购买") {
+                        Button {
                             Task { await purchase.restore() }
+                        } label: {
+                            Text(AppL10n.t("purchase_sheet_restore"))
+                                .font(.footnote.weight(.medium))
+                                .foregroundStyle(SwiftAppTheme.muted)
+                                .frame(maxWidth: .infinity)
                         }
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .appSecondaryButton()
+                        .buttonStyle(.plain)
                         .disabled(purchase.isPurchaseInFlight)
                     }
                 }
@@ -70,20 +79,36 @@ struct PurchaseView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("关闭") { dismiss() }
+                    Button(AppL10n.t("purchase_sheet_close")) { dismiss() }
                 }
             }
         }
         .tint(SwiftAppTheme.brand)
         .task { await purchase.loadProduct() }
-        .onChange(of: purchase.isUnlocked) { _, v in
-            if v { dismiss() }
+        .onChange(of: purchase.isUnlocked) { _, unlocked in
+            if unlocked { dismiss() }
         }
     }
 
-    private var primaryPriceText: String {
-        if let p = purchase.product { return p.displayPrice }
-        return "—"
+    /// 主按钮文案：有 `Product.displayPrice` 时为「购买 $x.xx」/「Buy $x.xx」；加载中或处理中显示状态；否则为无价格短文案（不出现占位符「一」或「—」）。
+    private var primaryButtonTitle: String {
+        if purchase.isFetchingProduct {
+            return AppL10n.t("purchase_sheet_loading")
+        }
+        if purchase.isPurchaseInFlight {
+            return AppL10n.t("purchase_sheet_processing")
+        }
+        if let product = purchase.product {
+            return String(format: AppL10n.t("purchase_sheet_primary_with_price"), product.displayPrice)
+        }
+        return AppL10n.t("purchase_sheet_primary_no_price")
+    }
+
+    /// 未拿到 `Product` 且已完成拉取、或正在拉取/购买中时禁用购买，避免无效点击。
+    private var isPrimaryPurchaseDisabled: Bool {
+        if purchase.isFetchingProduct || purchase.isPurchaseInFlight { return true }
+        if purchase.productFetchCompleted, purchase.product == nil { return true }
+        return false
     }
 
     private func featureLine(_ text: String, icon: String) -> some View {
@@ -94,6 +119,7 @@ struct PurchaseView: View {
             Text(text)
                 .font(.subheadline)
                 .foregroundStyle(SwiftAppTheme.text)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

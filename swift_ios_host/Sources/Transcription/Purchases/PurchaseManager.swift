@@ -12,6 +12,9 @@ final class PurchaseManager: ObservableObject {
     @Published private(set) var isUnlocked: Bool
     @Published private(set) var product: Product?
     @Published private(set) var isPurchaseInFlight = false
+    /// 首次 `loadProduct()` 是否已结束（成功或失败），用于购买按钮可用性。
+    @Published private(set) var productFetchCompleted = false
+    @Published private(set) var isFetchingProduct = false
     @Published var lastErrorMessage: String?
 
     private var updatesTask: Task<Void, Never>?
@@ -29,10 +32,17 @@ final class PurchaseManager: ObservableObject {
     }
 
     func loadProduct() async {
+        isFetchingProduct = true
+        defer {
+            isFetchingProduct = false
+            productFetchCompleted = true
+        }
         do {
             let list = try await Product.products(for: [Self.transcriptionProductId])
             product = list.first
+            lastErrorMessage = nil
         } catch {
+            product = nil
             lastErrorMessage = error.localizedDescription
         }
     }
@@ -100,6 +110,7 @@ final class PurchaseManager: ObservableObject {
                     lastErrorMessage = "交易验证失败，请重试或联系支持。"
                 }
             case .userCancelled:
+                lastErrorMessage = nil
                 break
             case .pending:
                 lastErrorMessage = "交易处理中，可稍后在系统设置中查看或点击「恢复购买」。"
@@ -107,7 +118,11 @@ final class PurchaseManager: ObservableObject {
                 break
             }
         } catch {
-            lastErrorMessage = error.localizedDescription
+            if (error as? SKError)?.code == .paymentCancelled {
+                lastErrorMessage = nil
+            } else {
+                lastErrorMessage = error.localizedDescription
+            }
         }
     }
 
