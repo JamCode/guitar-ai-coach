@@ -28,7 +28,7 @@ struct TranscriptionCQTFeatureExtractor {
     private let log2n: vDSP_Length
     private let window: [Float]
     private let fft: vDSP.FFT<DSPSplitComplex>?
-    private let binSamplePoints: [FrequencySamplePoint]
+    private let filterBins: [FrequencyFilterBin]
 
     init(
         targetSampleRate: Double = 22_050,
@@ -47,7 +47,7 @@ struct TranscriptionCQTFeatureExtractor {
         self.log2n = vDSP_Length(log2(Double(fftSize)))
         self.window = vDSP.window(ofType: Float.self, usingSequence: .hanningDenormalized, count: fftSize, isHalfWindow: false)
         self.fft = vDSP.FFT(log2n: log2n, radix: .radix2, ofType: DSPSplitComplex.self)
-        self.binSamplePoints = Self.makeBinSamplePoints(
+        self.filterBins = Self.makeFilterBins(
             sampleRate: targetSampleRate,
             fftSize: fftSize,
             binsPerOctave: binsPerOctave,
@@ -80,6 +80,7 @@ struct TranscriptionCQTFeatureExtractor {
         var imag = [Float](repeating: 0, count: fftSize / 2)
         var interleaved = [DSPComplex](repeating: DSPComplex(real: 0, imag: 0), count: fftSize / 2)
         var magnitudes = [Float](repeating: 0, count: fftSize / 2)
+        var amplitudes = [Float](repeating: 0, count: fftSize / 2)
 
         for frameIndex in 0..<frameCount {
             frame = Array(repeating: 0, count: fftSize)
@@ -106,11 +107,17 @@ struct TranscriptionCQTFeatureExtractor {
                 }
             }
 
-            for (binIndex, point) in binSamplePoints.enumerated() {
-                let lower = sqrt(max(0, magnitudes[point.lowerIndex]))
-                let upper = sqrt(max(0, magnitudes[point.upperIndex]))
-                let blended = lower * (1 - point.upperWeight) + upper * point.upperWeight
-                values[binIndex * frameCount + frameIndex] = log1p(blended)
+            for index in 0..<magnitudes.count {
+                amplitudes[index] = sqrt(max(0, magnitudes[index]))
+            }
+
+            for (binIndex, filter) in filterBins.enumerated() {
+                var sum: Float = 0
+                let startIndex = filter.startIndex
+                for (offset, weight) in filter.weights.enumerated() {
+                    sum += weight * amplitudes[startIndex + offset]
+                }
+                values[binIndex * frameCount + frameIndex] = log1p(sum)
             }
         }
 
@@ -204,33 +211,66 @@ struct TranscriptionCQTFeatureExtractor {
         return samples + Array(repeating: 0, count: count - samples.count)
     }
 
-    private static func makeBinSamplePoints(
+    private static func makeFilterBins(
         sampleRate: Double,
         fftSize: Int,
         binsPerOctave: Int,
         numOctaves: Int
-    ) -> [FrequencySamplePoint] {
+    ) -> [FrequencyFilterBin] {
         let nyquistIndex = fftSize / 2 - 1
         let resolution = sampleRate / Double(fftSize)
         let startFrequency = 32.70319566257483 // C1
-        return (0..<(binsPerOctave * numOctaves)).map { bin in
-            let frequency = startFrequency * pow(2.0, Double(bin) / Double(binsPerOctave))
-            let exactIndex = max(1.0, min(Double(nyquistIndex), frequency / resolution))
-            let lowerIndex = Int(exactIndex.rounded(.down))
-            let upperIndex = min(nyquistIndex, lowerIndex + 1)
-            return FrequencySamplePoint(
-                lowerIndex: lowerIndex,
-                upperIndex: upperIndex,
-                upperWeight: Float(exactIndex - Double(lowerIndex))
+        let totalBins = binsPerOctave * numOctaves
+        let binRatio = pow(2.0, 1.0 / Double(binsPerOctave))
+
+        var result: [FrequencyFilterBin] = []
+        result.reserveCapacity(totalBins)
+
+        for bin in 0..<totalBins {
+            let centerFreq = startFrequency * pow(2.0, Double(bin) / Double(binsPerOctave))
+            let centerIdx = centerFreq / resolution
+            let leftEdgeIdx = (centerFreq / binRatio) / resolution
+            let rightEdgeIdx = (centerFreq * binRatio) / resolution
+
+            // 低频段 f/Q 小于 1 个 FFT bin 时强制兜底到 1 个 bin，
+            // 避免退化成 0 权重；受 fftSize 物理上限约束。
+            let leftSpan = max(1.0, centerIdx - leftEdgeIdx)
+            let rightSpan = max(1.0, rightEdgeIdx - centerIdx)
+
+            var startIndex = Int((centerIdx - leftSpan).rounded(.down))
+            var endIndex = Int((centerIdx + rightSpan).rounded(.up))
+            startIndex = max(1, min(nyquistIndex, startIndex))
+            endIndex = max(startIndex, min(nyquistIndex, endIndex))
+
+            var weights: [Float] = []
+            weights.reserveCapacity(endIndex - startIndex + 1)
+            var weightSum: Float = 0
+            for k in startIndex...endIndex {
+                let distance = Double(k) - centerIdx
+                let span = distance >= 0 ? rightSpan : leftSpan
+                let w = max(0.0, 1.0 - abs(distance) / span)
+                let weight = Float(w)
+                weights.append(weight)
+                weightSum += weight
+            }
+
+            result.append(
+                FrequencyFilterBin(
+                    startIndex: startIndex,
+                    weights: weights,
+                    weightSum: weightSum
+                )
             )
         }
+
+        return result
     }
 }
 
-private struct FrequencySamplePoint {
-    let lowerIndex: Int
-    let upperIndex: Int
-    let upperWeight: Float
+private struct FrequencyFilterBin {
+    let startIndex: Int
+    let weights: [Float]
+    let weightSum: Float
 }
 
 enum OnnxChordLabelDecoder {
