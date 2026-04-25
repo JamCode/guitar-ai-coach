@@ -19,6 +19,7 @@ ECS_KEY="$HOME/Documents/guitar-ai-coach/my-ecs-key2.pem" ./deploy/ecs/paddleocr
 - **推荐版本**：PaddlePaddle `2.6.2`（CPU）+ PaddleOCR `2.7.0.3`（经典 API）  
   若使用 Paddle 3.x + PaddleOCR 3.x 默认的 PP-OCRv5 管线，在部分 **CPU/Alibaba Cloud Linux** 上可能触发 oneDNN/PIR 相关 `NotImplementedError`，因此线上采用 **2.6 + 2.7** 组合更稳。
 - **内存**：OCR 首次加载模型时内存占用明显；当前部分 ECS 为 **~2G RAM**，首启可能较慢或 OOM。若常失败，请在控制台 **扩容内存** 或经管理员 **增加 swap**（需 root）。
+- **NumPy**：需 **1.x**（`numpy>=1.24,<2`）。若曾误升 **NumPy 2.x**，会出现 `cv2` / `numpy.core.multiarray` 导入错误，需按 `requirements-paddleocr.txt` 重新安装并 `pip install "opencv-python-headless>=4.6" --force-reinstall`。
 
 ## 安装/修复依赖（在 ECS 上执行）
 

@@ -12,6 +12,7 @@ else
   exit 1
 fi
 conda activate paddleocr
+export FLAGS_enable_mkldnn=0
 export PADDLEOCR_HOME="${PADDLEOCR_HOME:-$HOME/.paddleocr}"
 HOST="${PADDLEOCR_BIND:-127.0.0.1}"
 PORT="${PADDLEOCR_PORT:-18081}"
