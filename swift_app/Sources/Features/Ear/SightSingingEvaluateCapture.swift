@@ -23,10 +23,12 @@ public enum SightSingingEvaluateCapture {
     ) async throws -> (samples: [Float], sampleRate: Double, wallClockMs: Int) {
         #if os(iOS)
         try await MicrophoneRecordingPermission.ensureGranted()
+        try AppAudioSession.configureSharedForPlaybackAndRecording()
         #endif
 
         let engine = AVAudioEngine()
         let input = engine.inputNode
+        // 必须在会话已 `setActive` 后再取 `inputFormat`；否则采样率可能为 0，引擎启动易报 -10851。
         let format = input.inputFormat(forBus: 0)
         let sampleRate = max(8_000.0, format.sampleRate)
 
@@ -39,14 +41,6 @@ public enum SightSingingEvaluateCapture {
             let slice = UnsafeBufferPointer(start: ch, count: n)
             accumulator.append(slice)
         }
-
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
-        try session.setPreferredSampleRate(44_100)
-        try session.setPreferredIOBufferDuration(0.0058)
-        try session.setActive(true)
-        #endif
 
         engine.prepare()
         do {

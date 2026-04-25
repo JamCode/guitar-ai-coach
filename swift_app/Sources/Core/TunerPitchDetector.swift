@@ -446,11 +446,7 @@ public enum TunerPitchEstimator {
 extension TunerPitchDetector {
     private func configureAudioSession() throws {
         #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
-        try session.setPreferredSampleRate(config.sampleRate)
-        try session.setPreferredIOBufferDuration(0.0058)
-        try session.setActive(true)
+        try AppAudioSession.configureSharedForPlaybackAndRecording()
         #endif
     }
 }

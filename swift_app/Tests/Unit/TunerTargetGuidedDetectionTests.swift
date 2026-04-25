@@ -42,7 +42,7 @@ final class TunerTargetGuidedDetectionTests: XCTestCase {
     // MARK: - Consistency filter
 
     @MainActor
-    func testIsolatedOctaveJumpIsRejectedByConsistencyFilter() async {
+    func testIsolatedOctaveJumpIsRejectedByConsistencyFilter() async throws {
         let vm = TunerViewModel(audio: NoopAudioEngine(), detector: NoopPitchDetector())
         vm.setSelectedString(0) // 低 E
         let stableHz = 82.41
@@ -54,7 +54,8 @@ final class TunerTargetGuidedDetectionTests: XCTestCase {
         // 单帧跳到高八度（164.82Hz，相对 82.41Hz 约 +1200 cent）：
         // 应被一致性过滤器视为孤立跳变，不更新 `frequencyHz`，也不影响显示 cents。
         vm.updateFrequencySample(164.82)
-        XCTAssertEqual(vm.frequencyHz, stableHz, accuracy: 1e-6, "孤立八度跳应被连续帧过滤器拦截")
+        let hz = try XCTUnwrap(vm.frequencyHz, "应已有稳定基频；孤立跳后仍保留原值。")
+        XCTAssertEqual(hz, stableHz, accuracy: 1e-6, "孤立八度跳应被连续帧过滤器拦截")
         XCTAssertEqual(vm.cents, centsBefore, accuracy: 1e-6, "被拦截帧不应影响 cents 显示")
     }
 
@@ -137,6 +138,7 @@ private final class NoopAudioEngine: AudioEngineServing {
         stringStaggerSec: Double
     ) throws {}
     func stopSampledGuitarNotes(midis: [Int]) {}
+    func stopAllSampledGuitarNotes() {}
     func stopPluckedGuitarVoices() {}
 }
 

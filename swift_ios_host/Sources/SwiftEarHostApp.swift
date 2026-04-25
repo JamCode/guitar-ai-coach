@@ -26,6 +26,9 @@ private func resolvedFeedbackRecipient() -> String {
 @main
 struct SwiftEarHostApp: App {
     init() {
+        #if os(iOS)
+        try? AppAudioSession.configureSharedForPlaybackAndRecording()
+        #endif
         let nav = UINavigationBarAppearance()
         nav.configureWithOpaqueBackground()
         nav.backgroundColor = UIColor(SwiftAppTheme.bg)

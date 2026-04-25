@@ -553,11 +553,7 @@ public final class AudioEngineService: AudioEngineServing {
 
     private func configureSession() throws {
         #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
-        try session.setPreferredSampleRate(44_100)
-        try session.setPreferredIOBufferDuration(0.0058)
-        try session.setActive(true)
+        try AppAudioSession.configureSharedForPlaybackAndRecording()
         #endif
     }
 

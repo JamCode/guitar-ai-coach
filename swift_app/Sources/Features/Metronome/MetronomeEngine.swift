@@ -1,4 +1,5 @@
 import AVFoundation
+import Core
 import Foundation
 
 /// 节拍音频与定时驱动：独立 `AVAudioEngine`，不占用 `AudioEngineService` 的吉他采样节点，避免互相打断。
@@ -129,10 +130,7 @@ public final class MetronomeEngine: MetronomeEngineing {
 
     private func ensureSession() throws {
         #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        // 与调音器等功能共存：不抢占麦克风类别，仅保证输出可用。
-        try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
-        try session.setActive(true)
+        try AppAudioSession.configureSharedForPlaybackAndRecording()
         #endif
     }
 
