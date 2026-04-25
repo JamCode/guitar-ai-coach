@@ -48,6 +48,8 @@ targets:
         product: Ear
       - package: GuitarAICoach
         product: Practice
+      - package: GuitarAICoach
+        product: Metronome
       - package: OnnxRuntime
         product: onnxruntime
 

@@ -6,6 +6,7 @@ import Chords
 import ChordChart
 import Ear
 import Practice
+import Metronome
 
 public struct ToolsHomeView: View {
     public init() {}
@@ -20,6 +21,15 @@ public struct ToolsHomeView: View {
                         title: AppL10n.t("tools_ear_title"),
                         subtitle: AppL10n.t("tools_ear_subtitle"),
                         systemImage: "ear"
+                    )
+                }
+                NavigationLink {
+                    MetronomeView()
+                } label: {
+                    toolsRow(
+                        title: "节拍器",
+                        subtitle: "BPM·拍号·独立练习节拍",
+                        systemImage: "metronome"
                     )
                 }
                 NavigationLink {

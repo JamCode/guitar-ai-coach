@@ -5,6 +5,7 @@ import Fretboard
 import Chords
 import ChordChart
 import Profile
+import Metronome
 import Core
 
 /// 「帮助与反馈」默认收件人；发版前请改为可收信地址。
@@ -176,32 +177,37 @@ private struct ToolsTabView: View {
         let pad = gridEdgePadding
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                VStack(spacing: gridGap) {
-                    HStack(spacing: gridGap) {
-                        gridTile(
-                            title: AppL10n.t("tools_tuner_title"),
-                            subtitle: AppL10n.t("tools_tuner_subtitle"),
-                            icon: "waveform"
-                        ) { TunerView() }
-                        gridTile(
-                            title: AppL10n.t("tools_fretboard_title"),
-                            subtitle: AppL10n.t("tools_fretboard_subtitle"),
-                            icon: "square.grid.3x3"
-                        ) { FretboardView() }
-                    }
-
-                    HStack(spacing: gridGap) {
-                        gridTile(
-                            title: AppL10n.t("tools_chord_lookup_title"),
-                            subtitle: AppL10n.t("tools_chord_lookup_subtitle"),
-                            icon: "pianokeys"
-                        ) { ChordLookupView() }
-                        gridTile(
-                            title: AppL10n.t("tools_chord_chart_title"),
-                            subtitle: AppL10n.t("tools_chord_chart_subtitle"),
-                            icon: "tablecells"
-                        ) { ChordChartView() }
-                    }
+                let toolColumns = [
+                    GridItem(.flexible(), spacing: gridGap),
+                    GridItem(.flexible(), spacing: gridGap),
+                ]
+                LazyVGrid(columns: toolColumns, spacing: gridGap) {
+                    gridTile(
+                        title: AppL10n.t("tools_metronome_title"),
+                        subtitle: AppL10n.t("tools_metronome_subtitle"),
+                        icon: "metronome"
+                    ) { MetronomeView() }
+                    gridTile(
+                        title: AppL10n.t("tools_tuner_title"),
+                        subtitle: AppL10n.t("tools_tuner_subtitle"),
+                        icon: "waveform"
+                    ) { TunerView() }
+                    gridTile(
+                        title: AppL10n.t("tools_fretboard_title"),
+                        subtitle: AppL10n.t("tools_fretboard_subtitle"),
+                        icon: "square.grid.3x3"
+                    ) { FretboardView() }
+                    gridTile(
+                        title: AppL10n.t("tools_chord_lookup_title"),
+                        subtitle: AppL10n.t("tools_chord_lookup_subtitle"),
+                        icon: "pianokeys"
+                    ) { ChordLookupView() }
+                    gridTile(
+                        title: AppL10n.t("tools_chord_chart_title"),
+                        subtitle: AppL10n.t("tools_chord_chart_subtitle"),
+                        icon: "tablecells"
+                    ) { ChordChartView() }
+                    .gridCellColumns(2)
                 }
 
                 Text(LocalizedStringResource("section_app_support", bundle: .main))

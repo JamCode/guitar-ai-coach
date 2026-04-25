@@ -67,6 +67,7 @@
 		E7F96863B18B84598A051C56 /* TranscriptionHistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE73BE481650BACC522D16 /* TranscriptionHistoryStoreTests.swift */; };
 		EADF9BF054D46963D836E9AC /* PracticeAcceptanceChecklist.md in Resources */ = {isa = PBXBuildFile; fileRef = F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */; };
 		EE8F0E2991EB41875CAF9588 /* Practice in Frameworks */ = {isa = PBXBuildFile; productRef = 7E47E8DA8FA41566235B9ED9 /* Practice */; };
+		F0E1D2C3B4A5968778695A4B /* Metronome in Frameworks */ = {isa = PBXBuildFile; productRef = F1E2D3C4B5A69788796A5B4C /* Metronome */; };
 		F8DF882624B2A38F4303EF98 /* ChordQuickReferenceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95326B0E05757D83577B0F63 /* ChordQuickReferenceSheet.swift */; };
 		F9C07796B19AFD1C3E04F3AD /* Chords in Frameworks */ = {isa = PBXBuildFile; productRef = 231960F99C0DA8778FB6E8A8 /* Chords */; };
 		F9C3785BA4276FDB2D7476AE /* SheetLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A3A296C60AC0D562ADC713 /* SheetLibraryStore.swift */; };
@@ -163,6 +164,7 @@
 				85F401EA077A7B0339A02A78 /* Profile in Frameworks */,
 				1C78E5853E20B93F79B3421E /* Ear in Frameworks */,
 				EE8F0E2991EB41875CAF9588 /* Practice in Frameworks */,
+				F0E1D2C3B4A5968778695A4B /* Metronome in Frameworks */,
 				BC053B1E5E74AF884B735DB8 /* onnxruntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -441,6 +443,7 @@
 				21929BB5D4BC54C7C1690129 /* Profile */,
 				EEDC03120E5A07496D4BF215 /* Ear */,
 				7E47E8DA8FA41566235B9ED9 /* Practice */,
+				F1E2D3C4B5A69788796A5B4C /* Metronome */,
 				E39F5AF77BCA907BCD92D067 /* onnxruntime */,
 			);
 			productName = SwiftEarHost;
@@ -877,6 +880,10 @@
 		EEDC03120E5A07496D4BF215 /* Ear */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Ear;
+		};
+		F1E2D3C4B5A69788796A5B4C /* Metronome */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Metronome;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

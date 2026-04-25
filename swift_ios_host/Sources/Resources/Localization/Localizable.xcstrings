@@ -154,6 +154,40 @@
         }
       }
     },
+    "tools_metronome_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metronome"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "节拍器"
+          }
+        }
+      }
+    },
+    "tools_metronome_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BPM, time signature, standalone practice"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BPM·拍号·独立练习节拍"
+          }
+        }
+      }
+    },
     "tools_fretboard_title": {
       "extractionState": "manual",
       "localizations": {
