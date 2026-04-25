@@ -84,6 +84,8 @@ struct ChordTimelineView: View {
     let currentTimeMs: Int
     let onScrubMs: (Int) -> Void
 
+    @State private var didInitialCenter = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("附近和弦")
@@ -100,39 +102,76 @@ struct ChordTimelineView: View {
                             .fill(SwiftAppTheme.surface)
                     )
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(nearbySegments.enumerated()), id: \.offset) { _, item in
-                            let isCurrent = item.index == currentIndex
-                            Button {
-                                onScrubMs(item.segment.startMs)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(TranscriptionPlayerFormatting.formatMs(item.segment.startMs))
-                                        .font(.caption2.monospacedDigit())
-                                        .foregroundStyle(isCurrent ? .white.opacity(0.92) : SwiftAppTheme.muted)
-                                    Text(item.segment.chord)
-                                        .font(.title3.weight(.bold))
-                                        .foregroundStyle(isCurrent ? .white : SwiftAppTheme.text)
-                                        .lineLimit(1)
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(Array(nearbySegments.enumerated()), id: \.offset) { _, item in
+                                let isCurrent = item.index == currentIndex
+                                Button {
+                                    onScrubMs(item.segment.startMs)
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        VStack(spacing: 3) {
+                                            Text(TranscriptionPlayerFormatting.formatMs(item.segment.startMs))
+                                                .font(.caption2.monospacedDigit())
+                                                .foregroundStyle(isCurrent ? .white.opacity(0.92) : SwiftAppTheme.muted)
+                                            Text(item.segment.chord)
+                                                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                                .foregroundStyle(isCurrent ? .white : SwiftAppTheme.text)
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.75)
+                                        }
+                                        .frame(width: 66, height: 48)
+                                        .background {
+                                            if isCurrent {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(
+                                                        LinearGradient(
+                                                            colors: [SwiftAppTheme.brand, SwiftAppTheme.brand.opacity(0.86)],
+                                                            startPoint: .topLeading,
+                                                            endPoint: .bottomTrailing
+                                                        )
+                                                    )
+                                            } else {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(SwiftAppTheme.surface.opacity(0.82))
+                                            }
+                                        }
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(isCurrent ? SwiftAppTheme.brand.opacity(0.95) : SwiftAppTheme.line, lineWidth: 1)
+                                        )
+
+                                        RoundedRectangle(cornerRadius: 999, style: .continuous)
+                                            .fill(isCurrent ? SwiftAppTheme.brand : .clear)
+                                            .frame(width: 32, height: 4)
+                                    }
                                 }
-                                .frame(width: 96, alignment: .leading)
-                                .padding(10)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(isCurrent ? SwiftAppTheme.brand : SwiftAppTheme.surface)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(isCurrent ? SwiftAppTheme.brand : SwiftAppTheme.line, lineWidth: 1)
-                                )
+                                .buttonStyle(.plain)
+                                .id(item.index)
                             }
-                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 2)
+                    }
+                    .onAppear {
+                        guard !didInitialCenter, let currentIndex else { return }
+                        didInitialCenter = true
+                        DispatchQueue.main.async {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                proxy.scrollTo(currentIndex, anchor: .center)
+                            }
+                        }
+                    }
+                    .onChange(of: currentIndex) { _, idx in
+                        guard let idx else { return }
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo(idx, anchor: .center)
                         }
                     }
                 }
             }
         }
+        .frame(maxHeight: 106, alignment: .top)
     }
 
     private var nearbySegments: [(index: Int, segment: TranscriptionSegment)] {
