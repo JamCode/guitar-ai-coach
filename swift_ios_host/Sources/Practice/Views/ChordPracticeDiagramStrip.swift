@@ -10,6 +10,8 @@ import SwiftUI
 /// 避免单独把 `GeometryReader` 放在 `VStack` 里时高度未定义导致宽度塌成一条线、指法图缩成点。
 struct ChordPracticeDiagramStrip: View {
     let chordSymbols: [String]
+    /// 与 `chordSymbols` 下标对应；`nil` 时不高亮（例如节拍器未用或已停）。
+    var activeGlobalIndex: Int? = nil
 
     private var widthToHeight: CGFloat {
         1 / ChordSwitchDiagramLayout.heightOverWidthRatio(
@@ -37,8 +39,12 @@ struct ChordPracticeDiagramStrip: View {
                         alignment: .leading,
                         spacing: rowGap
                     ) {
-                        ForEach(Array(chordSymbols.enumerated()), id: \.offset) { _, sym in
-                            ChordPracticeDiagramCell(symbol: sym, metrics: m)
+                        ForEach(Array(chordSymbols.enumerated()), id: \.offset) { idx, sym in
+                            ChordPracticeDiagramCell(
+                                symbol: sym,
+                                metrics: m,
+                                isActive: activeGlobalIndex.map { $0 == idx } ?? false
+                            )
                         }
                     }
                     .padding(.horizontal, m.outerHorizontalPadding)
@@ -52,6 +58,7 @@ struct ChordPracticeDiagramStrip: View {
 private struct ChordPracticeDiagramCell: View {
     let symbol: String
     let metrics: ChordSwitchDiagramLayout.Metrics
+    var isActive: Bool = false
 
     private var symbolFontSize: CGFloat {
         max(10, metrics.columnWidth * 0.11)
@@ -68,7 +75,10 @@ private struct ChordPracticeDiagramCell: View {
                         .clipShape(RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous)
-                                .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
+                                .stroke(
+                                    isActive ? SwiftAppTheme.brand : SwiftAppTheme.line.opacity(0.85),
+                                    lineWidth: isActive ? 2.5 : 1
+                                )
                         )
                 } else {
                     ZStack {
@@ -83,7 +93,10 @@ private struct ChordPracticeDiagramCell: View {
                     .frame(width: metrics.placeholderWidth, height: metrics.placeholderHeight)
                     .overlay(
                         RoundedRectangle(cornerRadius: metrics.cornerRadius, style: .continuous)
-                            .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
+                            .stroke(
+                                isActive ? SwiftAppTheme.brand : SwiftAppTheme.line.opacity(0.85),
+                                lineWidth: isActive ? 2.5 : 1
+                            )
                     )
                 }
             }
