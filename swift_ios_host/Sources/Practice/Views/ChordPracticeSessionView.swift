@@ -8,8 +8,6 @@ import SwiftUI
 struct ChordPracticeSessionView: View {
     @State private var exercise: ChordSwitchExercise = Self.bootstrapExercise()
 
-    @Environment(\.dismiss) private var dismiss
-
     @State private var showPracticeSettings: Bool = false
 
     /// 「下一组」使用的难度（默认与首题一致）。
@@ -72,17 +70,8 @@ struct ChordPracticeSessionView: View {
         }
         .navigationTitle("和弦切换练习")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        // 勿隐藏系统返回：否则禁用边缘右滑 pop（见 swift_app SightSingingViews 注释）。
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .accessibilityLabel("返回")
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showPracticeSettings = true
