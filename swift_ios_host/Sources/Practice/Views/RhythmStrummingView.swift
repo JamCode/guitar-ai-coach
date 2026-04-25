@@ -22,11 +22,13 @@ struct RhythmStrummingView: View {
     @State private var savingError: String?
     @State private var savedToast: Bool = false
     @StateObject private var metronomeVM = MetronomeViewModel()
-    @State private var currentStep: Int = 0
-    @State private var offbeatTask: Task<Void, Never>?
+    @State private var metronomeBPM: Int = 72
+    @State private var selectedTimeSignature: MetronomeTimeSignature = .fourFour
 
     private let beatLabels: [String] = ["1", "&", "2", "&", "3", "&", "4", "&"]
     private let defaultRecommendedBPM = 72
+    private let bpmMin = 40
+    private let bpmMax = 220
 
     private var recommendedBPM: Int {
         pattern.recommendedBPM ?? defaultRecommendedBPM
@@ -34,6 +36,10 @@ struct RhythmStrummingView: View {
 
     private var subdivisionLabel: String {
         pattern.subdivision.labelZh
+    }
+
+    private var startPauseTitle: String {
+        metronomeVM.transport == .running ? "⏸ 暂停" : "▶ 开始"
     }
 
     var body: some View {
@@ -69,26 +75,36 @@ struct RhythmStrummingView: View {
                     Text("一小节（\(pattern.timeSignature)，\(subdivisionLabel)六线谱）")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(SwiftAppTheme.text)
-                    HStack(spacing: 10) {
-                        Button {
-                            toggleMetronome()
-                        } label: {
-                            Text(metronomeVM.transport == .running ? "⏸ 暂停" : "▶ 开始练习")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .appSecondaryButton()
-                        Text("\(recommendedBPM) BPM")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(SwiftAppTheme.muted)
-                        Text(subdivisionLabel)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(SwiftAppTheme.muted)
-                    }
                     StrummingTabStaffView(
                         patternSteps: pattern.patternSteps,
-                        beatLabels: beatLabels,
-                        currentStep: currentStep
+                        beatLabels: beatLabels
                     )
+                }
+                .appCard()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("节拍器")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.text)
+                    HStack(spacing: 10) {
+                        Button("-") { updateBPM(delta: -5) }
+                            .appSecondaryButton()
+                        Text("\(metronomeBPM) BPM")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.text)
+                            .frame(minWidth: 84, alignment: .center)
+                        Button("+") { updateBPM(delta: 5) }
+                            .appSecondaryButton()
+                        Spacer(minLength: 8)
+                        Button(startPauseTitle) { toggleMetronome() }
+                            .appSecondaryButton()
+                    }
+                    Picker("拍号", selection: $selectedTimeSignature) {
+                        Text("4/4").tag(MetronomeTimeSignature.fourFour)
+                        Text("3/4").tag(MetronomeTimeSignature.threeFour)
+                        Text("6/8").tag(MetronomeTimeSignature.sixEight)
+                    }
+                    .pickerStyle(.segmented)
                 }
                 .appCard()
 
@@ -113,7 +129,7 @@ struct RhythmStrummingView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    stopAndResetPlayback()
+                    stopMetronome()
                     showSettings = true
                 } label: {
                     Image(systemName: "gearshape")
@@ -145,7 +161,7 @@ struct RhythmStrummingView: View {
 
                             在该弦序下：↑ 表示下扫，↓ 表示上扫，· 表示空拍，× 表示拍弦/切音。
 
-                            本页为 4/4 常用型，可与节拍器或歌曲一起练习；本期不含内置节拍器与音频。
+                            本页可用下方轻量节拍器控制条调速与拍号；不跟随箭头逐格高亮。
                             """
                         )
                         .font(.footnote)
@@ -171,7 +187,7 @@ struct RhythmStrummingView: View {
 
                 在该弦序下：↑ 表示下扫，↓ 表示上扫，· 表示空拍，× 表示拍弦/切音。
 
-                本页支持内置节拍器跟练；可在六线谱标题下方开始/暂停。
+                本页支持轻量节拍器控制；可调 BPM 与拍号后开始/暂停。
                 """
             )
         }
@@ -204,63 +220,61 @@ struct RhythmStrummingView: View {
         .onChange(of: selectedDifficulty) { _, _ in
             nextPattern()
         }
-        .onChange(of: metronomeVM.currentBeatIndex) { _, beat in
-            guard beat != nil, metronomeVM.transport == .running else { return }
-            handleMetronomeBeatTick()
+        .onChange(of: selectedTimeSignature) { _, newSig in
+            metronomeVM.setTimeSignature(newSig)
         }
         .onDisappear {
-            stopAndResetPlayback()
+            stopMetronome()
         }
     }
 
     private func nextPattern() {
-        stopAndResetPlayback()
+        stopMetronome()
         var rng = SystemRandomNumberGenerator()
         pattern = StrummingPatternGenerator.nextPattern(
             difficulty: selectedDifficulty,
             excluding: pattern.id,
             using: &rng
         )
+        syncMetronomeDefaultsFromPattern()
     }
 
     private func toggleMetronome() {
         switch metronomeVM.transport {
         case .running:
             metronomeVM.pause()
-            offbeatTask?.cancel()
-            offbeatTask = nil
         case .paused, .stopped:
-            if metronomeVM.transport == .stopped {
-                currentStep = 0
-            }
-            metronomeVM.setTimeSignature(.fourFour)
-            metronomeVM.setBPM(recommendedBPM)
+            metronomeVM.setTimeSignature(selectedTimeSignature)
+            metronomeVM.setBPM(metronomeBPM)
             metronomeVM.start()
         }
     }
 
-    private func handleMetronomeBeatTick() {
-        advanceStep()
-        guard pattern.subdivision == .eighth else { return }
-        offbeatTask?.cancel()
-        let halfBeatNs = UInt64((60.0 / Double(max(1, recommendedBPM)) * 0.5) * 1_000_000_000)
-        offbeatTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: halfBeatNs)
-            guard !Task.isCancelled, metronomeVM.transport == .running else { return }
-            advanceStep()
+    private func updateBPM(delta: Int) {
+        let next = max(bpmMin, min(bpmMax, metronomeBPM + delta))
+        guard next != metronomeBPM else { return }
+        metronomeBPM = next
+        metronomeVM.setBPM(metronomeBPM)
+    }
+
+    private func syncMetronomeDefaultsFromPattern() {
+        metronomeBPM = max(bpmMin, min(bpmMax, recommendedBPM))
+        selectedTimeSignature = parseTimeSignature(pattern.timeSignature) ?? .fourFour
+        metronomeVM.setTimeSignature(selectedTimeSignature)
+        metronomeVM.setBPM(metronomeBPM)
+    }
+
+    private func parseTimeSignature(_ value: String) -> MetronomeTimeSignature? {
+        switch value.replacingOccurrences(of: " ", with: "") {
+        case "4/4": .fourFour
+        case "3/4": .threeFour
+        case "6/8": .sixEight
+        default: nil
         }
     }
 
-    private func advanceStep() {
-        let count = max(1, pattern.patternSteps.count)
-        currentStep = (currentStep + 1) % count
-    }
-
-    private func stopAndResetPlayback() {
-        offbeatTask?.cancel()
-        offbeatTask = nil
+    private func stopMetronome() {
         metronomeVM.stop()
-        currentStep = 0
     }
 
     @MainActor
@@ -329,7 +343,6 @@ enum StrummingTabStaffGlyph: Equatable {
 private struct StrummingTabStaffView: View {
     let patternSteps: [StrumCellKind]
     let beatLabels: [String]
-    let currentStep: Int
     private let stringLabels = ["①", "②", "③", "④", "⑤", "⑥"]
     private var totalUnits: Int { max(1, patternSteps.count) }
 
@@ -339,9 +352,9 @@ private struct StrummingTabStaffView: View {
                 Text(" ")
                     .frame(width: 18)
                 ForEach(0..<totalUnits, id: \.self) { i in
-                    Text(beatLabels[i])
+                    Text(beatLabels[safe: i] ?? "")
                         .font(.caption)
-                        .foregroundStyle(i == currentStep ? SwiftAppTheme.brand : SwiftAppTheme.muted)
+                        .foregroundStyle(SwiftAppTheme.muted)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -369,13 +382,10 @@ private struct StrummingTabStaffView: View {
                     HStack(spacing: 6) {
                         ForEach(0..<totalUnits, id: \.self) { i in
                             let glyph = StrummingTabStaffGlyph.from(kind: patternSteps[safe: i] ?? .rest)
-                            let isActive = i == currentStep
                             Text(glyph.symbol)
-                                .font(.system(size: isActive ? 27 : 24, weight: .semibold))
-                                .foregroundStyle(isActive ? SwiftAppTheme.brand : SwiftAppTheme.text)
-                                .scaleEffect(isActive ? 1.06 : 1.0)
+                                .font(.system(size: 24, weight: .semibold))
+                                .foregroundStyle(SwiftAppTheme.text)
                                 .frame(maxWidth: .infinity)
-                                .animation(.easeOut(duration: 0.12), value: currentStep)
                         }
                     }
                     .padding(.horizontal, 6)
