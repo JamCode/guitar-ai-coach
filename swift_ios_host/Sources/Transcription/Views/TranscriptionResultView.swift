@@ -36,10 +36,10 @@ struct TranscriptionResultView: View {
     var body: some View {
         let currentIndex = PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: entry.segments)
         let currentSegment = currentIndex.flatMap { entry.segments.indices.contains($0) ? entry.segments[$0] : nil }
-        let upcomingSegments = PlaybackSyncResolver.upcomingSegments(for: vm.currentTimeMs, segments: entry.segments)
+        let upcomingSegments = PlaybackSyncResolver.upcomingSegments(for: vm.currentTimeMs, segments: entry.segments, limit: 3)
 
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(entry.displayName)
                         .font(.headline)
@@ -60,9 +60,7 @@ struct TranscriptionResultView: View {
                 ChordTimelineView(
                     segments: entry.segments,
                     currentIndex: currentIndex,
-                    durationMs: entry.durationMs,
                     currentTimeMs: vm.currentTimeMs,
-                    waveformSamples: entry.waveform,
                     onScrubMs: vm.seek
                 )
 
@@ -74,7 +72,10 @@ struct TranscriptionResultView: View {
                     onTogglePlay: vm.togglePlay
                 )
 
-                UpcomingChordsView(segments: upcomingSegments)
+                UpcomingChordsView(
+                    segments: upcomingSegments,
+                    currentTimeMs: vm.currentTimeMs
+                )
             }
             .padding(SwiftAppTheme.pagePadding)
         }
