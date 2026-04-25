@@ -5,7 +5,13 @@ import Core
 public struct MetronomeView: View {
     @StateObject private var vm: MetronomeViewModel
 
-    public init(viewModel: MetronomeViewModel = MetronomeViewModel()) {
+    @MainActor
+    public init() {
+        _vm = StateObject(wrappedValue: MetronomeViewModel())
+    }
+
+    @MainActor
+    public init(viewModel: MetronomeViewModel) {
         _vm = StateObject(wrappedValue: viewModel)
     }
 

@@ -26,7 +26,7 @@ struct TranscriptionResultView: View {
                 Text(entry.fileName)
                     .font(.headline)
                     .foregroundStyle(SwiftAppTheme.text)
-                Text("原调：\(entry.originalKey)")
+                Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
                     .font(.subheadline)
                     .foregroundStyle(SwiftAppTheme.muted)
             }
@@ -59,7 +59,7 @@ struct TranscriptionResultView: View {
             )
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("识别结果")
+        .navigationTitle(LocalizedStringResource("transcribe_result_title", bundle: .main))
         .appPageBackground()
         .task { vm.prepareIfNeeded() }
         .onChange(of: vm.isPlaying) { _, isPlaying in
@@ -69,8 +69,8 @@ struct TranscriptionResultView: View {
             UIApplication.shared.isIdleTimerDisabled = false
             vm.teardown()
         }
-        .alert("播放失败", isPresented: $vm.showingPlaybackError) {
-            Button("知道了", role: .cancel) {}
+        .alert(LocalizedStringResource("transcribe_playback_failed_title", bundle: .main), isPresented: $vm.showingPlaybackError) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) {}
         } message: {
             Text(vm.playbackErrorMessage)
         }
@@ -98,7 +98,7 @@ final class TranscriptionPlayerViewModel: ObservableObject {
         guard !isPrepared else { return }
         let url = URL(fileURLWithPath: entry.storedMediaPath)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            playbackErrorMessage = "原始媒体文件不存在，暂时无法播放。"
+            playbackErrorMessage = AppL10n.t("transcribe_playback_missing_file")
             showingPlaybackError = true
             return
         }

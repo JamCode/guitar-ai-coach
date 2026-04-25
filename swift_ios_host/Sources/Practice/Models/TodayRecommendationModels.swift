@@ -1,3 +1,4 @@
+import Core
 import Ear
 import Foundation
 import Practice
@@ -8,6 +9,14 @@ enum RecommendationDifficultyLevel: String, CaseIterable, Identifiable {
     case advanced = "高级"
 
     var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .beginner: return AppL10n.t("rec_diff_beginner")
+        case .intermediate: return AppL10n.t("rec_diff_intermediate")
+        case .advanced: return AppL10n.t("rec_diff_advanced")
+        }
+    }
 }
 
 enum RecommendationModuleType: String, CaseIterable, Identifiable, Codable {
@@ -20,14 +29,15 @@ enum RecommendationModuleType: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
-    var title: String {
+    /// 展示用；`Codable` 仍用英文 `rawValue`（如 `intervalEar`）。
+    var localizedTitle: String {
         switch self {
-        case .intervalEar: return "音程识别"
-        case .chordEar: return "和弦听辨"
-        case .sightSinging: return "视唱训练"
-        case .chordSwitch: return "和弦切换"
-        case .scaleTraining: return "音阶训练"
-        case .traditionalCrawl: return "传统爬格子"
+        case .intervalEar: return AppL10n.t("task_interval_ear_name")
+        case .chordEar: return AppL10n.t("task_ear_chord_mcq_name")
+        case .sightSinging: return AppL10n.t("task_sight_singing_name")
+        case .chordSwitch: return AppL10n.t("task_chord_switch_name")
+        case .scaleTraining: return AppL10n.t("rec_mod_scale_training")
+        case .traditionalCrawl: return AppL10n.t("rec_mod_traditional_crawl")
         }
     }
 

@@ -1,6 +1,7 @@
 name: SwiftEarHost
 options:
   minimumXcodeGenVersion: 2.38.0
+  developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"
 packages:
@@ -16,20 +17,23 @@ targets:
       - Sources
     resources:
       - Sources/Transcription/Resources
+      - Sources/Resources/Localization
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wanghan.guitarhelper
         PRODUCT_NAME: SwiftEarHost
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: 玩乐吉他
-        INFOPLIST_KEY_CFBundleName: 玩乐吉他
+        INFOPLIST_KEY_CFBundleDisplayName: Wanle Guitar
+        INFOPLIST_KEY_CFBundleName: Wanle Guitar
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: 玩乐吉他需要使用麦克风来进行调音和部分声音输入练习
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 需要访问相册以导入曲谱图片或视频。
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Wanle Guitar needs the microphone for tuning and some sound input exercises.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Allow photo library access to import sheet music images or videos.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: false
         SWIFT_VERSION: 5.10
     dependencies:
+      - package: GuitarAICoach
+        product: Core
       - package: GuitarAICoach
         product: Tuner
       - package: GuitarAICoach

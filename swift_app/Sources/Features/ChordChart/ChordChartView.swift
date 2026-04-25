@@ -16,8 +16,8 @@ public struct ChordChartView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("关于本表").appSectionTitle()
-                    Text("按和弦类型分组：基础三和弦、七和弦、挂留、加音、延伸与变化和弦。点按和弦卡片试听（先分解后柱式）。")
+                    Text(LocalizedStringResource("chord_chart_about_title", bundle: .main)).appSectionTitle()
+                    Text(LocalizedStringResource("chord_chart_about_body", bundle: .main))
                         .foregroundStyle(SwiftAppTheme.muted)
                 }
                 .appCard()
@@ -52,7 +52,7 @@ public struct ChordChartView: View {
                                                         .font(.caption)
                                                         .foregroundStyle(SwiftAppTheme.brand)
                                                 }
-                                                Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
+                                                Text(String(format: AppL10n.t("chord_chart_fret_line_format"), entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " ")))
                                                     .font(.caption.monospaced())
                                                     .foregroundStyle(SwiftAppTheme.muted)
                                             }
@@ -70,8 +70,8 @@ public struct ChordChartView: View {
                                         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                     }
                                     .buttonStyle(.plain)
-                                    .accessibilityLabel("\(entry.symbol) 和弦")
-                                    .accessibilityHint("点按试听，先分解琶音再柱式和弦")
+                                    .accessibilityLabel(String(format: AppL10n.t("chord_chart_a11y_label_format"), entry.symbol))
+                                    .accessibilityHint(AppL10n.t("chord_chart_a11y_hint"))
                                 }
                             }
                             .padding(.top, 10)
@@ -90,7 +90,7 @@ public struct ChordChartView: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("常用和弦")
+        .navigationTitle(Text(LocalizedStringResource("tools_chord_chart_title", bundle: .main)))
         .appPageBackground()
         .onAppear {
             chartAudio.tonePlayer.prepare()

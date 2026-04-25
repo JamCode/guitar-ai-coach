@@ -10,6 +10,8 @@ public protocol EarChordPlaying: AnyObject {
     func playChordFromFretsSixToOne(_ frets: [Int]) async throws
     /// 和弦进行：按顺序仅柱式播放每个把位（与常用和弦里柱式段同源），和弦间留短空隙。
     func playProgressionFromFretsSixToOne(_ sequence: [[Int]]) async throws
+    /// 立刻静音采样吉他轨（含琶音进行中），供切换难度等场景打断试听。
+    func cancelChordPlayback()
 }
 
 public final class EarChordPlayer: EarChordPlaying {
@@ -31,6 +33,11 @@ public final class EarChordPlayer: EarChordPlaying {
     public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
         self.voicing = ChordVoicingTonePlayer(audio: audio)
+    }
+
+    public func cancelChordPlayback() {
+        audio.stopAllSampledGuitarNotes()
+        audio.stopPluckedGuitarVoices()
     }
 
     public func playChordFromFretsSixToOne(_ frets: [Int]) async throws {

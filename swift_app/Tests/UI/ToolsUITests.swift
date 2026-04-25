@@ -8,6 +8,7 @@ import XCTest
 @testable import Practice
 import Metronome
 
+@MainActor
 final class ToolsUITests: XCTestCase {
     func testViewsCanBeConstructed() {
         _ = MetronomeView()

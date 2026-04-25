@@ -1,3 +1,4 @@
+import Core
 import Foundation
 
 // Keep model fields aligned with Flutter `practice_models.dart`.
@@ -7,6 +8,13 @@ struct PracticeTask: Identifiable, Equatable {
     let name: String
     let targetMinutes: Int
     let description: String
+}
+
+extension PracticeTask {
+    fileprivate var catalogKeyPrefix: String { "task_\(id.replacingOccurrences(of: "-", with: "_"))" }
+
+    var localizedName: String { AppL10n.t("\(catalogKeyPrefix)_name") }
+    var localizedDescription: String { AppL10n.t("\(catalogKeyPrefix)_desc") }
 }
 
 /// Swift 侧统一维护一期内置任务，避免散落常量（对齐 Flutter `kDefaultPracticeTasks`）。
@@ -95,6 +103,11 @@ struct PracticeSession: Identifiable, Codable, Equatable {
 
     /// 爬格子热身题卡 id（可空，兼容旧数据）。
     let scaleWarmupDrillId: String?
+
+    /// 练耳（音程 / 和弦听辨 / 和弦进行）在本次会话时间窗内的判题数；与 `earCorrectCount` 成对出现。
+    let earAnsweredCount: Int?
+    /// 练耳答对题数。
+    let earCorrectCount: Int?
 }
 
 // MARK: - Summary computation (aligned with Flutter)

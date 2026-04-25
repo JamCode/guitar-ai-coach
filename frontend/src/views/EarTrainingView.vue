@@ -1,31 +1,45 @@
 <template>
   <div class="ear-wrap">
     <div class="ear-card">
-      <div class="ear-hero">
-        <h1 class="ear-title">练耳训练</h1>
+      <div class="lang-panels">
+        <section class="lang-panel" aria-labelledby="ear-hero-en">
+          <h2 id="ear-hero-en" class="lang-panel__label">English</h2>
+          <h1 class="lang-panel__title">Ear training</h1>
+          <p class="lang-panel__note">Chord and progression drills in the browser.</p>
+        </section>
+        <section class="lang-panel" lang="zh-Hans" aria-labelledby="ear-hero-zh">
+          <h2 id="ear-hero-zh" class="lang-panel__label">中文</h2>
+          <h1 class="lang-panel__title">练耳训练</h1>
+          <p class="lang-panel__note">网页和弦练耳与单音练耳。</p>
+        </section>
       </div>
       <div class="track-tabs">
         <button
           type="button"
-          class="track-tab"
+          class="track-tab track-tab-bi"
           :class="{ active: activeTrack === 'legacy' }"
           @click="activeTrack = 'legacy'"
         >
-          和弦练耳
+          <span class="bi-pair" lang="en">Chord ear training</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">和弦练耳</span>
         </button>
         <button
           type="button"
-          class="track-tab"
+          class="track-tab track-tab-bi"
           :class="{ active: activeTrack === 'single_note' }"
           @click="activeTrack = 'single_note'"
         >
-          单音练耳（新）
+          <span class="bi-pair" lang="en">Single-note (new)</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">单音练耳（新）</span>
         </button>
       </div>
 
       <template v-if="activeTrack === 'legacy'">
       <section v-if="stage === 'setup'" class="ear-section">
-        <h2 class="ear-section-h">模式选择</h2>
+        <div class="section-bi-h">
+          <p class="bi-pair" lang="en">Choose mode</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">模式选择</p>
+        </div>
         <div class="mode-list">
           <button
             v-for="m in modes"
@@ -35,38 +49,75 @@
             :class="{ active: mode === m.id }"
             @click="mode = m.id"
           >
-            <strong>{{ m.title }}</strong>
-            <span>{{ m.desc }}</span>
+            <strong>
+              <span class="bi-pair" lang="en">{{ m.titleEn }}</span>
+              <span class="bi-pair bi-pair--zh" lang="zh-Hans">{{ m.titleZh }}</span>
+            </strong>
+            <span class="mode-item-desc">
+              <span class="bi-pair" lang="en">{{ m.descEn }}</span>
+              <span class="bi-pair bi-pair--zh" lang="zh-Hans">{{ m.descZh }}</span>
+            </span>
           </button>
         </div>
-        <button type="button" class="btn-primary" :disabled="busy" @click="startSession">
-          开始训练
+        <button type="button" class="btn-primary btn-bi" :disabled="busy" @click="startSession">
+          <span class="bi-pair" lang="en">Start</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">开始训练</span>
         </button>
         <button
           v-if="mode === 'C'"
           type="button"
-          class="btn-secondary"
+          class="btn-secondary btn-bi"
           :disabled="busy"
           @click="refreshDailySet"
         >
-          重置今日题单
+          <span class="bi-pair" lang="en">Regenerate today’s set</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">重置今日题单</span>
         </button>
-        <p v-if="dailyInfo && mode === 'C'" class="muted-line">
-          今日题单：{{ dailyInfo.question_ids.length }} 题（{{ dailyInfo.day_date }}）
+        <p v-if="dailyInfo && mode === 'C'" class="muted-line muted-line--bi">
+          <span class="bi-pair" lang="en"
+            >Today’s set: {{ dailyInfo.question_ids.length }} items ({{ dailyInfo.day_date }})</span
+          >
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans"
+            >今日题单：{{ dailyInfo.question_ids.length }} 题（{{ dailyInfo.day_date }}）</span
+          >
         </p>
-        <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
+        <div v-if="errorMsg" class="err-block" role="alert">
+          <p class="bi-pair" lang="en">Error</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">错误</p>
+          <p class="err err-msg">{{ errorMsg }}</p>
+        </div>
       </section>
 
       <section v-else-if="stage === 'quiz'" class="ear-section">
-        <h2 class="ear-section-h">答题中</h2>
-        <p class="progress">
-          已完成 {{ answered }} 题 · 答对 {{ correct }} 题
-          <span v-if="attempt?.mode === 'C'"> · 今日目标 10 题</span>
+        <div class="section-bi-h">
+          <p class="bi-pair" lang="en">In session</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">答题中</p>
+        </div>
+        <p class="progress progress--bi">
+          <span class="bi-pair" lang="en"
+            >Answered {{ answered }} · Correct {{ correct
+            }}<span v-if="attempt?.mode === 'C'"> · Daily goal: 10</span></span
+          >
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans"
+            >已完成 {{ answered }} 题 · 答对 {{ correct }} 题<span v-if="attempt?.mode === 'C'">
+              · 今日目标 10 题</span
+            ></span
+          >
         </p>
+        <div class="stem-head">
+          <p class="bi-pair" lang="en">Question (prompt is in Chinese)</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">题目</p>
+        </div>
         <p class="stem">{{ question?.prompt_zh }}</p>
         <div class="audio-row">
-          <button type="button" class="btn-secondary small" @click="playEarAudio">播放音频</button>
-          <button type="button" class="btn-secondary small" @click="playEarSlowAudio">0.8x 重听</button>
+          <button type="button" class="btn-secondary small btn-bi" @click="playEarAudio">
+            <span class="bi-pair" lang="en">Play audio</span>
+            <span class="bi-pair bi-pair--zh" lang="zh-Hans">播放音频</span>
+          </button>
+          <button type="button" class="btn-secondary small btn-bi" @click="playEarSlowAudio">
+            <span class="bi-pair" lang="en">Replay 0.8×</span>
+            <span class="bi-pair bi-pair--zh" lang="zh-Hans">0.8x 重听</span>
+          </button>
         </div>
 
         <div v-if="question" class="options">
@@ -88,74 +139,144 @@
           </button>
         </div>
 
-        <p v-if="reveal && feedback" :class="feedback.is_correct ? 'ok' : 'err'" class="feedback">
-          {{
-            feedback.is_correct
-              ? `回答正确：${feedback.correct_option_key} - ${feedback.correct_option_label}`
-              : `回答错误：正确答案是 ${feedback.correct_option_key} - ${feedback.correct_option_label}`
-          }}
-        </p>
-        <p v-if="reveal && feedback && answerTruthLine" class="muted-line answer-truth">
-          {{ answerTruthLine }}
-        </p>
+        <div
+          v-if="reveal && feedback"
+          :class="feedback.is_correct ? 'ok' : 'err'"
+          class="feedback feedback--bi"
+        >
+          <template v-if="feedback.is_correct">
+            <p class="bi-pair" lang="en">
+              Correct: {{ feedback.correct_option_key }} — {{ feedback.correct_option_label }}
+            </p>
+            <p class="bi-pair bi-pair--zh" lang="zh-Hans">
+              回答正确：{{ feedback.correct_option_key }} — {{ feedback.correct_option_label }}
+            </p>
+          </template>
+          <template v-else>
+            <p class="bi-pair" lang="en">
+              Incorrect. Correct answer: {{ feedback.correct_option_key }} —
+              {{ feedback.correct_option_label }}
+            </p>
+            <p class="bi-pair bi-pair--zh" lang="zh-Hans">
+              回答错误：正确答案是 {{ feedback.correct_option_key }} — {{ feedback.correct_option_label }}
+            </p>
+          </template>
+        </div>
+        <div v-if="reveal && feedback && (answerTruthEn || answerTruthLine)" class="answer-truth-box">
+          <p v-if="answerTruthEn" class="bi-pair" lang="en">{{ answerTruthEn }}</p>
+          <p v-if="answerTruthLine" class="bi-pair bi-pair--zh" lang="zh-Hans">{{ answerTruthLine }}</p>
+        </div>
 
-        <button type="button" class="btn-primary" :disabled="busy || !selectedOptionKey || reveal" @click="submitAnswer">
-          提交答案
+        <button
+          type="button"
+          class="btn-primary btn-bi"
+          :disabled="busy || !selectedOptionKey || reveal"
+          @click="submitAnswer"
+        >
+          <span class="bi-pair" lang="en">Submit</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">提交答案</span>
         </button>
-        <button v-if="reveal" type="button" class="btn-primary" :disabled="busy" @click="nextQuestion">
-          下一题
+        <button v-if="reveal" type="button" class="btn-primary btn-bi" :disabled="busy" @click="nextQuestion">
+          <span class="bi-pair" lang="en">Next</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">下一题</span>
         </button>
-        <button type="button" class="btn-secondary" :disabled="busy" @click="finishSession">
-          结束并查看结果
+        <button type="button" class="btn-secondary btn-bi" :disabled="busy" @click="finishSession">
+          <span class="bi-pair" lang="en">End &amp; see results</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">结束并查看结果</span>
         </button>
-        <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
+        <div v-if="errorMsg" class="err-block" role="alert">
+          <p class="bi-pair" lang="en">Error</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">错误</p>
+          <p class="err err-msg">{{ errorMsg }}</p>
+        </div>
       </section>
 
       <section v-else class="ear-section">
-        <h2 class="ear-section-h">训练结果</h2>
-        <p class="result-line">
-          本次 {{ summary?.mode }} 模式：{{ summary?.total_correct || 0 }}/{{ summary?.total_answered || 0 }}
-          （{{ formatPercent(summary?.accuracy || 0) }}）
+        <div class="section-bi-h">
+          <p class="bi-pair" lang="en">Session results</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">训练结果</p>
+        </div>
+        <p class="result-line result-line--bi">
+          <span class="bi-pair" lang="en"
+            >This session (mode {{ summary?.mode }}): {{ summary?.total_correct || 0 }}/{{
+              summary?.total_answered || 0
+            }}
+            ({{ formatPercent(summary?.accuracy || 0) }})</span
+          >
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans"
+            >本次 {{ summary?.mode }} 模式：{{ summary?.total_correct || 0 }}/{{
+              summary?.total_answered || 0
+            }}
+            （{{ formatPercent(summary?.accuracy || 0) }}）</span
+          >
         </p>
-        <p class="muted-line">学习者：{{ learnerId.slice(0, 12) }}...</p>
+        <p class="muted-line muted-line--bi">
+          <span class="bi-pair" lang="en">Learner: {{ learnerId.slice(0, 12) }}…</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">学习者：{{ learnerId.slice(0, 12) }}…</span>
+        </p>
 
         <div v-if="summary?.by_mode_stats?.length" class="box">
-          <h3>维度表现</h3>
+          <h3 class="box-h-bi">
+            <span class="bi-pair" lang="en">By dimension</span>
+            <span class="bi-pair bi-pair--zh" lang="zh-Hans">维度表现</span>
+          </h3>
           <ul>
-            <li v-for="s in summary.by_mode_stats" :key="s.mode">
-              {{ s.mode }}：{{ s.right_count }}/{{ s.total_count }}（{{ formatPercent(s.accuracy) }}）
+            <li v-for="s in summary?.by_mode_stats ?? []" :key="s.mode" class="li-bi">
+              <span class="bi-pair" lang="en"
+                >{{ earModeBilingual(s.mode).en }}: {{ s.right_count }}/{{ s.total_count }} ({{
+                  formatPercent(s.accuracy)
+                }})</span
+              >
+              <span class="bi-pair bi-pair--zh" lang="zh-Hans"
+                >{{ earModeBilingual(s.mode).zh }}：{{ s.right_count }}/{{ s.total_count }}（{{
+                  formatPercent(s.accuracy)
+                }}）</span
+              >
             </li>
           </ul>
         </div>
 
         <div v-if="summary?.wrongs?.length" class="box">
-          <h3>错题回顾</h3>
+          <h3 class="box-h-bi">
+            <span class="bi-pair" lang="en">Review mistakes (Chinese prompts)</span>
+            <span class="bi-pair bi-pair--zh" lang="zh-Hans">错题回顾</span>
+          </h3>
           <ul>
-            <li v-for="(w, idx) in summary.wrongs.slice(0, 10)" :key="idx">
+            <li v-for="(w, idx) in (summary?.wrongs ?? []).slice(0, 10)" :key="idx">
               {{ w.prompt_zh }}（正确：{{ w.correct_option_label }}）
             </li>
           </ul>
         </div>
 
-        <button type="button" class="btn-primary" :disabled="busy" @click="startSession">
-          继续训练
+        <button type="button" class="btn-primary btn-bi" :disabled="busy" @click="startSession">
+          <span class="bi-pair" lang="en">Continue</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">继续训练</span>
         </button>
-        <button type="button" class="btn-secondary" :disabled="busy" @click="fetchMistakes">
-          查看错题本
+        <button type="button" class="btn-secondary btn-bi" :disabled="busy" @click="fetchMistakes">
+          <span class="bi-pair" lang="en">Mistake list</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">查看错题本</span>
         </button>
-        <button type="button" class="btn-secondary" :disabled="busy" @click="resetAll">
-          返回模式选择
+        <button type="button" class="btn-secondary btn-bi" :disabled="busy" @click="resetAll">
+          <span class="bi-pair" lang="en">Back to mode selection</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">返回模式选择</span>
         </button>
 
         <div v-if="mistakes.length" class="box">
-          <h3>错题本（最近）</h3>
+          <h3 class="box-h-bi">
+            <span class="bi-pair" lang="en">Mistake list (recent)</span>
+            <span class="bi-pair bi-pair--zh" lang="zh-Hans">错题本（最近）</span>
+          </h3>
           <ul>
             <li v-for="m in mistakes.slice(0, 10)" :key="m.question_id">
               {{ m.prompt_zh }} · 错{{ m.wrong_count }}次 · 状态{{ m.status }}
             </li>
           </ul>
         </div>
-        <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
+        <div v-if="errorMsg" class="err-block" role="alert">
+          <p class="bi-pair" lang="en">Error</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">错误</p>
+          <p class="err err-msg">{{ errorMsg }}</p>
+        </div>
       </section>
       </template>
       <SingleNoteEarTrainer v-else />
@@ -224,10 +345,37 @@ function getLearnerId() {
 
 const learnerId = getLearnerId()
 const modes = [
-  { id: 'A' as Mode, title: 'A 单和弦听辨', desc: '大三 / 小三 / 属七' },
-  { id: 'B' as Mode, title: 'B 常见进行听辨', desc: '2~4 和弦进行识别' },
-  { id: 'C' as Mode, title: 'C 每日 10 题', desc: '6错题+2薄弱+2保温' },
+  {
+    id: 'A' as Mode,
+    titleEn: 'A · Single chord',
+    titleZh: 'A 单和弦听辨',
+    descEn: 'Major, minor, dominant 7',
+    descZh: '大三 / 小三 / 属七',
+  },
+  {
+    id: 'B' as Mode,
+    titleEn: 'B · Progression',
+    titleZh: 'B 常见进行听辨',
+    descEn: '2–4 chord progressions',
+    descZh: '2~4 和弦进行识别',
+  },
+  {
+    id: 'C' as Mode,
+    titleEn: 'C · Daily 10',
+    titleZh: 'C 每日 10 题',
+    descEn: '6 review + 2 weak + 2 warm-up',
+    descZh: '6错题+2薄弱+2保温',
+  },
 ]
+
+function earModeBilingual(mode: string): { en: string; zh: string } {
+  const map: Record<string, { en: string; zh: string }> = {
+    A: { en: 'Mode A · Single chord', zh: 'A 单和弦听辨' },
+    B: { en: 'Mode B · Progression', zh: 'B 常见进行听辨' },
+    C: { en: 'Mode C · Daily 10', zh: 'C 每日 10 题' },
+  }
+  return map[mode] ?? { en: mode, zh: mode }
+}
 
 const mode = ref<Mode>('A')
 const stage = ref<'setup' | 'quiz' | 'result'>('setup')
@@ -260,6 +408,26 @@ const answerTruthLine = computed(() => {
       return `标准答案进行：${mk} 调 · ${roman}（${syms.join(' → ')}）`
     } catch {
       return `标准答案进行：${mk} 调 · ${roman}`
+    }
+  }
+  return ''
+})
+
+const answerTruthEn = computed(() => {
+  const f = feedback.value
+  if (!f) return ''
+  const cs = f.chord_symbol?.trim()
+  if (cs) {
+    return `Reference chord: ${cs}`
+  }
+  const mk = f.music_key?.trim()
+  const roman = f.progression_roman?.trim()
+  if (mk && roman) {
+    try {
+      const syms = earRomanProgressionToSymbols(roman, normalizeEarKey(mk))
+      return `Reference progression: ${mk} · ${roman} (${syms.join(' → ')})`
+    } catch {
+      return `Reference progression: ${mk} · ${roman}`
     }
   }
   return ''
@@ -614,21 +782,7 @@ onUnmounted(() => {
   background: var(--bg);
 }
 .ear-card { width: 560px; max-width: 100%; }
-.ear-hero {
-  margin-bottom: 12px;
-  border: 1px solid #d8d8d8;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-  padding: 14px 16px;
-}
-.ear-title {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: #000;
-  letter-spacing: 0.01em;
-}
+.lang-panels { margin-bottom: 12px; }
 .track-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
 .track-tab {
   flex: 1;
@@ -647,12 +801,33 @@ onUnmounted(() => {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 .ear-section { border: 1px dashed #ccc; border-radius: 12px; background: #fff; padding: 14px; }
-.ear-section-h { margin: 0 0 10px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ear-text-secondary); }
 .mode-list { display: grid; gap: 8px; }
 .mode-item { border: 1px solid #ddd; border-radius: 10px; background: #fff; text-align: left; padding: 10px; cursor: pointer; }
 .mode-item.active { border: 2px solid #111; }
 .mode-item strong { display: block; margin-bottom: 4px; color: var(--ear-text-primary); }
-.mode-item span { color: var(--ear-text-muted); font-size: 13px; }
+.mode-item-desc { display: block; color: var(--ear-text-muted); font-size: 13px; }
+.stem-head { margin-bottom: 4px; }
+.answer-truth-box {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f7f7f7;
+  border: 1px solid #e5e5e5;
+}
+.err-block { margin-top: 8px; }
+.err-block .err-msg { margin: 6px 0 0; }
+.box-h-bi { margin: 0 0 8px; font-size: 13px; }
+.box-h-bi .bi-pair, .box-h-bi .bi-pair--zh { display: block; }
+.li-bi { margin-bottom: 4px; }
+.muted-line--bi .bi-pair,
+.muted-line--bi .bi-pair--zh { display: block; }
+.progress--bi .bi-pair,
+.progress--bi .bi-pair--zh,
+.result-line--bi .bi-pair,
+.result-line--bi .bi-pair--zh { display: block; }
+.feedback--bi { font-size: 13px; }
+.feedback--bi .bi-pair,
+.feedback--bi .bi-pair--zh { display: block; }
 .btn-primary,.btn-secondary { width: 100%; margin-top: 10px; padding: 11px 14px; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; }
 .btn-primary { border: 1px solid #111; background: #111; color: #fff; }
 .btn-secondary { border: 1px solid #8a8a8a; background: #f4f4f4; color: var(--ear-text-primary); }
@@ -698,13 +873,9 @@ onUnmounted(() => {
     --ear-text-muted: rgba(216, 220, 230, 0.72);
     color: var(--ear-text-primary);
   }
-  .ear-hero {
+  .answer-truth-box {
+    background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.14);
-    background: linear-gradient(180deg, rgba(28, 28, 34, 0.98) 0%, rgba(15, 15, 18, 0.98) 100%);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  }
-  .ear-title {
-    color: #d8dce6;
   }
   .track-tab {
     border-color: rgba(255, 255, 255, 0.18);
