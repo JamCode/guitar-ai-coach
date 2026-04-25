@@ -191,10 +191,14 @@ public final class AudioEngineService: AudioEngineServing {
         quality.markStop()
     }
 
-    /// 仅为首播预热播放图与 SF2，不激活 app 级录音会话，避免应用启动即抢占音频焦点。
+    /// 仅为首播预热 `AVAudioEngine` 图与 SF2 加载，减轻首次点弦的冷启动。
+    /// 须先与 `start()` 一致地配置并激活 `AVAudioSession` 再 `prepare`；否则在仅 `prepare`、未激活会话的图上取格式，易在真机/模拟器上于后续 `start()` 报 -10851。
     public func prepareForPlaybackWarmup() {
         stateLock.lock()
         defer { stateLock.unlock() }
+        #if os(iOS)
+        try? AppAudioSession.configureSharedForPlaybackAndRecording()
+        #endif
         engine.prepare()
         loadSampledGuitarIfNeeded()
     }

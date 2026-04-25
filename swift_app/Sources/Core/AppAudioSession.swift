@@ -23,7 +23,12 @@ public enum AppAudioSession {
             ]
         )
         try session.setPreferredSampleRate(44_100)
-        try session.setPreferredIOBufferDuration(0.0058)
+        // 个别模拟器/系统对极短 buffer 会拒设；失败时放宽一次，避免后续 `AVAudioEngine.start` 报 -10851。
+        do {
+            try session.setPreferredIOBufferDuration(0.0058)
+        } catch {
+            try? session.setPreferredIOBufferDuration(0.0232)
+        }
         try session.setActive(true, options: [])
         #endif
     }

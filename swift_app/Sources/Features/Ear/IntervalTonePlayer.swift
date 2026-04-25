@@ -58,6 +58,9 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
     }
 
     public func playAscendingPair(lowMidi: Int, highMidi: Int) async throws {
+        #if os(iOS)
+        try AppAudioSession.configureSharedForPlaybackAndRecording()
+        #endif
         let baseline: Int = {
             stateLock.lock()
             let v = cancelGeneration
@@ -92,6 +95,9 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
     }
 
     public func playSinglePreview(midi: Int) async throws {
+        #if os(iOS)
+        try AppAudioSession.configureSharedForPlaybackAndRecording()
+        #endif
         let baseline: Int = {
             stateLock.lock()
             let v = cancelGeneration
