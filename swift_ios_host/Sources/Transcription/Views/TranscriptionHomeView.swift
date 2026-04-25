@@ -5,31 +5,30 @@ import Core
 struct TranscriptionHomeView: View {
     @StateObject private var vm = TranscriptionHomeViewModel()
     @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showingPhotoPicker = false
     @State private var showingPurchase = false
     @EnvironmentObject private var purchaseManager: PurchaseManager
 
     var body: some View {
         List {
             Section {
-                Group {
-                    if purchaseManager.isUnlocked {
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .videos) {
-                            Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
-                                .frame(maxWidth: .infinity)
-                        }
-                        .appPrimaryButton()
+                Button {
+                    if purchaseManager.canAccessTranscription {
+                        showingPhotoPicker = true
                     } else {
-                        Button {
-                            showingPurchase = true
-                        } label: {
-                            Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
-                                .frame(maxWidth: .infinity)
-                        }
-                        .appPrimaryButton()
+                        showingPurchase = true
                     }
+                } label: {
+                    Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
+                        .frame(maxWidth: .infinity)
                 }
+                .appPrimaryButton()
+                .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .videos)
                 Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
                     .font(.footnote)
+                    .foregroundStyle(SwiftAppTheme.muted)
+                Text("内购环境：\(purchaseManager.runtimeEnvironment.rawValue)")
+                    .font(.caption2)
                     .foregroundStyle(SwiftAppTheme.muted)
             }
 

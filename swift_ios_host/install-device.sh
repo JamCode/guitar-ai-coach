@@ -18,8 +18,11 @@
 #   ./install-device.sh --release           # Release 配置
 #   ./install-device.sh --pull              # 先 git pull --rebase
 #   ./install-device.sh --list              # 仅列出可用真机（Core Device）
+#   ./install-device.sh --no-iap-bypass     # Debug 真机安装时关闭本地内购绕过
 #
 # 说明：首次安装可能需在手机上「设置 → 通用 → VPN与设备管理」信任开发者证书。
+# 本脚本可在 Debug 真机安装时注入 `LOCAL_IAP_BYPASS` 编译标记，仅用于本地开发排查。
+# 该标记默认不会用于 Release/Archive/TestFlight/App Store。
 #
 # OnnxRuntime 为本地 Swift 包（LocalPackages/…），与模拟器共用；bootstrap 默认不会删已下载目录（/--force 除外），见 LocalPackages/README.md
 # 不能常连 GitHub 时用 U 盘 + --from-dir，见 bootstrap --help
@@ -69,11 +72,13 @@ CONFIGURATION="Debug"
 DO_PULL=0
 LIST_ONLY=0
 DEVICE_REF=""
+ENABLE_LOCAL_IAP_BYPASS=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pull) DO_PULL=1; shift ;;
     --release) CONFIGURATION="Release"; shift ;;
+    --no-iap-bypass) ENABLE_LOCAL_IAP_BYPASS=0; shift ;;
     --list) LIST_ONLY=1; shift ;;
     --device)
       if [[ $# -lt 2 ]]; then echo "缺少 --device 参数值" >&2; exit 1; fi
@@ -85,7 +90,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "未知参数: $1（支持 --pull --release --list --device <名称或UDID>）" >&2
+      echo "未知参数: $1（支持 --pull --release --list --no-iap-bypass --device <名称或UDID>）" >&2
       exit 1
       ;;
   esac
@@ -201,6 +206,10 @@ XCODE_ARGS=(
 )
 if [[ -n "${DEVELOPMENT_TEAM:-}" ]]; then
   XCODE_ARGS+=(DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM}")
+fi
+if [[ "${CONFIGURATION}" == "Debug" && "${ENABLE_LOCAL_IAP_BYPASS}" -eq 1 ]]; then
+  echo "==> Debug 真机安装启用 LOCAL_IAP_BYPASS（仅本地开发）"
+  XCODE_ARGS+=(SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) LOCAL_IAP_BYPASS')
 fi
 
 xcodebuild "${XCODE_ARGS[@]}" build

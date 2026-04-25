@@ -31,6 +31,16 @@ struct PurchaseView: View {
                         RoundedRectangle(cornerRadius: SwiftAppTheme.cardRadius, style: .continuous)
                             .stroke(SwiftAppTheme.line, lineWidth: 1)
                     )
+                    Text("内购环境：\(purchase.runtimeEnvironment.rawValue)")
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if purchase.runtimeEnvironment == .localDebugBypass {
+                        Text("当前为本地调试绕过：已视为解锁，不会发起真实 App Store 购买。")
+                            .font(.footnote)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if purchase.productFetchCompleted, purchase.product == nil, purchase.lastErrorMessage == nil {
                         Text(AppL10n.t("purchase_sheet_product_unavailable"))
                             .font(.footnote)
@@ -70,7 +80,7 @@ struct PurchaseView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.plain)
-                        .disabled(purchase.isPurchaseInFlight)
+                        .disabled(purchase.isPurchaseInFlight || purchase.runtimeEnvironment == .localDebugBypass)
                     }
                 }
                 .padding(SwiftAppTheme.pagePadding)
@@ -106,6 +116,7 @@ struct PurchaseView: View {
 
     /// 未拿到 `Product` 且已完成拉取、或正在拉取/购买中时禁用购买，避免无效点击。
     private var isPrimaryPurchaseDisabled: Bool {
+        if purchase.runtimeEnvironment == .localDebugBypass { return true }
         if purchase.isFetchingProduct || purchase.isPurchaseInFlight { return true }
         if purchase.productFetchCompleted, purchase.product == nil { return true }
         return false

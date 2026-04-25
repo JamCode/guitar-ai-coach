@@ -1,6 +1,12 @@
 import Foundation
 import StoreKit
 
+enum PurchaseRuntimeEnvironment: String {
+    case localDebugBypass = "Local Debug Bypass"
+    case storeKitSandbox = "StoreKit Sandbox"
+    case production = "Production"
+}
+
 /// 扒歌功能（非消耗型内购）授权状态，使用 StoreKit 2。
 @MainActor
 final class PurchaseManager: ObservableObject {
@@ -17,10 +23,24 @@ final class PurchaseManager: ObservableObject {
     @Published private(set) var isFetchingProduct = false
     @Published var lastErrorMessage: String?
 
+    let runtimeEnvironment: PurchaseRuntimeEnvironment
+
+    var canAccessTranscription: Bool {
+        isUnlocked || runtimeEnvironment == .localDebugBypass
+    }
+
     private var updatesTask: Task<Void, Never>?
 
     private init() {
+        runtimeEnvironment = Self.detectRuntimeEnvironment()
         isUnlocked = UserDefaults.standard.bool(forKey: Self.userDefaultsUnlockedKey)
+        print("[IAP] runtime environment = \(runtimeEnvironment.rawValue)")
+        if runtimeEnvironment == .localDebugBypass {
+            setUnlocked(true, persist: false)
+            productFetchCompleted = true
+            product = nil
+            return
+        }
         updatesTask = Task { [weak self] in
             await self?.listenForTransactions()
         }
@@ -32,6 +52,13 @@ final class PurchaseManager: ObservableObject {
     }
 
     func loadProduct() async {
+        guard runtimeEnvironment != .localDebugBypass else {
+            product = nil
+            isFetchingProduct = false
+            productFetchCompleted = true
+            lastErrorMessage = nil
+            return
+        }
         let requestedProductIDs = [Self.transcriptionProductId]
         print("[StoreKit] loadProduct request productIDs=\(requestedProductIDs)")
         isFetchingProduct = true
@@ -64,6 +91,10 @@ final class PurchaseManager: ObservableObject {
 
     /// 以 `Transaction.currentEntitlements` 为权威，并回写 `UserDefaults` 加速冷启动读显示。
     func refreshUnlockedState() async {
+        guard runtimeEnvironment != .localDebugBypass else {
+            setUnlocked(true, persist: false)
+            return
+        }
         var found = false
         for await result in Transaction.currentEntitlements {
             if hasActiveTranscriptionEntitlement(verification: result) {
@@ -96,6 +127,11 @@ final class PurchaseManager: ObservableObject {
     }
 
     func purchase() async {
+        guard runtimeEnvironment != .localDebugBypass else {
+            setUnlocked(true, persist: false)
+            lastErrorMessage = nil
+            return
+        }
         isPurchaseInFlight = true
         lastErrorMessage = nil
         defer { isPurchaseInFlight = false }
@@ -138,6 +174,11 @@ final class PurchaseManager: ObservableObject {
     }
 
     func restore() async {
+        guard runtimeEnvironment != .localDebugBypass else {
+            setUnlocked(true, persist: false)
+            lastErrorMessage = nil
+            return
+        }
         isPurchaseInFlight = true
         lastErrorMessage = nil
         defer { isPurchaseInFlight = false }
@@ -147,6 +188,16 @@ final class PurchaseManager: ObservableObject {
         } catch {
             lastErrorMessage = error.localizedDescription
         }
+    }
+
+    private static func detectRuntimeEnvironment() -> PurchaseRuntimeEnvironment {
+        #if DEBUG && LOCAL_IAP_BYPASS
+        return .localDebugBypass
+        #elseif DEBUG
+        return .storeKitSandbox
+        #else
+        return .production
+        #endif
     }
 
 }
