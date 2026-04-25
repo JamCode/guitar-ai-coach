@@ -47,12 +47,34 @@ public struct EarMcqSessionView: View {
                 } else if let q = viewModel.question {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("题目").appSectionTitle()
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text(q.promptZh).foregroundStyle(SwiftAppTheme.text)
-                            if viewModel.bank == "A" {
-                                Self.chordDifficultyBadge(viewModel.chordDifficulty)
-                            } else if viewModel.bank == "B" {
-                                Self.progressionDifficultyBadge(viewModel.progressionDifficulty)
+                        Text(q.promptZh).foregroundStyle(SwiftAppTheme.text)
+                        if viewModel.bank == "A" {
+                            Picker("难度", selection: chordDifficultyBinding) {
+                                ForEach(EarChordMcqDifficulty.allCases, id: \.self) { level in
+                                    Text(level.rawValue).tag(level)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(viewModel.revealed)
+                            if let hint = EarChordMcqDifficulty.helpText[viewModel.chordDifficulty] {
+                                Text(hint)
+                                    .font(.caption)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        } else if viewModel.bank == "B" {
+                            Picker("难度", selection: progressionDifficultyBinding) {
+                                ForEach(EarProgressionMcqDifficulty.allCases, id: \.self) { level in
+                                    Text(level.rawValue).tag(level)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(viewModel.revealed)
+                            if let hint = EarProgressionMcqDifficulty.helpText[viewModel.progressionDifficulty] {
+                                Text(hint)
+                                    .font(.caption)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         // 和弦进行：不展示题库提示与试听说明小字，减少干扰。
@@ -70,7 +92,7 @@ public struct EarMcqSessionView: View {
                         if let playError = viewModel.playError {
                             Text(playError).foregroundStyle(.red)
                         }
-                        Button("播放") { Task { await viewModel.playCurrent() } }
+                        Button("播放") { viewModel.playCurrent() }
                             .appPrimaryButton()
                             .disabled(viewModel.isPlaybackInProgress)
                     }
@@ -180,6 +202,9 @@ public struct EarMcqSessionView: View {
         }
         .navigationTitle(viewModel.title)
         .appPageBackground()
+        .onDisappear {
+            viewModel.cancelPlayback()
+        }
         .task {
             if viewModel.loading {
                 await viewModel.bootstrap()
@@ -195,6 +220,20 @@ public struct EarMcqSessionView: View {
         } message: {
             Text(viewModel.summaryText)
         }
+    }
+
+    private var chordDifficultyBinding: Binding<EarChordMcqDifficulty> {
+        Binding(
+            get: { viewModel.chordDifficulty },
+            set: { viewModel.setChordDifficultyIfChanged($0) }
+        )
+    }
+
+    private var progressionDifficultyBinding: Binding<EarProgressionMcqDifficulty> {
+        Binding(
+            get: { viewModel.progressionDifficulty },
+            set: { viewModel.setProgressionDifficultyIfChanged($0) }
+        )
     }
 
     @ViewBuilder
@@ -244,28 +283,6 @@ public struct EarMcqSessionView: View {
             return "试听按进行顺序逐和弦播放柱式；音色与「和弦速查」同源（钢弦 SF2）。"
         }
         return "使用吉他采样合成，与预录音色可能略有差异。"
-    }
-
-    private static func chordDifficultyBadge(_ d: EarChordMcqDifficulty) -> some View {
-        Text(d.rawValue)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(SwiftAppTheme.muted)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(SwiftAppTheme.surfaceSoft)
-            .clipShape(Capsule())
-            .accessibilityLabel("难度 \(d.rawValue)")
-    }
-
-    private static func progressionDifficultyBadge(_ d: EarProgressionMcqDifficulty) -> some View {
-        Text(d.rawValue)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(SwiftAppTheme.muted)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(SwiftAppTheme.surfaceSoft)
-            .clipShape(Capsule())
-            .accessibilityLabel("和弦进行难度 \(d.rawValue)")
     }
 
     private static func choiceRowBorderColor(revealed: Bool, isCorrect: Bool, isPicked: Bool) -> Color {
