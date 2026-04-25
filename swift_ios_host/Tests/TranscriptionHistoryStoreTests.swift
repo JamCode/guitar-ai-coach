@@ -23,6 +23,7 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
             sourceURL: media,
             sourceType: .files,
             fileName: "demo.m4a",
+            customName: "我的练习歌",
             durationMs: 120_000,
             originalKey: "E",
             segments: [
@@ -36,6 +37,7 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
         XCTAssertEqual(loaded.count, 1)
         XCTAssertEqual(loaded.first?.id, entry.id)
         XCTAssertEqual(loaded.first?.segments, entry.segments)
+        XCTAssertEqual(loaded.first?.displayName, "我的练习歌")
         XCTAssertTrue(FileManager.default.fileExists(atPath: entry.storedMediaPath))
     }
 }

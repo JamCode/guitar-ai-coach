@@ -76,30 +76,19 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
             stateLock.unlock()
         }
         try audio.start()
-        if audio.isSampledGuitarAvailable {
-            try audio.playSampledGuitarNote(
-                midi: lowMidi,
-                velocity: Self.sampledVelocity,
-                gateDurationSec: Self.sampledGateSec
-            )
-            try await cooperativeSleep(seconds: Self.sampledGateSec + Self.silenceAfterFirstGateSec, baseline: baseline)
-            try Task.checkCancellation()
-            try audio.playSampledGuitarNote(
-                midi: highMidi,
-                velocity: Self.sampledVelocity,
-                gateDurationSec: Self.sampledGateSec
-            )
-            try await cooperativeSleep(seconds: Self.sampledGateSec + Self.releaseTailAfterSecondGateSec, baseline: baseline)
-        } else {
-            let hzLow = Self.midiToHz(lowMidi)
-            let hzHigh = Self.midiToHz(highMidi)
-            let pluckDur = max(0.95, Self.sampledGateSec + 0.65)
-            try audio.playPluckedGuitarString(frequencyHz: hzLow, durationSec: pluckDur)
-            try await cooperativeSleep(seconds: Self.sampledGateSec + Self.silenceAfterFirstGateSec, baseline: baseline)
-            try Task.checkCancellation()
-            try audio.playPluckedGuitarString(frequencyHz: hzHigh, durationSec: pluckDur)
-            try await cooperativeSleep(seconds: pluckDur + Self.releaseTailAfterSecondGateSec, baseline: baseline)
-        }
+        try audio.playSampledGuitarNote(
+            midi: lowMidi,
+            velocity: Self.sampledVelocity,
+            gateDurationSec: Self.sampledGateSec
+        )
+        try await cooperativeSleep(seconds: Self.sampledGateSec + Self.silenceAfterFirstGateSec, baseline: baseline)
+        try Task.checkCancellation()
+        try audio.playSampledGuitarNote(
+            midi: highMidi,
+            velocity: Self.sampledVelocity,
+            gateDurationSec: Self.sampledGateSec
+        )
+        try await cooperativeSleep(seconds: Self.sampledGateSec + Self.releaseTailAfterSecondGateSec, baseline: baseline)
     }
 
     public func playSinglePreview(midi: Int) async throws {
@@ -120,19 +109,12 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
             stateLock.unlock()
         }
         try audio.start()
-        if audio.isSampledGuitarAvailable {
-            try audio.playSampledGuitarNote(
-                midi: midi,
-                velocity: Self.sampledVelocity,
-                gateDurationSec: Self.previewGateSec
-            )
-            try await cooperativeSleep(seconds: Self.previewGateSec + Self.previewTailSec, baseline: baseline)
-        } else {
-            let hz = Self.midiToHz(midi)
-            let dur = 0.72
-            try audio.playPluckedGuitarString(frequencyHz: hz, durationSec: dur)
-            try await cooperativeSleep(seconds: dur + 0.12, baseline: baseline)
-        }
+        try audio.playSampledGuitarNote(
+            midi: midi,
+            velocity: Self.sampledVelocity,
+            gateDurationSec: Self.previewGateSec
+        )
+        try await cooperativeSleep(seconds: Self.previewGateSec + Self.previewTailSec, baseline: baseline)
     }
 
     private func cooperativeSleep(seconds: Double, baseline: Int) async throws {
@@ -151,9 +133,5 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
             try await Task.sleep(nanoseconds: UInt64(slice * 1_000_000_000))
             remaining -= slice
         }
-    }
-
-    private static func midiToHz(_ midi: Int) -> Double {
-        440.0 * pow(2.0, Double(midi - 69) / 12.0)
     }
 }

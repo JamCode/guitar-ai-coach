@@ -30,11 +30,18 @@ struct TranscriptionHomeView: View {
                             TranscriptionResultView(entry: entry)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(entry.fileName)
+                                Text(entry.displayName)
                                     .foregroundStyle(SwiftAppTheme.text)
                                 Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
                                     .font(.caption)
                                     .foregroundStyle(SwiftAppTheme.muted)
+                            }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task { await vm.delete(entry) }
+                            } label: {
+                                Label("删除", systemImage: "trash")
                             }
                         }
                     }
@@ -96,6 +103,17 @@ struct TranscriptionHomeView: View {
         } message: {
             Text(vm.alertMessage)
         }
+        .alert("给这首歌起个名字", isPresented: $vm.showingImportNamingPrompt) {
+            TextField("例如：周杰伦-晴天", text: $vm.pendingImportCustomName)
+            Button("取消", role: .cancel) {
+                vm.cancelPendingImport()
+            }
+            Button("开始识别") {
+                vm.confirmImport()
+            }
+        } message: {
+            Text("名称支持重复，后续历史和结果页会显示这个名字。")
+        }
     }
 }
 
@@ -106,9 +124,12 @@ final class TranscriptionHomeViewModel: ObservableObject {
     @Published var alertMessage = ""
     @Published var processingState: TranscriptionProcessingState?
     @Published var selectedEntry: TranscriptionHistoryEntry?
+    @Published var showingImportNamingPrompt = false
+    @Published var pendingImportCustomName = ""
 
     private let historyStore = TranscriptionHistoryStore()
     private var currentTask: Task<Void, Never>?
+    private var pendingImportRequest: PendingImportRequest?
 
     deinit {
         currentTask?.cancel()
@@ -131,7 +152,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
     func handleFileImportResult(_ result: Result<URL?, Error>) {
         switch result {
         case let .success(.some(url)):
-            startImport(url: url, sourceType: .files, requiresSecurityScopedAccess: true)
+            prepareImport(url: url, sourceType: .files, requiresSecurityScopedAccess: true)
         case .success(.none):
             break
         case let .failure(error):
@@ -145,11 +166,36 @@ final class TranscriptionHomeViewModel: ObservableObject {
             guard let file = try await item.loadTransferable(type: PickedMovieFile.self) else {
                 throw TranscriptionImportError.audioTrackReadFailed
             }
-            startImport(url: file.url, sourceType: .photoLibrary, requiresSecurityScopedAccess: false)
+            prepareImport(url: file.url, sourceType: .photoLibrary, requiresSecurityScopedAccess: false)
         } catch {
             alertMessage = (error as? LocalizedError)?.errorDescription ?? AppL10n.t("transcribe_error_audio_read_failed")
             showingAlert = true
         }
+    }
+
+    func cancelPendingImport() {
+        pendingImportRequest = nil
+        pendingImportCustomName = ""
+        showingImportNamingPrompt = false
+    }
+
+    func confirmImport() {
+        let customName = pendingImportCustomName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !customName.isEmpty else {
+            alertMessage = "请先输入名称"
+            showingAlert = true
+            return
+        }
+        guard let pendingImportRequest else { return }
+        showingImportNamingPrompt = false
+        pendingImportCustomName = ""
+        self.pendingImportRequest = nil
+        startImport(
+            url: pendingImportRequest.url,
+            sourceType: pendingImportRequest.sourceType,
+            requiresSecurityScopedAccess: pendingImportRequest.requiresSecurityScopedAccess,
+            customName: customName
+        )
     }
 
     func cancelProcessing() {
@@ -158,10 +204,24 @@ final class TranscriptionHomeViewModel: ObservableObject {
         processingState = nil
     }
 
-    private func startImport(url: URL, sourceType: TranscriptionSourceType, requiresSecurityScopedAccess: Bool) {
+    private func prepareImport(url: URL, sourceType: TranscriptionSourceType, requiresSecurityScopedAccess: Bool) {
+        pendingImportRequest = PendingImportRequest(
+            url: url,
+            sourceType: sourceType,
+            requiresSecurityScopedAccess: requiresSecurityScopedAccess
+        )
+        pendingImportCustomName = defaultCustomName(from: url)
+        showingImportNamingPrompt = true
+    }
+
+    private func startImport(
+        url: URL,
+        sourceType: TranscriptionSourceType,
+        requiresSecurityScopedAccess: Bool,
+        customName: String
+    ) {
         currentTask?.cancel()
-        let fileName = url.lastPathComponent
-        processingState = TranscriptionProcessingState(fileName: fileName, stepText: "transcribe_step_extract_audio")
+        processingState = TranscriptionProcessingState(fileName: customName, stepText: "transcribe_step_extract_audio")
         let historyStore = self.historyStore
 
         currentTask = Task { [weak self] in
@@ -171,6 +231,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
                     url: url,
                     sourceType: sourceType,
                     requiresSecurityScopedAccess: requiresSecurityScopedAccess,
+                    customName: customName,
                     historyStore: historyStore
                 ) { stepText in
                     await MainActor.run {
@@ -202,6 +263,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         url: URL,
         sourceType: TranscriptionSourceType,
         requiresSecurityScopedAccess: Bool,
+        customName: String,
         historyStore: TranscriptionHistoryStore,
         onStep: @escaping @Sendable (String) async -> Void
     ) async throws -> TranscriptionHistoryEntry {
@@ -237,12 +299,24 @@ final class TranscriptionHomeViewModel: ObservableObject {
             sourceURL: url,
             sourceType: sourceType,
             fileName: payload.fileName,
+            customName: customName,
             durationMs: payload.durationMs,
             originalKey: payload.originalKey,
             segments: payload.segments,
             waveform: payload.waveform
         )
     }
+
+    private func defaultCustomName(from url: URL) -> String {
+        let base = url.deletingPathExtension().lastPathComponent.trimmingCharacters(in: .whitespacesAndNewlines)
+        return base.isEmpty ? url.lastPathComponent : base
+    }
+}
+
+private struct PendingImportRequest {
+    let url: URL
+    let sourceType: TranscriptionSourceType
+    let requiresSecurityScopedAccess: Bool
 }
 
 struct TranscriptionProcessingState: Identifiable {

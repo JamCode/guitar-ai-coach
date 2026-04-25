@@ -67,15 +67,11 @@ public final class TunerViewModel: ObservableObject {
         selectedStringIndex = i
         detector.setTargetHz(targetHz)
         recomputeDisplayCents(resetSmoothing: true)
-        guard let hz = targetHz else { return }
+        guard targetHz != nil else { return }
         let midi = GuitarStandardTuning.openStringMidis[i]
         do {
             try audio.start()
-            if audio.isSampledGuitarAvailable {
-                try audio.playSampledGuitarNote(midi: midi, velocity: 98, gateDurationSec: 1.28)
-            } else {
-                try audio.playSine(frequencyHz: hz, durationSec: 0.22)
-            }
+            try audio.playSampledGuitarNote(midi: midi, velocity: 98, gateDurationSec: 1.28)
         } catch {
             errorText = String(format: AppL10n.t("tuner_error_ref_fmt"), error.localizedDescription)
         }
