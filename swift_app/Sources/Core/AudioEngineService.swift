@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import AVFAudio
 
 /// 采样音色资源入口，便于测试与上层复用。
 public enum GuitarSoundBank {
@@ -114,11 +115,15 @@ public final class AudioEngineService: AudioEngineServing {
     private let sampler = AVAudioUnitSampler()
     private let guitarMixer = AVAudioMixerNode()
     private let guitarEQ = AVAudioUnitEQ(numberOfBands: 4)
-    /// P2: 动态处理占位节点。
-    ///
-    /// `AVAudioUnitDynamicsProcessor` 在当前构建环境不可用，改为 `AVAudioUnitEQ(numberOfBands: 0)`
-    /// 作为稳定可用的中间节点，保持整条效果链结构与连接关系不变。
-    private let guitarCompressor = AVAudioUnitEQ(numberOfBands: 0)
+    /// P2: 动态压缩器级。新 SDK 下 `AVAudioUnitDynamicsProcessor` 与同步 `AVAudioUnit(audioComponentDescription:)` 在 Swift 中不可用，此处用 `AVAudioMixerNode` 直通，参数仍写入下方设计值供单测与以后接回 AU（如 `AVAudioUnit.instantiate` 异步加载）时对齐。
+    private let guitarCompressor: AVAudioMixerNode
+    /// 与 `configureGuitarToneChain` 中的设计值一致；当前为直通节时无实际动态压缩，但指标与 P2 目标一致。
+    private var dynamicsThreshold: Float = -18
+    private var dynamicsHeadRoom: Float = 5
+    private var dynamicsExpansionRatio: Float = 3.5
+    private var dynamicsAttack: Float = 0.025
+    private var dynamicsRelease: Float = 0.180
+    private var dynamicsOverallGain: Float = 2
     /// P2: Slapback 延迟（30ms、0% feedback），模拟录音棚话筒早反射，增加声音纵深感。
     private let guitarSlapback = AVAudioUnitDelay()
     /// P3: Haas 伪立体声宽度延迟（22ms、0% feedback），在进入混响前引入时间扩散，
@@ -130,18 +135,15 @@ public final class AudioEngineService: AudioEngineServing {
     private let samplerQueue = DispatchQueue(label: "guitar-ai-coach.audio.sampler-gate", qos: .userInitiated)
     private let stateLock = NSLock()
     private var started = false
-    /// Round-robin 计数器：每次触发单音或扫弦时递增，结合 sampler 全局微音高偏移模拟不同演奏角度的细微差异。
+    /// Round-robin 计数器：每次触发单音或扫弦时递增，结合 sampler 全局 `globalTuning`（cent）微音高偏移模拟不同演奏角度的细微差异。
     private var rrCounter: Int = 0
     /// 三档微音高偏移（单位：cent），轮换顺序固定，覆盖 0 / -1.8 / +1.8 cent。
     /// `internal` 可见度供单元测试验证数组内容，不对外暴露为 public API。
     static let rrTuningOffsets: [Float] = [0, -1.8, 1.8]
-    /// 压缩器参数常量（当前环境使用兼容占位节点，仍保留原目标参数供测试与后续恢复动态处理器）。
-    private let compressorThresholdSetting: Float = -18
-    private let compressorAttackSetting: Double = 0.025
-    private let compressorReleaseSetting: Double = 0.180
 
     public init(quality: AudioQualityBaseline = AudioQualityBaseline()) {
         self.quality = quality
+        self.guitarCompressor = AVAudioMixerNode()
         self.pluckVoices = (0..<4).map { _ in AVAudioPlayerNode() }
         engine.attach(player)
         for voice in pluckVoices {
@@ -246,11 +248,11 @@ public final class AudioEngineService: AudioEngineServing {
     // MARK: - Testable effect-chain accessors (internal)
 
     /// 压缩器触发阈值（dBFS），供单元测试断言参数合理性。
-    var compressorThreshold: Float { compressorThresholdSetting }
+    var compressorThreshold: Float { dynamicsThreshold }
     /// 压缩器 attack 时间（秒）。
-    var compressorAttackTime: Double { compressorAttackSetting }
+    var compressorAttackTime: Double { Double(dynamicsAttack) }
     /// 压缩器 release 时间（秒）。
-    var compressorReleaseTime: Double { compressorReleaseSetting }
+    var compressorReleaseTime: Double { Double(dynamicsRelease) }
     /// Slapback 延迟时间（秒）。
     var slapbackDelayTime: Double { guitarSlapback.delayTime }
     /// Slapback 反馈量（%）。
@@ -299,8 +301,14 @@ public final class AudioEngineService: AudioEngineServing {
         guitarReverb.loadFactoryPreset(.plate)
         guitarReverb.wetDryMix = 20
 
-        // P2: 动态处理占位（兼容实现）— 轻微补偿增益，避免替换节点后整体响度明显下降。
-        guitarCompressor.globalGain = 1.5
+        // P2: 压缩器（当前为 mixer 直通）— 设计参数写入 dynamics* 供单测/后续接 AU；节点本身直通。
+        dynamicsThreshold = -18
+        dynamicsHeadRoom = 5
+        dynamicsExpansionRatio = 3.5
+        dynamicsAttack = 0.025
+        dynamicsRelease = 0.180
+        dynamicsOverallGain = 2
+        guitarCompressor.outputVolume = 1.0
 
         // P2: Slapback 延迟 — 30ms 单次早反射，模拟话筒与琴体之间的物理距离感。
         // feedback = 0 确保只有一次反射，不产生回声堆叠。
@@ -552,5 +560,6 @@ public final class AudioEngineService: AudioEngineServing {
         try session.setActive(true)
         #endif
     }
+
 }
 

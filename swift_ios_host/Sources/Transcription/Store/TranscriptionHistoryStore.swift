@@ -1,5 +1,51 @@
 import Foundation
 
+/// 将 `TranscriptionHistoryEntry.storedMediaPath` 解析为可访问的媒体文件 URL。
+/// 新数据存相对路径 `transcription_media/<uuid>.<ext>`；旧数据可能为绝对路径。
+enum TranscriptionMediaPathResolver {
+    static let mediaDirectoryName = "transcription_media"
+
+    static func resolve(
+        storedMediaPath: String,
+        docsRoot: URL,
+        fileManager: FileManager = .default
+    ) -> URL? {
+        guard !storedMediaPath.isEmpty else { return nil }
+
+        if storedMediaPath.hasPrefix("/") {
+            let legacy = URL(fileURLWithPath: storedMediaPath)
+            if fileManager.fileExists(atPath: legacy.path) {
+                return legacy
+            }
+            let fallback = docsRoot
+                .appendingPathComponent(mediaDirectoryName, isDirectory: true)
+                .appendingPathComponent(legacy.lastPathComponent)
+            if fileManager.fileExists(atPath: fallback.path) {
+                return fallback
+            }
+            return nil
+        }
+
+        var fromRelative = docsRoot
+        for component in storedMediaPath.split(separator: "/") where !component.isEmpty {
+            fromRelative = fromRelative.appendingPathComponent(String(component))
+        }
+        if fileManager.fileExists(atPath: fromRelative.path) {
+            return fromRelative
+        }
+
+        let last = (storedMediaPath as NSString).lastPathComponent
+        guard !last.isEmpty, last != "." else { return nil }
+        let healed = docsRoot
+            .appendingPathComponent(mediaDirectoryName, isDirectory: true)
+            .appendingPathComponent(last)
+        if fileManager.fileExists(atPath: healed.path) {
+            return healed
+        }
+        return nil
+    }
+}
+
 enum TranscriptionHistoryStoreError: LocalizedError {
     case invalidDocumentsRoot
 
@@ -15,7 +61,7 @@ actor TranscriptionHistoryStore {
     private let rootOverride: URL?
     private let fileManager: FileManager
     private let indexFileName = "transcription_history.json"
-    private let mediaDirectoryName = "transcription_media"
+    private var mediaDirectoryName: String { TranscriptionMediaPathResolver.mediaDirectoryName }
 
     init(rootOverride: URL? = nil, fileManager: FileManager = .default) {
         self.rootOverride = rootOverride
@@ -54,12 +100,13 @@ actor TranscriptionHistoryStore {
         }
         try fileManager.copyItem(at: sourceURL, to: destination)
 
+        let relativeStoredPath = "\(mediaDirectoryName)/\(id).\(ext)"
         let entry = TranscriptionHistoryEntry(
             id: id,
             sourceType: sourceType,
             fileName: fileName,
             customName: customName,
-            storedMediaPath: destination.path,
+            storedMediaPath: relativeStoredPath,
             durationMs: durationMs,
             originalKey: originalKey,
             createdAtMs: Int(Date().timeIntervalSince1970 * 1000),
@@ -85,13 +132,20 @@ actor TranscriptionHistoryStore {
             }
         }
 
-        if let victim {
-            let fileURL = URL(fileURLWithPath: victim.storedMediaPath)
-            if fileManager.fileExists(atPath: fileURL.path) {
-                try? fileManager.removeItem(at: fileURL)
-            }
+        if let victim, let fileURL = try? resolveMediaURL(for: victim) {
+            try? fileManager.removeItem(at: fileURL)
         }
         try writeAll(remaining)
+    }
+
+    /// 将索引中的 `storedMediaPath` 解析为当前沙盒下可访问的绝对 URL（含旧数据兼容）。
+    func resolveMediaURL(for entry: TranscriptionHistoryEntry) throws -> URL? {
+        let root = try docsRoot()
+        return TranscriptionMediaPathResolver.resolve(
+            storedMediaPath: entry.storedMediaPath,
+            docsRoot: root,
+            fileManager: fileManager
+        )
     }
 
     private func writeAll(_ entries: [TranscriptionHistoryEntry]) throws {

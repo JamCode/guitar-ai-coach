@@ -7,6 +7,21 @@ enum PlaybackSyncResolver {
     static func currentIndex(for currentTimeMs: Int, segments: [TranscriptionSegment]) -> Int? {
         segments.firstIndex { $0.startMs <= currentTimeMs && currentTimeMs < $0.endMs }
     }
+
+    static func upcomingSegments(
+        for currentTimeMs: Int,
+        segments: [TranscriptionSegment],
+        limit: Int = 5
+    ) -> [TranscriptionSegment] {
+        guard !segments.isEmpty else { return [] }
+        if let idx = currentIndex(for: currentTimeMs, segments: segments) {
+            return Array(segments.dropFirst(idx + 1).prefix(limit))
+        }
+        if let futureIndex = segments.firstIndex(where: { currentTimeMs < $0.startMs }) {
+            return Array(segments.dropFirst(futureIndex).prefix(limit))
+        }
+        return []
+    }
 }
 
 struct TranscriptionResultView: View {
@@ -20,47 +35,59 @@ struct TranscriptionResultView: View {
 
     var body: some View {
         let currentIndex = PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: entry.segments)
-        let progress = entry.durationMs > 0 ? Double(vm.currentTimeMs) / Double(entry.durationMs) : 0
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entry.displayName)
-                    .font(.headline)
-                    .foregroundStyle(SwiftAppTheme.text)
-                Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
-                    .font(.subheadline)
-                    .foregroundStyle(SwiftAppTheme.muted)
+        let currentSegment = currentIndex.flatMap { entry.segments.indices.contains($0) ? entry.segments[$0] : nil }
+        let upcomingSegments = PlaybackSyncResolver.upcomingSegments(for: vm.currentTimeMs, segments: entry.segments)
+
+        ScrollView {
+            VStack(spacing: 18) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(entry.displayName)
+                        .font(.headline)
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .lineLimit(1)
+                    Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
+                        .font(.subheadline)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                CurrentChordCard(
+                    currentSegment: currentSegment,
+                    currentTimeMs: vm.currentTimeMs,
+                    durationMs: entry.durationMs
+                )
+
+                ChordTimelineView(
+                    segments: entry.segments,
+                    currentIndex: currentIndex,
+                    durationMs: entry.durationMs,
+                    currentTimeMs: vm.currentTimeMs,
+                    waveformSamples: entry.waveform,
+                    onScrubMs: vm.seek
+                )
+
+                PlaybackControlsView(
+                    currentTimeMs: $vm.currentTimeMs,
+                    durationMs: entry.durationMs,
+                    isPlaying: vm.isPlaying,
+                    onSeek: vm.seek,
+                    onTogglePlay: vm.togglePlay
+                )
+
+                UpcomingChordsView(segments: upcomingSegments)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(SwiftAppTheme.pagePadding)
-
-            ChordRibbonView(
-                segments: entry.segments,
-                currentIndex: currentIndex,
-                durationMs: entry.durationMs,
-                currentTimeMs: vm.currentTimeMs,
-                onScrubMs: vm.seek
-            )
-                .padding(.bottom, 12)
-
-            WaveformView(samples: entry.waveform, progress: progress) { progress01 in
-                guard entry.durationMs > 0 else { return }
-                let ms = Int((min(max(progress01, 0), 1) * Double(entry.durationMs)).rounded())
-                vm.seek(ms)
-            }
-                .frame(height: 280)
-                .padding(.horizontal, SwiftAppTheme.pagePadding)
-
-            PlaybackScrubberView(
-                currentTimeMs: $vm.currentTimeMs,
-                durationMs: entry.durationMs,
-                isPlaying: vm.isPlaying,
-                onSeek: vm.seek,
-                onTogglePlay: vm.togglePlay
-            )
             .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle(LocalizedStringResource("transcribe_result_title", bundle: .main))
         .appPageBackground()
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+        }
         .task { vm.prepareIfNeeded() }
         .onChange(of: vm.isPlaying) { _, isPlaying in
             UIApplication.shared.isIdleTimerDisabled = isPlaying
@@ -96,8 +123,13 @@ final class TranscriptionPlayerViewModel: ObservableObject {
 
     func prepareIfNeeded() {
         guard !isPrepared else { return }
-        let url = URL(fileURLWithPath: entry.storedMediaPath)
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        guard
+            let docsRoot = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+            let url = TranscriptionMediaPathResolver.resolve(
+                storedMediaPath: entry.storedMediaPath,
+                docsRoot: docsRoot
+            )
+        else {
             playbackErrorMessage = AppL10n.t("transcribe_playback_missing_file")
             showingPlaybackError = true
             return

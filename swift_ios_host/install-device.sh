@@ -21,7 +21,8 @@
 #
 # 说明：首次安装可能需在手机上「设置 → 通用 → VPN与设备管理」信任开发者证书。
 #
-# OnnxRuntime 为本地 Swift 包（LocalPackages/…），与模拟器共用；不能常连 GitHub 时用 U 盘 + --from-dir，见 bootstrap --help
+# OnnxRuntime 为本地 Swift 包（LocalPackages/…），与模拟器共用；bootstrap 默认不会删已下载目录（/--force 除外），见 LocalPackages/README.md
+# 不能常连 GitHub 时用 U 盘 + --from-dir，见 bootstrap --help
 #
 # Team ID 在哪里看（10 位字母数字）：
 #   • Xcode → Settings（或 Preferences）→ Accounts → 选中左侧 Apple ID → 右侧 Team 名称后面括号里

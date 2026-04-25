@@ -23,6 +23,7 @@
 #        ./bootstrap-onnx-local-package.sh --with-zips      # 仅补 zip，不克隆
 #
 #   D) 默认（能访问 GitHub）：不加参数，等价于 git clone 官方仓库。
+#   已拉取过: 再运行不会删除/覆盖本目录，除非加 --force（会整包删掉后重装）。
 
 set -euo pipefail
 
@@ -41,10 +42,13 @@ FROM_DIR=""
 FROM_ARCHIVE=""
 DO_ZIPS=0
 DO_HELP=0
+# 0= 若已存在完整包则完全保留；1= 先删后重装（慎用）
+FORCE_REINSTALL=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h) DO_HELP=1; shift ;;
+    --force) FORCE_REINSTALL=1; shift ;;
     --from-dir)
       [[ $# -lt 2 ]] && { echo "缺少 --from-dir 路径" >&2; exit 1; }
       FROM_DIR="$2"
@@ -64,9 +68,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "${DO_HELP}" -eq 1 ]]; then
-  sed -n '2,25p' "$0"
+  sed -n '2,26p' "$0"
   echo ""
-  echo "参数: [--from-dir 路径] [--from-archive 路径.zip|.tar.gz] [--with-zips]"
+  echo "参数: [--from-dir 路径] [--from-archive 路径] [--with-zips] [--force]"
+  echo "  --force  在已有 LocalPackages/.../Package.swift 时仍先删目录再重装；默认永不覆盖。"
   echo "环境变量: ONNXRUNTIME_SPM_GIT_URL | ONNXRUNTIME_POD_ZIP_URL | ONNXRUNTIME_EXT_ZIP_URL | ONNXRUNTIME_ZIPS_DIR"
   exit 0
 fi
@@ -128,9 +133,16 @@ extract_archive_to_pkg() {
 }
 
 ensure_spm_source() {
-  if [[ -f "${PKG_DIR}/Package.swift" ]]; then
-    echo "==> 已存在 ${PKG_DIR}/Package.swift，跳过源码准备。"
+  if [[ -f "${PKG_DIR}/Package.swift" && "${FORCE_REINSTALL}" -ne 1 ]]; then
+    echo "==> 已存在 ${PKG_DIR}/Package.swift，保留本地包，不删除、不覆盖。"
+    if [[ -n "${FROM_DIR}" || -n "${FROM_ARCHIVE}" ]]; then
+      echo "    （已忽略 --from-dir / --from-archive；若要用新源替换，请加 --force）" >&2
+    fi
     return 0
+  fi
+  if [[ -f "${PKG_DIR}/Package.swift" && "${FORCE_REINSTALL}" -eq 1 ]]; then
+    echo "==> --force：删除已有 ${PKG_DIR} 后重新准备"
+    rm -rf "${PKG_DIR}"
   fi
   if [[ -n "${FROM_DIR}" ]]; then
     copy_tree_into_pkg "$(cd "${FROM_DIR}" && pwd)"

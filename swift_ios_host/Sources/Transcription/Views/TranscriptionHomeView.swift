@@ -26,24 +26,7 @@ struct TranscriptionHomeView: View {
             if !vm.recentHistory.isEmpty {
                 Section {
                     ForEach(vm.recentHistory.prefix(3), id: \.id) { entry in
-                        NavigationLink {
-                            TranscriptionResultView(entry: entry)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(entry.displayName)
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
-                                    .font(.caption)
-                                    .foregroundStyle(SwiftAppTheme.muted)
-                            }
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                Task { await vm.delete(entry) }
-                            } label: {
-                                Label("删除", systemImage: "trash")
-                            }
-                        }
+                        TranscriptionHomeRecentRow(entry: entry, onDelete: { await vm.delete(entry) })
                     }
                 } header: {
                     Text(LocalizedStringResource("transcribe_section_recent", bundle: .main))
@@ -72,19 +55,28 @@ struct TranscriptionHomeView: View {
         }
         .task { await vm.reload() }
         .appPageBackground()
+        .fileImporter(
+            isPresented: $showingFileImporter,
+            allowedContentTypes: [.audio, .movie, .mpeg4Movie, .mp3],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case let .success(urls):
+                if let first = urls.first {
+                    vm.handleFileImportResult(.success(first))
+                } else {
+                    vm.handleFileImportResult(.success(nil))
+                }
+            case let .failure(error):
+                vm.handleFileImportResult(.failure(error))
+            }
+        }
         .onChange(of: selectedPhotoItem) { _, newValue in
             guard let newValue else { return }
             Task {
                 await vm.importPhotoItem(newValue)
                 selectedPhotoItem = nil
             }
-        }
-        .fileImporter(
-            isPresented: $showingFileImporter,
-            allowedContentTypes: [.audio, .movie],
-            allowsMultipleSelection: false
-        ) { result in
-            vm.handleFileImportResult(result.map { $0.first })
         }
         .sheet(item: $vm.processingState) { state in
             NavigationStack {
@@ -113,6 +105,33 @@ struct TranscriptionHomeView: View {
             }
         } message: {
             Text("名称支持重复，后续历史和结果页会显示这个名字。")
+        }
+    }
+}
+
+private struct TranscriptionHomeRecentRow: View {
+    let entry: TranscriptionHistoryEntry
+    let onDelete: () async -> Void
+
+    var body: some View {
+        let keyLine = String(format: AppL10n.t("transcribe_original_key"), entry.originalKey)
+        return NavigationLink {
+            TranscriptionResultView(entry: entry)
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.displayName)
+                    .foregroundStyle(SwiftAppTheme.text)
+                Text(keyLine)
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                Task { await onDelete() }
+            } label: {
+                Label("删除", systemImage: "trash")
+            }
         }
     }
 }
@@ -295,16 +314,42 @@ final class TranscriptionHomeViewModel: ObservableObject {
         try Task.checkCancellation()
 
         await onStep("transcribe_step_finalize")
-        return try await historyStore.saveResult(
-            sourceURL: url,
+        let tempM4a = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("m4a")
+        defer {
+            try? FileManager.default.removeItem(at: tempM4a)
+        }
+        try await TranscriptionMediaDecoder.exportM4A(from: url, to: tempM4a)
+        try Task.checkCancellation()
+
+        let stem = (payload.fileName as NSString).deletingPathExtension
+        let displayFileName = stem.isEmpty ? "recording.m4a" : "\(stem).m4a"
+
+        let entry = try await historyStore.saveResult(
+            sourceURL: tempM4a,
             sourceType: sourceType,
-            fileName: payload.fileName,
+            fileName: displayFileName,
             customName: customName,
             durationMs: payload.durationMs,
             originalKey: payload.originalKey,
             segments: payload.segments,
             waveform: payload.waveform
         )
+        if sourceType == .photoLibrary {
+            Self.removeTemporaryImportFileIfNeeded(at: url)
+        }
+        return entry
+    }
+
+    /// 相册导入时拷贝到 tmp 的整段视频，长期仅存 m4a 后可删除，避免双份大文件。
+    private static func removeTemporaryImportFileIfNeeded(at url: URL) {
+        let tmpRoot = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+        let resolved = url.resolvingSymlinksInPath()
+        let tmpPath = tmpRoot.path
+        let path = resolved.path
+        guard path == tmpPath || path.hasPrefix(tmpPath + "/") else { return }
+        try? FileManager.default.removeItem(at: resolved)
     }
 
     private func defaultCustomName(from url: URL) -> String {
