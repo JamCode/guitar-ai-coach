@@ -26,28 +26,72 @@ public enum EarPlaybackMidi {
             .split(separator: "-")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         return romans.map { roman in
-            let root = progressionRoot(key: key, roman: roman)
-            let quality: [Int] = roman.lowercased().contains("vii")
-                ? [0, 3, 6]
-                : (roman == roman.lowercased() ? [0, 3, 7] : [0, 4, 7])
-            return quality.map { root + $0 }
+            let root = progressionChordRootMidi(key: key, roman: roman)
+            return progressionIntervals(roman: roman).map { root + $0 }
         }
     }
 
-    private static func progressionRoot(key: String, roman: String) -> Int {
-        let scale: [Int] = [0, 2, 4, 5, 7, 9, 11]
-        let degree: Int
-        switch roman.lowercased().replacingOccurrences(of: "°", with: "") {
-        case "i": degree = 0
-        case "ii": degree = 1
-        case "iii": degree = 2
-        case "iv": degree = 3
-        case "v": degree = 4
-        case "vi": degree = 5
-        case "vii": degree = 6
-        default: degree = 0
+    /// 和弦根音 MIDI（4 组），支持练耳程序化扩展：`V7`、`ii7`、`(V/ii)`、`bVI` 等。
+    public static func progressionChordRootMidi(key: String, roman: String) -> Int {
+        let tonic = noteToMidi(key, octave: 4)
+        let pc = chordRootPcFromTonic(roman: roman)
+        let tonicPc = tonic % 12
+        let rootPc = (tonicPc + pc + 12) % 12
+        let octaveBase = tonic - tonicPc
+        return octaveBase + rootPc
+    }
+
+    /// 根音相对主音的半音偏移（0…11）。
+    private static func chordRootPcFromTonic(roman: String) -> Int {
+        let r = roman.trimmingCharacters(in: .whitespacesAndNewlines)
+        let majorSteps = [0, 2, 4, 5, 7, 9, 11]
+        func deg(_ i: Int) -> Int { majorSteps[i % 7] }
+
+        switch r {
+        case "I", "i":
+            return deg(0)
+        case "ii", "ii7":
+            return deg(1)
+        case "iii":
+            return deg(2)
+        case "IV", "iv":
+            return deg(3)
+        case "V", "V7":
+            return deg(4)
+        case "vi", "vi7":
+            return deg(5)
+        case "vii", "vii°":
+            return deg(6)
+        case "bVI":
+            return 8
+        case "bIII":
+            return 3
+        case "(V/ii)":
+            return (deg(1) + 7) % 12
+        case "(V/vi)":
+            return (deg(5) + 7) % 12
+        default:
+            return deg(0)
         }
-        return noteToMidi(key, octave: 4) + scale[degree]
+    }
+
+    private static func progressionIntervals(roman: String) -> [Int] {
+        let r = roman.trimmingCharacters(in: .whitespacesAndNewlines)
+        if r.lowercased().contains("vii") {
+            return [0, 3, 6]
+        }
+        switch r {
+        case "ii7", "vi7":
+            return [0, 3, 7, 10]
+        case "V7":
+            return [0, 4, 7, 10]
+        case "iv":
+            return [0, 3, 7]
+        case "bVI", "bIII", "I", "IV", "V":
+            return [0, 4, 7]
+        default:
+            return r == r.lowercased() ? [0, 3, 7] : [0, 4, 7]
+        }
     }
 
     /// 如 `I-V-vi-IV` 在 C 大调 → `["C","G","Am","F"]`（与当前三和弦听辨算法一致）。
@@ -57,6 +101,11 @@ public enum EarPlaybackMidi {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
             .map { letterChordSymbol(key: key, roman: $0) }
+    }
+
+    /// 与 `letterChordSymbols` 一致：单 token → 展示用字母和弦（供 `OfflineChordBuilder` 等）。
+    public static func letterChordSymbolForProgressionToken(key: String, roman: String) -> String {
+        letterChordSymbol(key: key, roman: roman)
     }
 
     /// `progression_roman` 按 `-` 分割后的功能标记段数（与 `letterChordSymbols` 分割规则一致）。
@@ -69,14 +118,28 @@ public enum EarPlaybackMidi {
     }
 
     private static func letterChordSymbol(key: String, roman: String) -> String {
-        let rootMidi = progressionRoot(key: key, roman: roman)
+        let rootMidi = progressionChordRootMidi(key: key, roman: roman)
         let pc = ((rootMidi % 12) + 12) % 12
         let name = sharpPitchClassNames[pc]
-        if roman.lowercased().contains("vii") {
+        let r = roman.trimmingCharacters(in: .whitespacesAndNewlines)
+        if r.lowercased().contains("vii") {
             return "\(name)dim"
         }
-        let isMinorTriad = roman == roman.lowercased()
-        return isMinorTriad ? "\(name)m" : name
+        switch r {
+        case "V7":
+            return "\(name)7"
+        case "ii7", "vi7":
+            return "\(name)m7"
+        case "iv":
+            return "\(name)m"
+        case "bVI", "bIII":
+            return name
+        case "(V/ii)", "(V/vi)":
+            return "\(name)7"
+        default:
+            let isMinorTriad = r == r.lowercased()
+            return isMinorTriad ? "\(name)m" : name
+        }
     }
 
     private static let sharpPitchClassNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]

@@ -307,6 +307,62 @@ final class EarCoreTests: XCTestCase {
         XCTAssertEqual(EarPlaybackMidi.romanNumeralSegmentCount(q.progressionRoman!), 4)
     }
 
+    func testProgressionWeightedGeneratorCadenceAndPenultimate() {
+        for difficulty in EarProgressionMcqDifficulty.allCases {
+            let n: Int = switch difficulty {
+            case .初级: 3
+            case .中级: 4
+            case .高级: 5
+            }
+            var rng = SystemRandomNumberGenerator()
+            var endsOnTonic = 0
+            let trials = 80
+            for _ in 0 ..< trials {
+                let line = EarProgressionHarmonyEngine.generateProgressionRoman(
+                    difficulty: difficulty,
+                    length: n,
+                    using: &rng
+                )
+                let parts = line.split(separator: "-").map { String($0).trimmingCharacters(in: .whitespaces) }
+                XCTAssertEqual(parts.count, n, line)
+                if difficulty == .初级 {
+                    for p in parts {
+                        XCTAssertFalse(p.contains("7"), "初级不含七和弦 extension：\(line)")
+                        XCTAssertFalse(p.hasPrefix("(V/"), "初级不含次属：\(line)")
+                    }
+                }
+                if parts.last == "I" { endsOnTonic += 1 }
+            }
+            XCTAssertGreaterThanOrEqual(
+                endsOnTonic,
+                max(1, trials / 10),
+                "加权生成应在统计上有显著比例以 I 收句（难度 \(difficulty) 得到 \(endsOnTonic)/\(trials)）"
+            )
+        }
+    }
+
+    func testProgressionDebugModeEmitsStepLines() {
+        var lines: [String] = []
+        EarProgressionHarmonyEngine.debugMode = .linesOnly { lines.append($0) }
+        defer { EarProgressionHarmonyEngine.debugMode = .off }
+        var rng = TestLCG(seed: 7)
+        _ = EarProgressionHarmonyEngine.generateProgressionRoman(difficulty: .中级, length: 4, using: &rng)
+        XCTAssertFalse(lines.isEmpty)
+        XCTAssertTrue(lines.contains { $0.contains("picked=") })
+        XCTAssertTrue(lines.contains { $0.hasPrefix("→ line:") })
+    }
+
+    func testPlaybackMidiV7AndSecondaryDominantSymbols() {
+        XCTAssertEqual(
+            EarPlaybackMidi.letterChordSymbols(key: "C", progressionRoman: "I-V7-I"),
+            ["C", "G7", "C"]
+        )
+        XCTAssertEqual(
+            EarPlaybackMidi.letterChordSymbols(key: "C", progressionRoman: "ii-(V/ii)-ii"),
+            ["Dm", "A7", "Dm"]
+        )
+    }
+
     @MainActor
     func testEarMcqChordDifficultyChangeBeforeReveal() async {
         let vm = EarMcqSessionViewModel(
