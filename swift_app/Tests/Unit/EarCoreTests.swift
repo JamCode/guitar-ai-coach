@@ -16,6 +16,19 @@ private final class SilentIntervalTonePlayerForTests: IntervalTonePlaying {
     func playSinglePreview(midi: Int) async throws {}
 }
 
+private actor MockEarMcqHistoryStore: EarMcqHistoryStoring {
+    func appendAttempt(_ record: EarMcqAttemptRecord) async {}
+}
+
+private final class SilentEarChordPlayerForTests: EarChordPlaying {
+    func playChordMidis(_ midis: [Int]) async throws {}
+    func playChordSequence(_ sequence: [[Int]]) async throws {}
+    func playSinglePreview(midi: Int) async throws {}
+    func playChordFromFretsSixToOne(_ frets: [Int]) async throws {}
+    func playProgressionFromFretsSixToOne(_ sequence: [[Int]]) async throws {}
+    func cancelChordPlayback() {}
+}
+
 /// 可复现的 64-bit LCG，仅单测使用。
 private struct TestLCG: RandomNumberGenerator {
     private var state: UInt64
@@ -27,6 +40,15 @@ private struct TestLCG: RandomNumberGenerator {
 }
 
 final class EarCoreTests: XCTestCase {
+    func testEarPracticeSessionStatsNonEarTaskReturnsNil() async {
+        let r = await EarPracticeSessionStats.correctnessCountsInWindow(
+            practiceTaskId: "chord-switch",
+            startedAt: Date().addingTimeInterval(-3600),
+            endedAt: Date()
+        )
+        XCTAssertNil(r)
+    }
+
     func testIntervalGeneratorBuildsFourChoicesAndAscendingPair() {
         var rng = SystemRandomNumberGenerator()
         let q = IntervalQuestionGenerator.next(difficulty: .高级, using: &rng)
@@ -157,6 +179,44 @@ final class EarCoreTests: XCTestCase {
     }
 
     @MainActor
+    func testIntervalEarSessionCanChangeDifficultyBeforeReveal() async {
+        let vm = IntervalEarSessionViewModel(
+            difficulty: .初级,
+            player: SilentIntervalTonePlayerForTests(),
+            historyStore: MockIntervalEarHistoryStore()
+        )
+        XCTAssertEqual(vm.difficulty, .初级)
+        XCTAssertEqual(vm.question?.difficulty, .初级)
+        vm.setDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.difficulty, .高级)
+        XCTAssertEqual(vm.question?.difficulty, .高级)
+        XCTAssertFalse(vm.revealed)
+        vm.setDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.difficulty, .高级)
+    }
+
+    @MainActor
+    func testIntervalEarSessionIgnoresDifficultyChangeAfterReveal() async throws {
+        let mock = MockIntervalEarHistoryStore()
+        let vm = IntervalEarSessionViewModel(
+            maxQuestions: 3,
+            difficulty: .初级,
+            player: SilentIntervalTonePlayerForTests(),
+            historyStore: mock
+        )
+        await vm.playPair()
+        guard let q = vm.question else {
+            XCTFail("missing question")
+            return
+        }
+        let wrongIdx = q.choices.firstIndex { $0.semitones != q.answer.semitones } ?? 0
+        vm.selectChoice(wrongIdx)
+        XCTAssertTrue(vm.revealed)
+        vm.setDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.difficulty, .初级)
+    }
+
+    @MainActor
     func testIntervalEarSubmitAppendsHistoryRecord() async throws {
         let mock = MockIntervalEarHistoryStore()
         let vm = IntervalEarSessionViewModel(
@@ -245,6 +305,117 @@ final class EarCoreTests: XCTestCase {
         XCTAssertNotNil(q.musicKey)
         XCTAssertNotNil(q.progressionRoman)
         XCTAssertEqual(EarPlaybackMidi.romanNumeralSegmentCount(q.progressionRoman!), 4)
+    }
+
+    @MainActor
+    func testEarMcqChordDifficultyChangeBeforeReveal() async {
+        let vm = EarMcqSessionViewModel(
+            title: "和弦听辨",
+            bank: "A",
+            chordDifficulty: .初级,
+            player: SilentEarChordPlayerForTests(),
+            historyStore: MockEarMcqHistoryStore()
+        )
+        await vm.bootstrap()
+        XCTAssertFalse(vm.loading)
+        XCTAssertNil(vm.loadError)
+        XCTAssertEqual(vm.chordDifficulty, .初级)
+        let id0 = vm.question?.id
+        vm.setChordDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.chordDifficulty, .高级)
+        XCTAssertNotEqual(vm.question?.id, id0)
+        XCTAssertFalse(vm.revealed)
+    }
+
+    @MainActor
+    func testEarMcqChordDifficultyChangeIgnoredAfterReveal() async throws {
+        let vm = EarMcqSessionViewModel(
+            title: "和弦听辨",
+            bank: "A",
+            chordDifficulty: .初级,
+            player: SilentEarChordPlayerForTests(),
+            historyStore: MockEarMcqHistoryStore()
+        )
+        await vm.bootstrap()
+        vm.playCurrent()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard let q = vm.question else {
+            XCTFail("missing question")
+            return
+        }
+        let wrongIdx = q.options.firstIndex { $0.key != q.correctOptionKey } ?? 0
+        vm.selectChoice(wrongIdx)
+        XCTAssertTrue(vm.revealed)
+        let idAfter = vm.question?.id
+        vm.setChordDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.chordDifficulty, .初级)
+        XCTAssertEqual(vm.question?.id, idAfter)
+    }
+
+    @MainActor
+    func testEarMcqCappedSessionRegeneratesTailOnChordDifficultyChange() async {
+        let vm = EarMcqSessionViewModel(
+            title: "和弦听辨",
+            bank: "A",
+            maxQuestions: 4,
+            chordDifficulty: .初级,
+            player: SilentEarChordPlayerForTests(),
+            historyStore: MockEarMcqHistoryStore()
+        )
+        await vm.bootstrap()
+        XCTAssertEqual(vm.session.count, 4)
+        let beforeIds = vm.session.map(\.id)
+        vm.setChordDifficultyIfChanged(.高级)
+        XCTAssertEqual(vm.session.count, 4)
+        XCTAssertNotEqual(vm.session.map(\.id), beforeIds)
+    }
+
+    @MainActor
+    func testEarMcqProgressionDifficultyChangeBeforeReveal() async {
+        let vm = EarMcqSessionViewModel(
+            title: "和弦进行",
+            bank: "B",
+            progressionDifficulty: .初级,
+            player: SilentEarChordPlayerForTests(),
+            historyStore: MockEarMcqHistoryStore()
+        )
+        await vm.bootstrap()
+        XCTAssertEqual(vm.progressionDifficulty, .初级)
+        let n0 = vm.question.flatMap { EarPlaybackMidi.romanNumeralSegmentCount($0.progressionRoman ?? "") }
+        XCTAssertEqual(n0, 3)
+        vm.setProgressionDifficultyIfChanged(.中级)
+        XCTAssertEqual(vm.progressionDifficulty, .中级)
+        let n1 = vm.question.flatMap { EarPlaybackMidi.romanNumeralSegmentCount($0.progressionRoman ?? "") }
+        XCTAssertEqual(n1, 4)
+    }
+
+    func testEarMcqAttemptRecordCodableRoundTripWithProgressionDifficulty() throws {
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.sortedKeys]
+        enc.dateEncodingStrategy = .iso8601
+        let dec = JSONDecoder()
+        dec.dateDecodingStrategy = .iso8601
+        let original = EarMcqAttemptRecord(
+            bank: "B",
+            title: "和弦进行",
+            questionId: "q1",
+            questionType: "progression_recognition",
+            promptZh: "听和弦进行",
+            optionKeys: ["A", "B", "C", "D"],
+            optionLabels: ["a", "b", "c", "d"],
+            selectedIndex: 0,
+            selectedKey: "A",
+            correctOptionKey: "B",
+            wasCorrect: false,
+            pageIndex: 0,
+            chordDifficultyRaw: nil,
+            progressionDifficultyRaw: "高级"
+        )
+        let data = try enc.encode([original])
+        let back = try dec.decode([EarMcqAttemptRecord].self, from: data)
+        XCTAssertEqual(back.count, 1)
+        XCTAssertNil(back[0].chordDifficultyRaw)
+        XCTAssertEqual(back[0].progressionDifficultyRaw, "高级")
     }
 
     func testSightSingingIntervalQuestionsAreAscendingPairs() async throws {

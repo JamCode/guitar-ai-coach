@@ -21,6 +21,7 @@ private func resolvedFeedbackRecipient() -> String {
     return kFeedbackMailRecipient
 }
 
+
 @main
 struct SwiftEarHostApp: App {
     init() {
@@ -116,13 +117,13 @@ private struct RootTabView: View {
                     PracticeHomeView()
                 } else {
                     PlaceholderView(
-                        title: "练习",
-                        detail: "首次进入该 Tab 后才会加载练习数据。"
+                        title: AppL10n.t("tab_practice"),
+                        detail: AppL10n.t("placeholder_practice_detail")
                     )
                 }
             }
             .tabItem {
-                Label("练习", systemImage: "figure.strengthtraining.traditional")
+                Label(LocalizedStringResource("tab_practice", bundle: .main), systemImage: "figure.strengthtraining.traditional")
             }
             .tag(0)
 
@@ -130,7 +131,7 @@ private struct RootTabView: View {
                 SheetLibraryView(vm: sheetLibraryVM)
             }
             .tabItem {
-                Label("我的谱", systemImage: "music.note.list")
+                Label(LocalizedStringResource("tab_mine_sheets", bundle: .main), systemImage: "music.note.list")
             }
             .tag(1)
 
@@ -138,7 +139,7 @@ private struct RootTabView: View {
                 TranscriptionHomeView()
             }
             .tabItem {
-                Label("扒歌", systemImage: "waveform.path.ecg")
+                Label(LocalizedStringResource("tab_transcribe", bundle: .main), systemImage: "waveform.path.ecg")
             }
             .tag(2)
 
@@ -146,7 +147,7 @@ private struct RootTabView: View {
                 ToolsTabView()
             }
             .tabItem {
-                Label("工具", systemImage: "wrench.and.screwdriver")
+                Label(LocalizedStringResource("tab_tools", bundle: .main), systemImage: "wrench.and.screwdriver")
             }
             .tag(3)
         }
@@ -178,32 +179,32 @@ private struct ToolsTabView: View {
                 VStack(spacing: gridGap) {
                     HStack(spacing: gridGap) {
                         gridTile(
-                            title: "调音器",
-                            subtitle: "麦克风拾音与标准空弦目标",
+                            title: AppL10n.t("tools_tuner_title"),
+                            subtitle: AppL10n.t("tools_tuner_subtitle"),
                             icon: "waveform"
                         ) { TunerView() }
                         gridTile(
-                            title: "吉他指板",
-                            subtitle: "竖向指板·音高标注·拨弦试听·变调夹",
+                            title: AppL10n.t("tools_fretboard_title"),
+                            subtitle: AppL10n.t("tools_fretboard_subtitle"),
                             icon: "square.grid.3x3"
                         ) { FretboardView() }
                     }
 
                     HStack(spacing: gridGap) {
                         gridTile(
-                            title: "和弦速查",
-                            subtitle: "离线可查构成音与常见把位",
+                            title: AppL10n.t("tools_chord_lookup_title"),
+                            subtitle: AppL10n.t("tools_chord_lookup_subtitle"),
                             icon: "pianokeys"
                         ) { ChordLookupView() }
                         gridTile(
-                            title: "常用和弦",
-                            subtitle: "初/中/高分段·本地指法图速查",
+                            title: AppL10n.t("tools_chord_chart_title"),
+                            subtitle: AppL10n.t("tools_chord_chart_subtitle"),
                             icon: "tablecells"
                         ) { ChordChartView() }
                     }
                 }
 
-                Text("应用与支持")
+                Text(LocalizedStringResource("section_app_support", bundle: .main))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(SwiftAppTheme.muted)
                     .padding(.top, 4)
@@ -219,7 +220,7 @@ private struct ToolsTabView: View {
                         .padding(.leading, 52)
                     toolsSupportRow(
                         icon: "info.circle",
-                        title: "关于与版本",
+                        title: AppL10n.t("about_version_title"),
                         subtitle: aboutVersionText
                     ) {
                         AppVersionView()
@@ -230,20 +231,20 @@ private struct ToolsTabView: View {
             .padding(pad)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .navigationTitle("工具")
+        .navigationTitle(LocalizedStringResource("tools_nav_title", bundle: .main))
         .appPageBackground()
         .task {
             aboutVersionText = AppVersionInfoLoader.load().displayVersion
         }
-        .alert("无法打开邮件", isPresented: $showMailOpenFailed) {
-            Button("知道了", role: .cancel) {}
+        .alert(LocalizedStringResource("alert_cannot_open_mail_title", bundle: .main), isPresented: $showMailOpenFailed) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) {}
         } message: {
-            Text("请确认本机已安装「邮件」并已登录邮箱账户；或复制反馈内容通过其他方式发送。")
+            Text(LocalizedStringResource("alert_cannot_open_mail_message", bundle: .main))
         }
-        .alert("无法打开隐私政策", isPresented: $showPrivacyPolicyOpenFailed) {
-            Button("知道了", role: .cancel) {}
+        .alert(LocalizedStringResource("alert_cannot_open_privacy_title", bundle: .main), isPresented: $showPrivacyPolicyOpenFailed) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) {}
         } message: {
-            Text("请检查网络连接后重试。")
+            Text(LocalizedStringResource("alert_cannot_open_privacy_message", bundle: .main))
         }
     }
 
@@ -251,8 +252,8 @@ private struct ToolsTabView: View {
         let addr = resolvedFeedbackRecipient().trimmingCharacters(in: .whitespacesAndNewlines)
         guard !addr.isEmpty else { return nil }
         let info = AppVersionInfoLoader.load()
-        let subject = "玩乐吉他反馈（\(info.displayVersion)）"
-        let body = "请描述问题、复现步骤或建议：\n\n"
+        let subject = String(format: AppL10n.t("feedback_mail_subject"), info.displayVersion)
+        let body = AppL10n.t("feedback_mail_body")
         var c = URLComponents()
         c.scheme = "mailto"
         c.path = addr
@@ -282,10 +283,10 @@ private struct ToolsTabView: View {
                     .frame(width: 24)
                     .foregroundStyle(SwiftAppTheme.brand)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("帮助与反馈")
+                    Text(LocalizedStringResource("support_feedback_title", bundle: .main))
                         .font(.headline)
                         .foregroundStyle(SwiftAppTheme.text)
-                    Text("发邮件反馈")
+                    Text(LocalizedStringResource("support_feedback_subtitle", bundle: .main))
                         .font(.subheadline)
                         .foregroundStyle(SwiftAppTheme.muted)
                         .lineLimit(2)
@@ -324,10 +325,10 @@ private struct ToolsTabView: View {
                     .frame(width: 24)
                     .foregroundStyle(SwiftAppTheme.brand)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("隐私政策")
+                    Text(LocalizedStringResource("support_privacy_title", bundle: .main))
                         .font(.headline)
                         .foregroundStyle(SwiftAppTheme.text)
-                    Text("查看网页版隐私说明")
+                    Text(LocalizedStringResource("support_privacy_subtitle", bundle: .main))
                         .font(.subheadline)
                         .foregroundStyle(SwiftAppTheme.muted)
                         .lineLimit(2)

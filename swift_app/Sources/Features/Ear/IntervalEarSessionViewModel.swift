@@ -18,7 +18,8 @@ public final class IntervalEarSessionViewModel: ObservableObject {
 
     /// `nil` 表示不限题量，可一直「下一题」由算法续出题；非 `nil` 时答满后结束并弹出小结。
     public let maxQuestions: Int?
-    public let difficulty: IntervalEarDifficulty
+    /// 当前难度；可在未揭示本题答案前通过 `setDifficultyIfChanged` 调整（会重出一题并需重新试听）。
+    @Published public private(set) var difficulty: IntervalEarDifficulty
     private let player: IntervalTonePlaying
     private let historyStore: any IntervalEarHistoryStoring
     private var rng: SystemRandomNumberGenerator
@@ -36,6 +37,22 @@ public final class IntervalEarSessionViewModel: ObservableObject {
         self.historyStore = historyStore
         self.rng = SystemRandomNumberGenerator()
         self.question = IntervalQuestionGenerator.next(difficulty: difficulty, antiAbsolutePitch: nil, using: &rng)
+    }
+
+    /// 切换难度：仅在本题尚未判分揭示时允许；会取消播放、重随机本题，并清空「已完整试听」状态。
+    public func setDifficultyIfChanged(_ newValue: IntervalEarDifficulty) {
+        guard newValue != difficulty else { return }
+        guard !revealed else { return }
+        let anchorLow = pageIndex > 0 ? question?.lowMidi : nil
+        cancelPlayback()
+        difficulty = newValue
+        selectedChoiceIndex = nil
+        question = IntervalQuestionGenerator.next(
+            difficulty: difficulty,
+            antiAbsolutePitch: Self.antiAbsolutePitch(for: difficulty, previousLowerMidi: anchorLow),
+            using: &rng
+        )
+        hasCompletedInitialAudition = false
     }
 
     /// 是否有题量上限（有则最后一题后进入「查看结果」流程）。

@@ -1,32 +1,69 @@
 <template>
   <section class="single-note">
-    <h2 class="ear-section-h">单音练耳</h2>
+    <div class="lang-panels lang-panels--tight">
+      <section class="lang-panel" lang="en" aria-labelledby="sn-en">
+        <h2 id="sn-en" class="lang-panel__label">English</h2>
+        <h1 class="lang-panel__title sn-title">Single-note ear training</h1>
+        <p class="lang-panel__note">Identify notes after A4.</p>
+      </section>
+      <section class="lang-panel" lang="zh-Hans" aria-labelledby="sn-zh">
+        <h2 id="sn-zh" class="lang-panel__label">中文</h2>
+        <h1 class="lang-panel__title sn-title">单音练耳</h1>
+        <p class="lang-panel__note">在标准音 A4 后辨认单音。</p>
+      </section>
+    </div>
 
     <template v-if="stage === 'setup'">
       <div class="row">
         <label class="field">
-          <span>题型</span>
+          <span class="field-label-bi">
+            <span class="bi-pair" lang="en">Type</span>
+            <span class="bi-pair bi-pair--zh" lang="zh-Hans">题型</span>
+          </span>
           <select v-model="mode">
-            <option value="single_note">单个单音</option>
-            <option value="multi_note">多个单音（3个）</option>
+            <option value="single_note">One note / 单个单音</option>
+            <option value="multi_note">3 notes / 多个单音（3个）</option>
           </select>
         </label>
         <label class="check">
           <input v-model="includeAccidental" type="checkbox" />
-          <span>包含半音（#）</span>
+          <span>
+            <span class="bi-pair" lang="en">Include accidentals (#)</span>
+            <span class="bi-pair bi-pair--zh" lang="zh-Hans">包含半音（#）</span>
+          </span>
         </label>
       </div>
-      <button class="btn-primary" :disabled="busy" @click="startSession">开始训练</button>
-      <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
+      <button class="btn-primary btn-bi" :disabled="busy" @click="startSession">
+        <span class="bi-pair" lang="en">Start</span>
+        <span class="bi-pair bi-pair--zh" lang="zh-Hans">开始训练</span>
+      </button>
+      <div v-if="errorMsg" class="err-block" role="alert">
+        <p class="bi-pair" lang="en">Error</p>
+        <p class="bi-pair bi-pair--zh" lang="zh-Hans">错误</p>
+        <p class="err err-msg">{{ errorMsg }}</p>
+      </div>
     </template>
 
     <template v-else-if="stage === 'quiz' && currentQuestion">
-      <p class="progress">
-        第 {{ currentQuestion.index }}/{{ currentQuestion.total_questions }} 题 · 已答对 {{ correctCount }} 题
+      <p class="progress progress--bi">
+        <span class="bi-pair" lang="en"
+          >Q {{ currentQuestion.index }}/{{ currentQuestion.total_questions }} · Correct
+          {{ correctCount }}</span
+        >
+        <span class="bi-pair bi-pair--zh" lang="zh-Hans"
+          >第 {{ currentQuestion.index }}/{{ currentQuestion.total_questions }} 题 · 已答对
+          {{ correctCount }} 题</span
+        >
       </p>
       <div class="actions">
-        <button class="btn-secondary small" :disabled="busy" @click="playQuestion">播放标准音 + 题目</button>
-        <button class="btn-secondary small" :disabled="busy" @click="replayQuestion">重播本题</button>
+        <button class="btn-secondary small btn-bi" :disabled="busy" @click="playQuestion">
+          <span class="bi-pair" lang="en">A4 + question</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">播放标准音 + 题目</span>
+        </button>
+        <button class="btn-secondary small btn-bi" :disabled="busy" @click="replayQuestion">
+          <span class="bi-pair" lang="en">Replay this item</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">重播本题</span>
+        </button>
       </div>
 
       <div v-if="isMultiMode" class="slots">
@@ -54,40 +91,78 @@
       </div>
 
       <div class="actions">
-        <button class="btn-secondary small" :disabled="busy || reveal" @click="undoAnswer">撤销一步</button>
-        <button class="btn-secondary small" :disabled="busy || reveal" @click="clearAnswer">清空</button>
+        <button class="btn-secondary small btn-bi" :disabled="busy || reveal" @click="undoAnswer">
+          <span class="bi-pair" lang="en">Undo</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">撤销一步</span>
+        </button>
+        <button class="btn-secondary small btn-bi" :disabled="busy || reveal" @click="clearAnswer">
+          <span class="bi-pair" lang="en">Clear</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">清空</span>
+        </button>
       </div>
 
-      <button class="btn-primary" :disabled="busy || !canSubmit || reveal" @click="submitAnswer">
-        提交答案
+      <button class="btn-primary btn-bi" :disabled="busy || !canSubmit || reveal" @click="submitAnswer">
+        <span class="bi-pair" lang="en">Submit</span>
+        <span class="bi-pair bi-pair--zh" lang="zh-Hans">提交答案</span>
       </button>
-      <button v-if="reveal" class="btn-primary" :disabled="busy" @click="nextQuestion">下一题</button>
+      <button v-if="reveal" class="btn-primary btn-bi" :disabled="busy" @click="nextQuestion">
+        <span class="bi-pair" lang="en">Next</span>
+        <span class="bi-pair bi-pair--zh" lang="zh-Hans">下一题</span>
+      </button>
 
-      <p v-if="feedback" :class="feedback.is_correct ? 'ok' : 'err'" class="feedback">
-        {{
-          feedback.is_correct
-            ? `回答正确：${feedback.correct_answers.join(' - ')}`
-            : `回答错误：正确答案是 ${feedback.correct_answers.join(' - ')}`
-        }}
-      </p>
-      <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
+      <div v-if="feedback" :class="feedback.is_correct ? 'ok' : 'err'" class="feedback feedback--bi">
+        <template v-if="feedback.is_correct">
+          <p class="bi-pair" lang="en">Correct: {{ feedback.correct_answers.join(' – ') }}</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">
+            回答正确：{{ feedback.correct_answers.join(' - ') }}
+          </p>
+        </template>
+        <template v-else>
+          <p class="bi-pair" lang="en">Correct answer: {{ feedback.correct_answers.join(' – ') }}</p>
+          <p class="bi-pair bi-pair--zh" lang="zh-Hans">
+            回答错误：正确答案是 {{ feedback.correct_answers.join(' - ') }}
+          </p>
+        </template>
+      </div>
+      <div v-if="errorMsg" class="err-block" role="alert">
+        <p class="bi-pair" lang="en">Error</p>
+        <p class="bi-pair bi-pair--zh" lang="zh-Hans">错误</p>
+        <p class="err err-msg">{{ errorMsg }}</p>
+      </div>
     </template>
 
     <template v-else>
-      <h3 class="result-title">训练结果</h3>
-      <p class="result-line">
-        正确 {{ summary.correct }}/{{ summary.total }}（{{ formatPercent(summary.accuracy) }}）
+      <div class="section-bi-h result-head">
+        <p class="bi-pair" lang="en">Session results</p>
+        <p class="bi-pair bi-pair--zh" lang="zh-Hans">训练结果</p>
+      </div>
+      <p class="result-line result-line--bi">
+        <span class="bi-pair" lang="en"
+          >Correct {{ summary.correct }}/{{ summary.total }} ({{ formatPercent(summary.accuracy) }})</span
+        >
+        <span class="bi-pair bi-pair--zh" lang="zh-Hans"
+          >正确 {{ summary.correct }}/{{ summary.total }}（{{ formatPercent(summary.accuracy) }}）</span
+        >
       </p>
-      <p class="muted">模式：{{ modeLabel }}</p>
+      <p class="muted muted--bi">
+        <span class="bi-pair" lang="en">Mode: {{ modeLabelEn }}</span>
+        <span class="bi-pair bi-pair--zh" lang="zh-Hans">模式：{{ modeLabelZh }}</span>
+      </p>
       <div v-if="wrongs.length" class="wrong-box">
-        <strong>错题回顾</strong>
+        <div class="wrong-box-h">
+          <span class="bi-pair" lang="en">Mistakes</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">错题回顾</span>
+        </div>
         <ul>
           <li v-for="item in wrongs" :key="item.question_id">
-            你的答案：{{ item.user_answers.join(' - ') || '-' }}；正确：{{ item.correct_answers.join(' - ') }}
+            你的：{{ item.user_answers.join(' - ') || '-' }}；正确：{{ item.correct_answers.join(' - ') }}
           </li>
         </ul>
       </div>
-      <button class="btn-primary" :disabled="busy" @click="resetAll">再来一组</button>
+      <button class="btn-primary btn-bi" :disabled="busy" @click="resetAll">
+        <span class="bi-pair" lang="en">Another round</span>
+        <span class="bi-pair bi-pair--zh" lang="zh-Hans">再来一组</span>
+      </button>
     </template>
   </section>
 </template>
@@ -141,7 +216,12 @@ const isMultiMode = computed(() => mode.value === 'multi_note')
 const expectedCount = computed(() => currentQuestion.value?.notes_per_question || 1)
 const canSubmit = computed(() => answers.value.length === expectedCount.value)
 const fillIndex = computed(() => Math.min(answers.value.length, expectedCount.value - 1))
-const modeLabel = computed(() => (mode.value === 'single_note' ? '单个单音' : '多个单音（3个）'))
+const modeLabelEn = computed(() =>
+  mode.value === 'single_note' ? 'One note' : 'Three notes',
+)
+const modeLabelZh = computed(() =>
+  mode.value === 'single_note' ? '单个单音' : '多个单音（3个）',
+)
 
 function formatPercent(n: number) {
   return `${Math.round(n * 100)}%`
@@ -343,6 +423,54 @@ function resetAll() {
   padding: 14px;
   color: var(--sn-text-primary);
 }
+.sn-title {
+  font-size: 1.2rem;
+}
+.lang-panels {
+  margin-bottom: 12px;
+}
+.field-label-bi {
+  display: block;
+  margin-bottom: 6px;
+}
+.field-label-bi .bi-pair--zh {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+}
+.err-block {
+  margin-top: 8px;
+}
+.err-block .err-msg {
+  margin: 6px 0 0;
+}
+.progress--bi .bi-pair,
+.progress--bi .bi-pair--zh,
+.result-line--bi .bi-pair,
+.result-line--bi .bi-pair--zh,
+.muted--bi .bi-pair,
+.muted--bi .bi-pair--zh {
+  display: block;
+}
+.feedback--bi .bi-pair,
+.feedback--bi .bi-pair--zh {
+  display: block;
+  font-size: 13px;
+}
+.wrong-box-h {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 800;
+}
+.wrong-box-h .bi-pair--zh {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.result-head {
+  margin-bottom: 8px;
+}
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
 .field select {
   width: 100%;
@@ -462,9 +590,6 @@ function resetAll() {
     border-color: rgba(255, 255, 255, 0.14);
     background: rgba(255, 255, 255, 0.06);
     color: rgba(216, 220, 230, 0.92);
-  }
-  .ear-section-h {
-    color: rgba(216, 220, 230, 0.8);
   }
 }
 </style>

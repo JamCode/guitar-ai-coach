@@ -17,6 +17,8 @@ public struct EarMcqAttemptRecord: Codable, Sendable, Equatable, Identifiable {
     public var wasCorrect: Bool
     public var pageIndex: Int
     public var chordDifficultyRaw: String?
+    /// `bank == "B"`（和弦进行）时写入当前档位，与 `chordDifficultyRaw` 对称。
+    public var progressionDifficultyRaw: String?
 
     public init(
         id: UUID = UUID(),
@@ -33,7 +35,8 @@ public struct EarMcqAttemptRecord: Codable, Sendable, Equatable, Identifiable {
         correctOptionKey: String,
         wasCorrect: Bool,
         pageIndex: Int,
-        chordDifficultyRaw: String?
+        chordDifficultyRaw: String?,
+        progressionDifficultyRaw: String? = nil
     ) {
         self.id = id
         self.occurredAt = occurredAt
@@ -50,6 +53,7 @@ public struct EarMcqAttemptRecord: Codable, Sendable, Equatable, Identifiable {
         self.wasCorrect = wasCorrect
         self.pageIndex = pageIndex
         self.chordDifficultyRaw = chordDifficultyRaw
+        self.progressionDifficultyRaw = progressionDifficultyRaw
     }
 }
 

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>玩乐吉他技术支持</title>
+  <title>Wanle Guitar — Support / 玩乐吉他技术支持</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -64,7 +64,35 @@
     }
     .nav {
       font-size: 0.92rem;
-      margin: 0 0 10px;
+      margin: 0 0 8px;
+    }
+    .lang-jump {
+      font-size: 0.92rem;
+      margin: 0 0 12px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: color-mix(in oklab, var(--bg) 50%, var(--card));
+    }
+    .section-lang {
+      scroll-margin-top: 12px;
+    }
+    .section-lang + .section-lang {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+    .section-lang[lang|="zh"] h2:first-of-type {
+      margin-top: 18px;
+    }
+    .section-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 4px;
     }
     .notice {
       margin-top: 14px;
@@ -81,38 +109,90 @@
 <body>
   <main class="wrap">
     <article class="card">
-      <p class="nav"><a href="index.html">隐私政策</a> · <strong>技术支持</strong></p>
-      <h1>玩乐吉他技术支持</h1>
-      <p class="meta">更新时间：2026-04-23</p>
+      <p class="lang-jump" role="navigation" aria-label="Language and related pages">
+        <strong>Jump / 跳转</strong>：
+        <a href="#doc-en">English</a>
+        <span aria-hidden="true"> · </span>
+        <a href="#doc-zh">中文</a>
+        <span aria-hidden="true"> · | · </span>
+        <a href="index.html#doc-en">Privacy (EN)</a>
+        <span aria-hidden="true"> · </span>
+        <a href="index.html#doc-zh">隐私政策</a>
+      </p>
 
-      <p>本页面为「玩乐吉他」iOS 应用的技术支持信息，与 App Store 展示一致。我们未提供独立服务器，本页托管于 GitHub Pages，仅用于帮助用户联系与自助说明。</p>
+      <section id="doc-en" class="section-lang" lang="en" aria-labelledby="title-en">
+        <p class="nav"><a href="index.html#doc-en">Privacy Policy</a> · <strong>Support</strong></p>
+        <p class="section-label">English</p>
+        <h1 id="title-en">Wanle Guitar — Support</h1>
+        <p class="meta">Last updated: 2026-04-23</p>
 
-      <h2>1. 应用与平台</h2>
-      <ul>
-        <li><strong>应用名称</strong>：玩乐吉他</li>
-        <li><strong>平台</strong>：iOS（具体兼容版本以 App Store 页面为准）</li>
-        <li><strong>功能概览</strong>：练习与记录、视唱练耳、本地曲谱、扒歌分析、调音/指板/和弦工具等，主要能力在设备本地处理。</li>
-      </ul>
+        <p>This page provides technical support information for the <strong>Wanle Guitar</strong> iOS app, aligned with the App Store listing. We do not run a separate support server; the page is hosted on GitHub Pages and exists to help you get in touch and to provide basic self-service information.</p>
 
-      <h2>2. 如何获取帮助</h2>
-      <p>你可以通过以下方式联系开发者：</p>
-      <ul>
-        <li><strong>应用内</strong>：打开「工具」→「帮助与反馈」，使用系统邮件发送问题描述（需本机已配置邮件账户）。</li>
-        <li><strong>邮件</strong>：直接发送邮件至 <code>23766856@qq.com</code>。我们会在方便时阅读并尽量回复，但无法承诺实时响应或 SLA。</li>
-      </ul>
+        <h2>1. App and platform</h2>
+        <ul>
+          <li><strong>App name</strong> — 玩乐吉他 (Wanle Guitar)</li>
+          <li><strong>Platform</strong> — iOS (see the App Store for minimum / compatible OS versions)</li>
+          <li><strong>Overview</strong> — practice &amp; history, ear training, local scores, transcription-style analysis, tuner / fretboard / chord tools, and more. Most processing is done on the device.</li>
+        </ul>
 
-      <h2>3. 反馈问题时请尽量附带</h2>
-      <p>为便于定位问题，建议在邮件/反馈正文中写清（能写多少写多少）：</p>
-      <ul>
-        <li>设备型号、iOS 系统版本、App 版本号；</li>
-        <li>问题现象与大致发生步骤；</li>
-        <li>是否涉及麦克风/相册/文件访问、以及当时权限是否已允许。</li>
-      </ul>
+        <h2>2. How to get help</h2>
+        <p>You can contact the developers as follows:</p>
+        <ul>
+          <li><strong>In the app</strong> — go to <strong>Tools</strong> → <strong>Help &amp; feedback</strong> and send a description using the system mail UI (a mail account must be configured on the device).</li>
+          <li><strong>Email</strong> — write to <code>23766856@qq.com</code>. We read messages when we can and try to respond, but we cannot guarantee real-time responses or a fixed SLA.</li>
+        </ul>
 
-      <h2>4. 数据与隐私</h2>
-      <p>关于数据收集、权限用途与删除方式，请参阅 <a href="index.html">《玩乐吉他隐私政策》</a>。</p>
+        <h2>3. What to include when reporting a problem</h2>
+        <p>To help us investigate, please include as much of the following as you can in your email or in-app report:</p>
+        <ul>
+          <li>Device model, iOS version, and app version</li>
+          <li>What you saw and the steps to reproduce (roughly)</li>
+          <li>Whether microphone / photos / file access is involved, and whether permission was granted at the time</li>
+        </ul>
 
-      <p class="notice">本页面不构成法律或合同承诺。若你遇到涉及账号安全、支付或系统级异常，请同时参考 Apple 官方支持渠道。</p>
+        <h2>4. Data and privacy</h2>
+        <p>For data collection, permission purposes, and deletion, see the <a href="index.html#doc-en">Wanle Guitar Privacy Policy</a>.</p>
+
+        <p class="notice">This page is not a legal or contractual warranty. If you have issues with account security, payments, or system-level errors, also consult Apple’s official support channels where appropriate.</p>
+        <p class="meta" style="margin-top: 16px;"><a href="#doc-zh">Continue to 中文版本 ↓</a></p>
+      </section>
+
+      <section id="doc-zh" class="section-lang" lang="zh-Hans" aria-labelledby="title-zh">
+        <p class="nav"><a href="index.html#doc-zh">隐私政策</a> · <strong>技术支持</strong></p>
+        <p class="section-label">中文</p>
+        <h1 id="title-zh">玩乐吉他技术支持</h1>
+        <p class="meta">更新时间：2026-04-23</p>
+
+        <p>本页面为「玩乐吉他」iOS 应用的技术支持信息，与 App Store 展示一致。我们未提供独立服务器，本页托管于 GitHub Pages，仅用于帮助用户联系与自助说明。</p>
+
+        <h2>1. 应用与平台</h2>
+        <ul>
+          <li><strong>应用名称</strong>：玩乐吉他</li>
+          <li><strong>平台</strong>：iOS（具体兼容版本以 App Store 页面为准）</li>
+          <li><strong>功能概览</strong>：练习与记录、视唱练耳、本地曲谱、扒歌分析、调音/指板/和弦工具等，主要能力在设备本地处理。</li>
+        </ul>
+
+        <h2>2. 如何获取帮助</h2>
+        <p>你可以通过以下方式联系开发者：</p>
+        <ul>
+          <li><strong>应用内</strong>：打开「工具」→「帮助与反馈」，使用系统邮件发送问题描述（需本机已配置邮件账户）。</li>
+          <li><strong>邮件</strong>：直接发送邮件至 <code>23766856@qq.com</code>。我们会在方便时阅读并尽量回复，但无法承诺实时响应或 SLA。</li>
+        </ul>
+
+        <h2>3. 反馈问题时请尽量附带</h2>
+        <p>为便于定位问题，建议在邮件/反馈正文中写清（能写多少写多少）：</p>
+        <ul>
+          <li>设备型号、iOS 系统版本、App 版本号；</li>
+          <li>问题现象与大致发生步骤；</li>
+          <li>是否涉及麦克风/相册/文件访问、以及当时权限是否已允许。</li>
+        </ul>
+
+        <h2>4. 数据与隐私</h2>
+        <p>关于数据收集、权限用途与删除方式，请参阅 <a href="index.html#doc-zh">《玩乐吉他隐私政策》</a>。</p>
+
+        <p class="notice">本页面不构成法律或合同承诺。若你遇到涉及账号安全、支付或系统级异常，请同时参考 Apple 官方支持渠道。</p>
+        <p class="meta" style="margin-top: 16px;"><a href="#doc-en">Back to English ↑</a></p>
+      </section>
     </article>
   </main>
 </body>

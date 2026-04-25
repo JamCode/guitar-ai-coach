@@ -16,7 +16,9 @@ protocol PracticeSessionStore {
         musicKey: String?,
         complexity: String?,
         rhythmPatternId: String?,
-        scaleWarmupDrillId: String?
+        scaleWarmupDrillId: String?,
+        earAnsweredCount: Int?,
+        earCorrectCount: Int?
     ) async throws
 
     func loadSummary(now: Date?) async throws -> PracticeSummary
