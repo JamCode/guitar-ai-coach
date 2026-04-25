@@ -59,6 +59,16 @@ final class EarCoreTests: XCTestCase {
         XCTAssertTrue(q.choices.contains(where: { $0.semitones == q.answer.semitones }))
     }
 
+    func testIntervalKindTeachTextCoversAllSemitones() {
+        for s in 0 ... 12 {
+            let k = IntervalKind.kind(semitones: s, tritone: .aug4)
+            XCTAssertFalse(k.teachZh.isEmpty, "teachZh empty for semitone \(s)")
+        }
+        let tritoneAug = IntervalKind.kind(semitones: 6, tritone: .aug4)
+        let tritoneDim = IntervalKind.kind(semitones: 6, tritone: .dim5)
+        XCTAssertNotEqual(tritoneAug.teachZh, tritoneDim.teachZh)
+    }
+
     func testChromaticStripCoversOctaveAndBothNotes() {
         let strip = IntervalChromaticStrip.midisCoveringOctaveIncluding(lowMidi: 64, highMidi: 67)
         XCTAssertTrue(strip.contains(64))

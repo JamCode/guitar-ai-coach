@@ -137,13 +137,19 @@ public struct IntervalEarView: View {
                             let firstRowCount = (strip.count + 1) / 2
                             let row1 = Array(strip.prefix(firstRowCount))
                             let row2 = Array(strip.suffix(strip.count - firstRowCount))
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("本题音区（可点试听，至少一个八度）")
-                                    .font(.caption.weight(.semibold))
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(q.answer.teachZh)
+                                    .font(.subheadline)
                                     .foregroundStyle(SwiftAppTheme.muted)
-                                VStack(alignment: .leading, spacing: 6) {
-                                    chromaticPillRow(midis: row1, question: q)
-                                    chromaticPillRow(midis: row2, question: q)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("本题音区（可点试听，至少一个八度）")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(SwiftAppTheme.muted)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        chromaticPillRow(midis: row1, question: q)
+                                        chromaticPillRow(midis: row2, question: q)
+                                    }
                                 }
                             }
                         }

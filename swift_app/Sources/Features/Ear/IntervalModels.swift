@@ -76,6 +76,43 @@ public struct IntervalKind: Hashable, Sendable {
 
     /// 兼容旧逻辑：1...12 半音，三全音按增四度展示。
     public static let trainingPool: [IntervalKind] = (1 ... 12).map { kind(semitones: $0, tritone: .aug4) }
+
+    /// 揭示答案后展示的一行乐理说明（与 `nameZh` 一一对应）。
+    public var teachZh: String {
+        switch semitones {
+        case 0:
+            return "同音或八度内重复，两音高一致，音程为 0 个半音。"
+        case 1:
+            return "比低音只高 1 个半音，极窄的半音关系，不协和、张力强，常有「往上解决」的听感。"
+        case 2:
+            return "含 2 个半音（1 个全音），大调音阶中相邻度名的典型间距，略带展开感。"
+        case 3:
+            return "3 个半音，小调、布鲁斯里常见的三度色彩，比大三度更柔和、略暗。"
+        case 4:
+            return "4 个半音，大三和弦的骨架，明亮、稳定，是流行与进行里的常用和声感。"
+        case 5:
+            return "5 个半音（2 个全音 + 1 个半音），属完全协和，音响开阔、坚实，和纯五度、纯八度同属一类自然框架。"
+        case 6:
+            if nameZh == "减五度" {
+                return "6 个半音（同「三全音」），不协和、紧张，常在属七等和弦里以「减五度」对低音呈现。"
+            }
+            return "6 个半音，又称三全音；极不稳定，色彩尖锐，在古典中常需「解决」到更协和的音程。"
+        case 7:
+            return "7 个半音，属—主、下属—主进行的重要支柱，与纯四度互为转位，和声上非常顺耳。"
+        case 8:
+            return "8 个半音，小调色彩偏柔、略暗，与大六度成对，常见于抒情与慢歌和声。"
+        case 9:
+            return "9 个半音，大调中明亮、宽的感觉，大六和弦顶音到根音的跨度就常是这类听感。"
+        case 10:
+            return "10 个半音，属七、小七等和弦里常见，略带忧郁或「悬而未决」的七度音色彩。"
+        case 11:
+            return "11 个半音，大七和弦顶音与根音的跨度，比小七更「亮」、更倾向主音的引力。"
+        case 12:
+            return "高一个完整八度，与低音为同名音高、频率比约 2:1，最融合、最稳定的「同音高」感。"
+        default:
+            return ""
+        }
+    }
 }
 
 public struct IntervalQuestion: Sendable {
