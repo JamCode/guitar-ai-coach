@@ -200,7 +200,9 @@ struct RhythmStrummingView: View {
                 musicKey: nil,
                 complexity: nil,
                 rhythmPatternId: pattern.id,
-                scaleWarmupDrillId: nil
+                scaleWarmupDrillId: nil,
+                earAnsweredCount: nil,
+                earCorrectCount: nil
             )
             savedToast = true
         } catch {

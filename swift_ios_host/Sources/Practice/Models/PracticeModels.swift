@@ -103,6 +103,11 @@ struct PracticeSession: Identifiable, Codable, Equatable {
 
     /// 爬格子热身题卡 id（可空，兼容旧数据）。
     let scaleWarmupDrillId: String?
+
+    /// 练耳（音程 / 和弦听辨 / 和弦进行）在本次会话时间窗内的判题数；与 `earCorrectCount` 成对出现。
+    let earAnsweredCount: Int?
+    /// 练耳答对题数。
+    let earCorrectCount: Int?
 }
 
 // MARK: - Summary computation (aligned with Flutter)

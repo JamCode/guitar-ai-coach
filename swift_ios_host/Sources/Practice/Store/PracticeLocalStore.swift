@@ -32,7 +32,9 @@ final class PracticeLocalStore: PracticeSessionStore {
         musicKey: String?,
         complexity: String?,
         rhythmPatternId: String?,
-        scaleWarmupDrillId: String?
+        scaleWarmupDrillId: String?,
+        earAnsweredCount: Int?,
+        earCorrectCount: Int?
     ) async throws {
         guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
         var sessions = try await loadSessions()
@@ -50,7 +52,9 @@ final class PracticeLocalStore: PracticeSessionStore {
             musicKey: musicKey,
             complexity: complexity,
             rhythmPatternId: rhythmPatternId,
-            scaleWarmupDrillId: scaleWarmupDrillId
+            scaleWarmupDrillId: scaleWarmupDrillId,
+            earAnsweredCount: earAnsweredCount,
+            earCorrectCount: earCorrectCount
         )
         sessions.append(session)
         defaults.set(encodeSessions(sessions), forKey: key)
@@ -93,6 +97,8 @@ func encodeSessions(_ sessions: [PracticeSession]) -> String {
         if let complexity = s.complexity { m["complexity"] = complexity }
         if let rhythmPatternId = s.rhythmPatternId { m["rhythmPatternId"] = rhythmPatternId }
         if let scaleWarmupDrillId = s.scaleWarmupDrillId { m["scaleWarmupDrillId"] = scaleWarmupDrillId }
+        if let earAnsweredCount = s.earAnsweredCount { m["earAnsweredCount"] = earAnsweredCount }
+        if let earCorrectCount = s.earCorrectCount { m["earCorrectCount"] = earCorrectCount }
         return m
     }
     guard
@@ -140,6 +146,8 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
     let complexity = dict["complexity"] as? String
     let rhythmPatternId = dict["rhythmPatternId"] as? String
     let scaleWarmupDrillId = dict["scaleWarmupDrillId"] as? String
+    let earAnsweredCount = asOptionalInt(dict["earAnsweredCount"])
+    let earCorrectCount = asOptionalInt(dict["earCorrectCount"])
 
     return PracticeSession(
         id: id,
@@ -155,7 +163,9 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
         musicKey: musicKey,
         complexity: complexity,
         rhythmPatternId: rhythmPatternId,
-        scaleWarmupDrillId: scaleWarmupDrillId
+        scaleWarmupDrillId: scaleWarmupDrillId,
+        earAnsweredCount: earAnsweredCount,
+        earCorrectCount: earCorrectCount
     )
 }
 
@@ -175,5 +185,13 @@ private func asInt(_ v: Any?, fallback: Int) -> Int {
     if let d = v as? Double { return Int(d) }
     if let n = v as? NSNumber { return n.intValue }
     return fallback
+}
+
+private func asOptionalInt(_ v: Any?) -> Int? {
+    if v == nil { return nil }
+    if let i = v as? Int { return i }
+    if let d = v as? Double { return Int(d) }
+    if let n = v as? NSNumber { return n.intValue }
+    return nil
 }
 
