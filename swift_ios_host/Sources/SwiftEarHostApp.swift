@@ -59,8 +59,27 @@ struct SwiftEarHostApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            HostRootView()
         }
+    }
+}
+
+/// 根容器：首次启动展示导览，完成后不再出现。
+private struct HostRootView: View {
+    @AppStorage(FirstLaunchTourStorage.completedKey) private var tourCompleted = false
+
+    var body: some View {
+        RootTabView()
+            .fullScreenCover(
+                isPresented: Binding(
+                    get: { !tourCompleted },
+                    set: { presented in
+                        if !presented { tourCompleted = true }
+                    }
+                )
+            ) {
+                FirstLaunchTourView()
+            }
     }
 }
 
