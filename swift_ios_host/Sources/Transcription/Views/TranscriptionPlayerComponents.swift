@@ -31,15 +31,12 @@ struct CurrentChordCard: View {
                 Text("当前和弦")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(SwiftAppTheme.brand)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(SwiftAppTheme.brandSoft)
-                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule(style: .continuous).fill(SwiftAppTheme.brandSoft))
 
                 Text(chord)
-                    .font(.system(size: 46, weight: .bold, design: .rounded))
+                    .font(.system(size: 58, weight: .bold, design: .rounded))
                     .foregroundStyle(SwiftAppTheme.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
@@ -54,7 +51,7 @@ struct CurrentChordCard: View {
             Group {
                 if let fingering {
                     ChordDiagramView(frets: fingering.frets)
-                        .frame(width: 112, height: 132)
+                        .frame(width: 120, height: 132)
                 } else {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(SwiftAppTheme.surfaceSoft)
@@ -68,7 +65,7 @@ struct CurrentChordCard: View {
                 }
             }
         }
-        .padding(18)
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(SwiftAppTheme.surface)
@@ -89,7 +86,7 @@ struct ChordTimelineView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("和弦时间轴")
+            Text("附近和弦")
                 .appSectionTitle()
 
             if segments.isEmpty {
@@ -115,11 +112,11 @@ struct ChordTimelineView: View {
                                         .font(.caption2.monospacedDigit())
                                         .foregroundStyle(isCurrent ? .white.opacity(0.92) : SwiftAppTheme.muted)
                                     Text(item.segment.chord)
-                                        .font(.headline.weight(.bold))
+                                        .font(.title3.weight(.bold))
                                         .foregroundStyle(isCurrent ? .white : SwiftAppTheme.text)
                                         .lineLimit(1)
                                 }
-                                .frame(width: 92, alignment: .leading)
+                                .frame(width: 96, alignment: .leading)
                                 .padding(10)
                                 .background(
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -191,6 +188,12 @@ struct PlaybackControlsView: View {
                 Button("1.0x") {}
                     .buttonStyle(.bordered)
                     .tint(SwiftAppTheme.brand)
+                    .overlay(alignment: .bottom) {
+                        Text("倍速")
+                            .font(.caption2)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .offset(y: 18)
+                    }
 
                 Spacer()
 
@@ -213,9 +216,16 @@ struct PlaybackControlsView: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(SwiftAppTheme.brand)
+                .overlay(alignment: .bottom) {
+                    Text("循环")
+                        .font(.caption2)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .offset(y: 18)
+                }
             }
         }
         .padding(16)
+        .padding(.bottom, 8)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(SwiftAppTheme.surface)
@@ -247,35 +257,37 @@ struct UpcomingChordsView: View {
                             .fill(SwiftAppTheme.surface)
                     )
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(Array(segments.enumerated()), id: \.offset) { idx, segment in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(idx == 0 ? "下一个" : "接着")
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(SwiftAppTheme.muted)
-                                Text(segment.chord)
-                                    .font(.title3.weight(.bold))
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                    .lineLimit(1)
-                                Text(TranscriptionPlayerFormatting.formatDurationShort(max(0, segment.startMs - currentTimeMs)))
-                                    .font(.footnote.monospacedDigit())
-                                    .foregroundStyle(SwiftAppTheme.brand)
-                            }
-                            .frame(width: 92, alignment: .leading)
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(idx == 0 ? SwiftAppTheme.surfaceSoft : SwiftAppTheme.surface)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(idx == 0 ? SwiftAppTheme.brand.opacity(0.45) : SwiftAppTheme.line, lineWidth: 1)
-                            )
+                HStack(spacing: 0) {
+                    ForEach(Array(segments.prefix(3).enumerated()), id: \.offset) { idx, segment in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(idx == 0 ? "下一个" : "接着")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(SwiftAppTheme.muted)
+                            Text(segment.chord)
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(SwiftAppTheme.text)
+                                .lineLimit(1)
+                            Text(TranscriptionPlayerFormatting.formatDurationShort(max(0, segment.startMs - currentTimeMs)))
+                                .font(.footnote.monospacedDigit())
+                                .foregroundStyle(SwiftAppTheme.brand)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        if idx < min(2, segments.count - 1) {
+                            Divider()
+                                .overlay(SwiftAppTheme.line)
+                                .padding(.vertical, 10)
                         }
                     }
-                    .padding(.horizontal, 1)
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(SwiftAppTheme.surface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(SwiftAppTheme.line, lineWidth: 1)
+                )
             }
         }
     }

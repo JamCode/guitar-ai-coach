@@ -40,14 +40,14 @@ struct TranscriptionResultView: View {
 
         ScrollView {
             VStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(entry.displayName)
-                        .font(.headline)
+                        .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(SwiftAppTheme.text)
                         .lineLimit(1)
                     Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
-                        .font(.subheadline)
-                        .foregroundStyle(SwiftAppTheme.muted)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.brand)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
