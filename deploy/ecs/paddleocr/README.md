@@ -1,5 +1,14 @@
 # 阿里云 ECS 上的 PaddleOCR（歌谱图片 OCR）
 
+## 外网 HTTPS（Nginx 反代，已配）
+
+假设域名与仓库 `guitar-server.conf` 一致，外网通过 **443** 访问（路径带 **`/paddleocr/`** 前缀）：
+
+- 健康检查：`https://wanghanai.xyz/paddleocr/health`
+- OCR 上传：`POST https://wanghanai.xyz/paddleocr/ocr`（`multipart/form-data` 字段名 `file`）
+
+Nginx 将 `/paddleocr/` 剥掉后转发到本机 `127.0.0.1:18081`（`proxy_pass` 配置见 `deploy/ecs/nginx/guitar-server.conf`）。
+
 ## 一键：在本机同步并完成安装（推荐）
 
 在**你本机能 SSH 进 ECS 的终端**里，进入本仓库后执行（私钥路径按实际修改）：
