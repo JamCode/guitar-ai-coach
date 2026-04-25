@@ -14,15 +14,15 @@ struct TranscriptionProcessingView: View {
                 .font(.headline)
                 .foregroundStyle(SwiftAppTheme.text)
                 .multilineTextAlignment(.center)
-            Text(stepText)
+            Text(AppL10n.t(stepText))
                 .font(.subheadline)
                 .foregroundStyle(SwiftAppTheme.muted)
-            Button("取消", action: onCancel)
+            Button(LocalizedStringResource("transcribe_button_cancel", bundle: .main), action: onCancel)
                 .appSecondaryButton()
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .navigationTitle("正在识别")
+        .navigationTitle(LocalizedStringResource("transcribe_processing_title", bundle: .main))
         .appPageBackground()
     }
 }

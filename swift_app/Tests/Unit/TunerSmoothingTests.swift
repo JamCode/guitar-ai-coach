@@ -104,6 +104,7 @@ private final class NoopAudioEngine: AudioEngineServing {
         stringStaggerSec: Double
     ) throws {}
     func stopSampledGuitarNotes(midis: [Int]) {}
+    func stopAllSampledGuitarNotes() {}
     func stopPluckedGuitarVoices() {}
 }
 

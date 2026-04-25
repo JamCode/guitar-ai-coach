@@ -53,18 +53,6 @@ struct PracticeTimerSessionView: View {
         .padding(SwiftAppTheme.pagePadding)
         .navigationTitle(task.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .accessibilityLabel("返回")
-            }
-        }
         .onReceive(ticker) { _ in
             guard running else { return }
             elapsedSeconds += 1
@@ -135,7 +123,9 @@ struct PracticeTimerSessionView: View {
                 musicKey: nil,
                 complexity: nil,
                 rhythmPatternId: nil,
-                scaleWarmupDrillId: nil
+                scaleWarmupDrillId: nil,
+                earAnsweredCount: nil,
+                earCorrectCount: nil
             )
             savedToast = true
         } catch {

@@ -23,12 +23,12 @@ public struct EarHomeView: View {
                     ) { IntervalEarView() }
                     navCard(
                         title: "和弦听辨",
-                        subtitle: "大三 / 小三 / 属七 / 七和弦 · 不限题量 · 即时判分 · 吉他采样",
+                        subtitle: "大三 / 小三 / 属七 / 七和弦 · 页内可选难度 · 不限题量 · 吉他采样",
                         systemImage: "pianokeys"
                     ) { EarMcqSessionView(title: "和弦听辨", bank: "A", chordDifficulty: .初级) }
                     navCard(
                         title: "和弦进行",
-                        subtitle: "常见流行进行 · 四选一 · 不限题量 · 揭示后指法图",
+                        subtitle: "常见流行进行 · 四选一 · 页内可选难度 · 不限题量 · 揭示后指法图",
                         systemImage: "music.note.list"
                     ) { EarMcqSessionView(title: "和弦进行", bank: "B") }
                     if EarHomeVisibility.showSightSingingTraining {

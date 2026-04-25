@@ -267,7 +267,7 @@ public enum EarProgressionHarmonyEngine {
                     colorUsed = true
                     colorBudget = 0
                 }
-                if debugMode != .off {
+                if case .linesOnly = debugMode {
                     let prevStr = prev ?? "—"
                     let detail = zip(pool, scores)
                         .map { c, v in String(format: "%@=%.1f", c, v) }
@@ -280,7 +280,7 @@ public enum EarProgressionHarmonyEngine {
                 seq.append(chosen)
             }
             let line = seq.joined(separator: "-")
-            if debugMode != .off {
+            if case .linesOnly = debugMode {
                 dbg.forEach { logLine($0) }
                 logLine("→ line: \(line) (attempt \(attempt + 1))")
             }

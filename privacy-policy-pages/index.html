@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>玩乐吉他隐私政策</title>
+  <title>Wanle Guitar — Privacy Policy / 玩乐吉他隐私政策</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -62,6 +62,38 @@
       font-size: 0.94rem;
       margin: 0 0 14px;
     }
+    .nav {
+      font-size: 0.92rem;
+      margin: 0 0 8px;
+    }
+    .lang-jump {
+      font-size: 0.92rem;
+      margin: 0 0 12px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: color-mix(in oklab, var(--bg) 50%, var(--card));
+    }
+    .section-lang {
+      scroll-margin-top: 12px;
+    }
+    .section-lang + .section-lang {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+    .section-lang[lang|="zh"] h2:first-of-type {
+      margin-top: 18px;
+    }
+    .section-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 4px;
+    }
     .notice {
       margin-top: 14px;
       padding: 10px 12px;
@@ -71,65 +103,132 @@
     }
     a { color: var(--brand); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .nav {
-      font-size: 0.92rem;
-      margin: 0 0 10px;
-    }
+    code { font-size: 0.95em; }
   </style>
 </head>
 <body>
   <main class="wrap">
     <article class="card">
-      <p class="nav"><strong>隐私政策</strong> · <a href="support.html">技术支持</a></p>
-      <h1>玩乐吉他隐私政策</h1>
-      <p class="meta">更新时间：2026-04-23</p>
+      <p class="lang-jump" role="navigation" aria-label="Language and related pages">
+        <strong>Jump / 跳转</strong>：
+        <a href="#doc-en">English</a>
+        <span aria-hidden="true"> · </span>
+        <a href="#doc-zh">中文</a>
+        <span aria-hidden="true"> · | · </span>
+        <a href="support.html#doc-en">Support (EN)</a>
+        <span aria-hidden="true"> · </span>
+        <a href="support.html#doc-zh">技术支持</a>
+      </p>
 
-      <p>欢迎使用玩乐吉他。我们重视你的隐私与数据安全。本政策用于说明：在你使用本 App 过程中，我们会处理哪些信息，以及这些信息如何被使用和保存。</p>
+      <section id="doc-en" class="section-lang" lang="en" aria-labelledby="title-en">
+        <p class="nav"><strong>Privacy Policy</strong> · <a href="support.html#doc-en">Support</a></p>
+        <p class="section-label">English</p>
+        <h1 id="title-en">Wanle Guitar — Privacy Policy</h1>
+        <p class="meta">Last updated: 2026-04-23</p>
 
-      <h2>1. 我们处理哪些信息</h2>
-      <p>玩乐吉他目前以本地功能为主。根据你实际使用的功能，App 可能处理以下信息：</p>
-      <ul>
-        <li><strong>你主动导入的媒体和文件</strong>：例如从相册选择的视频、从“文件”导入的音频/视频、用于“我的谱”的图片。</li>
-        <li><strong>练习与识别相关记录</strong>：例如扒歌识别结果、历史记录、练习记录与部分本地偏好设置。</li>
-        <li><strong>设备权限状态</strong>：例如麦克风权限、相册访问权限，用于决定相关功能是否可用。</li>
-      </ul>
+        <p>Welcome to Wanle Guitar. We take your privacy and data security seriously. This policy explains what information we may process when you use the app, and how that information is used and stored.</p>
 
-      <h2>2. 权限用途说明</h2>
-      <ul>
-        <li><strong>麦克风权限</strong>：用于调音和部分声音输入练习功能。</li>
-        <li><strong>相册访问权限</strong>：用于从相册导入图片/视频，进行谱面管理或本地识别处理。</li>
-        <li><strong>文件导入权限</strong>：用于从系统“文件”中选择音频/视频，进行本地分析处理。</li>
-      </ul>
+        <h2>1. Information we may process</h2>
+        <p>Wanle Guitar is primarily a local, on-device app. Depending on the features you use, the app may process the following:</p>
+        <ul>
+          <li><strong>Media and files you import</strong> — e.g. videos from Photos, audio/video from Files, or images for “My Scores / sheet” features.</li>
+          <li><strong>Practice and analysis-related data</strong> — e.g. transcription results, history, practice logs, and some local preferences.</li>
+          <li><strong>Device permission state</strong> — e.g. whether microphone or photo library access is granted, which affects whether related features are available.</li>
+        </ul>
 
-      <h2>3. 数据存储与处理方式</h2>
-      <ul>
-        <li>你导入的媒体、识别历史和相关结果主要保存在<strong>你的设备本地</strong>。</li>
-        <li>练习记录和部分应用设置会保存在设备本地（例如系统本地存储）。</li>
-        <li>当前版本功能主要在本地处理。根据当前代码实现，<strong>不会将上述内容上传到开发者自建服务器</strong>。</li>
-      </ul>
+        <h2>2. How we use permissions</h2>
+        <ul>
+          <li><strong>Microphone</strong> — for the tuner and certain sound-based practice features.</li>
+          <li><strong>Photo library</strong> — to import images or videos for score management or on-device analysis.</li>
+          <li><strong>Files</strong> — to let you pick audio or video from the system Files app for local processing.</li>
+        </ul>
 
-      <h2>4. 你如何管理和删除数据</h2>
-      <ul>
-        <li>你可以在 App 内删除相关历史记录（例如扒歌历史、谱面条目及其对应本地文件）。</li>
-        <li>对于 App 内未提供独立删除入口的本地数据，你可通过系统卸载 App 清除该 App 在本机的本地数据。</li>
-      </ul>
+        <h2>3. Storage and processing</h2>
+        <ul>
+          <li>Imported media, recognition history, and related results are kept primarily <strong>on your device</strong>.</li>
+          <li>Practice data and some app settings are stored locally (e.g. in on-device storage).</li>
+          <li>In the current version, features are designed to run mainly on the device. Based on the current implementation, <strong>we do not upload the above content to a developer-operated server</strong>.</li>
+        </ul>
 
-      <h2>5. 第三方服务与跟踪</h2>
-      <ul>
-        <li>当前版本未集成广告跟踪类 SDK，未提供面向用户的第三方行为跟踪功能。</li>
-        <li>若未来版本接入新的第三方能力，我们会在更新后同步调整本政策并在需要时征求你的授权。</li>
-      </ul>
+        <h2>4. How you can manage or delete data</h2>
+        <ul>
+          <li>You can delete relevant history in the app (e.g. transcription history, score entries, and their associated local files) where the app provides controls.</li>
+          <li>For any local data without a dedicated in-app delete path, you can remove the app to clear its sandbox data on that device.</li>
+        </ul>
 
-      <h2>6. 未成年人说明</h2>
-      <p>如你是未成年人，建议在监护人指导下阅读并使用本 App。</p>
+        <h2>5. Third-party services and tracking</h2>
+        <ul>
+          <li>The current version does not integrate ad-tracking SDKs and does not offer third-party behaviour tracking to users for marketing purposes.</li>
+          <li>If future versions add new third-party capabilities, we will update this policy and request consent where required.</li>
+        </ul>
 
-      <h2>7. 隐私政策更新</h2>
-      <p>我们可能根据功能变化或合规要求更新本政策。更新后的版本会发布在本页面，并标注最新更新时间。</p>
+        <h2>6. Minors</h2>
+        <p>If you are a minor, we encourage you to use the app with guidance from a parent or guardian.</p>
 
-      <h2>8. 联系我们</h2>
-      <p>如你对本政策有疑问，或希望反馈隐私相关问题，请联系：</p>
-      <p><strong>联系邮箱</strong>：<code>23766856@qq.com</code></p>
-      <p class="notice">建议此邮箱与 App 内“帮助与反馈”保持一致，避免用户联系混淆。</p>
+        <h2>7. Changes to this policy</h2>
+        <p>We may update this policy as features or legal requirements change. The latest version will be published on this page with an updated “last updated” date.</p>
+
+        <h2>8. Contact us</h2>
+        <p>If you have questions about this policy or want to report a privacy concern, contact us at:</p>
+        <p><strong>Email</strong>: <code>23766856@qq.com</code></p>
+        <p class="notice">For consistency, this address should match the in-app “Help &amp; feedback” contact where applicable.</p>
+        <p class="meta" style="margin-top: 16px;"><a href="#doc-zh">Continue to 中文版本 ↓</a></p>
+      </section>
+
+      <section id="doc-zh" class="section-lang" lang="zh-Hans" aria-labelledby="title-zh">
+        <p class="nav"><strong>隐私政策</strong> · <a href="support.html#doc-zh">技术支持</a></p>
+        <p class="section-label">中文</p>
+        <h1 id="title-zh">玩乐吉他隐私政策</h1>
+        <p class="meta">更新时间：2026-04-23</p>
+
+        <p>欢迎使用玩乐吉他。我们重视你的隐私与数据安全。本政策用于说明：在你使用本 App 过程中，我们会处理哪些信息，以及这些信息如何被使用和保存。</p>
+
+        <h2>1. 我们处理哪些信息</h2>
+        <p>玩乐吉他目前以本地功能为主。根据你实际使用的功能，App 可能处理以下信息：</p>
+        <ul>
+          <li><strong>你主动导入的媒体和文件</strong>：例如从相册选择的视频、从“文件”导入的音频/视频、用于“我的谱”的图片。</li>
+          <li><strong>练习与识别相关记录</strong>：例如扒歌识别结果、历史记录、练习记录与部分本地偏好设置。</li>
+          <li><strong>设备权限状态</strong>：例如麦克风权限、相册访问权限，用于决定相关功能是否可用。</li>
+        </ul>
+
+        <h2>2. 权限用途说明</h2>
+        <ul>
+          <li><strong>麦克风权限</strong>：用于调音和部分声音输入练习功能。</li>
+          <li><strong>相册访问权限</strong>：用于从相册导入图片/视频，进行谱面管理或本地识别处理。</li>
+          <li><strong>文件导入权限</strong>：用于从系统“文件”中选择音频/视频，进行本地分析处理。</li>
+        </ul>
+
+        <h2>3. 数据存储与处理方式</h2>
+        <ul>
+          <li>你导入的媒体、识别历史和相关结果主要保存在<strong>你的设备本地</strong>。</li>
+          <li>练习记录和部分应用设置会保存在设备本地（例如系统本地存储）。</li>
+          <li>当前版本功能主要在本地处理。根据当前代码实现，<strong>不会将上述内容上传到开发者自建服务器</strong>。</li>
+        </ul>
+
+        <h2>4. 你如何管理和删除数据</h2>
+        <ul>
+          <li>你可以在 App 内删除相关历史记录（例如扒歌历史、谱面条目及其对应本地文件）。</li>
+          <li>对于 App 内未提供独立删除入口的本地数据，你可通过系统卸载 App 清除该 App 在本机的本地数据。</li>
+        </ul>
+
+        <h2>5. 第三方服务与跟踪</h2>
+        <ul>
+          <li>当前版本未集成广告跟踪类 SDK，未提供面向用户的第三方行为跟踪功能。</li>
+          <li>若未来版本接入新的第三方能力，我们会在更新后同步调整本政策并在需要时征求你的授权。</li>
+        </ul>
+
+        <h2>6. 未成年人说明</h2>
+        <p>如你是未成年人，建议在监护人指导下阅读并使用本 App。</p>
+
+        <h2>7. 隐私政策更新</h2>
+        <p>我们可能根据功能变化或合规要求更新本政策。更新后的版本会发布在本页面，并标注最新更新时间。</p>
+
+        <h2>8. 联系我们</h2>
+        <p>如你对本政策有疑问，或希望反馈隐私相关问题，请联系：</p>
+        <p><strong>联系邮箱</strong>：<code>23766856@qq.com</code></p>
+        <p class="notice">建议此邮箱与 App 内“帮助与反馈”保持一致，避免用户联系混淆。</p>
+        <p class="meta" style="margin-top: 16px;"><a href="#doc-en">Back to English ↑</a></p>
+      </section>
     </article>
   </main>
 </body>

@@ -91,17 +91,7 @@ struct ScaleWarmupSessionView: View {
         }
         .navigationTitle(task.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .accessibilityLabel("返回")
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showSettings = true
@@ -211,7 +201,9 @@ struct ScaleWarmupSessionView: View {
                 musicKey: nil,
                 complexity: nil,
                 rhythmPatternId: nil,
-                scaleWarmupDrillId: drill.id
+                scaleWarmupDrillId: drill.id,
+                earAnsweredCount: nil,
+                earCorrectCount: nil
             )
             savedToast = true
         } catch {

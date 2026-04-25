@@ -19,18 +19,23 @@ struct SheetLibraryView: View {
             } else if let error = vm.error {
                 VStack(spacing: 12) {
                     Text(error).foregroundStyle(SwiftAppTheme.muted)
-                    Button("重试") { Task { await vm.reload() } }.appPrimaryButton()
+                    Button(LocalizedStringResource("sheets_button_retry", bundle: .main)) { Task { await vm.reload() } }.appPrimaryButton()
                 }
             } else if vm.entries.isEmpty {
-                Text("暂无谱子。点击右上角 + 从相册多选；起名后保存到本地。")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(SwiftAppTheme.muted)
-                    .padding()
+                VStack(alignment: .center, spacing: 16) {
+                    Text(LocalizedStringResource("sheets_empty_message", bundle: .main))
+                        .multilineTextAlignment(.center)
+                    Text(LocalizedStringResource("sheets_privacy_notice", bundle: .main))
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
             } else {
                 listView
             }
         }
-        .navigationTitle("我的谱")
+        .navigationTitle(LocalizedStringResource("sheets_screen_title", bundle: .main))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -38,7 +43,7 @@ struct SheetLibraryView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .accessibilityLabel("从相册添加")
+                .accessibilityLabel(LocalizedStringResource("sheets_a11y_add_from_album", bundle: .main))
             }
         }
         .photosPicker(
@@ -66,8 +71,8 @@ struct SheetLibraryView: View {
         }
         .appPageBackground()
         .refreshable { await vm.reload() }
-        .alert("提示", isPresented: Binding(get: { vm.toast != nil }, set: { _ in vm.toast = nil })) {
-            Button("知道了", role: .cancel) { vm.toast = nil }
+        .alert(LocalizedStringResource("common_notice_title", bundle: .main), isPresented: Binding(get: { vm.toast != nil }, set: { _ in vm.toast = nil })) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) { vm.toast = nil }
         } message: {
             Text(vm.toast ?? "")
         }
@@ -80,40 +85,53 @@ struct SheetLibraryView: View {
 
     private var listView: some View {
         List {
-            ForEach(vm.entries) { entry in
-                Button {
-                    vm.selectedEntry = entry
-                } label: {
-                    HStack(spacing: 12) {
-                        SheetCoverThumbnail(store: vm.store, entry: entry)
-                            .frame(width: 68, height: 68)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(entry.displayName)
-                                .foregroundStyle(SwiftAppTheme.text)
-                                .lineLimit(1)
-                            Text("\(entry.pageCount) 页 · \(dateText(entry.addedAtMs))")
-                                .font(.caption)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                            Text("状态：\(entry.parseStatus)")
-                                .font(.caption2)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(SwiftAppTheme.muted)
-                    }
-                }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        Task { await vm.remove(entry: entry) }
+            Section {
+                ForEach(vm.entries) { entry in
+                    Button {
+                        vm.selectedEntry = entry
                     } label: {
-                        Text("删除")
+                        HStack(spacing: 12) {
+                            SheetCoverThumbnail(store: vm.store, entry: entry)
+                                .frame(width: 68, height: 68)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(entry.displayName)
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .lineLimit(1)
+                                Text(String(format: AppL10n.t("sheets_list_meta_format"), Int64(entry.pageCount), dateText(entry.addedAtMs)))
+                                    .font(.caption)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                                Text(String(format: AppL10n.t("sheets_status_line_format"), localizedSheetParseStatus(entry.parseStatus)))
+                                    .font(.caption2)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(SwiftAppTheme.muted)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            Task { await vm.remove(entry: entry) }
+                        } label: {
+                            Text(LocalizedStringResource("sheets_action_delete", bundle: .main))
+                        }
                     }
                 }
+            } footer: {
+                Text(LocalizedStringResource("sheets_privacy_notice", bundle: .main))
+                    .font(.caption2)
+                    .foregroundStyle(SwiftAppTheme.muted)
             }
         }
         .scrollContentBackground(.hidden)
+    }
+
+    private func localizedSheetParseStatus(_ raw: String) -> String {
+        let key = "sheet_status_\(raw)"
+        let out = AppL10n.t(key)
+        if out == key { return raw }
+        return out
     }
 
     private func dateText(_ ms: Int) -> String {
@@ -167,7 +185,7 @@ final class SheetLibraryViewModel: ObservableObject {
             await cleanup(urls)
             await reload()
         } catch {
-            toast = "保存失败：\(error.localizedDescription)"
+            toast = String(format: AppL10n.t("sheets_toast_save_failed"), error.localizedDescription)
         }
     }
 
@@ -176,7 +194,7 @@ final class SheetLibraryViewModel: ObservableObject {
             try await store.remove(id: entry.id)
             await reload()
         } catch {
-            toast = "删除失败：\(error.localizedDescription)"
+            toast = String(format: AppL10n.t("sheets_toast_delete_failed"), error.localizedDescription)
         }
     }
 
@@ -218,9 +236,9 @@ private struct SheetDraftView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 12) {
-                TextField("输入谱名", text: $name)
+                TextField(AppL10n.t("sheets_draft_name_placeholder"), text: $name)
                     .textFieldStyle(.roundedBorder)
-                Text("共 \(imagesData.count) 页")
+                Text(String(format: AppL10n.t("sheets_draft_page_count"), Int64(imagesData.count)))
                     .foregroundStyle(SwiftAppTheme.muted)
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
@@ -238,13 +256,13 @@ private struct SheetDraftView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("保存谱子")
+            .navigationTitle(AppL10n.t("sheets_draft_title"))
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button(AppL10n.t("sheets_draft_cancel")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
+                    Button(AppL10n.t("sheets_draft_save")) {
                         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                        onSave(trimmed.isEmpty ? "未命名谱子" : trimmed, imagesData)
+                        onSave(trimmed.isEmpty ? AppL10n.t("sheets_untitled") : trimmed, imagesData)
                         dismiss()
                     }
                 }
@@ -277,7 +295,7 @@ private struct SheetDetailView: View {
             if loading {
                 ProgressView()
             } else if files.isEmpty {
-                Text("未找到谱面图片").foregroundStyle(SwiftAppTheme.muted)
+                Text(AppL10n.t("sheets_no_images")).foregroundStyle(SwiftAppTheme.muted)
             } else {
                 GeometryReader { geo in
                     let size = geo.size
@@ -330,12 +348,14 @@ private struct SheetDetailView: View {
                     durationSeconds: durationSeconds,
                     completed: true,
                     difficulty: 3,
-                    note: "曲谱：\(entry.displayName)（\(entry.pageCount) 页）",
+                    note: String(format: AppL10n.t("sheets_practice_note_format"), entry.displayName, Int64(entry.pageCount)),
                     progressionId: nil,
                     musicKey: nil,
                     complexity: nil,
                     rhythmPatternId: nil,
-                    scaleWarmupDrillId: nil
+                    scaleWarmupDrillId: nil,
+                    earAnsweredCount: nil,
+                    earCorrectCount: nil
                 )
             }
         }
@@ -387,9 +407,9 @@ private struct SheetDetailView: View {
                 immersiveReading.toggle()
             }
         }
-        .accessibilityHint("轻点以显示或隐藏标题栏")
+        .accessibilityHint(AppL10n.t("sheets_a11y_toggle_chrome"))
         .overlay(alignment: .bottom) {
-            Text("第 \(pageIndex) 页 · 共 \(pageImages.count) 页")
+            Text(String(format: AppL10n.t("sheets_page_indicator"), pageIndex, pageImages.count))
                 .font(.caption)
                 .foregroundStyle(SwiftAppTheme.muted)
                 .padding(.bottom, 6)

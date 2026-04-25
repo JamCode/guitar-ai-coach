@@ -22,7 +22,7 @@ struct PracticeLandingView: View {
                     Text(error)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(SwiftAppTheme.text)
-                    Button("重试") { Task { await vm.refresh(blockingUI: true) } }
+                    Button(AppL10n.t("practice_retry")) { Task { await vm.refresh(blockingUI: true) } }
                         .appPrimaryButton()
                 }
                 .padding(24)
@@ -31,7 +31,7 @@ struct PracticeLandingView: View {
             }
         }
         .background(SwiftAppTheme.bg.ignoresSafeArea())
-        .navigationTitle("练习")
+        .navigationTitle(AppL10n.t("practice_screen_title"))
         .appNavigationBarChrome()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -43,7 +43,7 @@ struct PracticeLandingView: View {
                     Image(systemName: "calendar")
                         .foregroundStyle(SwiftAppTheme.text)
                 }
-                .accessibilityLabel("训练日历")
+                .accessibilityLabel(AppL10n.t("practice_a11y_training_calendar"))
             }
         }
         .task { await vm.refresh() }
@@ -58,32 +58,40 @@ struct PracticeLandingView: View {
 
                 PracticeRecentSummaryCard(sessions: vm.sessions)
 
-                Text("视唱练耳")
+                Text(AppL10n.t("practice_section_ear"))
                     .appSectionTitle()
 
-                PracticeLinkCard(title: "音程识别", subtitle: "两音上行、四选一", icon: "play.circle") {
+                PracticeLinkCard(
+                    title: AppL10n.t("task_interval_ear_name"),
+                    subtitle: AppL10n.t("practice_link_interval_sub"),
+                    icon: "play.circle"
+                ) {
                     ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
                         IntervalEarView()
                     }
                 }
                 PracticeLinkCard(
-                    title: "和弦听辨",
-                    subtitle: "大三 / 小三 / 属七 · 题库离线 · 吉他采样合成",
+                    title: AppL10n.t("task_ear_chord_mcq_name"),
+                    subtitle: AppL10n.t("practice_link_ear_chord_sub"),
                     icon: "pianokeys"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
-                        EarMcqSessionView(title: "和弦听辨", bank: "A")
+                        EarMcqSessionView(title: AppL10n.t("task_ear_chord_mcq_name"), bank: "A")
                     }
                 }
-                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
+                PracticeLinkCard(
+                    title: AppL10n.t("task_ear_progression_mcq_name"),
+                    subtitle: AppL10n.t("practice_link_ear_prog_sub"),
+                    icon: "music.note.list"
+                ) {
                     ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
-                        EarMcqSessionView(title: "和弦进行", bank: "B")
+                        EarMcqSessionView(title: AppL10n.t("task_ear_progression_mcq_name"), bank: "B")
                     }
                 }
                 if EarPracticeHubVisibility.showSightSingingTraining {
                     PracticeLinkCard(
-                        title: "视唱训练",
-                        subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
+                        title: AppL10n.t("task_sight_singing_name"),
+                        subtitle: AppL10n.t("task_ear_mcq_sight_subtitle"),
                         icon: "mic"
                     ) {
                         ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
@@ -92,13 +100,13 @@ struct PracticeLandingView: View {
                     }
                 }
 
-                Text("练琴")
+                Text(AppL10n.t("practice_section_guitar"))
                     .appSectionTitle()
 
                 ForEach(kDefaultPracticeTasks) { task in
                     PracticeLinkCard(
-                        title: task.name,
-                        subtitle: task.description,
+                        title: task.localizedName,
+                        subtitle: task.localizedDescription,
                         icon: practiceHomeIcon(for: task.id)
                     ) {
                         PracticeTaskRouterScreen(task: task)
@@ -112,7 +120,7 @@ struct PracticeLandingView: View {
                         }
                     } label: {
                         HStack {
-                            Text("全部训练项目")
+                            Text(AppL10n.t("practice_all_training"))
                                 .font(.subheadline)
                                 .foregroundStyle(SwiftAppTheme.muted)
                             Spacer()
@@ -144,12 +152,12 @@ struct PracticeLandingView: View {
         let innerRadius: CGFloat = 16
 
         return VStack(alignment: .leading, spacing: 14) {
-            Text("今日推荐训练")
+            Text(AppL10n.t("practice_today_recommend"))
                 .font(.title3.weight(.bold))
                 .foregroundStyle(SwiftAppTheme.text)
 
             if vm.recommendationItems.isEmpty {
-                Text("暂无推荐，点击开始训练后将自动生成。")
+                Text(AppL10n.t("practice_today_recommend_empty"))
                     .font(.subheadline)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -169,7 +177,7 @@ struct PracticeLandingView: View {
                                 .foregroundStyle(SwiftAppTheme.brand)
                                 .frame(width: 26, alignment: .center)
 
-                            Text(item.module.title)
+                            Text(item.module.localizedTitle)
                                 .font(.headline)
                                 .foregroundStyle(SwiftAppTheme.text)
                                 .lineLimit(1)
@@ -204,7 +212,7 @@ struct PracticeLandingView: View {
                     )
                 }
             } label: {
-                Text("开始训练")
+                Text(AppL10n.t("practice_start_training"))
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -227,30 +235,37 @@ struct PracticeLandingView: View {
 
 private enum PracticeHomeCopy {
     static func rollingSummaryLine(sessionCount: Int, totalSeconds: Int) -> String {
-        let minutes = max(0, totalSeconds) / 60
-        let hours = minutes / 60
-        let rem = minutes % 60
-        let durationZh: String
-        if hours > 0 {
-            durationZh = rem > 0 ? "\(hours)小时\(rem)分钟" : "\(hours)小时"
-        } else {
-            durationZh = "\(minutes)分钟"
-        }
-        return "近7天 · \(sessionCount)次 · 共\(durationZh)"
+        let totalMinutes = max(0, totalSeconds) / 60
+        let durationText: String = {
+            let m = totalMinutes
+            let h = m / 60
+            let rem = m % 60
+            if h > 0 {
+                if rem > 0 {
+                    return String(format: AppL10n.t("time_hours_minutes"), h, rem)
+                }
+                return String(format: AppL10n.t("time_hours_only"), h)
+            }
+            return String(format: AppL10n.t("time_minutes"), m)
+        }()
+        return String(format: AppL10n.t("practice_rolling_format"), sessionCount, durationText)
     }
 
     static func lastPracticeLine(endedAt: Date?, now: Date = Date()) -> String {
-        guard let endedAt else { return "还没有练习记录" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "zh_CN")
-        f.dateFormat = "M月d日 HH:mm"
-        if Calendar(identifier: .gregorian).isDate(endedAt, inSameDayAs: now) {
-            let time = DateFormatter()
-            time.locale = f.locale
-            time.dateFormat = "HH:mm"
-            return "上次练习：今天 \(time.string(from: endedAt))"
+        guard let endedAt else { return AppL10n.t("practice_last_never") }
+        let cal = Calendar(identifier: .gregorian)
+        let timeOnly = DateFormatter()
+        timeOnly.locale = .current
+        timeOnly.timeStyle = .short
+        timeOnly.dateStyle = .none
+        if cal.isDate(endedAt, inSameDayAs: now) {
+            return String(format: AppL10n.t("practice_last_today"), timeOnly.string(from: endedAt))
         }
-        return "上次练习：\(f.string(from: endedAt))"
+        let dateTime = DateFormatter()
+        dateTime.locale = .current
+        dateTime.dateStyle = .medium
+        dateTime.timeStyle = .short
+        return String(format: AppL10n.t("practice_last_past"), dateTime.string(from: endedAt))
     }
 }
 
@@ -306,37 +321,45 @@ private struct EarPracticeHubScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text("视唱练耳")
+                Text(AppL10n.t("practice_nav_ear_full"))
                     .font(.headline)
                     .foregroundStyle(SwiftAppTheme.text)
-                Text("选择一个训练开始，建议每次 10 分钟。")
+                Text(AppL10n.t("practice_ear_hub_subtitle"))
                     .font(.subheadline)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .padding(.bottom, 4)
 
-                PracticeLinkCard(title: "音程识别", subtitle: "两音上行、四选一", icon: "play.circle") {
+                PracticeLinkCard(
+                    title: AppL10n.t("task_interval_ear_name"),
+                    subtitle: AppL10n.t("practice_link_interval_sub"),
+                    icon: "play.circle"
+                ) {
                     ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
                         IntervalEarView()
                     }
                 }
                 PracticeLinkCard(
-                    title: "和弦听辨",
-                    subtitle: "大三 / 小三 / 属七 · 题库离线 · 吉他采样合成",
+                    title: AppL10n.t("task_ear_chord_mcq_name"),
+                    subtitle: AppL10n.t("practice_link_ear_chord_sub"),
                     icon: "pianokeys"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
-                        EarMcqSessionView(title: "和弦听辨", bank: "A")
+                        EarMcqSessionView(title: AppL10n.t("task_ear_chord_mcq_name"), bank: "A")
                     }
                 }
-                PracticeLinkCard(title: "和弦进行", subtitle: "常见流行进行 · 不限题量 · 指法揭示", icon: "music.note.list") {
+                PracticeLinkCard(
+                    title: AppL10n.t("task_ear_progression_mcq_name"),
+                    subtitle: AppL10n.t("practice_link_ear_prog_sub"),
+                    icon: "music.note.list"
+                ) {
                     ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
-                        EarMcqSessionView(title: "和弦进行", bank: "B")
+                        EarMcqSessionView(title: AppL10n.t("task_ear_progression_mcq_name"), bank: "B")
                     }
                 }
                 if EarPracticeHubVisibility.showSightSingingTraining {
                     PracticeLinkCard(
-                        title: "视唱训练",
-                        subtitle: "立刻出题 · 齿轮内调音域与模式 · 设置自动保存",
+                        title: AppL10n.t("task_sight_singing_name"),
+                        subtitle: AppL10n.t("task_ear_mcq_sight_subtitle"),
                         icon: "mic"
                     ) {
                         ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
@@ -347,7 +370,7 @@ private struct EarPracticeHubScreen: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("视唱练耳")
+        .navigationTitle(AppL10n.t("practice_nav_ear_full"))
         .appPageBackground()
     }
 }
@@ -356,10 +379,10 @@ private struct GuitarPracticeHubScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text("练琴")
+                Text(AppL10n.t("practice_nav_guitar_hub"))
                     .font(.headline)
                     .foregroundStyle(SwiftAppTheme.text)
-                Text("从基础练习开始，优先保持节拍稳定。")
+                Text(AppL10n.t("practice_guitar_hub_subtitle"))
                     .font(.subheadline)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .padding(.bottom, 4)
@@ -372,10 +395,10 @@ private struct GuitarPracticeHubScreen: View {
                     } label: {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(task.name)
+                                Text(task.localizedName)
                                     .font(.headline)
                                     .foregroundStyle(SwiftAppTheme.text)
-                                Text("\(task.targetMinutes) 分钟 · \(task.description)")
+                                Text(String(format: AppL10n.t("practice_task_line"), Int64(task.targetMinutes), task.localizedDescription))
                                     .font(.subheadline)
                                     .foregroundStyle(SwiftAppTheme.muted)
                             }
@@ -391,7 +414,7 @@ private struct GuitarPracticeHubScreen: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("练琴")
+        .navigationTitle(AppL10n.t("practice_nav_guitar_hub"))
         .appPageBackground()
     }
 }
@@ -399,30 +422,30 @@ private struct GuitarPracticeHubScreen: View {
 private struct PracticeTrainingCatalogView: View {
     var body: some View {
         List {
-            Section("视唱练耳") {
-                NavigationLink("音程识别") {
+            Section(AppL10n.t("practice_catalog_ear")) {
+                NavigationLink(AppL10n.t("task_interval_ear_name")) {
                     TabBarHiddenContainer {
                         ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
                             IntervalEarView()
                         }
                     }
                 }
-                NavigationLink("和弦听辨") {
+                NavigationLink(AppL10n.t("task_ear_chord_mcq_name")) {
                     TabBarHiddenContainer {
                         ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
-                            EarMcqSessionView(title: "和弦听辨", bank: "A")
+                            EarMcqSessionView(title: AppL10n.t("task_ear_chord_mcq_name"), bank: "A")
                         }
                     }
                 }
-                NavigationLink("和弦进行") {
+                NavigationLink(AppL10n.t("task_ear_progression_mcq_name")) {
                     TabBarHiddenContainer {
                         ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
-                            EarMcqSessionView(title: "和弦进行", bank: "B")
+                            EarMcqSessionView(title: AppL10n.t("task_ear_progression_mcq_name"), bank: "B")
                         }
                     }
                 }
                 if EarPracticeHubVisibility.showSightSingingTraining {
-                    NavigationLink("视唱训练") {
+                    NavigationLink(AppL10n.t("task_sight_singing_name")) {
                         TabBarHiddenContainer {
                             ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
                                 SightSingingSessionView()
@@ -432,9 +455,9 @@ private struct PracticeTrainingCatalogView: View {
                 }
             }
 
-            Section("练琴") {
+            Section(AppL10n.t("practice_catalog_guitar")) {
                 ForEach(kDefaultPracticeTasks) { task in
-                    NavigationLink(task.name) {
+                    NavigationLink(task.localizedName) {
                         TabBarHiddenContainer {
                             PracticeTaskRouterScreen(task: task)
                         }
@@ -442,7 +465,7 @@ private struct PracticeTrainingCatalogView: View {
                 }
             }
         }
-        .navigationTitle("全部训练项目")
+        .navigationTitle(AppL10n.t("practice_catalog_title"))
         .appPageBackground()
     }
 }
@@ -474,7 +497,7 @@ private struct PracticeCalendarScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 DatePicker(
-                    "选择日期",
+                    AppL10n.t("practice_pick_date"),
                     selection: $selectedDate,
                     displayedComponents: [.date]
                 )
@@ -482,17 +505,17 @@ private struct PracticeCalendarScreen: View {
                 .tint(SwiftAppTheme.brand)
                 .appCard()
 
-                Text("本月有 \(monthPracticedDays) 天完成了训练")
+                Text(String(format: AppL10n.t("practice_month_stats"), monthPracticedDays))
                     .font(.subheadline)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .appCard()
 
-                Text("当天记录")
+                Text(AppL10n.t("practice_today_log"))
                     .appSectionTitle()
                     .padding(.top, 4)
 
                 if selectedDaySessions.isEmpty {
-                    Text("所选日期暂无训练记录。")
+                    Text(AppL10n.t("practice_no_sessions_day"))
                         .foregroundStyle(SwiftAppTheme.muted)
                         .appCard()
                 } else {
@@ -503,12 +526,17 @@ private struct PracticeCalendarScreen: View {
                                 Text(session.taskName)
                                     .foregroundStyle(SwiftAppTheme.text)
                                 Spacer()
-                                Text("\(time) · 难度 \(session.difficulty)/5")
+                                Text(String(format: AppL10n.t("practice_row_time_diff"), time, session.difficulty))
                                     .foregroundStyle(SwiftAppTheme.muted)
                             }
-                            Text("训练时长 \(PracticeSessionDisplay.duration(session.durationSeconds))")
+                            Text(String(format: AppL10n.t("practice_row_duration"), PracticeSessionDisplay.duration(session.durationSeconds)))
                                 .font(.subheadline)
                                 .foregroundStyle(SwiftAppTheme.muted)
+                            if let earLine = PracticeSessionDisplay.earAccuracyLine(session) {
+                                Text(earLine)
+                                    .font(.subheadline)
+                                    .foregroundStyle(SwiftAppTheme.text)
+                            }
                         }
                         .appCard()
                     }
@@ -516,7 +544,7 @@ private struct PracticeCalendarScreen: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("训练日历")
+        .navigationTitle(AppL10n.t("practice_calendar_title"))
         .appPageBackground()
     }
 }
@@ -597,7 +625,7 @@ private final class PracticeLandingViewModel: ObservableObject {
             loading = false
         } catch {
             hasShownInitialContent = false
-            loadError = "读取本地练习记录失败：\(error)"
+            loadError = String(format: AppL10n.t("practice_error_load"), String(describing: error))
             sessions = []
             recommendationItems = []
             loading = false
@@ -606,6 +634,14 @@ private final class PracticeLandingViewModel: ObservableObject {
 }
 
 private enum PracticeSessionDisplay {
+    /// 练耳任务：展示本次停留期间判题正确率（依赖 `ForegroundPracticeSessionTracker` 写入的计数）。
+    static func earAccuracyLine(_ session: PracticeSession) -> String? {
+        guard let answered = session.earAnsweredCount, let correct = session.earCorrectCount else { return nil }
+        guard answered > 0 else { return nil }
+        let pct = Int((Double(correct) / Double(answered) * 100).rounded())
+        return "练耳作答 \(answered) 题 · 答对 \(correct) · 正确率 \(pct)%"
+    }
+
     static func duration(_ seconds: Int) -> String {
         formatDuration(seconds)
     }
@@ -650,15 +686,15 @@ private struct PracticeTaskRouterScreen: View {
                 Image(systemName: "hammer.circle")
                     .font(.system(size: 44, weight: .semibold))
                     .foregroundStyle(SwiftAppTheme.muted)
-                Text(task.name)
+                Text(task.localizedName)
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(SwiftAppTheme.text)
-                Text("该任务正在迁移：\(task.id)")
+                Text(String(format: AppL10n.t("practice_task_migrating"), task.id))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             .padding(24)
-            .navigationTitle(task.name)
+            .navigationTitle(task.localizedName)
             .appPageBackground()
         }
     }

@@ -10,11 +10,11 @@ public struct ProfileHomeView: View {
         ScrollView {
             VStack(spacing: 12) {
                 VStack(spacing: 0) {
-                    navRow(icon: "questionmark.circle", title: "帮助与反馈", subtitle: nil) {
+                    navRow(icon: "questionmark.circle", title: AppL10n.t("support_feedback_title"), subtitle: nil) {
                         HelpFeedbackView()
                     }
                     Divider().padding(.leading, 52)
-                    navRow(icon: "info.circle", title: "关于与版本", subtitle: versionText) {
+                    navRow(icon: "info.circle", title: AppL10n.t("about_version_title"), subtitle: versionText) {
                         AppVersionView()
                     }
                 }
@@ -22,7 +22,7 @@ public struct ProfileHomeView: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("我的")
+        .navigationTitle(Text(LocalizedStringResource("profile_nav_title", bundle: .main)))
         .appPageBackground()
         .task {
             versionText = AppVersionInfoLoader.load().displayVersion
@@ -64,23 +64,23 @@ public struct HelpFeedbackView: View {
         ScrollView {
             VStack(spacing: 12) {
                 VStack(spacing: 0) {
-                    navRow(icon: "ladybug", title: "诊断日志", subtitle: "闪退排查：查看本机记录的异常") {
+                    navRow(icon: "ladybug", title: AppL10n.t("help_diag_title"), subtitle: AppL10n.t("help_diag_subtitle")) {
                         DiagnosticLogsView()
                     }
                     Divider().padding(.leading, 52)
-                    staticRow(title: "常见问题", subtitle: "调音器、练习记录、我的谱相关问题")
+                    staticRow(title: AppL10n.t("help_faq_title"), subtitle: AppL10n.t("help_faq_subtitle"))
                     Divider().padding(.leading, 52)
-                    staticRow(title: "问题反馈", subtitle: "描述你的问题与复现步骤")
+                    staticRow(title: AppL10n.t("help_bug_title"), subtitle: AppL10n.t("help_bug_subtitle"))
                     Divider().padding(.leading, 52)
-                    staticRow(title: "功能建议", subtitle: "告诉我们你希望新增的功能")
+                    staticRow(title: AppL10n.t("help_suggest_title"), subtitle: AppL10n.t("help_suggest_subtitle"))
                     Divider().padding(.leading, 52)
-                    staticRow(title: "关于我们", subtitle: "版本信息与开源说明")
+                    staticRow(title: AppL10n.t("help_about_row_title"), subtitle: AppL10n.t("help_about_row_subtitle"))
                 }
                 .appCard()
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("帮助与反馈")
+        .navigationTitle(Text(LocalizedStringResource("support_feedback_title", bundle: .main)))
         .appPageBackground()
     }
 
@@ -133,11 +133,11 @@ public struct AppVersionView: View {
         ScrollView {
             VStack(spacing: 12) {
                 VStack(spacing: 0) {
-                    kvRow("应用版本", info.displayVersion)
+                    kvRow(AppL10n.t("about_kv_version"), info.displayVersion)
                     Divider().padding(.leading, 14)
-                    kvRow("发布渠道", info.releaseChannel)
+                    kvRow(AppL10n.t("about_kv_channel"), info.releaseChannel)
                     Divider().padding(.leading, 14)
-                    kvRow("系统平台", info.platformLabel)
+                    kvRow(AppL10n.t("about_kv_platform"), info.platformLabel)
                 }
                 .appCard()
 
@@ -147,17 +147,17 @@ public struct AppVersionView: View {
                 } label: {
                     HStack {
                         Image(systemName: "doc.on.doc")
-                        Text("复制版本信息")
+                        Text(LocalizedStringResource("about_copy_version", bundle: .main))
                     }
                 }
                 .appPrimaryButton()
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("关于与版本")
+        .navigationTitle(Text(LocalizedStringResource("about_version_title", bundle: .main)))
         .appPageBackground()
-        .alert("版本信息已复制", isPresented: $copied) {
-            Button("确定", role: .cancel) {}
+        .alert(Text(LocalizedStringResource("about_copied_alert", bundle: .main)), isPresented: $copied) {
+            Button(AppL10n.t("button_ok"), role: .cancel) {}
         }
     }
 
@@ -178,13 +178,13 @@ public struct AccountSecurityView: View {
     public var body: some View {
         ScrollView {
             VStack(spacing: 12) {
-                infoRow("当前模式", "离线模式（无需登录，无网络依赖）")
-                infoRow("数据存储位置", "练习记录和曲谱仅保存在本机应用沙箱内")
-                infoRow("云同步", "当前版本未启用云端同步与账号恢复")
+                infoRow(AppL10n.t("privacy_mode_title"), AppL10n.t("privacy_mode_subtitle"))
+                infoRow(AppL10n.t("privacy_storage_title"), AppL10n.t("privacy_storage_subtitle"))
+                infoRow(AppL10n.t("privacy_sync_title"), AppL10n.t("privacy_sync_subtitle"))
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("隐私与本地数据")
+        .navigationTitle(Text(LocalizedStringResource("privacy_local_nav_title", bundle: .main)))
         .appPageBackground()
     }
 
@@ -200,7 +200,7 @@ public struct AccountSecurityView: View {
 
 public struct DiagnosticLogsView: View {
     @State private var loading = true
-    @State private var pathText = "（未初始化或当前平台不支持）"
+    @State private var pathText: String = AppL10n.t("diag_path_unavailable")
     @State private var bytes: Int = 0
     @State private var showClearConfirm = false
     @State private var toastText: String?
@@ -210,34 +210,40 @@ public struct DiagnosticLogsView: View {
     public var body: some View {
         ScrollView {
             if loading {
-                ProgressView("加载中…")
+                ProgressView {
+                    Text(LocalizedStringResource("diag_loading", bundle: .main))
+                }
                     .tint(SwiftAppTheme.brand)
                     .padding(.top, 24)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("说明").appSectionTitle()
-                        Text("Dart/Swift 层未捕获异常会追加写入下方路径。原生崩溃需查看 Xcode 设备日志。")
+                        Text(LocalizedStringResource("diag_notes_title", bundle: .main)).appSectionTitle()
+                        Text(LocalizedStringResource("diag_notes_body", bundle: .main))
                             .foregroundStyle(SwiftAppTheme.muted)
                     }
                     .appCard()
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("日志文件").appSectionTitle()
+                        Text(LocalizedStringResource("diag_file_title", bundle: .main)).appSectionTitle()
                         Text(pathText)
                             .font(.footnote.monospaced())
                             .textSelection(.enabled)
                             .foregroundStyle(SwiftAppTheme.text)
-                        Text("约 \((Double(bytes) / 1024.0).formatted(.number.precision(.fractionLength(1)))) KB")
+                        Text(String(format: AppL10n.t("diag_size_kb_format"), (Double(bytes) / 1024.0).formatted(.number.precision(.fractionLength(1)))))
                             .font(.caption)
                             .foregroundStyle(SwiftAppTheme.muted)
                     }
                     .appCard()
 
                     VStack(spacing: 8) {
-                        ShareLink(item: URL(fileURLWithPath: pathText), preview: SharePreview("玩乐吉他 诊断日志")) {
-                            Label("分享日志文件", systemImage: "square.and.arrow.up")
-                                .frame(maxWidth: .infinity)
+                        ShareLink(item: URL(fileURLWithPath: pathText), preview: SharePreview(AppL10n.t("diag_share_preview"))) {
+                            Label {
+                                Text(LocalizedStringResource("diag_share_button", bundle: .main))
+                            } icon: {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .frame(maxWidth: .infinity)
                         }
                         .appPrimaryButton()
                         .disabled(!pathText.hasPrefix("/"))
@@ -246,18 +252,26 @@ public struct DiagnosticLogsView: View {
 #if canImport(UIKit)
                             UIPasteboard.general.string = pathText
 #endif
-                            toastText = "路径已复制"
+                            toastText = AppL10n.t("diag_toast_path_copied")
                         } label: {
-                            Label("复制路径", systemImage: "doc.on.doc")
-                                .frame(maxWidth: .infinity)
+                            Label {
+                                Text(LocalizedStringResource("diag_copy_path", bundle: .main))
+                            } icon: {
+                                Image(systemName: "doc.on.doc")
+                            }
+                            .frame(maxWidth: .infinity)
                         }
                         .appSecondaryButton()
 
                         Button {
                             showClearConfirm = true
                         } label: {
-                            Label("清空日志", systemImage: "trash")
-                                .frame(maxWidth: .infinity)
+                            Label {
+                                Text(LocalizedStringResource("diag_clear_logs", bundle: .main))
+                            } icon: {
+                                Image(systemName: "trash")
+                            }
+                            .frame(maxWidth: .infinity)
                         }
                         .appSecondaryButton()
                     }
@@ -265,26 +279,26 @@ public struct DiagnosticLogsView: View {
                 .padding(SwiftAppTheme.pagePadding)
             }
         }
-        .navigationTitle("诊断日志")
+        .navigationTitle(Text(LocalizedStringResource("diag_nav_title", bundle: .main)))
         .appPageBackground()
         .task { await reload() }
-        .alert("清空诊断日志？", isPresented: $showClearConfirm) {
-            Button("取消", role: .cancel) {}
-            Button("清空", role: .destructive) {
+        .alert(Text(LocalizedStringResource("diag_clear_confirm_title", bundle: .main)), isPresented: $showClearConfirm) {
+            Button(AppL10n.t("button_cancel"), role: .cancel) {}
+            Button(AppL10n.t("diag_clear_action"), role: .destructive) {
                 Task {
                     await DiagnosticLogStore.shared.clear()
                     await reload()
-                    toastText = "已清空"
+                    toastText = AppL10n.t("diag_toast_cleared")
                 }
             }
         } message: {
-            Text("将删除本机已记录的错误文本（不可恢复）。")
+            Text(LocalizedStringResource("diag_clear_message", bundle: .main))
         }
         .alert(toastText ?? "", isPresented: Binding(
             get: { toastText != nil },
             set: { if !$0 { toastText = nil } }
         )) {
-            Button("确定", role: .cancel) {}
+            Button(AppL10n.t("button_ok"), role: .cancel) {}
         }
     }
 
@@ -294,7 +308,7 @@ public struct DiagnosticLogsView: View {
         await DiagnosticLogStore.shared.ensureInitialized()
         let url = await DiagnosticLogStore.shared.fileURL()
         let n = await DiagnosticLogStore.shared.byteLength()
-        pathText = url?.path ?? "（未初始化或当前平台不支持）"
+        pathText = url?.path ?? AppL10n.t("diag_path_unavailable")
         bytes = n
         loading = false
     }

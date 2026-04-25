@@ -80,6 +80,8 @@ private final class TestAudioEngine: AudioEngineServing {
 
     func stopSampledGuitarNotes(midis: [Int]) {}
 
+    func stopAllSampledGuitarNotes() {}
+
     func stopPluckedGuitarVoices() {}
 }
 
