@@ -5,7 +5,7 @@ import Core
 
 enum PlaybackSyncResolver {
     static func currentIndex(for currentTimeMs: Int, segments: [TranscriptionSegment]) -> Int? {
-        segments.firstIndex { $0.startMs <= currentTimeMs && currentTimeMs < $0.endMs }
+        TranscriptionChordResolver.index(at: currentTimeMs, in: segments)
     }
 
     static func upcomingSegments(
@@ -14,13 +14,59 @@ enum PlaybackSyncResolver {
         limit: Int = 5
     ) -> [TranscriptionSegment] {
         guard !segments.isEmpty else { return [] }
-        if let idx = currentIndex(for: currentTimeMs, segments: segments) {
+        if let idx = TranscriptionChordResolver.index(at: currentTimeMs, in: segments) {
             return Array(segments.dropFirst(idx + 1).prefix(limit))
         }
         if let futureIndex = segments.firstIndex(where: { currentTimeMs < $0.startMs }) {
             return Array(segments.dropFirst(futureIndex).prefix(limit))
         }
         return []
+    }
+}
+
+enum TranscriptionChordResolver {
+    static func preparedSegments(from raw: [TranscriptionSegment]) -> [TranscriptionSegment] {
+        let sorted = raw.sorted { lhs, rhs in
+            if lhs.startMs == rhs.startMs { return lhs.endMs < rhs.endMs }
+            return lhs.startMs < rhs.startMs
+        }
+        let filtered = sorted.filter { isValidChord($0.chord) }
+        return filtered.isEmpty ? sorted : filtered
+    }
+
+    static func index(at currentTimeMs: Int, in segments: [TranscriptionSegment], gapToleranceMs: Int = 200) -> Int? {
+        guard !segments.isEmpty else { return nil }
+
+        if let exact = segments.firstIndex(where: { $0.startMs <= currentTimeMs && currentTimeMs < $0.endMs }) {
+            return exact
+        }
+
+        if currentTimeMs < segments[0].startMs { return 0 }
+        if let last = segments.indices.last, currentTimeMs >= segments[last].endMs { return last }
+
+        if let prev = segments.lastIndex(where: { $0.endMs <= currentTimeMs }),
+           let next = segments.indices.dropFirst(prev + 1).first {
+            let prevGap = currentTimeMs - segments[prev].endMs
+            let nextGap = segments[next].startMs - currentTimeMs
+            if prevGap >= 0, nextGap >= 0, min(prevGap, nextGap) <= gapToleranceMs {
+                return prevGap <= nextGap ? prev : next
+            }
+        }
+        return nil
+    }
+
+    static func nearestValidSegment(at currentTimeMs: Int, in segments: [TranscriptionSegment]) -> TranscriptionSegment? {
+        guard !segments.isEmpty else { return nil }
+        let idx = index(at: currentTimeMs, in: segments) ?? 0
+
+        if isValidChord(segments[idx].chord) { return segments[idx] }
+        if let prev = segments[0...idx].last(where: { isValidChord($0.chord) }) { return prev }
+        if idx + 1 < segments.count, let next = segments[(idx + 1)...].first(where: { isValidChord($0.chord) }) { return next }
+        return nil
+    }
+
+    static func isValidChord(_ chord: String) -> Bool {
+        !ChordFingeringResolver.isInvalidChordName(chord)
     }
 }
 
@@ -35,9 +81,10 @@ struct TranscriptionResultView: View {
     }
 
     var body: some View {
-        let currentIndex = PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: entry.segments)
-        let currentSegment = currentIndex.flatMap { entry.segments.indices.contains($0) ? entry.segments[$0] : nil }
-        let upcomingSegments = PlaybackSyncResolver.upcomingSegments(for: vm.currentTimeMs, segments: entry.segments, limit: 3)
+        let prepared = TranscriptionChordResolver.preparedSegments(from: entry.segments)
+        let currentIndex = PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: prepared)
+        let currentSegment = TranscriptionChordResolver.nearestValidSegment(at: vm.currentTimeMs, in: prepared)
+        let upcomingSegments = PlaybackSyncResolver.upcomingSegments(for: vm.currentTimeMs, segments: prepared, limit: 3)
 
         ScrollView {
             VStack(spacing: 12) {
@@ -59,7 +106,7 @@ struct TranscriptionResultView: View {
                 )
 
                 ChordTimelineView(
-                    segments: entry.segments,
+                    segments: prepared,
                     currentIndex: currentIndex,
                     currentTimeMs: vm.currentTimeMs,
                     onScrubMs: vm.seek
@@ -98,6 +145,33 @@ struct TranscriptionResultView: View {
             FullChordChartView(entry: entry, vm: vm)
         }
         .task { vm.prepareIfNeeded() }
+        .onReceive(
+            vm.$currentTimeMs
+                .map { timeMs in
+                    TranscriptionChordResolver.index(at: timeMs, in: prepared)
+                }
+                .removeDuplicates()
+        ) { idx in
+            #if DEBUG
+            if let idx {
+                let seg = prepared[idx]
+                let normalized = ChordFingeringResolver.normalizeChordName(seg.chord)
+                let fingering = ChordFingeringResolver.resolve(seg.chord)
+                if !TranscriptionChordResolver.isValidChord(seg.chord) || fingering == nil {
+                    let start = max(0, idx - 3)
+                    let end = min(prepared.count, idx + 4)
+                    let nearby = prepared[start..<end].map { "[\($0.startMs)-\($0.endMs)] \($0.chord)" }.joined(separator: " | ")
+                    let rowStart = (idx / 4) * 4
+                    let rowEnd = min(prepared.count, rowStart + 4)
+                    let row = prepared[rowStart..<rowEnd].map(\.chord).joined(separator: ", ")
+                    print("[TranscriptionChordDebug] time=\(vm.currentTimeMs) matched=[\(seg.startMs)-\(seg.endMs)] raw=\(seg.chord) normalized=\(normalized) fingeringKey=\(fingering?.symbol ?? "nil") nearby=\(nearby) row=\(row)")
+                }
+            } else {
+                let nearby = prepared.prefix(3).map { "[\($0.startMs)-\($0.endMs)] \($0.chord)" }.joined(separator: " | ")
+                print("[TranscriptionChordDebug] time=\(vm.currentTimeMs) noExactMatch nearby=\(nearby)")
+            }
+            #endif
+        }
         .onChange(of: vm.isPlaying) { _, isPlaying in
             UIApplication.shared.isIdleTimerDisabled = isPlaying
         }

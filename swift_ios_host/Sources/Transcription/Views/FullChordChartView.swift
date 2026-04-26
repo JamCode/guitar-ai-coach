@@ -16,10 +16,7 @@ struct FullChordChartView: View {
     init(entry: TranscriptionHistoryEntry, vm: TranscriptionPlayerViewModel) {
         self.entry = entry
         self.vm = vm
-        let sorted = entry.segments.sorted { lhs, rhs in
-            if lhs.startMs == rhs.startMs { return lhs.endMs < rhs.endMs }
-            return lhs.startMs < rhs.startMs
-        }
+        let sorted = TranscriptionChordResolver.preparedSegments(from: entry.segments)
         self.sortedSegments = sorted
         self.rows = stride(from: 0, to: sorted.count, by: 4).map { start in
             Array(sorted[start..<min(start + 4, sorted.count)])

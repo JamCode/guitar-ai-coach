@@ -23,7 +23,7 @@ struct CurrentChordCard: View {
     let durationMs: Int
 
     var body: some View {
-        let chord = currentSegment?.chord ?? "—"
+        let chord = currentSegment.map { ChordFingeringResolver.normalizeChordName($0.chord) }.flatMap { TranscriptionChordResolver.isValidChord($0) ? $0 : nil } ?? "暂无和弦"
         let fingering = currentSegment.flatMap { ChordFingeringResolver.resolve($0.chord) }
 
         HStack(alignment: .center, spacing: 16) {
@@ -50,8 +50,16 @@ struct CurrentChordCard: View {
 
             Group {
                 if let fingering {
-                    ChordDiagramView(frets: fingering.frets)
-                        .frame(width: 120, height: 132)
+                    VStack(spacing: 4) {
+                        ChordDiagramView(frets: fingering.frets)
+                            .frame(width: 120, height: 126)
+                        if let bassHint = fingering.bassHint {
+                            Text("按 \(fingering.symbol) 指法，低音 \(bassHint)")
+                                .font(.caption2)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                                .lineLimit(1)
+                        }
+                    }
                 } else {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(SwiftAppTheme.surfaceSoft)
