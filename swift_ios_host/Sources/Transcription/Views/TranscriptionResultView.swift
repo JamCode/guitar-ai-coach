@@ -27,6 +27,7 @@ enum PlaybackSyncResolver {
 struct TranscriptionResultView: View {
     let entry: TranscriptionHistoryEntry
     @StateObject private var vm: TranscriptionPlayerViewModel
+    @State private var showingFullChordChart = false
 
     init(entry: TranscriptionHistoryEntry) {
         self.entry = entry
@@ -74,7 +75,8 @@ struct TranscriptionResultView: View {
 
                 UpcomingChordsView(
                     segments: upcomingSegments,
-                    currentTimeMs: vm.currentTimeMs
+                    currentTimeMs: vm.currentTimeMs,
+                    onOpenFullChordChart: { showingFullChordChart = true }
                 )
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -83,11 +85,17 @@ struct TranscriptionResultView: View {
         .appPageBackground()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
+                Menu {
+                    Button("查看完整和弦谱") {
+                        showingFullChordChart = true
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
             }
+        }
+        .navigationDestination(isPresented: $showingFullChordChart) {
+            FullChordChartView(entry: entry)
         }
         .task { vm.prepareIfNeeded() }
         .onChange(of: vm.isPlaying) { _, isPlaying in

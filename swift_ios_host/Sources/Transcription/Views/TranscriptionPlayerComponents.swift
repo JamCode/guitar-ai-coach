@@ -279,11 +279,21 @@ struct PlaybackControlsView: View {
 struct UpcomingChordsView: View {
     let segments: [TranscriptionSegment]
     let currentTimeMs: Int
+    let onOpenFullChordChart: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("接下来和弦")
-                .appSectionTitle()
+            HStack {
+                Text("接下来和弦")
+                    .appSectionTitle()
+                Spacer()
+                Button("完整和弦谱 >") {
+                    onOpenFullChordChart()
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.brand)
+                .buttonStyle(.plain)
+            }
 
             if segments.isEmpty {
                 Text("当前已经接近结尾")
