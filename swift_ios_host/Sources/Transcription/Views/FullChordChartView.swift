@@ -49,7 +49,7 @@ struct FullChordChartView: View {
                     }
                 }
                 .padding(SwiftAppTheme.pagePadding)
-                .padding(.bottom, 112)
+                .padding(.bottom, 96)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 5)
                         .onChanged { _ in
@@ -86,10 +86,11 @@ struct FullChordChartView: View {
         }
         .navigationTitle("完整和弦谱")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) {
             CompactPlaybackBarHost(vm: vm, durationMs: entry.durationMs)
                 .padding(.horizontal, 16)
-                .padding(.top, 6)
+                .padding(.top, 4)
         }
         .appPageBackground()
     }
