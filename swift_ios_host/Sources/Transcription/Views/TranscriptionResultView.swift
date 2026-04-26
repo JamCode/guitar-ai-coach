@@ -95,13 +95,14 @@ struct TranscriptionResultView: View {
             }
         }
         .navigationDestination(isPresented: $showingFullChordChart) {
-            FullChordChartView(entry: entry)
+            FullChordChartView(entry: entry, vm: vm)
         }
         .task { vm.prepareIfNeeded() }
         .onChange(of: vm.isPlaying) { _, isPlaying in
             UIApplication.shared.isIdleTimerDisabled = isPlaying
         }
         .onDisappear {
+            guard !showingFullChordChart else { return }
             UIApplication.shared.isIdleTimerDisabled = false
             vm.teardown()
         }
@@ -117,6 +118,8 @@ struct TranscriptionResultView: View {
 final class TranscriptionPlayerViewModel: ObservableObject {
     @Published var currentTimeMs = 0
     @Published var isPlaying = false
+    @Published var playbackRate: Double = 1.0
+    @Published var isLooping = false
     @Published var showingPlaybackError = false
     @Published var playbackErrorMessage = ""
 
@@ -178,13 +181,15 @@ final class TranscriptionPlayerViewModel: ObservableObject {
         if isPlaying {
             player.pause()
             isPlaying = false
+            syncIdleTimer()
             return
         }
         if currentTimeMs >= max(0, entry.durationMs - 250) {
             seek(0)
         }
-        player.play()
+        player.playImmediately(atRate: Float(playbackRate))
         isPlaying = true
+        syncIdleTimer()
     }
 
     func seek(_ ms: Int) {
@@ -198,6 +203,7 @@ final class TranscriptionPlayerViewModel: ObservableObject {
     func teardown() {
         player?.pause()
         isPlaying = false
+        syncIdleTimer()
         if let timeObserver, let player {
             player.removeTimeObserver(timeObserver)
         }
@@ -210,7 +216,40 @@ final class TranscriptionPlayerViewModel: ObservableObject {
 
     @objc
     private func handlePlaybackEnded() {
+        guard let player else { return }
+        if isLooping {
+            seek(0)
+            player.playImmediately(atRate: Float(playbackRate))
+            isPlaying = true
+            syncIdleTimer()
+            return
+        }
         isPlaying = false
         currentTimeMs = entry.durationMs
+        syncIdleTimer()
+    }
+
+    func cyclePlaybackRate() {
+        let options: [Double] = [1.0, 1.25, 1.5]
+        guard let idx = options.firstIndex(where: { abs($0 - playbackRate) < 0.001 }) else {
+            playbackRate = 1.0
+            applyPlaybackRateIfNeeded()
+            return
+        }
+        playbackRate = options[(idx + 1) % options.count]
+        applyPlaybackRateIfNeeded()
+    }
+
+    func toggleLoop() {
+        isLooping.toggle()
+    }
+
+    private func applyPlaybackRateIfNeeded() {
+        guard isPlaying else { return }
+        player?.rate = Float(playbackRate)
+    }
+
+    private func syncIdleTimer() {
+        UIApplication.shared.isIdleTimerDisabled = isPlaying
     }
 }
