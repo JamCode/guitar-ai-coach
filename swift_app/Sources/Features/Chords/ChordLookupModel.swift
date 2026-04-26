@@ -25,11 +25,16 @@ public enum ChordSelectCatalog {
     public static let bassOptions = [
         ChordOption(id: "", label: "根音位"),
         ChordOption(id: "C", label: "/C"),
+        ChordOption(id: "C#", label: "/C#"),
         ChordOption(id: "D", label: "/D"),
+        ChordOption(id: "Eb", label: "/Eb"),
         ChordOption(id: "E", label: "/E"),
         ChordOption(id: "F", label: "/F"),
+        ChordOption(id: "F#", label: "/F#"),
         ChordOption(id: "G", label: "/G"),
+        ChordOption(id: "Ab", label: "/Ab"),
         ChordOption(id: "A", label: "/A"),
+        ChordOption(id: "Bb", label: "/Bb"),
         ChordOption(id: "B", label: "/B")
     ]
 }
