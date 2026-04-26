@@ -6,82 +6,69 @@ struct FullChordChartView: View {
     let entry: TranscriptionHistoryEntry
     let vm: TranscriptionPlayerViewModel
 
-    @State private var suppressAutoScrollUntil: Date = .distantPast
     @State private var currentSegmentIndex: Int? = nil
     @State private var currentRowIndex: Int? = nil
     @State private var currentChordIndexInRow: Int? = nil
 
-    private var sortedSegments: [TranscriptionSegment] {
-        entry.segments.sorted { lhs, rhs in
+    private let sortedSegments: [TranscriptionSegment]
+    private let rows: [[TranscriptionSegment]]
+
+    init(entry: TranscriptionHistoryEntry, vm: TranscriptionPlayerViewModel) {
+        self.entry = entry
+        self.vm = vm
+        let sorted = entry.segments.sorted { lhs, rhs in
             if lhs.startMs == rhs.startMs { return lhs.endMs < rhs.endMs }
             return lhs.startMs < rhs.startMs
         }
-    }
-
-    private var rows: [[TranscriptionSegment]] {
-        stride(from: 0, to: sortedSegments.count, by: 4).map { start in
-            Array(sortedSegments[start..<min(start + 4, sortedSegments.count)])
+        self.sortedSegments = sorted
+        self.rows = stride(from: 0, to: sorted.count, by: 4).map { start in
+            Array(sorted[start..<min(start + 4, sorted.count)])
         }
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    headerCard
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                headerCard
 
-                    LazyVStack(spacing: 8) {
-                        ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
-                            ChordRowView(
-                                rowIndex: rowIndex,
-                                row: row,
-                                isCurrentRow: rowIndex == currentRowIndex,
-                                currentChordIndexInRow: rowIndex == currentRowIndex ? currentChordIndexInRow : nil,
-                                onTapRow: {
-                                    if let first = row.first { vm.seek(first.startMs) }
-                                },
-                                onTapChord: { seg in
-                                    vm.seek(seg.startMs)
-                                }
-                            )
-                            .id("row-\(rowIndex)")
-                        }
+                LazyVStack(spacing: 8) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
+                        ChordRowView(
+                            rowIndex: rowIndex,
+                            row: row,
+                            isCurrentRow: rowIndex == currentRowIndex,
+                            currentChordIndexInRow: rowIndex == currentRowIndex ? currentChordIndexInRow : nil,
+                            onTapRow: {
+                                if let first = row.first { vm.seek(first.startMs) }
+                            },
+                            onTapChord: { seg in
+                                vm.seek(seg.startMs)
+                            }
+                        )
+                        .id("row-\(rowIndex)")
                     }
                 }
-                .padding(SwiftAppTheme.pagePadding)
-                .padding(.bottom, 96)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 5)
-                        .onChanged { _ in
-                            suppressAutoScrollUntil = Date().addingTimeInterval(2.5)
-                        }
-                )
             }
-            .onAppear {
-                applyHighlight(for: vm.currentTimeMs)
-            }
-            .onReceive(
-                vm.$currentTimeMs
-                    .map { timeMs in
-                        PlaybackSyncResolver.currentIndex(for: timeMs, segments: sortedSegments)
-                    }
-                    .removeDuplicates()
-            ) { idx in
-                currentSegmentIndex = idx
-                if let idx {
-                    currentRowIndex = idx / 4
-                    currentChordIndexInRow = idx % 4
-                } else {
-                    currentRowIndex = nil
-                    currentChordIndexInRow = nil
+            .padding(SwiftAppTheme.pagePadding)
+            .padding(.bottom, 96)
+        }
+        .onAppear {
+            applyHighlight(for: vm.currentTimeMs)
+        }
+        .onReceive(
+            vm.$currentTimeMs
+                .map { timeMs in
+                    PlaybackSyncResolver.currentIndex(for: timeMs, segments: sortedSegments)
                 }
-            }
-            .onChange(of: currentRowIndex) { _, next in
-                guard let next else { return }
-                guard Date() >= suppressAutoScrollUntil else { return }
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    proxy.scrollTo("row-\(next)", anchor: .center)
-                }
+                .removeDuplicates()
+        ) { idx in
+            currentSegmentIndex = idx
+            if let idx {
+                currentRowIndex = idx / 4
+                currentChordIndexInRow = idx % 4
+            } else {
+                currentRowIndex = nil
+                currentChordIndexInRow = nil
             }
         }
         .navigationTitle("完整和弦谱")
