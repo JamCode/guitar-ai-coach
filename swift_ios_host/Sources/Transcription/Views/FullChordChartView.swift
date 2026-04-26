@@ -1,10 +1,15 @@
 import SwiftUI
 import Core
+import Combine
 
 struct FullChordChartView: View {
     let entry: TranscriptionHistoryEntry
-    @ObservedObject var vm: TranscriptionPlayerViewModel
+    let vm: TranscriptionPlayerViewModel
+
     @State private var suppressAutoScrollUntil: Date = .distantPast
+    @State private var currentSegmentIndex: Int? = nil
+    @State private var currentRowIndex: Int? = nil
+    @State private var currentChordIndexInRow: Int? = nil
 
     private var sortedSegments: [TranscriptionSegment] {
         entry.segments.sorted { lhs, rhs in
@@ -19,98 +24,32 @@ struct FullChordChartView: View {
         }
     }
 
-    private var currentSegmentIndex: Int? {
-        PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: sortedSegments)
-    }
-
-    private var currentRowIndex: Int? {
-        guard let idx = currentSegmentIndex else { return nil }
-        return idx / 4
-    }
-
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.displayName)
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(SwiftAppTheme.text)
-                            .lineLimit(1)
-                        Text("原调：\(entry.originalKey)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(SwiftAppTheme.brand)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(SwiftAppTheme.surface)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(SwiftAppTheme.line, lineWidth: 1)
-                    )
+                    headerCard
 
-                    ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
-                        let isCurrentRow = rowIndex == currentRowIndex
-                        HStack(spacing: 10) {
-                            Text(formatMs(row.first?.startMs ?? 0))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(isCurrentRow ? SwiftAppTheme.brand : SwiftAppTheme.muted)
-                                .frame(width: 44, alignment: .leading)
-
-                            HStack(spacing: 6) {
-                                ForEach(Array(row.enumerated()), id: \.offset) { segOffset, segment in
-                                    let globalIndex = rowIndex * 4 + segOffset
-                                    let isCurrentSegment = globalIndex == currentSegmentIndex
-                                    Button {
-                                        vm.seek(segment.startMs)
-                                    } label: {
-                                        Text(segment.chord)
-                                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                            .foregroundStyle(isCurrentSegment ? .white : SwiftAppTheme.text)
-                                            .lineLimit(1)
-                                            .minimumScaleFactor(0.75)
-                                            .padding(.horizontal, 10)
-                                            .frame(height: 34)
-                                            .background(
-                                                Capsule(style: .continuous)
-                                                    .fill(isCurrentSegment ? SwiftAppTheme.brand : (isCurrentRow ? SwiftAppTheme.surfaceSoft.opacity(0.92) : SwiftAppTheme.surfaceSoft))
-                                            )
-                                            .overlay(
-                                                Capsule(style: .continuous)
-                                                    .stroke(isCurrentSegment ? SwiftAppTheme.brand : SwiftAppTheme.line, lineWidth: 1)
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
+                    LazyVStack(spacing: 8) {
+                        ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
+                            ChordRowView(
+                                rowIndex: rowIndex,
+                                row: row,
+                                isCurrentRow: rowIndex == currentRowIndex,
+                                currentChordIndexInRow: rowIndex == currentRowIndex ? currentChordIndexInRow : nil,
+                                onTapRow: {
+                                    if let first = row.first { vm.seek(first.startMs) }
+                                },
+                                onTapChord: { seg in
+                                    vm.seek(seg.startMs)
                                 }
-                            }
+                            )
+                            .id("row-\(rowIndex)")
                         }
-                        .frame(height: 58, alignment: .center)
-                        .padding(.horizontal, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(SwiftAppTheme.surface)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(
-                                    isCurrentRow ? SwiftAppTheme.brand.opacity(0.55) : SwiftAppTheme.line,
-                                    lineWidth: isCurrentRow ? 1.4 : 1
-                                )
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if let first = row.first {
-                                vm.seek(first.startMs)
-                            }
-                        }
-                        .id("row-\(rowIndex)")
                     }
                 }
                 .padding(SwiftAppTheme.pagePadding)
-                .padding(.bottom, 138)
+                .padding(.bottom, 112)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 5)
                         .onChanged { _ in
@@ -118,10 +57,29 @@ struct FullChordChartView: View {
                         }
                 )
             }
+            .onAppear {
+                applyHighlight(for: vm.currentTimeMs)
+            }
+            .onReceive(
+                vm.$currentTimeMs
+                    .map { timeMs in
+                        PlaybackSyncResolver.currentIndex(for: timeMs, segments: sortedSegments)
+                    }
+                    .removeDuplicates()
+            ) { idx in
+                currentSegmentIndex = idx
+                if let idx {
+                    currentRowIndex = idx / 4
+                    currentChordIndexInRow = idx % 4
+                } else {
+                    currentRowIndex = nil
+                    currentChordIndexInRow = nil
+                }
+            }
             .onChange(of: currentRowIndex) { _, next in
                 guard let next else { return }
                 guard Date() >= suppressAutoScrollUntil else { return }
-                withAnimation(.easeOut(duration: 0.22)) {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     proxy.scrollTo("row-\(next)", anchor: .center)
                 }
             }
@@ -129,12 +87,111 @@ struct FullChordChartView: View {
         .navigationTitle("完整和弦谱")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            FullChordChartMiniPlayerBar(vm: vm, durationMs: entry.durationMs)
-                .padding(.horizontal, 12)
+            CompactPlaybackBarHost(vm: vm, durationMs: entry.durationMs)
+                .padding(.horizontal, 16)
                 .padding(.top, 6)
-                .background(.clear)
         }
         .appPageBackground()
+    }
+
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(entry.displayName)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(SwiftAppTheme.text)
+                .lineLimit(1)
+            Text("原调：\(entry.originalKey)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.brand)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(SwiftAppTheme.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(SwiftAppTheme.line, lineWidth: 1)
+        )
+    }
+
+    private func applyHighlight(for currentTimeMs: Int) {
+        let idx = PlaybackSyncResolver.currentIndex(for: currentTimeMs, segments: sortedSegments)
+        currentSegmentIndex = idx
+        if let idx {
+            currentRowIndex = idx / 4
+            currentChordIndexInRow = idx % 4
+        } else {
+            currentRowIndex = nil
+            currentChordIndexInRow = nil
+        }
+    }
+}
+
+private struct ChordRowView: View, Equatable {
+    let rowIndex: Int
+    let row: [TranscriptionSegment]
+    let isCurrentRow: Bool
+    let currentChordIndexInRow: Int?
+    let onTapRow: () -> Void
+    let onTapChord: (TranscriptionSegment) -> Void
+
+    static func == (lhs: ChordRowView, rhs: ChordRowView) -> Bool {
+        lhs.rowIndex == rhs.rowIndex
+            && lhs.row == rhs.row
+            && lhs.isCurrentRow == rhs.isCurrentRow
+            && lhs.currentChordIndexInRow == rhs.currentChordIndexInRow
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(formatMs(row.first?.startMs ?? 0))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(isCurrentRow ? SwiftAppTheme.brand : SwiftAppTheme.muted)
+                .frame(width: 44, alignment: .leading)
+
+            HStack(spacing: 6) {
+                ForEach(Array(row.enumerated()), id: \.offset) { idx, segment in
+                    let isCurrentChord = currentChordIndexInRow == idx
+                    Button {
+                        onTapChord(segment)
+                    } label: {
+                        Text(segment.chord)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundStyle(isCurrentChord ? .white : SwiftAppTheme.text)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                            .padding(.horizontal, 10)
+                            .frame(height: 34)
+                            .background(
+                                Capsule(style: .continuous)
+                                    .fill(isCurrentChord ? SwiftAppTheme.brand : (isCurrentRow ? SwiftAppTheme.surfaceSoft.opacity(0.95) : SwiftAppTheme.surfaceSoft))
+                            )
+                            .overlay(
+                                Capsule(style: .continuous)
+                                    .stroke(isCurrentChord ? SwiftAppTheme.brand : SwiftAppTheme.line, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .frame(height: 58, alignment: .center)
+        .padding(.horizontal, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(SwiftAppTheme.surface.opacity(isCurrentRow ? 0.98 : 0.9))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(
+                    isCurrentRow ? SwiftAppTheme.brand.opacity(0.5) : SwiftAppTheme.line,
+                    lineWidth: isCurrentRow ? 1.3 : 1
+                )
+        )
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTapRow)
     }
 
     private func formatMs(_ ms: Int) -> String {
@@ -143,45 +200,77 @@ struct FullChordChartView: View {
     }
 }
 
-private struct FullChordChartMiniPlayerBar: View {
+private struct CompactPlaybackBarHost: View {
     @ObservedObject var vm: TranscriptionPlayerViewModel
     let durationMs: Int
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text(formatMs(vm.currentTimeMs))
-                Spacer()
-                Text(formatMs(durationMs))
+        CompactPlaybackBar(
+            currentTime: vm.currentTimeMs,
+            duration: durationMs,
+            isPlaying: vm.isPlaying,
+            playbackRate: vm.playbackRate,
+            isLooping: vm.isLooping,
+            onSeek: { vm.seek($0) },
+            onPlayPause: { vm.togglePlay() },
+            onToggleLoop: { vm.toggleLoop() },
+            onChangeRate: { vm.cyclePlaybackRate() }
+        )
+    }
+}
+
+private struct CompactPlaybackBar: View {
+    let currentTime: Int
+    let duration: Int
+    let isPlaying: Bool
+    let playbackRate: Double
+    let isLooping: Bool
+    let onSeek: (Int) -> Void
+    let onPlayPause: () -> Void
+    let onToggleLoop: () -> Void
+    let onChangeRate: () -> Void
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Text(formatMs(currentTime))
+                    .font(.system(size: 16, weight: .medium, design: .monospaced))
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .frame(width: 52, alignment: .leading)
+
+                Slider(
+                    value: Binding(
+                        get: { Double(currentTime) },
+                        set: { onSeek(Int($0.rounded())) }
+                    ),
+                    in: 0...Double(max(duration, 1))
+                )
+                .tint(SwiftAppTheme.brand)
+                .frame(maxWidth: .infinity)
+
+                Text(formatMs(duration))
+                    .font(.system(size: 16, weight: .medium, design: .monospaced))
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .frame(width: 52, alignment: .trailing)
             }
-            .font(.caption.monospacedDigit())
-            .foregroundStyle(SwiftAppTheme.muted)
-
-            Slider(
-                value: Binding(
-                    get: { Double(vm.currentTimeMs) },
-                    set: { vm.seek(Int($0.rounded())) }
-                ),
-                in: 0...Double(max(durationMs, 1))
-            )
-            .tint(SwiftAppTheme.brand)
 
             HStack {
-                Button(String(format: "%.1fx", vm.playbackRate)) {
-                    vm.cyclePlaybackRate()
+                Button(String(format: "%.1fx", playbackRate)) {
+                    onChangeRate()
                 }
+                .frame(width: 60, height: 36)
                 .buttonStyle(.bordered)
                 .tint(SwiftAppTheme.brand)
 
                 Spacer()
 
                 Button {
-                    vm.togglePlay()
+                    onPlayPause()
                 } label: {
-                    Image(systemName: vm.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 20, weight: .bold))
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: 50, height: 50)
                         .background(Circle().fill(SwiftAppTheme.brand))
                 }
                 .buttonStyle(.plain)
@@ -189,25 +278,26 @@ private struct FullChordChartMiniPlayerBar: View {
                 Spacer()
 
                 Button {
-                    vm.toggleLoop()
+                    onToggleLoop()
                 } label: {
                     Image(systemName: "repeat")
                         .font(.headline.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                        .foregroundStyle(vm.isLooping ? SwiftAppTheme.brand : SwiftAppTheme.muted)
+                        .foregroundStyle(isLooping ? SwiftAppTheme.brand : SwiftAppTheme.muted)
+                        .frame(width: 60, height: 36)
                 }
                 .buttonStyle(.bordered)
                 .tint(SwiftAppTheme.brand)
             }
         }
-        .padding(14)
-        .frame(height: 120)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .frame(height: 84)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(SwiftAppTheme.surface)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(SwiftAppTheme.surface.opacity(0.88))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(SwiftAppTheme.line, lineWidth: 1)
         )
     }
