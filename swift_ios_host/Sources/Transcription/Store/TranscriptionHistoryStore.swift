@@ -89,6 +89,9 @@ actor TranscriptionHistoryStore {
         durationMs: Int,
         originalKey: String,
         segments: [TranscriptionSegment],
+        displaySegments: [TranscriptionSegment],
+        chordChartSegments: [TranscriptionSegment],
+        backend: String,
         waveform: [Double]
     ) async throws -> TranscriptionHistoryEntry {
         let mediaDir = try mediaDirectoryURL()
@@ -111,6 +114,9 @@ actor TranscriptionHistoryStore {
             originalKey: originalKey,
             createdAtMs: Int(Date().timeIntervalSince1970 * 1000),
             segments: segments,
+            displaySegments: displaySegments,
+            chordChartSegments: chordChartSegments,
+            backend: backend,
             waveform: waveform
         )
 

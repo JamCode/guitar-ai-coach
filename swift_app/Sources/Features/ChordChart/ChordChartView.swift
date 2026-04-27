@@ -35,8 +35,10 @@ public struct ChordChartView: View {
                         ) {
                             VStack(spacing: 8) {
                                 ForEach(section.entries) { entry in
+                                    let resolved = ChordFingeringProvider.resolve(symbol: entry.symbol)
+                                    let displayFrets = resolved?.frets ?? entry.frets
                                     Button {
-                                        chartAudio.tonePlayer.playChordFrets(entry.frets)
+                                        chartAudio.tonePlayer.playChordFrets(displayFrets)
                                     } label: {
                                         HStack(alignment: .top, spacing: 10) {
                                             VStack(alignment: .leading, spacing: 4) {
@@ -52,7 +54,7 @@ public struct ChordChartView: View {
                                                         .font(.caption)
                                                         .foregroundStyle(SwiftAppTheme.brand)
                                                 }
-                                                Text(String(format: AppL10n.t("chord_chart_fret_line_format"), entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " ")))
+                                                Text(String(format: AppL10n.t("chord_chart_fret_line_format"), displayFrets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " ")))
                                                     .font(.caption.monospaced())
                                                     .foregroundStyle(SwiftAppTheme.muted)
                                             }
@@ -61,7 +63,7 @@ public struct ChordChartView: View {
                                             .padding(.horizontal, 10)
                                             .contentShape(Rectangle())
 
-                                            chordDiagramCard(entry: entry)
+                                            chordDiagramCard(frets: displayFrets)
                                         }
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
@@ -97,8 +99,8 @@ public struct ChordChartView: View {
         }
     }
 
-    private func chordDiagramCard(entry: ChordChartEntry) -> some View {
-        ChordDiagramView(frets: entry.frets)
+    private func chordDiagramCard(frets: [Int]) -> some View {
+        ChordDiagramView(frets: frets)
             .frame(width: 76, height: 98)
             .padding(6)
             .background(SwiftAppTheme.surface)

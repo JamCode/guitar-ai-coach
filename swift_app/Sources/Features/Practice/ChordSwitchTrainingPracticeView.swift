@@ -1,6 +1,7 @@
 import ChordChart
 import Chords
 import Core
+import Metronome
 import SwiftUI
 
 /// 和弦切换推荐练习：由 `ChordSwitchGenerator` 生成多组序列与 BPM 说明。
@@ -74,6 +75,10 @@ private struct ChordSwitchExerciseDetailView: View {
     let exercise: ChordSwitchExercise
 
     @State private var showKeySettings = false
+    @StateObject private var metronomeVM = MetronomeViewModel()
+    @State private var practicedBeatCount: Int = 0
+    @State private var currentChordIndex: Int = 0
+    @State private var beatAccumulator: Double = 0
 
     private static var keyGearToolbarPlacement: ToolbarItemPlacement {
         #if os(iOS)
@@ -89,6 +94,37 @@ private struct ChordSwitchExerciseDetailView: View {
 
     private var referenceKeyLabel: String {
         ChordSwitchKeyResolver.referenceMajorKeyLabel(for: exercise)
+    }
+
+    private var flattenedCount: Int {
+        max(1, exercise.flattenedChords.count)
+    }
+
+    private var recommendedBPM: Int {
+        let candidate: Int
+        if exercise.bpmMin > 0, exercise.bpmMax > 0 {
+            candidate = (exercise.bpmMin + exercise.bpmMax) / 2
+        } else if exercise.bpmMin > 0 {
+            candidate = exercise.bpmMin
+        } else if exercise.bpmMax > 0 {
+            candidate = exercise.bpmMax
+        } else {
+            candidate = 60
+        }
+        return MetronomeConfig.clampBPM(candidate)
+    }
+
+    private var beatsPerChordForPractice: Double {
+        let raw = exercise.beatsPerChord
+        return raw > 0 ? raw : 2
+    }
+
+    private var beatsPerChordLabel: String {
+        let raw = beatsPerChordForPractice
+        if abs(raw - raw.rounded()) < 1e-6 {
+            return "每和弦 \(Int(raw.rounded())) 拍"
+        }
+        return "每和弦 \(String(format: "%.1f", raw)) 拍"
     }
 
     private func romanBase(segmentIndex: Int) -> Int {
@@ -110,6 +146,37 @@ private struct ChordSwitchExerciseDetailView: View {
         return exercise.romanNumerals[idx]
     }
 
+    private func resetPracticeProgress() {
+        metronomeVM.stop()
+        practicedBeatCount = 0
+        currentChordIndex = 0
+        beatAccumulator = 0
+    }
+
+    private func handleMetronomeBeatTick() {
+        practicedBeatCount += 1
+        beatAccumulator += 1
+        let step = beatsPerChordForPractice
+        while beatAccumulator + 1e-9 >= step {
+            beatAccumulator -= step
+            currentChordIndex = (currentChordIndex + 1) % flattenedCount
+        }
+    }
+
+    private func togglePracticeMetronome() {
+        switch metronomeVM.transport {
+        case .running:
+            metronomeVM.pause()
+        case .paused, .stopped:
+            if metronomeVM.transport == .stopped {
+                practicedBeatCount = 0
+                beatAccumulator = 0
+            }
+            metronomeVM.setBPM(recommendedBPM)
+            metronomeVM.start()
+        }
+    }
+
     var body: some View {
         List {
             Section {
@@ -117,7 +184,8 @@ private struct ChordSwitchExerciseDetailView: View {
                     chords: previewChords,
                     romans: romanSlice(segmentIndex: 0),
                     difficulty: exercise.difficulty,
-                    keyZh: exercise.keyZh
+                    keyZh: exercise.keyZh,
+                    activeGlobalIndex: currentChordIndex
                 )
                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                 .listRowBackground(Color.clear)
@@ -128,6 +196,24 @@ private struct ChordSwitchExerciseDetailView: View {
                 Text(exercise.bpmHintZh)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        Button {
+                            togglePracticeMetronome()
+                        } label: {
+                            Text(metronomeVM.transport == .running ? "⏸ 暂停" : "▶ 开始节拍")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .appSecondaryButton()
+                        Text("BPM \(recommendedBPM) · \(beatsPerChordLabel)")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                    }
+                    Text("当前拍数 \(practicedBeatCount) · 当前和弦 #\(currentChordIndex + 1)")
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                }
             }
 
             if !exercise.goalsZh.isEmpty {
@@ -150,7 +236,13 @@ private struct ChordSwitchExerciseDetailView: View {
                             .foregroundStyle(.secondary)
                         ChordSwitchChordDiagramGrid(
                             items: seg.chords.enumerated().map { j, sym in
-                                (sym, romanForChord(segmentIndex: i, chordIndex: j))
+                                let globalIndex = romanBase(segmentIndex: i) + j
+                                return (
+                                    symbol: sym,
+                                    roman: romanForChord(segmentIndex: i, chordIndex: j),
+                                    globalIndex: globalIndex,
+                                    isActive: globalIndex == currentChordIndex
+                                )
                             }
                         )
                     }
@@ -192,13 +284,20 @@ private struct ChordSwitchExerciseDetailView: View {
                 }
             }
         }
+        .onChange(of: metronomeVM.currentBeatIndex) { _, beat in
+            guard beat != nil, metronomeVM.transport == .running else { return }
+            handleMetronomeBeatTick()
+        }
+        .onDisappear {
+            resetPracticeProgress()
+        }
     }
 }
 
 // MARK: - 指法图网格（每行最多 4 个，自动换行）
 
 private struct ChordSwitchChordDiagramGrid: View {
-    let items: [(symbol: String, roman: String)]
+    let items: [(symbol: String, roman: String, globalIndex: Int, isActive: Bool)]
 
     private var widthToHeight: CGFloat {
         1 / ChordSwitchDiagramLayout.heightOverWidthRatio(
@@ -225,7 +324,12 @@ private struct ChordSwitchChordDiagramGrid: View {
                         spacing: rowGap
                     ) {
                         ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                            ChordSwitchSymbolCell(symbol: item.symbol, roman: item.roman, metrics: m)
+                            ChordSwitchSymbolCell(
+                                symbol: item.symbol,
+                                roman: item.roman,
+                                metrics: m,
+                                isActive: item.isActive
+                            )
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -244,6 +348,7 @@ private struct ChordSwitchSelectionPreviewCard: View {
     let romans: [String]
     let difficulty: ChordSwitchDifficulty
     let keyZh: String
+    let activeGlobalIndex: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -272,7 +377,12 @@ private struct ChordSwitchSelectionPreviewCard: View {
             } else {
                 ChordSwitchChordDiagramGrid(
                     items: chords.enumerated().map { i, sym in
-                        (sym, i < romans.count ? romans[i] : "—")
+                        (
+                            symbol: sym,
+                            roman: i < romans.count ? romans[i] : "—",
+                            globalIndex: i,
+                            isActive: i == activeGlobalIndex
+                        )
                     }
                 )
             }
@@ -295,6 +405,7 @@ private struct ChordSwitchSymbolCell: View {
     let symbol: String
     let roman: String
     let metrics: ChordSwitchDiagramLayout.Metrics
+    let isActive: Bool
 
     private var romanFontSize: CGFloat {
         max(9, metrics.columnWidth * 0.095)
@@ -343,10 +454,17 @@ private struct ChordSwitchSymbolCell: View {
 
             Text(symbol)
                 .font(.system(size: symbolFontSize, weight: .semibold, design: .default))
-                .foregroundStyle(SwiftAppTheme.text)
+                .foregroundStyle(isActive ? SwiftAppTheme.dynamic(.red, .red) : SwiftAppTheme.text)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
+        .padding(.vertical, 4)
+        .background(isActive ? SwiftAppTheme.brandSoft.opacity(0.45) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: max(8, metrics.cornerRadius), style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: max(8, metrics.cornerRadius), style: .continuous)
+                .stroke(isActive ? SwiftAppTheme.brand : .clear, lineWidth: isActive ? 1.8 : 0)
+        )
         .frame(maxWidth: .infinity)
     }
 }

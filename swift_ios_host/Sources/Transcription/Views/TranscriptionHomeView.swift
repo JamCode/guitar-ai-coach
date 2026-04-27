@@ -1,11 +1,14 @@
+import OSLog
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 import Core
 
 struct TranscriptionHomeView: View {
     @StateObject private var vm = TranscriptionHomeViewModel()
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showingPhotoPicker = false
+    @State private var showingFileImporter = false
     @State private var showingPurchase = false
     @EnvironmentObject private var purchaseManager: PurchaseManager
 
@@ -24,6 +27,18 @@ struct TranscriptionHomeView: View {
                 }
                 .appPrimaryButton()
                 .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .videos)
+
+                Button {
+                    if purchaseManager.canAccessTranscription {
+                        showingFileImporter = true
+                    } else {
+                        showingPurchase = true
+                    }
+                } label: {
+                    Text("从文件导入音频/视频")
+                        .frame(maxWidth: .infinity)
+                }
+                .appSecondaryButton()
                 Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
@@ -69,6 +84,21 @@ struct TranscriptionHomeView: View {
             Task {
                 await vm.importPhotoItem(newValue)
                 selectedPhotoItem = nil
+            }
+        }
+        .fileImporter(
+            isPresented: $showingFileImporter,
+            allowedContentTypes: [.audio, .movie, .mpeg4Movie, .quickTimeMovie],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case let .success(urls):
+                guard let url = urls.first else { return }
+                Task {
+                    await vm.importExternalFile(url)
+                }
+            case let .failure(error):
+                vm.showImportError(error.localizedDescription)
             }
         }
         .sheet(item: $vm.processingState) { state in
@@ -142,6 +172,8 @@ final class TranscriptionHomeViewModel: ObservableObject {
     @Published var showingImportNamingPrompt = false
     @Published var pendingImportCustomName = ""
 
+    @AppStorage("transcription_remote_preflight_done") private var didRunNetworkPreflight = false
+
     private let historyStore = TranscriptionHistoryStore()
     private var currentTask: Task<Void, Never>?
     private var pendingImportRequest: PendingImportRequest?
@@ -151,6 +183,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
     }
 
     func reload() async {
+        await ensureNetworkPreflightIfNeeded()
         recentHistory = await historyStore.loadAll()
     }
 
@@ -174,6 +207,15 @@ final class TranscriptionHomeViewModel: ObservableObject {
             alertMessage = (error as? LocalizedError)?.errorDescription ?? AppL10n.t("transcribe_error_audio_read_failed")
             showingAlert = true
         }
+    }
+
+    func importExternalFile(_ url: URL) async {
+        prepareImport(url: url, sourceType: .files, requiresSecurityScopedAccess: true)
+    }
+
+    func showImportError(_ message: String) {
+        alertMessage = message
+        showingAlert = true
     }
 
     func cancelPendingImport() {
@@ -224,7 +266,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         customName: String
     ) {
         currentTask?.cancel()
-        processingState = TranscriptionProcessingState(fileName: customName, stepText: "transcribe_step_extract_audio")
+        processingState = TranscriptionProcessingState(fileName: customName, stepText: "正在准备音频")
         let historyStore = self.historyStore
 
         currentTask = Task { [weak self] in
@@ -255,7 +297,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     self.processingState = nil
-                    self.alertMessage = (error as? LocalizedError)?.errorDescription ?? AppL10n.t("transcribe_error_chord_unstable")
+                    self.alertMessage = (error as? LocalizedError)?.errorDescription ?? "识别失败，请稍后重试"
                     self.showingAlert = true
                 }
             }
@@ -277,37 +319,103 @@ final class TranscriptionHomeViewModel: ObservableObject {
             }
         }
 
-        let durationMs = try await TranscriptionMediaDecoder.probeDuration(url: url)
-        try TranscriptionImportService.validate(fileName: url.lastPathComponent, durationMs: durationMs)
+        let originalDurationMs = try await TranscriptionMediaDecoder.probeDuration(url: url)
+        try TranscriptionImportService.validate(fileName: url.lastPathComponent, durationMs: originalDurationMs)
         try Task.checkCancellation()
 
-        await onStep("transcribe_step_extract_audio")
-        let decoded = try await TranscriptionMediaDecoder.decode(url: url)
-        try Task.checkCancellation()
+        let originalMediaBytes = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue
 
-        await onStep("transcribe_step_recognize_chords")
-        let payload = try await TranscriptionOrchestrator(recognizer: OnnxChordRecognizer()).recognize(
-            fileName: decoded.fileName,
-            durationMs: decoded.durationMs,
-            samples: decoded.pcmSamples,
-            sampleRate: decoded.sampleRate
-        )
-        guard !payload.segments.isEmpty else {
-            throw TranscriptionImportError.noStableChordDetected
-        }
-        try Task.checkCancellation()
+        await onStep("正在准备音频")
+        let tempCompressedM4A = FileManager.default.temporaryDirectory
+            .appendingPathComponent("chord-upload-\(UUID().uuidString).m4a")
 
-        await onStep("transcribe_step_finalize")
+        let tempWav = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("wav")
         let tempM4a = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("m4a")
         defer {
+            try? FileManager.default.removeItem(at: tempCompressedM4A)
+            try? FileManager.default.removeItem(at: tempWav)
             try? FileManager.default.removeItem(at: tempM4a)
         }
+
+        var uploadFileURL = tempCompressedM4A
+        var multipartFilename = "compressed.m4a"
+        do {
+            try await TranscriptionMediaDecoder.exportCompressedM4AForRemoteUpload(
+                from: url,
+                to: tempCompressedM4A,
+                aacBitrate: 96_000
+            )
+        } catch {
+            Logger(subsystem: Bundle.main.bundleIdentifier ?? "SwiftEarHost", category: "RemoteChord").warning(
+                "compressed m4a export failed, using WAV fallback (large upload): \(String(describing: error))"
+            )
+            #if DEBUG
+            print("[RemoteChord] compressed m4a export failed, fallback wav: \(error)")
+            #endif
+            let decoded = try await TranscriptionMediaDecoder.decode(url: url)
+            try TranscriptionMediaDecoder.writeWAV(
+                samples: decoded.pcmSamples,
+                sampleRate: decoded.sampleRate,
+                to: tempWav
+            )
+            uploadFileURL = tempWav
+            multipartFilename = "fallback.wav"
+        }
+        try Task.checkCancellation()
+
         try await TranscriptionMediaDecoder.exportM4A(from: url, to: tempM4a)
         try Task.checkCancellation()
 
-        let stem = (payload.fileName as NSString).deletingPathExtension
+        await onStep("正在上传")
+
+        await onStep("正在识别")
+        let outcome = try await RemoteChordRecognitionService.transcribeAudio(
+            fileURL: uploadFileURL,
+            multipartFilename: multipartFilename,
+            originalMediaBytes: originalMediaBytes
+        )
+        let remote = outcome.result
+        #if DEBUG
+        let st = remote.timing
+        print(
+            String(
+                format: "[RemoteChord][summary] originalBytes=%@ m4aOrWavUploadBytes=%d uploadSec=%@ clientTotalSec=%.3f serverInferSec=%.3f serverTotalSec=%.3f",
+                originalMediaBytes.map { String($0) } ?? "nil",
+                outcome.uploadFileBytes,
+                outcome.uploadSeconds.map { String(format: "%.3f", $0) } ?? "nil",
+                outcome.clientTotalSeconds,
+                st?.inferenceSec ?? -1,
+                st?.totalSec ?? -1
+            )
+        )
+        #endif
+        let rawSegments = remote.segments.map { $0.toTranscriptionSegment() }
+        let displaySegments = remote.displaySegments.map { $0.toTranscriptionSegment() }
+        let simplifiedSegments = (remote.simplifiedDisplaySegments ?? []).map { $0.toTranscriptionSegment() }
+        let chartSegments = (remote.chordChartSegments ?? []).map { $0.toTranscriptionSegment() }
+        let resolvedChartSegments: [TranscriptionSegment] = {
+            if !chartSegments.isEmpty { return chartSegments }
+            if !simplifiedSegments.isEmpty { return simplifiedSegments }
+            return displaySegments
+        }()
+
+        guard !displaySegments.isEmpty else {
+            throw TranscriptionImportError.noStableChordDetected
+        }
+        try Task.checkCancellation()
+
+        await onStep("正在整理结果")
+        let durationMs = Int(((remote.duration ?? 0) * 1000).rounded())
+        let resolvedKey = (remote.key?.isEmpty == false) ? remote.key! : "C"
+        #if DEBUG
+        print("[RemoteChord] key=\(resolvedKey) displaySegments=\(displaySegments.count) chordChartSegments=\(resolvedChartSegments.count)")
+        #endif
+
+        let stem = (url.lastPathComponent as NSString).deletingPathExtension
         let displayFileName = stem.isEmpty ? "recording.m4a" : "\(stem).m4a"
 
         let entry = try await historyStore.saveResult(
@@ -315,10 +423,13 @@ final class TranscriptionHomeViewModel: ObservableObject {
             sourceType: sourceType,
             fileName: displayFileName,
             customName: customName,
-            durationMs: payload.durationMs,
-            originalKey: payload.originalKey,
-            segments: payload.segments,
-            waveform: payload.waveform
+            durationMs: durationMs > 0 ? durationMs : originalDurationMs,
+            originalKey: resolvedKey,
+            segments: rawSegments,
+            displaySegments: displaySegments,
+            chordChartSegments: resolvedChartSegments,
+            backend: "remote",
+            waveform: []
         )
         if sourceType == .photoLibrary {
             Self.removeTemporaryImportFileIfNeeded(at: url)
@@ -339,6 +450,12 @@ final class TranscriptionHomeViewModel: ObservableObject {
     private func defaultCustomName(from url: URL) -> String {
         let base = url.deletingPathExtension().lastPathComponent.trimmingCharacters(in: .whitespacesAndNewlines)
         return base.isEmpty ? url.lastPathComponent : base
+    }
+
+    private func ensureNetworkPreflightIfNeeded() async {
+        guard !didRunNetworkPreflight else { return }
+        didRunNetworkPreflight = true
+        await RemoteChordRecognitionService.preflightNetworkAccess()
     }
 }
 

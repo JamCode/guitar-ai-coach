@@ -28,21 +28,12 @@ enum ChordFingeringResolver {
     static func resolve(_ chord: String) -> ResolvedChordFingering? {
         let normalized = normalizeChordName(chord)
         guard !isInvalidChordName(normalized) else { return nil }
-
-        if let payload = OfflineChordBuilder.buildPayload(displaySymbol: normalized),
-           let voicing = payload.voicings.first {
-            return ResolvedChordFingering(symbol: normalized, frets: voicing.explain.frets, bassHint: nil)
-        }
-
-        // Slash chord fallback: D/F# -> D
-        if let slashIndex = normalized.firstIndex(of: "/") {
-            let root = String(normalized[..<slashIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
-            let bass = String(normalized[normalized.index(after: slashIndex)...]).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !root.isEmpty,
-               let payload = OfflineChordBuilder.buildPayload(displaySymbol: root),
-               let voicing = payload.voicings.first {
-                return ResolvedChordFingering(symbol: root, frets: voicing.explain.frets, bassHint: bass.isEmpty ? nil : bass)
-            }
+        if let resolved = ChordFingeringProvider.resolve(symbol: normalized) {
+            return ResolvedChordFingering(
+                symbol: resolved.resolvedSymbol,
+                frets: resolved.frets,
+                bassHint: resolved.bassHint
+            )
         }
 
         #if DEBUG

@@ -103,8 +103,8 @@ public enum ChordChartData {
             entries: [
                 ChordChartEntry(symbol: "Cadd9", frets: [-1, 3, 2, 0, 3, 0], theory: "add9；最常用加音和弦之一。", voicing: "开放 Cadd9。"),
                 ChordChartEntry(symbol: "Gadd9", frets: [3, 0, 0, 2, 0, 3], theory: "add9；明亮宽阔。", voicing: "开放 Gadd9。"),
-                ChordChartEntry(symbol: "Dadd9", frets: [-1, -1, 0, 2, 3, 0], theory: "add9；干净清透。", voicing: "开放 Dadd9。"),
-                ChordChartEntry(symbol: "Aadd9", frets: [-1, 0, 2, 4, 0, 0], theory: "add9；开阔明亮。", voicing: "开放 Aadd9。"),
+                ChordChartEntry(symbol: "Dadd9", frets: [-1, 5, 4, 2, 3, 0], theory: "add9；干净清透。", voicing: "低把位 Dadd9。"),
+                ChordChartEntry(symbol: "Aadd9", frets: [-1, 0, 2, 4, 2, 0], theory: "add9；开阔明亮。", voicing: "开放 Aadd9。"),
                 ChordChartEntry(symbol: "Fadd9", frets: [1, 3, 3, 2, 1, 3], theory: "add9；抒情氛围感强。", voicing: "1 品横按 add9。"),
                 ChordChartEntry(symbol: "Cadd6", frets: [-1, 3, 2, 2, 1, 0], theory: "add6；温暖复古。", voicing: "开放 Cadd6。"),
                 ChordChartEntry(symbol: "C6", frets: [-1, 3, 2, 2, 1, 0], theory: "6 和弦（1-3-5-6）；流行/爵士常用。", voicing: "开放 C6。"),
@@ -120,7 +120,7 @@ public enum ChordChartData {
             intro: "基于七和弦继续叠加 9/11/13，常见于 Jazz、R&B、Soul 与高级流行。",
             entries: [
                 ChordChartEntry(symbol: "C9", frets: [-1, 3, 2, 3, 3, -1], theory: "9 和弦；属功能上加 9 度色彩。", voicing: "5～2 弦紧凑按法。"),
-                ChordChartEntry(symbol: "Cm9", frets: [3, 1, 3, 3, 3, 3], theory: "小九和弦；柔和且深邃。", voicing: "6 弦根横按。"),
+                ChordChartEntry(symbol: "Cm9", frets: [-1, 3, 1, 3, 3, -1], theory: "小九和弦；柔和且深邃。", voicing: "5 弦根紧凑按法。"),
                 ChordChartEntry(symbol: "G9", frets: [3, -1, 3, 4, 3, -1], theory: "9 和弦；蓝调与 Funk 常见。", voicing: "6～3 弦根部按法。"),
                 ChordChartEntry(symbol: "D9", frets: [-1, 5, 4, 5, 5, -1], theory: "9 和弦；流行与爵士都常见。", voicing: "5 品紧凑按法。"),
                 ChordChartEntry(symbol: "A9", frets: [5, -1, 5, 6, 5, -1], theory: "9 和弦；律动型伴奏好用。", voicing: "6 弦根按法。"),

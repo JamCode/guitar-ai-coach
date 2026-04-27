@@ -29,6 +29,13 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
             segments: [
                 TranscriptionSegment(startMs: 0, endMs: 4_000, chord: "E")
             ],
+            displaySegments: [
+                TranscriptionSegment(startMs: 0, endMs: 4_000, chord: "E")
+            ],
+            chordChartSegments: [
+                TranscriptionSegment(startMs: 0, endMs: 4_000, chord: "E")
+            ],
+            backend: "remote",
             waveform: [0.1, 0.4, 0.2]
         )
 
@@ -86,6 +93,9 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
             durationMs: 1_000,
             originalKey: "C",
             segments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "C")],
+            displaySegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "C")],
+            chordChartSegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "C")],
+            backend: "remote",
             waveform: [0.2]
         )
 
@@ -104,6 +114,9 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
             originalKey: list[0].originalKey,
             createdAtMs: list[0].createdAtMs,
             segments: list[0].segments,
+            displaySegments: list[0].displaySegments,
+            chordChartSegments: list[0].chordChartSegments,
+            backend: list[0].backend,
             waveform: list[0].waveform
         )
         try JSONEncoder().encode(list).write(to: indexURL, options: .atomic)

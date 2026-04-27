@@ -60,3 +60,296 @@ struct TranscriptionOrchestrator {
         )
     }
 }
+
+enum RemoteChordRecognitionError: LocalizedError {
+    case network
+    case timeout
+    case invalidResponse
+    case backendFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .network, .invalidResponse, .backendFailed:
+            return "识别失败，请稍后重试"
+        case .timeout:
+            return "识别超时，请稍后重试"
+        }
+    }
+}
+
+struct RemoteServerTiming: Decodable, Sendable {
+    let receiveSec: Double
+    let ingestSec: Double
+    let inferenceSec: Double
+    let totalSec: Double
+
+    private enum CodingKeys: String, CodingKey {
+        case receiveSec = "receive_sec"
+        case ingestSec = "ingest_sec"
+        case inferenceSec = "inference_sec"
+        case totalSec = "total_sec"
+    }
+}
+
+struct RemoteChordRecognitionResult: Decodable {
+    let success: Bool
+    let duration: Double?
+    let key: String?
+    let segments: [RemoteChordSegment]
+    let displaySegments: [RemoteChordSegment]
+    let simplifiedDisplaySegments: [RemoteChordSegment]?
+    let chordChartSegments: [RemoteChordSegment]?
+    let timing: RemoteServerTiming?
+
+    private enum CodingKeys: String, CodingKey {
+        case success
+        case duration
+        case key
+        case segments
+        case displaySegments
+        case simplifiedDisplaySegments
+        case chordChartSegments
+        case timing
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        success = try c.decodeIfPresent(Bool.self, forKey: .success) ?? false
+        duration = try c.decodeIfPresent(Double.self, forKey: .duration)
+        key = try c.decodeIfPresent(String.self, forKey: .key)
+        segments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .segments) ?? []
+        displaySegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .displaySegments) ?? []
+        simplifiedDisplaySegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .simplifiedDisplaySegments)
+        chordChartSegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .chordChartSegments)
+        timing = try c.decodeIfPresent(RemoteServerTiming.self, forKey: .timing)
+    }
+}
+
+struct RemoteChordTranscribeOutcome: Sendable {
+    let result: RemoteChordRecognitionResult
+    let originalMediaBytes: Int?
+    let uploadFileBytes: Int
+    let uploadSeconds: Double?
+    let clientTotalSeconds: Double
+}
+
+struct RemoteChordSegment: Decodable {
+    let start: Double
+    let end: Double
+    let chord: String
+
+    func toTranscriptionSegment() -> TranscriptionSegment {
+        TranscriptionSegment(
+            startMs: Int((start * 1000).rounded()),
+            endMs: Int((end * 1000).rounded()),
+            chord: chord
+        )
+    }
+}
+
+enum RemoteChordRecognitionService {
+    static let endpoint = URL(string: "https://wanghanai.xyz/api/chord-onnx/transcribe")!
+    static let healthEndpoint = URL(string: "https://wanghanai.xyz/api/chord-onnx/health")!
+
+    /// - Parameters:
+    ///   - fileURL: 待上传的音频文件（优先 compressed m4a）。
+    ///   - multipartFilename: multipart 中的 filename，服务端仅作记录。
+    ///   - originalMediaBytes: 用户所选原始视频/音频文件大小（若可得），用于调试日志。
+    static func transcribeAudio(
+        fileURL: URL,
+        multipartFilename: String = "compressed.m4a",
+        originalMediaBytes: Int? = nil
+    ) async throws -> RemoteChordTranscribeOutcome {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        let audioData = try Data(contentsOf: fileURL)
+        let mimeType: String = {
+            switch fileURL.pathExtension.lowercased() {
+            case "wav": return "audio/wav"
+            case "mp3": return "audio/mpeg"
+            default: return "audio/m4a"
+            }
+        }()
+
+        let body = makeMultipartBody(
+            boundary: boundary,
+            fieldName: "file",
+            fileName: multipartFilename,
+            mimeType: mimeType,
+            fileData: audioData
+        )
+
+        let tmpMultipart = FileManager.default.temporaryDirectory
+            .appendingPathComponent("chord-multipart-\(UUID().uuidString).dat")
+        try body.write(to: tmpMultipart, options: .atomic)
+        defer {
+            try? FileManager.default.removeItem(at: tmpMultipart)
+        }
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let clientStarted = Date()
+        let (data, response, uploadSeconds): (Data, URLResponse, Double?)
+        do {
+            (data, response, uploadSeconds) = try await MultipartUploadSession.upload(
+                request: request,
+                multipartBodyFileURL: tmpMultipart
+            )
+        } catch let e as URLError {
+            if e.code == .timedOut {
+                throw RemoteChordRecognitionError.timeout
+            }
+            throw RemoteChordRecognitionError.network
+        } catch {
+            throw RemoteChordRecognitionError.network
+        }
+
+        let clientTotalSeconds = Date().timeIntervalSince(clientStarted)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw RemoteChordRecognitionError.network
+        }
+        let decoded: RemoteChordRecognitionResult
+        do {
+            decoded = try JSONDecoder().decode(RemoteChordRecognitionResult.self, from: data)
+        } catch {
+            throw RemoteChordRecognitionError.invalidResponse
+        }
+        guard decoded.success else {
+            throw RemoteChordRecognitionError.backendFailed
+        }
+
+        #if DEBUG
+        let t = decoded.timing
+        print(
+            String(
+                format: "[RemoteChord] originalMediaBytes=%@ uploadFileBytes=%d uploadSec=%@ clientTotalSec=%.3f server receive=%.3f ingest=%.3f infer=%.3f total=%.3f",
+                originalMediaBytes.map { String($0) } ?? "nil",
+                audioData.count,
+                uploadSeconds.map { String(format: "%.3f", $0) } ?? "nil",
+                clientTotalSeconds,
+                t?.receiveSec ?? -1,
+                t?.ingestSec ?? -1,
+                t?.inferenceSec ?? -1,
+                t?.totalSec ?? -1
+            )
+        )
+        #endif
+
+        return RemoteChordTranscribeOutcome(
+            result: decoded,
+            originalMediaBytes: originalMediaBytes,
+            uploadFileBytes: audioData.count,
+            uploadSeconds: uploadSeconds,
+            clientTotalSeconds: clientTotalSeconds
+        )
+    }
+
+    /// 首次进入页面时做一次轻量网络预检，尽早触发系统网络授权弹窗（若系统版本会弹）。
+    static func preflightNetworkAccess() async {
+        var request = URLRequest(url: healthEndpoint)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 8
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 8
+        config.timeoutIntervalForResource = 8
+        let session = URLSession(configuration: config)
+        _ = try? await session.data(for: request)
+    }
+
+    private static func makeMultipartBody(
+        boundary: String,
+        fieldName: String,
+        fileName: String,
+        mimeType: String,
+        fileData: Data
+    ) -> Data {
+        var data = Data()
+        data.append("--\(boundary)\r\n".data(using: .utf8)!)
+        data.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        data.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        data.append(fileData)
+        data.append("\r\n".data(using: .utf8)!)
+        data.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        return data
+    }
+}
+
+/// 使用 `uploadTask(fromFile:)` 以便拿到上传进度时间；请求体写入临时文件。
+private final class MultipartUploadSession: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
+    private let request: URLRequest
+    private let multipartBodyFileURL: URL
+    private let continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>
+
+    private var session: URLSession!
+    private var responseData = Data()
+    private let wallClockStart = Date()
+    private var firstBodyByteSentAt: Date?
+    private var uploadCompletedAt: Date?
+
+    private init(
+        request: URLRequest,
+        multipartBodyFileURL: URL,
+        continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>
+    ) {
+        self.request = request
+        self.multipartBodyFileURL = multipartBodyFileURL
+        self.continuation = continuation
+        super.init()
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 600
+        config.timeoutIntervalForResource = 600
+        session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+        session.uploadTask(with: request, fromFile: multipartBodyFileURL).resume()
+    }
+
+    static func upload(request: URLRequest, multipartBodyFileURL: URL) async throws -> (Data, URLResponse, Double?) {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>) in
+            _ = MultipartUploadSession(
+                request: request,
+                multipartBodyFileURL: multipartBodyFileURL,
+                continuation: continuation
+            )
+        }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didSendBodyData bytesSent: Int64,
+        totalBytesSent: Int64,
+        totalBytesExpectedToSend: Int64
+    ) {
+        if firstBodyByteSentAt == nil, bytesSent > 0 {
+            firstBodyByteSentAt = Date()
+        }
+        if totalBytesExpectedToSend > 0, totalBytesSent >= totalBytesExpectedToSend {
+            uploadCompletedAt = Date()
+        }
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        responseData.append(data)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        session.finishTasksAndInvalidate()
+        if let error {
+            continuation.resume(throwing: error)
+            return
+        }
+        guard let response = task.response else {
+            continuation.resume(throwing: URLError(.badServerResponse))
+            return
+        }
+        let uploadSeconds: Double?
+        if let a = firstBodyByteSentAt, let b = uploadCompletedAt {
+            uploadSeconds = b.timeIntervalSince(a)
+        } else if let b = uploadCompletedAt {
+            uploadSeconds = b.timeIntervalSince(wallClockStart)
+        } else {
+            uploadSeconds = nil
+        }
+        continuation.resume(returning: (responseData, response, uploadSeconds))
+    }
+}

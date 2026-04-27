@@ -25,6 +25,13 @@ enum PlaybackSyncResolver {
 }
 
 enum TranscriptionChordResolver {
+    struct DisplayTuning {
+        static let minDisplayChordDurationMs = 500
+        static let sameSecondConflictWindowMs = 1000
+        static let keepBothThresholdMs = 750
+        static let gapToleranceMs = 200
+    }
+
     static func preparedSegments(from raw: [TranscriptionSegment]) -> [TranscriptionSegment] {
         let sorted = raw.sorted { lhs, rhs in
             if lhs.startMs == rhs.startMs { return lhs.endMs < rhs.endMs }
@@ -34,7 +41,69 @@ enum TranscriptionChordResolver {
         return filtered.isEmpty ? sorted : filtered
     }
 
-    static func index(at currentTimeMs: Int, in segments: [TranscriptionSegment], gapToleranceMs: Int = 200) -> Int? {
+    static func makeDisplayChordSegments(rawSegments: [TranscriptionSegment]) -> [TranscriptionSegment] {
+        let sorted = rawSegments.sorted { lhs, rhs in
+            if lhs.startMs == rhs.startMs { return lhs.endMs < rhs.endMs }
+            return lhs.startMs < rhs.startMs
+        }
+        let validOnly = sorted.filter { isValidChord($0.chord) && $0.endMs > $0.startMs }
+        var working = mergeAdjacentSameChords(validOnly)
+
+        var mergedShortCount = 0
+        var changed = true
+        while changed {
+            changed = false
+            guard !working.isEmpty else { break }
+            var idx = 0
+            while idx < working.count {
+                let seg = working[idx]
+                let dur = seg.endMs - seg.startMs
+                if dur >= DisplayTuning.minDisplayChordDurationMs {
+                    idx += 1
+                    continue
+                }
+                if let target = mergeTargetIndex(for: idx, in: working) {
+                    let targetSeg = working[target]
+                    let merged = mergeSegments(seg, targetSeg)
+                    let first = min(idx, target)
+                    let second = max(idx, target)
+                    working[second] = merged
+                    working.remove(at: first)
+                    changed = true
+                    mergedShortCount += 1
+                    idx = max(0, first - 1)
+                } else {
+                    idx += 1
+                }
+            }
+            working = mergeAdjacentSameChords(working)
+        }
+
+        let beforeConflict = countSameSecondConflicts(working)
+        var sampleBefore: [TranscriptionSegment] = []
+        var sampleAfter: [TranscriptionSegment] = []
+        let perSecondResolved = resolveSameSecondConflicts(
+            segments: working,
+            sampleBefore: &sampleBefore,
+            sampleAfter: &sampleAfter
+        )
+        var cleaned = mergeAdjacentSameChords(perSecondResolved)
+        cleaned = normalizeMonotonic(segments: cleaned)
+
+        #if DEBUG
+        if beforeConflict > 0 || mergedShortCount > 0 {
+            print("[TranscriptionDisplaySegments] raw=\(rawSegments.count) display=\(cleaned.count) shortMerged=\(mergedShortCount) sameSecondConflicts=\(beforeConflict)")
+            if let b = sampleBefore.first, let a = sampleAfter.first {
+                print("[TranscriptionDisplaySegments] before: \(formatDebugSegment(b))")
+                print("[TranscriptionDisplaySegments] after:  \(formatDebugSegment(a))")
+            }
+        }
+        #endif
+
+        return cleaned
+    }
+
+    static func index(at currentTimeMs: Int, in segments: [TranscriptionSegment], gapToleranceMs: Int = DisplayTuning.gapToleranceMs) -> Int? {
         guard !segments.isEmpty else { return nil }
 
         if let exact = segments.firstIndex(where: { $0.startMs <= currentTimeMs && currentTimeMs < $0.endMs }) {
@@ -68,6 +137,130 @@ enum TranscriptionChordResolver {
     static func isValidChord(_ chord: String) -> Bool {
         !ChordFingeringResolver.isInvalidChordName(chord)
     }
+
+    private static func mergeAdjacentSameChords(_ segments: [TranscriptionSegment]) -> [TranscriptionSegment] {
+        guard !segments.isEmpty else { return [] }
+        var merged: [TranscriptionSegment] = [segments[0]]
+        for seg in segments.dropFirst() {
+            guard let last = merged.last else {
+                merged.append(seg)
+                continue
+            }
+            let sameChord = ChordFingeringResolver.normalizeChordName(last.chord) == ChordFingeringResolver.normalizeChordName(seg.chord)
+            let touching = seg.startMs <= last.endMs + DisplayTuning.gapToleranceMs
+            if sameChord && touching {
+                merged[merged.count - 1] = TranscriptionSegment(
+                    startMs: last.startMs,
+                    endMs: max(last.endMs, seg.endMs),
+                    chord: last.chord
+                )
+            } else {
+                merged.append(seg)
+            }
+        }
+        return merged
+    }
+
+    private static func mergeTargetIndex(for idx: Int, in segments: [TranscriptionSegment]) -> Int? {
+        let current = segments[idx]
+        let prevIdx = idx > 0 ? idx - 1 : nil
+        let nextIdx = idx + 1 < segments.count ? idx + 1 : nil
+
+        if let prevIdx, ChordFingeringResolver.normalizeChordName(segments[prevIdx].chord) == ChordFingeringResolver.normalizeChordName(current.chord) {
+            return prevIdx
+        }
+        if let nextIdx, ChordFingeringResolver.normalizeChordName(segments[nextIdx].chord) == ChordFingeringResolver.normalizeChordName(current.chord) {
+            return nextIdx
+        }
+
+        switch (prevIdx, nextIdx) {
+        case let (p?, n?):
+            let pDur = segments[p].endMs - segments[p].startMs
+            let nDur = segments[n].endMs - segments[n].startMs
+            return pDur >= nDur ? p : n
+        case let (p?, nil):
+            return p
+        case let (nil, n?):
+            return n
+        default:
+            return nil
+        }
+    }
+
+    private static func mergeSegments(_ a: TranscriptionSegment, _ b: TranscriptionSegment) -> TranscriptionSegment {
+        let keepChord: String
+        if (a.endMs - a.startMs) >= (b.endMs - b.startMs) {
+            keepChord = a.chord
+        } else {
+            keepChord = b.chord
+        }
+        return TranscriptionSegment(
+            startMs: min(a.startMs, b.startMs),
+            endMs: max(a.endMs, b.endMs),
+            chord: keepChord
+        )
+    }
+
+    private static func resolveSameSecondConflicts(
+        segments: [TranscriptionSegment],
+        sampleBefore: inout [TranscriptionSegment],
+        sampleAfter: inout [TranscriptionSegment]
+    ) -> [TranscriptionSegment] {
+        let groups = Dictionary(grouping: segments) { max(0, $0.startMs / DisplayTuning.sameSecondConflictWindowMs) }
+        var kept: [TranscriptionSegment] = []
+        for key in groups.keys.sorted() {
+            let bucket = groups[key]!.sorted { ($0.endMs - $0.startMs) > ($1.endMs - $1.startMs) }
+            let uniqueChordCount = Set(bucket.map { ChordFingeringResolver.normalizeChordName($0.chord) }).count
+            if uniqueChordCount <= 1 {
+                kept.append(contentsOf: bucket)
+                continue
+            }
+            let longOnes = bucket.filter { ($0.endMs - $0.startMs) >= DisplayTuning.keepBothThresholdMs }
+            if longOnes.count >= 2 {
+                kept.append(contentsOf: longOnes.prefix(1))
+            } else if let first = bucket.first {
+                if sampleBefore.isEmpty {
+                    sampleBefore = bucket
+                    sampleAfter = [first]
+                }
+                kept.append(first)
+            }
+        }
+        return kept.sorted { lhs, rhs in
+            if lhs.startMs == rhs.startMs { return lhs.endMs < rhs.endMs }
+            return lhs.startMs < rhs.startMs
+        }
+    }
+
+    private static func normalizeMonotonic(segments: [TranscriptionSegment]) -> [TranscriptionSegment] {
+        guard !segments.isEmpty else { return [] }
+        var normalized: [TranscriptionSegment] = []
+        for seg in segments {
+            let start = max(seg.startMs, normalized.last?.endMs ?? seg.startMs)
+            let end = max(seg.endMs, start + 1)
+            if let last = normalized.last, last.startMs == start, last.chord == seg.chord {
+                normalized[normalized.count - 1] = TranscriptionSegment(startMs: last.startMs, endMs: max(last.endMs, end), chord: last.chord)
+            } else {
+                normalized.append(TranscriptionSegment(startMs: start, endMs: end, chord: seg.chord))
+            }
+        }
+        return normalized
+    }
+
+    private static func countSameSecondConflicts(_ segments: [TranscriptionSegment]) -> Int {
+        let groups = Dictionary(grouping: segments) { max(0, $0.startMs / DisplayTuning.sameSecondConflictWindowMs) }
+        return groups.values.reduce(0) { partial, bucket in
+            let distinct = Set(bucket.map { ChordFingeringResolver.normalizeChordName($0.chord) }).count
+            return partial + (distinct > 1 ? 1 : 0)
+        }
+    }
+
+    private static func formatDebugSegment(_ segment: TranscriptionSegment) -> String {
+        let startSec = Double(segment.startMs) / 1000.0
+        let endSec = Double(segment.endMs) / 1000.0
+        let duration = Double(segment.endMs - segment.startMs) / 1000.0
+        return String(format: "%.2f~%.2f %@ duration %.2fs", startSec, endSec, segment.chord, duration)
+    }
 }
 
 struct TranscriptionResultView: View {
@@ -81,7 +274,8 @@ struct TranscriptionResultView: View {
     }
 
     var body: some View {
-        let prepared = TranscriptionChordResolver.preparedSegments(from: entry.segments)
+        let baseSegments = entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
+        let prepared = TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: baseSegments)
         let currentIndex = PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: prepared)
         let currentSegment = TranscriptionChordResolver.nearestValidSegment(at: vm.currentTimeMs, in: prepared)
         let upcomingSegments = PlaybackSyncResolver.upcomingSegments(for: vm.currentTimeMs, segments: prepared, limit: 3)

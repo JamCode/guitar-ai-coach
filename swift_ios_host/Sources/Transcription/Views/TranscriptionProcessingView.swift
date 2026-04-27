@@ -14,7 +14,7 @@ struct TranscriptionProcessingView: View {
                 .font(.headline)
                 .foregroundStyle(SwiftAppTheme.text)
                 .multilineTextAlignment(.center)
-            Text(AppL10n.t(stepText))
+            Text(stepText)
                 .font(.subheadline)
                 .foregroundStyle(SwiftAppTheme.muted)
             Button(LocalizedStringResource("transcribe_button_cancel", bundle: .main), action: onCancel)

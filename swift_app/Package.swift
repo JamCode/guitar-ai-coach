@@ -79,7 +79,7 @@ let package = Package(
         ),
         .target(
             name: "Practice",
-            dependencies: ["Core", "Fretboard", "Chords", "ChordChart"],
+            dependencies: ["Core", "Fretboard", "Chords", "ChordChart", "Metronome"],
             path: "Sources/Features/Practice"
         ),
         .target(
