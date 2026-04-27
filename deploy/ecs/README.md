@@ -42,6 +42,7 @@ chmod 600 "$ECS_KEY"
 - **一键同步 + 装依赖 + 停旧进程 + 起 uvicorn + health**：在**本机仓库根**执行（先 `chmod 600` 你的私钥）  
   `ECS_KEY="/path/to/key.pem" ./deploy/ecs/chord_onnx/push-and-setup.sh`  
   日志默认追加到 **`$HOME/guitar-ai-coach/logs/chord_onnx.log`**（可在 `push-and-setup.sh` 中改 `CHORD_LOG` 默认值）。
+- **GitHub Actions**：仓库工作流 **ECS backend deploy** 在检测到 `backend/chord_onnx_server/**` 变更（或手动 `workflow_dispatch`）时，会 rsync 该目录到 ECS、在 `chord-onnx` conda 环境中装依赖并重启 `:8000` 服务，与上条脚本行为一致。
 - 线上反代见 **`deploy/ecs/nginx/guitar-server.conf`** 中 `location /api/chord-onnx/`。
 
 ---
