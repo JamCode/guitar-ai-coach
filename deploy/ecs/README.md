@@ -37,6 +37,13 @@ chmod 600 "$ECS_KEY"
 
 以下命令默认在**本机仓库根目录** `guitar-ai-coach/` 下执行。
 
+## Chord ONNX 服务（本机 `127.0.0.1:8000`）
+
+- **一键同步 + 装依赖 + 停旧进程 + 起 uvicorn + health**：在**本机仓库根**执行（先 `chmod 600` 你的私钥）  
+  `ECS_KEY="/path/to/key.pem" ./deploy/ecs/chord_onnx/push-and-setup.sh`  
+  日志默认追加到 **`$HOME/guitar-ai-coach/logs/chord_onnx.log`**（可在 `push-and-setup.sh` 中改 `CHORD_LOG` 默认值）。
+- 线上反代见 **`deploy/ecs/nginx/guitar-server.conf`** 中 `location /api/chord-onnx/`。
+
 ---
 
 ## 首次：站点目录 + Nginx 指向（在 ECS 上只需做一次，需 root）

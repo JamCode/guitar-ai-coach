@@ -3,6 +3,10 @@
 deploy/ecs/nginx/ssl/
 deploy/ecs/backend.env
 backend/logs/
+# Chord ONNX：权重体积大、由服务器或制品单独放置；见 backend/chord_onnx_server/models/README.md
+backend/chord_onnx_server/models/*.onnx
+backend/chord_onnx_server/uploads/
+backend/chord_onnx_server/outputs/
 swift_app/.build/
 # Xcode / SwiftPM per-user data (scheme order, breakpoints, etc.)
 swift_app/.swiftpm/xcode/xcuserdata/
