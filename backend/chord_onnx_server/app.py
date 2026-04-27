@@ -6,6 +6,7 @@ import time
 import traceback
 import uuid
 from pathlib import Path
+from typing import Any, Mapping
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
@@ -25,6 +26,103 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 logger = logging.getLogger("chord_onnx")
 app = FastAPI(title="Chord ONNX Server", version="0.1.0")
 service = ChordOnnxInferenceService(model_path=MODEL_PATH)
+
+# 仅用于响应前调试日志：与 chord 字段做精确匹配（不改识别/后处理）。
+_CHORD_DEBUG_WATCHLIST: tuple[str, ...] = (
+    "Ab5",
+    "B5",
+    "Daug",
+    "C#dim",
+    "Eadd9",
+    "F#sus4",
+    "Em",
+    "G",
+)
+
+
+def _chord_debug_seg_duration_sec(seg: Mapping[str, Any]) -> str:
+    if "duration" in seg and seg["duration"] is not None:
+        return str(seg["duration"])
+    try:
+        start = float(seg["start"])
+        end = float(seg["end"])
+        return f"{end - start:.6f}"
+    except (KeyError, TypeError, ValueError):
+        return "-"
+
+
+def _chord_debug_format_segment_line(index: int, seg: Mapping[str, Any]) -> str:
+    """列顺序: index | start | end | duration | chord | confidence（缺字段用 - 或推导）。"""
+    start_s = "-" if seg.get("start", None) is None else str(seg["start"])
+    end_s = "-" if seg.get("end", None) is None else str(seg["end"])
+    if "duration" in seg and seg["duration"] is not None:
+        dur_s = str(seg["duration"])
+    else:
+        dur_s = _chord_debug_seg_duration_sec(seg)
+    chord_s = str(seg.get("chord", "") or "")
+    conf_s = "-" if seg.get("confidence", None) is None else str(seg["confidence"])
+    return " | ".join([str(index), start_s, end_s, dur_s, chord_s, conf_s])
+
+
+def _chord_debug_print_segment_block(
+    label: str,
+    segments: list[Any],
+    *,
+    max_rows: int,
+) -> None:
+    header = "index | start | end | duration | chord | confidence"
+    print(f"[CHORD_DEBUG] --- {label} (first {max_rows}, columns: {header}) ---")
+    for i, seg in enumerate(segments[:max_rows]):
+        if not isinstance(seg, Mapping):
+            print(f"[CHORD_DEBUG] {label}[{i}] non-dict: {seg!r}")
+            continue
+        line = _chord_debug_format_segment_line(i, seg)
+        print(f"[CHORD_DEBUG] {label} {line}")
+
+
+def _chord_debug_watchlist_hits(segments: list[Any]) -> None:
+    hits: dict[str, list[int]] = {name: [] for name in _CHORD_DEBUG_WATCHLIST}
+    for i, seg in enumerate(segments):
+        if not isinstance(seg, Mapping):
+            continue
+        chord = seg.get("chord")
+        if chord is None:
+            continue
+        c = str(chord).strip()
+        if c in hits:
+            hits[c].append(i)
+    print("[CHORD_DEBUG] watchlist (exact chord match on chordChartSegments):")
+    for name in _CHORD_DEBUG_WATCHLIST:
+        idxs = hits[name]
+        print(f"[CHORD_DEBUG]   {name}: count={len(idxs)} positions={idxs}")
+
+
+def _chord_debug_log_response_payload(
+    *,
+    req_id: str,
+    upload_filename: str | None,
+    result: Mapping[str, Any],
+    payload: Mapping[str, Any],
+) -> None:
+    segs = payload.get("segments") or []
+    disp = payload.get("displaySegments") or []
+    simp = payload.get("simplifiedDisplaySegments") or []
+    chart = payload.get("chordChartSegments") or []
+    detected_key = result.get("key", payload.get("key"))
+    original_key = result.get("originalKey", "n/a")
+
+    title = (upload_filename or "").strip() or "n/a"
+    print(
+        f"[CHORD_DEBUG] request_id={req_id} song_or_filename={title!r} "
+        f"detectedKey={detected_key!r} originalKey={original_key!r}"
+    )
+    print(
+        f"[CHORD_DEBUG] counts segments={len(segs)} displaySegments={len(disp)} "
+        f"simplifiedDisplaySegments={len(simp)} chordChartSegments={len(chart)}"
+    )
+    _chord_debug_print_segment_block("chordChartSegments", chart, max_rows=80)
+    _chord_debug_watchlist_hits(chart)
+    _chord_debug_print_segment_block("simplifiedDisplaySegments", simp, max_rows=80)
 
 
 @app.on_event("startup")
@@ -96,6 +194,12 @@ async def transcribe(file: UploadFile = File(...)) -> JSONResponse:
         report_path = OUTPUT_DIR / f"{req_id}.json"
         with report_path.open("w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
+        _chord_debug_log_response_payload(
+            req_id=req_id,
+            upload_filename=file.filename,
+            result=result,
+            payload=payload,
+        )
         return JSONResponse(content=payload)
     except InferenceInputShapeError as exc:
         logger.warning(
