@@ -8,9 +8,10 @@ import uuid
 from pathlib import Path
 from typing import Any, Mapping
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
+from chord_auth import APP_TOKEN_ENV, app_token_status, configured_app_token
 from inference import ChordOnnxInferenceService, InferenceInputShapeError, ffmpeg_available
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -138,12 +139,25 @@ def _startup_log_model() -> None:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "ffmpeg": ffmpeg_available()}
+    return {
+        "status": "ok",
+        "ffmpeg": ffmpeg_available(),
+        "app_token_configured": bool(configured_app_token()),
+    }
+
+
+def _verify_app_token(request: Request) -> None:
+    status = app_token_status(request.headers.get("X-App-Token", ""))
+    if status == "missing_config":
+        logger.error("[transcribe] missing required env var: %s", APP_TOKEN_ENV)
+        raise HTTPException(status_code=503, detail="service auth is not configured")
+    if status != "ok":
+        raise HTTPException(status_code=401, detail="unauthorized")
 
 
 @app.post("/transcribe")
-async def transcribe(file: UploadFile = File(...)) -> JSONResponse:
-    # TODO: add app secret / token auth.
+async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResponse:
+    _verify_app_token(request)
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in ALLOWED_EXTS:
         raise HTTPException(status_code=400, detail=f"unsupported file type: {suffix}")

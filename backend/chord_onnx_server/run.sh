@@ -11,4 +11,13 @@ fi
 # shellcheck source=/dev/null
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
 conda activate chord-onnx
+
+ENV_FILE="$HOME/guitar-ai-coach/deploy/ecs/backend.env"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "$ENV_FILE"
+  set +a
+fi
+
 exec uvicorn app:app --host 0.0.0.0 --port 8000

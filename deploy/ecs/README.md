@@ -208,6 +208,14 @@ rsync -avz -e "ssh -i $ECS_KEY -o StrictHostKeyChecking=accept-new" \
 
 **注意**：`backend.env` 含 `DASHSCOPE_API_KEY` 等敏感信息，勿推送到公开仓库。
 
+扒歌 ONNX 服务需要在同一个 `backend.env` 中配置固定 App Token：
+
+```bash
+CHORD_ONNX_APP_TOKEN=替换为一段足够长的随机字符串
+```
+
+iOS 构建时也需使用同一个值注入 `CHORD_ONNX_APP_TOKEN` Build Setting（见 `swift_ios_host/install-device.local.env.example` 与 `upload-testflight.local.env.example`）。服务端会校验请求头 `X-App-Token`，Nginx 也会对 `/api/chord-onnx/` 做 IP 限流；该 Token 只是无账号阶段的基础防刷，不应当视为用户身份或强安全凭证。
+
 ### 3. 重启后端服务
 
 （依赖 `wanghan` 的 **NOPASSWD** `systemctl restart guitar-ai-coach-backend`，见上文环境表。）

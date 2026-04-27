@@ -191,6 +191,15 @@ enum RemoteChordRecognitionService {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        let appToken = AppSecrets.chordOnnxAppToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !appToken.isEmpty {
+            request.setValue(appToken, forHTTPHeaderField: "X-App-Token")
+        }
+        #if DEBUG
+        if appToken.isEmpty {
+            print("[RemoteChord] missing CHORD_ONNX_APP_TOKEN build setting; upload may be rejected")
+        }
+        #endif
 
         let clientStarted = Date()
         let (data, response, uploadSeconds): (Data, URLResponse, Double?)
