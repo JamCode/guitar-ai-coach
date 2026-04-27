@@ -124,7 +124,7 @@ struct TranscriptionHomeView: View {
             Button("取消", role: .cancel) {
                 vm.cancelPendingImport()
             }
-            Button("开始识别") {
+            Button("生成参考和弦") {
                 vm.confirmImport()
             }
         } message: {

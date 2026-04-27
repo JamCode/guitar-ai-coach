@@ -71,7 +71,7 @@ struct TranscriptionProgressState: Equatable, Sendable {
         TranscriptionProgressState(
             stage: .generatingChart,
             progress: min(1.0, max(0.88, progress)),
-            message: "正在生成和弦谱..."
+            message: "正在生成参考和弦谱..."
         )
     }
 
@@ -79,7 +79,7 @@ struct TranscriptionProgressState: Equatable, Sendable {
         TranscriptionProgressState(
             stage: .completed,
             progress: 1.0,
-            message: "和弦谱生成完成"
+            message: "参考和弦谱生成完成"
         )
     }
 

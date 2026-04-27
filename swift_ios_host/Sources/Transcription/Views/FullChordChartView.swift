@@ -71,7 +71,7 @@ struct FullChordChartView: View {
                 currentChordIndexInRow = nil
             }
         }
-        .navigationTitle("完整和弦谱")
+        .navigationTitle("参考和弦谱")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) {
@@ -88,7 +88,7 @@ struct FullChordChartView: View {
                 .font(.title2.weight(.bold))
                 .foregroundStyle(SwiftAppTheme.text)
                 .lineLimit(1)
-            Text("原调：\(entry.originalKey)")
+            Text("参考调：\(entry.originalKey)")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.brand)
         }
