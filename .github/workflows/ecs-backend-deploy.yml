@@ -1,4 +1,4 @@
-# Push 到指定分支后：若 backend Python 或 Flyway 迁移有变更，则自动部署到阿里云 ECS。
+# 手动 workflow_dispatch / workflow_call，或路径变更时：部署 backend Python、Flyway、以及 Chord ONNX 服务到阿里云 ECS。
 #
 # 需在仓库 Settings → Secrets and variables → Actions 中配置：
 #
@@ -20,8 +20,10 @@
 # 前置条件（一次性）：
 #   - ECS 上已按 deploy/ecs/README.md 配置 systemd、backend.env、MySQL 与 Flyway baseline
 #   - SSH 公钥已加入 ECS，且 wanghan 可对 guitar-ai-coach-backend 执行 NOPASSWD restart
+#   - Chord ONNX：ECS 上已有 Miniconda 环境 chord-onnx（与 deploy/ecs/chord_onnx/push-and-setup.sh 一致），
+#     服务监听 127.0.0.1:8000；rsync 不使用 --delete，避免误删远端 models/*.onnx
 #
-name: ECS backend deploy (Python + Flyway)
+name: ECS backend deploy (Python + Flyway + Chord ONNX)
 
 permissions:
   contents: read
@@ -41,6 +43,7 @@ jobs:
     outputs:
       python: ${{ steps.filter.outputs.python }}
       flyway: ${{ steps.filter.outputs.flyway }}
+      chord_onnx: ${{ steps.filter.outputs.chord_onnx }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,6 +58,8 @@ jobs:
             flyway:
               - 'backend/database/flyway/sql/**'
               - 'backend/database/flyway/flyway.conf'
+            chord_onnx:
+              - 'backend/chord_onnx_server/**'
 
   deploy:
     name: Deploy to ECS
@@ -63,11 +68,13 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'workflow_call' ||
       needs.changes.outputs.python == 'true' ||
-      needs.changes.outputs.flyway == 'true'
+      needs.changes.outputs.flyway == 'true' ||
+      needs.changes.outputs.chord_onnx == 'true'
     runs-on: ubuntu-latest
     outputs:
       python_changed: ${{ steps.filter-deploy.outputs.python_changed }}
       flyway_changed: ${{ steps.filter-deploy.outputs.flyway_changed }}
+      chord_onnx_changed: ${{ steps.filter-deploy.outputs.chord_onnx_changed }}
     env:
       ECS_HOST: ${{ vars.ECS_HOST }}
       ECS_USER: ${{ vars.ECS_USER }}
@@ -93,9 +100,11 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
             echo "python_changed=true" >> "$GITHUB_OUTPUT"
             echo "flyway_changed=true" >> "$GITHUB_OUTPUT"
+            echo "chord_onnx_changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "python_changed=${{ needs.changes.outputs.python }}" >> "$GITHUB_OUTPUT"
             echo "flyway_changed=${{ needs.changes.outputs.flyway }}" >> "$GITHUB_OUTPUT"
+            echo "chord_onnx_changed=${{ needs.changes.outputs.chord_onnx }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check required secrets
@@ -195,6 +204,66 @@ jobs:
           echo "::error::Backend smoke check failed after retries (expected 200, last=${code:-empty})"
           exit 1
 
+      - name: Rsync chord ONNX server
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.chord_onnx == 'true'
+        run: |
+          ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
+            "${ECS_USER}@${ECS_HOST}" \
+            "mkdir -p \"${ECS_PATH}/backend/chord_onnx_server\" \"${ECS_PATH}/logs\""
+          rsync -avz -e "ssh -i $HOME/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new" \
+            --exclude '.venv' --exclude '__pycache__' --exclude '*.pyc' \
+            --exclude 'uploads' --exclude 'outputs' \
+            backend/chord_onnx_server/ "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/backend/chord_onnx_server/"
+
+      - name: pip install chord ONNX requirements & restart (conda chord-onnx, port 8000)
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.chord_onnx == 'true'
+        run: |
+          ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
+            "${ECS_USER}@${ECS_HOST}" \
+            "export BASE='${ECS_PATH}' && bash -s" <<'REMOTE'
+          set -euo pipefail
+          if [[ ! -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+            echo "::error::ECS: Miniconda not found at ~/miniconda3 (required for chord-onnx env)"
+            exit 1
+          fi
+          # shellcheck source=/dev/null
+          source "$HOME/miniconda3/etc/profile.d/conda.sh"
+          conda activate chord-onnx
+          cd "${BASE}/backend/chord_onnx_server"
+          python -m pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+          chmod +x run.sh 2>/dev/null || true
+          CHORD_LOG="${CHORD_ONNX_LOG:-${BASE}/logs/chord_onnx.log}"
+          mkdir -p "$(dirname "$CHORD_LOG")"
+          echo "stop old listener on 8000"
+          if command -v fuser >/dev/null 2>&1; then
+            fuser -k 8000/tcp 2>/dev/null || true
+          else
+            pkill -f "uvicorn app:app --host 0.0.0.0 --port 8000" 2>/dev/null || true
+            pkill -f "conda run -n chord-onnx uvicorn" 2>/dev/null || true
+          fi
+          sleep 2
+          echo "start chord onnx: nohup ./run.sh -> $CHORD_LOG"
+          nohup ./run.sh >> "$CHORD_LOG" 2>&1 &
+          sleep 3
+          REMOTE
+
+      - name: Smoke check chord ONNX (ECS localhost :8000)
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || needs.changes.outputs.chord_onnx == 'true'
+        run: |
+          set +e
+          code=""
+          for i in 1 2 3 4 5 6 7 8; do
+            code=$(ssh -i ~/.ssh/ecs_deploy_key -o StrictHostKeyChecking=accept-new \
+              "${ECS_USER}@${ECS_HOST}" \
+              "curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 5 http://127.0.0.1:8000/health" 2>/dev/null)
+            code=$(echo -n "$code" | tr -d '\r\n ')
+            echo "chord-onnx smoke try $i: HTTP ${code:-empty}"
+            [ "$code" = "200" ] && exit 0
+            sleep 4
+          done
+          echo "::error::Chord ONNX smoke check failed after retries (expected 200, last=${code:-empty})"
+          exit 1
+
       - name: Write backend deployment summary
         if: always()
         run: |
@@ -205,6 +274,7 @@ jobs:
             echo "- Workflow result: \`${{ job.status }}\`"
             echo "- Python changed: \`${{ steps.filter-deploy.outputs.python_changed }}\`"
             echo "- Flyway changed: \`${{ steps.filter-deploy.outputs.flyway_changed }}\`"
+            echo "- Chord ONNX changed: \`${{ steps.filter-deploy.outputs.chord_onnx_changed }}\`"
             echo "- Target ECS host: \`${ECS_HOST}\`"
             echo "- Target ECS path: \`${ECS_PATH}\`"
           } > "$SUMMARY_FILE"
