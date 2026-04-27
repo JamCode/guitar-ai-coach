@@ -105,8 +105,9 @@ struct TranscriptionHomeView: View {
             NavigationStack {
                 TranscriptionProcessingView(
                     fileName: state.fileName,
-                    stepText: state.stepText,
-                    onCancel: vm.cancelProcessing
+                    progressState: state.progressState,
+                    onCancel: vm.cancelProcessing,
+                    onRetry: vm.retryProcessing
                 )
             }
         }
@@ -176,10 +177,12 @@ final class TranscriptionHomeViewModel: ObservableObject {
 
     private let historyStore = TranscriptionHistoryStore()
     private var currentTask: Task<Void, Never>?
+    private var analyzingProgressTask: Task<Void, Never>?
     private var pendingImportRequest: PendingImportRequest?
 
     deinit {
         currentTask?.cancel()
+        analyzingProgressTask?.cancel()
     }
 
     func reload() async {
@@ -246,7 +249,20 @@ final class TranscriptionHomeViewModel: ObservableObject {
     func cancelProcessing() {
         currentTask?.cancel()
         currentTask = nil
+        stopAnalyzingTimer()
+        logProgress("cancelled")
         processingState = nil
+    }
+
+    func retryProcessing() {
+        guard let state = processingState else { return }
+        logProgress("retry tapped")
+        startImport(
+            url: state.url,
+            sourceType: state.sourceType,
+            requiresSecurityScopedAccess: state.requiresSecurityScopedAccess,
+            customName: state.fileName
+        )
     }
 
     private func prepareImport(url: URL, sourceType: TranscriptionSourceType, requiresSecurityScopedAccess: Bool) {
@@ -266,7 +282,16 @@ final class TranscriptionHomeViewModel: ObservableObject {
         customName: String
     ) {
         currentTask?.cancel()
-        processingState = TranscriptionProcessingState(fileName: customName, stepText: "正在准备音频")
+        stopAnalyzingTimer()
+        processingState = TranscriptionProcessingState(
+            fileName: customName,
+            url: url,
+            sourceType: sourceType,
+            requiresSecurityScopedAccess: requiresSecurityScopedAccess,
+            progressState: .preparing()
+        )
+        logProgress("start import", state: .preparing())
+        let processingID = processingState?.id
         let historyStore = self.historyStore
 
         currentTask = Task { [weak self] in
@@ -278,30 +303,97 @@ final class TranscriptionHomeViewModel: ObservableObject {
                     requiresSecurityScopedAccess: requiresSecurityScopedAccess,
                     customName: customName,
                     historyStore: historyStore
-                ) { stepText in
+                ) { progressState in
                     await MainActor.run {
-                        guard let current = self.processingState else { return }
-                        self.processingState = current.with(stepText: stepText)
+                        guard self.processingState?.id == processingID else { return }
+                        self.applyProgress(progressState)
                     }
                 }
 
                 await MainActor.run {
+                    guard self.processingState?.id == processingID else { return }
+                    self.stopAnalyzingTimer()
+                    self.applyProgress(.completed())
                     self.processingState = nil
                     self.selectedEntry = saved
                 }
                 await reload()
             } catch is CancellationError {
                 await MainActor.run {
+                    guard self.processingState?.id == processingID else { return }
+                    self.stopAnalyzingTimer()
+                    self.logProgress("task cancelled")
                     self.processingState = nil
                 }
             } catch {
                 await MainActor.run {
-                    self.processingState = nil
-                    self.alertMessage = (error as? LocalizedError)?.errorDescription ?? "识别失败，请稍后重试"
-                    self.showingAlert = true
+                    guard self.processingState?.id == processingID else { return }
+                    self.stopAnalyzingTimer()
+                    let message = (error as? LocalizedError)?.errorDescription ?? "识别失败，请稍后重试"
+                    let failed = (self.processingState?.progressState ?? .preparing()).failed(message: message)
+                    self.applyProgress(failed)
                 }
             }
         }
+    }
+
+    private func applyProgress(_ progressState: TranscriptionProgressState) {
+        guard let current = processingState else { return }
+        if current.progressState.stage == .failed, progressState.stage != .preparing {
+            return
+        }
+        if progressState.stage != .preparing,
+           progressState.stage != .failed,
+           progressState.clampedProgress < current.progressState.clampedProgress {
+            logProgress("ignored stale progress", state: progressState)
+            return
+        }
+        if progressState.stage == .analyzing {
+            startAnalyzingTimerIfNeeded()
+        }
+        if progressState.stage == .failed || progressState.stage == .completed {
+            stopAnalyzingTimer()
+        }
+        processingState = current.with(progressState: progressState)
+        logProgress("state update", state: progressState)
+    }
+
+    private func startAnalyzingTimerIfNeeded() {
+        guard analyzingProgressTask == nil else { return }
+        logProgress("start analyzing timer")
+        analyzingProgressTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                if Task.isCancelled { return }
+                await MainActor.run {
+                    guard
+                        let self,
+                        let current = self.processingState,
+                        current.progressState.stage == .analyzing
+                    else { return }
+                    let nextProgress = min(0.88, current.progressState.clampedProgress + 0.01)
+                    guard nextProgress > current.progressState.clampedProgress else { return }
+                    self.processingState = current.with(progressState: .analyzing(nextProgress))
+                    self.logProgress("analyzing timer", state: .analyzing(nextProgress))
+                }
+            }
+        }
+    }
+
+    private func stopAnalyzingTimer() {
+        analyzingProgressTask?.cancel()
+        analyzingProgressTask = nil
+    }
+
+    private func logProgress(_ event: String, state: TranscriptionProgressState? = nil) {
+        #if DEBUG
+        let resolved = state ?? processingState?.progressState
+        if let resolved {
+            print("[TranscriptionProgress] \(event) stage=\(resolved.stage.rawValue) progress=\(resolved.percentage)% message=\(resolved.message)")
+        } else {
+            print("[TranscriptionProgress] \(event)")
+        }
+        #endif
     }
 
     private static func processImportedMedia(
@@ -310,7 +402,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         requiresSecurityScopedAccess: Bool,
         customName: String,
         historyStore: TranscriptionHistoryStore,
-        onStep: @escaping @Sendable (String) async -> Void
+        onProgress: @escaping @Sendable (TranscriptionProgressState) async -> Void
     ) async throws -> TranscriptionHistoryEntry {
         let didAccess = requiresSecurityScopedAccess ? url.startAccessingSecurityScopedResource() : false
         defer {
@@ -325,7 +417,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
 
         let originalMediaBytes = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue
 
-        await onStep("正在准备音频")
+        await onProgress(.preparing(0.02))
         let tempCompressedM4A = FileManager.default.temporaryDirectory
             .appendingPathComponent("chord-upload-\(UUID().uuidString).m4a")
 
@@ -367,16 +459,21 @@ final class TranscriptionHomeViewModel: ObservableObject {
         }
         try Task.checkCancellation()
 
+        await onProgress(.preparing(0.08))
         try await TranscriptionMediaDecoder.exportM4A(from: url, to: tempM4a)
         try Task.checkCancellation()
 
-        await onStep("正在上传")
-
-        await onStep("正在识别")
+        await onProgress(.uploading(uploadFraction: 0.0))
         let outcome = try await RemoteChordRecognitionService.transcribeAudio(
             fileURL: uploadFileURL,
             multipartFilename: multipartFilename,
-            originalMediaBytes: originalMediaBytes
+            originalMediaBytes: originalMediaBytes,
+            onUploadProgress: { fraction in
+                Task { await onProgress(.uploading(uploadFraction: fraction)) }
+            },
+            onAnalyzingStarted: {
+                Task { await onProgress(.analyzing()) }
+            }
         )
         let remote = outcome.result
         #if DEBUG
@@ -408,7 +505,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         }
         try Task.checkCancellation()
 
-        await onStep("正在整理结果")
+        await onProgress(.generatingChart())
         let durationMs = Int(((remote.duration ?? 0) * 1000).rounded())
         let resolvedKey = (remote.key?.isEmpty == false) ? remote.key! : "C"
         #if DEBUG
@@ -468,16 +565,36 @@ private struct PendingImportRequest {
 struct TranscriptionProcessingState: Identifiable {
     let id: UUID
     let fileName: String
-    let stepText: String
+    let url: URL
+    let sourceType: TranscriptionSourceType
+    let requiresSecurityScopedAccess: Bool
+    let progressState: TranscriptionProgressState
 
-    init(id: UUID = UUID(), fileName: String, stepText: String) {
+    init(
+        id: UUID = UUID(),
+        fileName: String,
+        url: URL,
+        sourceType: TranscriptionSourceType,
+        requiresSecurityScopedAccess: Bool,
+        progressState: TranscriptionProgressState
+    ) {
         self.id = id
         self.fileName = fileName
-        self.stepText = stepText
+        self.url = url
+        self.sourceType = sourceType
+        self.requiresSecurityScopedAccess = requiresSecurityScopedAccess
+        self.progressState = progressState
     }
 
-    func with(stepText: String) -> TranscriptionProcessingState {
-        TranscriptionProcessingState(id: id, fileName: fileName, stepText: stepText)
+    func with(progressState: TranscriptionProgressState) -> TranscriptionProcessingState {
+        TranscriptionProcessingState(
+            id: id,
+            fileName: fileName,
+            url: url,
+            sourceType: sourceType,
+            requiresSecurityScopedAccess: requiresSecurityScopedAccess,
+            progressState: progressState
+        )
     }
 }
 

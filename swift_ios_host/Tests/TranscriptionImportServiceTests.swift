@@ -2,6 +2,38 @@ import XCTest
 @testable import SwiftEarHost
 
 final class TranscriptionImportServiceTests: XCTestCase {
+    func testProgressStateMapsUploadFractionToConfiguredRange() {
+        let start = TranscriptionProgressState.uploading(uploadFraction: 0)
+        XCTAssertEqual(start.stage, .uploading)
+        XCTAssertEqual(start.progress, 0.10, accuracy: 0.0001)
+        XCTAssertEqual(start.message, "正在上传歌曲 0%...")
+
+        let middle = TranscriptionProgressState.uploading(uploadFraction: 0.5)
+        XCTAssertEqual(middle.progress, 0.275, accuracy: 0.0001)
+        XCTAssertEqual(middle.message, "正在上传歌曲 50%...")
+
+        let end = TranscriptionProgressState.uploading(uploadFraction: 1)
+        XCTAssertEqual(end.progress, 0.45, accuracy: 0.0001)
+        XCTAssertEqual(end.message, "正在上传歌曲 100%...")
+    }
+
+    func testProgressStateKeepsFailedProgress() {
+        let analyzing = TranscriptionProgressState.analyzing(0.72)
+        let failed = analyzing.failed(message: "识别失败，请稍后重试")
+
+        XCTAssertEqual(failed.stage, .failed)
+        XCTAssertEqual(failed.progress, 0.72, accuracy: 0.0001)
+        XCTAssertEqual(failed.message, "识别失败，请稍后重试")
+    }
+
+    func testAnalyzingProgressCapsBeforeCompleted() {
+        let analyzing = TranscriptionProgressState.analyzing(0.99)
+
+        XCTAssertEqual(analyzing.stage, .analyzing)
+        XCTAssertEqual(analyzing.progress, 0.88, accuracy: 0.0001)
+        XCTAssertEqual(analyzing.percentage, 88)
+    }
+
     func testValidateSupportedExtension_acceptsConfiguredFormats() {
         XCTAssertNoThrow(try TranscriptionImportService.validate(fileName: "demo.mp3", durationMs: 30_000))
         XCTAssertNoThrow(try TranscriptionImportService.validate(fileName: "demo.mov", durationMs: 30_000))
