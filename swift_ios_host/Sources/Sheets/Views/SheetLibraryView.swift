@@ -286,6 +286,9 @@ private struct SheetDetailView: View {
     @State private var accumulatedForegroundSeconds: TimeInterval = 0
     /// 轻点谱面进入全屏阅读（隐藏导航栏、铺满可视区域）；再点一次恢复。
     @State private var immersiveReading = false
+    @State private var currentPageIndex = 0
+    @State private var currentPageScale: CGFloat = 1
+    @State private var currentPageOffset: CGSize = .zero
     private let practiceStore = PracticeLocalStore()
 
     /// 至少多少秒才落一条记录，避免点进即返回产生噪声。
@@ -303,14 +306,11 @@ private struct SheetDetailView: View {
                         Color.black
                             .opacity(immersiveReading ? 1 : 0)
                             .allowsHitTesting(false)
-                        TabView {
-                            ForEach(Array(pageImages.enumerated()), id: \.offset) { idx, image in
-                                sheetPage(image: image, pageIndex: idx + 1, containerSize: size)
-                            }
+                        if pageImages.indices.contains(currentPageIndex) {
+                            sheetPage(image: pageImages[currentPageIndex], pageIndex: currentPageIndex + 1, containerSize: size)
+                                .id(currentPageIndex)
+                                .gesture(pageDragGesture, including: allowsPageSwipe ? .gesture : .none)
                         }
-                        .tabViewStyle(.page(indexDisplayMode: .automatic))
-                        /// 避免 TabView 与导航栏高度变化叠加「双重插值」导致掉帧。
-                        .animation(nil, value: immersiveReading)
                     }
                     .frame(width: size.width, height: size.height)
                 }
@@ -378,12 +378,16 @@ private struct SheetDetailView: View {
         let urls = (try? await store.resolveStoredFiles(entry)) ?? []
         files = urls
         pageImages = urls.map { UIImage(contentsOfFile: $0.path) }
+        currentPageIndex = 0
+        currentPageScale = Self.minReadableScale
+        currentPageOffset = .zero
         loading = false
         if scenePhase == .active {
             resumeForegroundClockIfEligible()
         }
     }
 
+    private static let minReadableScale: CGFloat = 1
     private static let immersiveSpring = Animation.spring(response: 0.32, dampingFraction: 0.94)
 
     @ViewBuilder
@@ -394,8 +398,73 @@ private struct SheetDetailView: View {
             totalPages: pageImages.count,
             containerSize: containerSize,
             immersiveReading: $immersiveReading
+        ) { scale, offset in
+            currentPageScale = scale
+            currentPageOffset = offset
         )
     }
+
+    private var allowsPageSwipe: Bool {
+        currentPageScale <= SheetImageGesturePolicy.pagingScaleThreshold
+    }
+
+    private var pageDragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                logGesture(
+                    "page drag changed translation=\(format(value.translation))"
+                )
+            }
+            .onEnded { value in
+                let translation = value.translation
+                let horizontalEnough = abs(translation.width) > 60
+                    && abs(translation.width) > abs(translation.height) * 1.3
+                let previousIndex = currentPageIndex
+                var didChangePage = false
+
+                guard allowsPageSwipe else {
+                    logGesture("page drag ended ignored translation=\(format(translation)) didChangePage=false")
+                    return
+                }
+
+                if horizontalEnough, translation.width < -60, currentPageIndex < pageImages.count - 1 {
+                    currentPageIndex += 1
+                    didChangePage = true
+                } else if horizontalEnough, translation.width > 60, currentPageIndex > 0 {
+                    currentPageIndex -= 1
+                    didChangePage = true
+                }
+
+                if didChangePage {
+                    currentPageScale = Self.minReadableScale
+                    currentPageOffset = .zero
+                }
+                logGesture(
+                    "page drag ended translation=\(format(translation)) horizontalEnough=\(horizontalEnough) from=\(previousIndex + 1) to=\(currentPageIndex + 1) didChangePage=\(didChangePage)"
+                )
+            }
+    }
+
+    private func logGesture(_ message: String) {
+        print(
+            "[SheetImageViewer] \(message) scale=\(format(currentPageScale)) offset=\(format(currentPageOffset)) allowPageSwipe=\(allowsPageSwipe) allowImageDrag=\(!allowsPageSwipe)"
+        )
+    }
+
+    private func format(_ value: CGFloat) -> String {
+        String(format: "%.3f", Double(value))
+    }
+
+    private func format(_ size: CGSize) -> String {
+        "(x:\(format(size.width)), y:\(format(size.height)))"
+    }
+}
+
+private enum SheetImageGesturePolicy {
+    static let minScale: CGFloat = 1
+    static let pagingScaleThreshold: CGFloat = 1.02
+    static let maxScale: CGFloat = 4
+    static let doubleTapScale: CGFloat = 2
 }
 
 private struct ZoomableSheetPage: View {
@@ -404,14 +473,13 @@ private struct ZoomableSheetPage: View {
     let totalPages: Int
     let containerSize: CGSize
     @Binding var immersiveReading: Bool
+    let onInteractionChanged: (CGFloat, CGSize) -> Void
 
     @State private var currentScale: CGFloat = 1
     @State private var baseScale: CGFloat = 1
     @State private var currentOffset: CGSize = .zero
     @State private var baseOffset: CGSize = .zero
 
-    private static let minScale: CGFloat = 1
-    private static let maxScale: CGFloat = 4
     private static let immersiveSpring = Animation.spring(response: 0.32, dampingFraction: 0.94)
 
     var body: some View {
@@ -423,7 +491,7 @@ private struct ZoomableSheetPage: View {
                     .frame(width: containerSize.width, height: containerSize.height)
                     .scaleEffect(currentScale)
                     .offset(currentOffset)
-                    .gesture(dragGesture)
+                    .gesture(imageDragGesture, including: allowsImageDrag ? .gesture : .none)
                     .simultaneousGesture(magnificationGesture)
             } else {
                 RoundedRectangle(cornerRadius: 8)
@@ -433,11 +501,8 @@ private struct ZoomableSheetPage: View {
         }
         .frame(width: containerSize.width, height: containerSize.height)
         .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(Self.immersiveSpring) {
-                immersiveReading.toggle()
-            }
-        }
+        .simultaneousGesture(tapGesture)
+        .onAppear { notifyInteraction("appear") }
         .accessibilityHint(AppL10n.t("sheets_a11y_toggle_chrome"))
         .overlay(alignment: .bottom) {
             Text(String(format: AppL10n.t("sheets_page_indicator"), pageIndex, totalPages))
@@ -449,55 +514,129 @@ private struct ZoomableSheetPage: View {
         }
     }
 
+    private var allowsImageDrag: Bool {
+        currentScale > SheetImageGesturePolicy.pagingScaleThreshold
+    }
+
     private var magnificationGesture: some Gesture {
         MagnificationGesture()
             .onChanged { value in
                 let scaled = baseScale * value
-                currentScale = min(Self.maxScale, max(Self.minScale, scaled))
-                currentOffset = clampedOffset(baseOffset, for: currentScale)
+                currentScale = min(SheetImageGesturePolicy.maxScale, max(SheetImageGesturePolicy.minScale, scaled))
+                if currentScale <= SheetImageGesturePolicy.pagingScaleThreshold {
+                    currentOffset = .zero
+                } else {
+                    currentOffset = clampedOffset(baseOffset, for: currentScale)
+                }
+                notifyInteraction("magnify changed")
             }
             .onEnded { _ in
                 baseScale = currentScale
-                if currentScale <= Self.minScale + 0.001 {
-                    baseScale = Self.minScale
-                    currentScale = Self.minScale
+                if currentScale <= SheetImageGesturePolicy.pagingScaleThreshold {
+                    baseScale = SheetImageGesturePolicy.minScale
+                    currentScale = SheetImageGesturePolicy.minScale
                     baseOffset = .zero
                     currentOffset = .zero
                 } else {
                     baseOffset = clampedOffset(currentOffset, for: currentScale)
                     currentOffset = baseOffset
                 }
+                notifyInteraction("magnify ended")
             }
     }
 
-    private var dragGesture: some Gesture {
+    private var imageDragGesture: some Gesture {
         DragGesture()
             .onChanged { value in
-                guard currentScale > Self.minScale else { return }
+                guard allowsImageDrag else {
+                    notifyInteraction("image drag changed ignored translation=\(format(value.translation))")
+                    return
+                }
                 let candidate = CGSize(
                     width: baseOffset.width + value.translation.width,
                     height: baseOffset.height + value.translation.height
                 )
                 currentOffset = clampedOffset(candidate, for: currentScale)
+                notifyInteraction("image drag changed translation=\(format(value.translation))")
             }
-            .onEnded { _ in
-                guard currentScale > Self.minScale else {
+            .onEnded { value in
+                guard allowsImageDrag else {
                     baseOffset = .zero
                     currentOffset = .zero
+                    notifyInteraction("image drag ended ignored translation=\(format(value.translation))")
                     return
                 }
                 baseOffset = clampedOffset(currentOffset, for: currentScale)
                 currentOffset = baseOffset
+                notifyInteraction("image drag ended translation=\(format(value.translation))")
             }
     }
 
+    private var tapGesture: some Gesture {
+        ExclusiveGesture(TapGesture(count: 2), TapGesture(count: 1))
+            .onEnded { value in
+                switch value {
+                case .first:
+                    toggleDoubleTapZoom()
+                case .second:
+                    withAnimation(Self.immersiveSpring) {
+                        immersiveReading.toggle()
+                    }
+                    notifyInteraction("single tap toggle chrome")
+                }
+            }
+    }
+
+    private func toggleDoubleTapZoom() {
+        withAnimation(Self.immersiveSpring) {
+            if currentScale > SheetImageGesturePolicy.pagingScaleThreshold {
+                currentScale = SheetImageGesturePolicy.minScale
+                baseScale = SheetImageGesturePolicy.minScale
+                currentOffset = .zero
+                baseOffset = .zero
+            } else {
+                currentScale = SheetImageGesturePolicy.doubleTapScale
+                baseScale = SheetImageGesturePolicy.doubleTapScale
+                currentOffset = .zero
+                baseOffset = .zero
+            }
+        }
+        notifyInteraction("double tap zoom")
+    }
+
     private func clampedOffset(_ offset: CGSize, for scale: CGFloat) -> CGSize {
-        guard scale > Self.minScale else { return .zero }
-        let maxX = (containerSize.width * (scale - 1)) / 2
-        let maxY = (containerSize.height * (scale - 1)) / 2
+        guard scale > SheetImageGesturePolicy.pagingScaleThreshold else { return .zero }
+        let fittedSize = fittedImageSize()
+        let maxX = max(0, (fittedSize.width * scale - containerSize.width) / 2)
+        let maxY = max(0, (fittedSize.height * scale - containerSize.height) / 2)
         return CGSize(
             width: min(max(offset.width, -maxX), maxX),
             height: min(max(offset.height, -maxY), maxY)
         )
+    }
+
+    private func fittedImageSize() -> CGSize {
+        guard let image, image.size.width > 0, image.size.height > 0 else {
+            return containerSize
+        }
+        let widthRatio = containerSize.width / image.size.width
+        let heightRatio = containerSize.height / image.size.height
+        let ratio = min(widthRatio, heightRatio)
+        return CGSize(width: image.size.width * ratio, height: image.size.height * ratio)
+    }
+
+    private func notifyInteraction(_ event: String) {
+        onInteractionChanged(currentScale, currentOffset)
+        print(
+            "[SheetImageViewer] \(event) scale=\(format(currentScale)) offset=\(format(currentOffset)) allowPageSwipe=\(!allowsImageDrag) allowImageDrag=\(allowsImageDrag)"
+        )
+    }
+
+    private func format(_ value: CGFloat) -> String {
+        String(format: "%.3f", Double(value))
+    }
+
+    private func format(_ size: CGSize) -> String {
+        "(x:\(format(size.width)), y:\(format(size.height)))"
     }
 }
