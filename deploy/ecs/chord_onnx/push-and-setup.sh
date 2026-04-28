@@ -42,10 +42,20 @@ if [[ ! -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
 fi
 # shellcheck source=/dev/null
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
+if [[ -f "$HOME/guitar-ai-coach/deploy/ecs/backend.env" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "$HOME/guitar-ai-coach/deploy/ecs/backend.env"
+  set +a
+fi
 conda activate chord-onnx
 cd "$HOME/guitar-ai-coach/backend/chord_onnx_server"
 python -m pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 chmod +x run.sh 2>/dev/null || true
+if [[ -z "${CHORD_ONNX_APP_TOKEN:-}" ]]; then
+  echo "缺少 CHORD_ONNX_APP_TOKEN：请在 $HOME/guitar-ai-coach/deploy/ecs/backend.env 中配置后再启动" >&2
+  exit 1
+fi
 
 CHORD_LOG="${CHORD_ONNX_LOG:-$HOME/guitar-ai-coach/logs/chord_onnx.log}"
 mkdir -p "$(dirname "$CHORD_LOG")"

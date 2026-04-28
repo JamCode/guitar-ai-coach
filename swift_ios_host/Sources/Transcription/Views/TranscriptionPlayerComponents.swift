@@ -295,7 +295,7 @@ struct UpcomingChordsView: View {
                 Text("接下来和弦")
                     .appSectionTitle()
                 Spacer()
-                Button("完整和弦谱 >") {
+                Button("参考和弦谱 >") {
                     onOpenFullChordChart()
                 }
                 .font(.caption.weight(.semibold))

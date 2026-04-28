@@ -8,6 +8,13 @@ import re
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+# 谱面展示偏“弹唱参考”，比逐帧识别更积极地吸收短暂经过/误判片段。
+SHORT_CHORD_ABSORB_SEC = 1.5
+OUT_OF_KEY_ABSORB_SEC = 2.0
+COMPLEX_CHORD_ABSORB_SEC = 2.0
+LOW_CONFIDENCE_ABSORB_SEC = 2.0
+ADJACENT_MERGE_TOLERANCE_SEC = 0.2
+
 # 常见大调的主干和声（与产品约定一致，可扩展）
 MAJOR_KEY_CORE_CHORDS: dict[str, frozenset[str]] = {
     "A": frozenset({"A", "Bm", "C#m", "D", "E", "E7", "F#m", "C#7"}),
@@ -41,6 +48,8 @@ class _Seg:
     end: float
     chord: str
     confidence: float = 1.0
+    was_complex: bool = False
+    original_chord: str | None = None
 
     @property
     def duration(self) -> float:
@@ -74,6 +83,35 @@ def _chord_in_core(chord: str, core: frozenset[str] | None) -> bool:
     if base in core:
         return True
     return False
+
+
+def simplify_chord_for_reference(chord: str) -> str:
+    """统一给播放器时间轴与参考和弦谱使用的保守和弦名。"""
+    base = _strip_figures(_strip_bass(chord))
+    if not base:
+        return chord
+    m = re.match(r"^([A-G](?:#|b)?)(.*)$", base)
+    if not m:
+        return base
+    root, suffix = m.group(1), m.group(2)
+    suffix_l = suffix.lower()
+
+    if suffix_l.startswith("m") and not suffix_l.startswith("maj"):
+        return f"{root}m"
+    return root
+
+
+def _is_complex_chord(chord: str) -> bool:
+    base = _strip_figures(_strip_bass(chord))
+    if not base:
+        return False
+    m = re.match(r"^[A-G](?:#|b)?(.*)$", base)
+    if not m:
+        return True
+    suffix = m.group(1).lower()
+    if suffix in {"", "m"}:
+        return False
+    return True
 
 
 def _parse_raw_segment(
@@ -121,6 +159,8 @@ def _merge_adjacent_same(segs: list[_Seg], tolerance_sec: float = 0.0) -> list[_
                 end=max(last.end, s.end),
                 chord=last.chord,
                 confidence=w,
+                was_complex=last.was_complex or s.was_complex,
+                original_chord=last.original_chord or s.original_chord,
             )
         else:
             out.append(s)
@@ -138,6 +178,19 @@ def _merge_pair_chord(a: _Seg, b: _Seg, core: frozenset[str] | None) -> str:
     if a.duration >= b.duration:
         return a.chord
     return b.chord
+
+
+def _has_same_surrounding_chord(i: int, working: list[_Seg]) -> bool:
+    seg = working[i]
+    prev = working[i - 1] if i > 0 else None
+    nxt = working[i + 1] if i + 1 < len(working) else None
+    return (
+        prev is not None
+        and nxt is not None
+        and prev.chord == nxt.chord
+        and prev.duration >= 1.0
+        and nxt.duration >= 1.0
+    )
 
 
 def _pick_target_absorb(
@@ -178,6 +231,8 @@ def _absorb_index_into(working: list[_Seg], i: int, j: int, core: frozenset[str]
         end=max(s1.end, s2.end),
         chord=_merge_pair_chord(s1, s2, core),
         confidence=w,
+        was_complex=s1.was_complex or s2.was_complex,
+        original_chord=s1.original_chord or s2.original_chord,
     )
     working[lo] = merged
     working.pop(hi)
@@ -194,11 +249,13 @@ def _iter_absorb(
         if d <= 0:
             continue
         absorb = False
-        if rule == "B" and d < 1.0:
+        if rule == "B" and d < SHORT_CHORD_ABSORB_SEC and _has_same_surrounding_chord(i, working):
             absorb = True
-        elif rule == "D" and core is not None and not _chord_in_core(seg.chord, core) and d < 1.4:
+        elif rule == "D" and core is not None and not _chord_in_core(seg.chord, core) and d < OUT_OF_KEY_ABSORB_SEC:
             absorb = True
-        elif rule == "E" and seg.confidence < 0.45 and d < 2.0:
+        elif rule == "C" and seg.was_complex and d < COMPLEX_CHORD_ABSORB_SEC:
+            absorb = True
+        elif rule == "E" and seg.confidence < 0.45 and d < LOW_CONFIDENCE_ABSORB_SEC:
             absorb = True
         if not absorb:
             continue
@@ -214,8 +271,9 @@ def _run_absorption_loop(working: list[_Seg], core: frozenset[str] | None) -> di
     """顺序：B 系列 -> D 系列 -> E 系列，各系列内吸到稳定再下一系列。"""
     short = 0
     ood = 0
+    complex_ = 0
     lowc = 0
-    for rule, which in (("B", "short"), ("D", "ood"), ("E", "low")):
+    for rule, which in (("C", "complex"), ("D", "ood"), ("B", "short"), ("E", "low")):
         while True:
             n = _iter_absorb(working, core, rule)
             if n == 0:
@@ -224,12 +282,15 @@ def _run_absorption_loop(working: list[_Seg], core: frozenset[str] | None) -> di
                 short += 1
             elif which == "ood":
                 ood += 1
+            elif which == "complex":
+                complex_ += 1
             else:
                 lowc += 1
-            working[:] = _merge_adjacent_same(working, 0.0)
+            working[:] = _merge_adjacent_same(working, ADJACENT_MERGE_TOLERANCE_SEC)
     return {
         "absorbedShortChordCount": short,
         "absorbedOutOfKeyCount": ood,
+        "absorbedComplexChordCount": complex_,
         "absorbedLowConfidenceCount": lowc,
     }
 
@@ -274,9 +335,26 @@ def build_chord_chart_segments(
             },
         }
 
-    segs = [_parse_raw_segment(s) for s in raw_segments]
+    parsed = [_parse_raw_segment(s) for s in raw_segments]
+    simplified_complex_count = 0
+    segs: list[_Seg] = []
+    for seg in parsed:
+        simplified = simplify_chord_for_reference(seg.chord)
+        was_complex = _is_complex_chord(seg.chord)
+        if simplified != _strip_figures(_strip_bass(seg.chord)):
+            simplified_complex_count += 1
+        segs.append(
+            _Seg(
+                start=seg.start,
+                end=seg.end,
+                chord=simplified,
+                confidence=seg.confidence,
+                was_complex=was_complex,
+                original_chord=seg.chord,
+            )
+        )
     # A. 先合并相邻同和弦
-    working = _merge_adjacent_same(segs, 0.0)
+    working = _merge_adjacent_same(segs, ADJACENT_MERGE_TOLERANCE_SEC)
     core = _core_set_for_key(estimated_key)
 
     absorb_stats = _run_absorption_loop(working, core)
@@ -290,7 +368,9 @@ def build_chord_chart_segments(
         "chordChartSegmentCount": len(final),
         "absorbedShortChordCount": absorb_stats["absorbedShortChordCount"],
         "absorbedOutOfKeyCount": absorb_stats["absorbedOutOfKeyCount"],
+        "absorbedComplexChordCount": absorb_stats["absorbedComplexChordCount"],
         "absorbedLowConfidenceCount": absorb_stats["absorbedLowConfidenceCount"],
+        "simplifiedComplexChordCount": simplified_complex_count,
         "estimatedKey": estimated_key,
         "chordChartText": text,
     }

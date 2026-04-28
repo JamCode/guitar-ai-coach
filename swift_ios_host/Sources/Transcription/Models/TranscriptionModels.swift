@@ -11,6 +11,87 @@ struct TranscriptionSegment: Codable, Equatable, Hashable {
     let chord: String
 }
 
+enum TranscriptionProgressStage: String, Equatable, Sendable {
+    case preparing
+    case uploading
+    case analyzing
+    case generatingChart
+    case completed
+    case failed
+}
+
+struct TranscriptionProgressState: Equatable, Sendable {
+    let stage: TranscriptionProgressStage
+    let progress: Double
+    let message: String
+
+    var clampedProgress: Double {
+        min(1.0, max(0.0, progress))
+    }
+
+    var percentage: Int {
+        Int((clampedProgress * 100).rounded())
+    }
+
+    var isFailed: Bool {
+        stage == .failed
+    }
+
+    var isActive: Bool {
+        stage != .completed && stage != .failed
+    }
+
+    static func preparing(_ progress: Double = 0.0) -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: .preparing,
+            progress: min(0.10, max(0.0, progress)),
+            message: "正在准备音频..."
+        )
+    }
+
+    static func uploading(uploadFraction: Double) -> TranscriptionProgressState {
+        let fraction = min(1.0, max(0.0, uploadFraction))
+        let uploadPercent = Int((fraction * 100).rounded())
+        return TranscriptionProgressState(
+            stage: .uploading,
+            progress: 0.10 + fraction * 0.35,
+            message: "正在上传歌曲 \(uploadPercent)%..."
+        )
+    }
+
+    static func analyzing(_ progress: Double = 0.45) -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: .analyzing,
+            progress: min(0.88, max(0.45, progress)),
+            message: "正在分析和弦..."
+        )
+    }
+
+    static func generatingChart(_ progress: Double = 0.88) -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: .generatingChart,
+            progress: min(1.0, max(0.88, progress)),
+            message: "正在生成参考和弦谱..."
+        )
+    }
+
+    static func completed() -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: .completed,
+            progress: 1.0,
+            message: "参考和弦谱生成完成"
+        )
+    }
+
+    func failed(message: String) -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: .failed,
+            progress: clampedProgress,
+            message: message
+        )
+    }
+}
+
 struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
     let id: String
     let sourceType: TranscriptionSourceType

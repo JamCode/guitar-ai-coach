@@ -33,6 +33,7 @@
 		4A01A95A6053A24A9234596E /* TranscriptionWaveformServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68059C23A81871F4A1111EE6 /* TranscriptionWaveformServiceTests.swift */; };
 		4A91EDEC8222B2801CAAEC67 /* ForegroundPracticeSessionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081234E4C13CA98AA373674F /* ForegroundPracticeSessionTracker.swift */; };
 		4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */; };
+		5017D9C2B64A4C9C8A3E8D12 /* AppSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5017D9C1B64A4C9C8A3E8D12 /* AppSecrets.swift */; };
 		566E75613410B952C4E68533 /* TranscriptionHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2396A158BEE17BFE3AF2BADA /* TranscriptionHomeView.swift */; };
 		58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */; };
 		682303963F7DBBEA6CBE3F4A /* RecommendationHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0944BA0BAA6C603F2C127D /* RecommendationHistoryStore.swift */; };
@@ -113,6 +114,7 @@
 		49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeTimerSessionView.swift; sourceTree = "<group>"; };
 		4E88D873D9F1B077821D23E7 /* consonance_ace.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; path = consonance_ace.onnx; sourceTree = "<group>"; };
 		4ECE95D73D9DFEC3EBB60E6B /* ScaleWarmupDrill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleWarmupDrill.swift; sourceTree = "<group>"; };
+		5017D9C1B64A4C9C8A3E8D12 /* AppSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/AppSecrets.swift; sourceTree = "<group>"; };
 		5949CDF8018DDF958DB27304 /* TranscriptionMediaDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionMediaDecoder.swift; sourceTree = "<group>"; };
 		66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeFinishDialog.swift; sourceTree = "<group>"; };
 		68059C23A81871F4A1111EE6 /* TranscriptionWaveformServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionWaveformServiceTests.swift; sourceTree = "<group>"; };
@@ -397,6 +399,7 @@
 			children = (
 				119222F862F03CC58F905D72 /* Assets.xcassets */,
 				1E1113A563A237477AFD4E68 /* PrivacyInfo.xcprivacy */,
+				5017D9C1B64A4C9C8A3E8D12 /* AppSecrets.swift */,
 				B2E304F5061708594A5B6C7D /* FirstLaunchTourView.swift */,
 				117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */,
 				4203DCF495DEA7E31C4E9B7D /* Practice */,
@@ -588,6 +591,7 @@
 				482F6F903FB7DF1F60DC16A9 /* SheetLibraryView.swift in Sources */,
 				93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */,
 				58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */,
+				5017D9C2B64A4C9C8A3E8D12 /* AppSecrets.swift in Sources */,
 				A1F203E405D60728494A5B6C /* FirstLaunchTourView.swift in Sources */,
 				4EEB9211C81504F49534A89A /* SwiftEarHostApp.swift in Sources */,
 				38A6C604DFC07C237B556CD5 /* TodayRecommendationListView.swift in Sources */,
@@ -658,6 +662,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Wanle Guitar";
 				INFOPLIST_KEY_CFBundleName = "Wanle Guitar";
+				INFOPLIST_KEY_CHORD_ONNX_APP_TOKEN = "$(CHORD_ONNX_APP_TOKEN)";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Wanle Guitar needs the microphone for tuning and some sound input exercises.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow photo library access to import sheet music images or videos.";
@@ -820,6 +825,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Wanle Guitar";
 				INFOPLIST_KEY_CFBundleName = "Wanle Guitar";
+				INFOPLIST_KEY_CHORD_ONNX_APP_TOKEN = "$(CHORD_ONNX_APP_TOKEN)";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Wanle Guitar needs the microphone for tuning and some sound input exercises.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow photo library access to import sheet music images or videos.";

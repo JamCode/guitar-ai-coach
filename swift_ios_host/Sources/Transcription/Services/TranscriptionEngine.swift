@@ -158,7 +158,9 @@ enum RemoteChordRecognitionService {
     static func transcribeAudio(
         fileURL: URL,
         multipartFilename: String = "compressed.m4a",
-        originalMediaBytes: Int? = nil
+        originalMediaBytes: Int? = nil,
+        onUploadProgress: @escaping @Sendable (Double) -> Void = { _ in },
+        onAnalyzingStarted: @escaping @Sendable () -> Void = {}
     ) async throws -> RemoteChordTranscribeOutcome {
         let boundary = "Boundary-\(UUID().uuidString)"
         let audioData = try Data(contentsOf: fileURL)
@@ -180,6 +182,7 @@ enum RemoteChordRecognitionService {
 
         let tmpMultipart = FileManager.default.temporaryDirectory
             .appendingPathComponent("chord-multipart-\(UUID().uuidString).dat")
+        try Task.checkCancellation()
         try body.write(to: tmpMultipart, options: .atomic)
         defer {
             try? FileManager.default.removeItem(at: tmpMultipart)
@@ -188,19 +191,35 @@ enum RemoteChordRecognitionService {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        let appToken = AppSecrets.chordOnnxAppToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !appToken.isEmpty {
+            request.setValue(appToken, forHTTPHeaderField: "X-App-Token")
+        }
+        #if DEBUG
+        if appToken.isEmpty {
+            print("[RemoteChord] missing CHORD_ONNX_APP_TOKEN build setting; upload may be rejected")
+        }
+        #endif
 
         let clientStarted = Date()
         let (data, response, uploadSeconds): (Data, URLResponse, Double?)
         do {
             (data, response, uploadSeconds) = try await MultipartUploadSession.upload(
                 request: request,
-                multipartBodyFileURL: tmpMultipart
+                multipartBodyFileURL: tmpMultipart,
+                onUploadProgress: onUploadProgress,
+                onUploadCompleted: onAnalyzingStarted
             )
         } catch let e as URLError {
+            if e.code == .cancelled {
+                throw CancellationError()
+            }
             if e.code == .timedOut {
                 throw RemoteChordRecognitionError.timeout
             }
             throw RemoteChordRecognitionError.network
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             throw RemoteChordRecognitionError.network
         }
@@ -275,41 +294,67 @@ enum RemoteChordRecognitionService {
     }
 }
 
-/// 使用 `uploadTask(fromFile:)` 以便拿到上传进度时间；请求体写入临时文件。
+/// 使用 `uploadTask(fromFile:)` 以便拿到真实上传进度；请求体写入临时文件。
 private final class MultipartUploadSession: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
     private let request: URLRequest
     private let multipartBodyFileURL: URL
     private let continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>
+    private let cancellationToken: MultipartUploadCancellationToken
+    private let onUploadProgress: @Sendable (Double) -> Void
+    private let onUploadCompleted: @Sendable () -> Void
 
     private var session: URLSession!
     private var responseData = Data()
     private let wallClockStart = Date()
     private var firstBodyByteSentAt: Date?
     private var uploadCompletedAt: Date?
+    private var didNotifyUploadCompleted = false
+    private var didResumeContinuation = false
 
     private init(
         request: URLRequest,
         multipartBodyFileURL: URL,
-        continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>
+        continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>,
+        cancellationToken: MultipartUploadCancellationToken,
+        onUploadProgress: @escaping @Sendable (Double) -> Void,
+        onUploadCompleted: @escaping @Sendable () -> Void
     ) {
         self.request = request
         self.multipartBodyFileURL = multipartBodyFileURL
         self.continuation = continuation
+        self.cancellationToken = cancellationToken
+        self.onUploadProgress = onUploadProgress
+        self.onUploadCompleted = onUploadCompleted
         super.init()
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 600
         config.timeoutIntervalForResource = 600
         session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
-        session.uploadTask(with: request, fromFile: multipartBodyFileURL).resume()
+        let task = session.uploadTask(with: request, fromFile: multipartBodyFileURL)
+        cancellationToken.set(task)
+        task.resume()
     }
 
-    static func upload(request: URLRequest, multipartBodyFileURL: URL) async throws -> (Data, URLResponse, Double?) {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>) in
-            _ = MultipartUploadSession(
-                request: request,
-                multipartBodyFileURL: multipartBodyFileURL,
-                continuation: continuation
-            )
+    static func upload(
+        request: URLRequest,
+        multipartBodyFileURL: URL,
+        onUploadProgress: @escaping @Sendable (Double) -> Void,
+        onUploadCompleted: @escaping @Sendable () -> Void
+    ) async throws -> (Data, URLResponse, Double?) {
+        let cancellationToken = MultipartUploadCancellationToken()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, URLResponse, Double?), Error>) in
+                _ = MultipartUploadSession(
+                    request: request,
+                    multipartBodyFileURL: multipartBodyFileURL,
+                    continuation: continuation,
+                    cancellationToken: cancellationToken,
+                    onUploadProgress: onUploadProgress,
+                    onUploadCompleted: onUploadCompleted
+                )
+            }
+        } onCancel: {
+            cancellationToken.cancel()
         }
     }
 
@@ -323,8 +368,13 @@ private final class MultipartUploadSession: NSObject, URLSessionDataDelegate, UR
         if firstBodyByteSentAt == nil, bytesSent > 0 {
             firstBodyByteSentAt = Date()
         }
-        if totalBytesExpectedToSend > 0, totalBytesSent >= totalBytesExpectedToSend {
-            uploadCompletedAt = Date()
+        if totalBytesExpectedToSend > 0 {
+            let fraction = min(1.0, max(0.0, Double(totalBytesSent) / Double(totalBytesExpectedToSend)))
+            onUploadProgress(fraction)
+            if totalBytesSent >= totalBytesExpectedToSend {
+                uploadCompletedAt = Date()
+                notifyUploadCompletedIfNeeded()
+            }
         }
     }
 
@@ -335,11 +385,11 @@ private final class MultipartUploadSession: NSObject, URLSessionDataDelegate, UR
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         session.finishTasksAndInvalidate()
         if let error {
-            continuation.resume(throwing: error)
+            resume(throwing: error)
             return
         }
         guard let response = task.response else {
-            continuation.resume(throwing: URLError(.badServerResponse))
+            resume(throwing: URLError(.badServerResponse))
             return
         }
         let uploadSeconds: Double?
@@ -350,6 +400,48 @@ private final class MultipartUploadSession: NSObject, URLSessionDataDelegate, UR
         } else {
             uploadSeconds = nil
         }
-        continuation.resume(returning: (responseData, response, uploadSeconds))
+        resume(returning: (responseData, response, uploadSeconds))
+    }
+
+    private func notifyUploadCompletedIfNeeded() {
+        guard !didNotifyUploadCompleted else { return }
+        didNotifyUploadCompleted = true
+        onUploadCompleted()
+    }
+
+    private func resume(returning value: (Data, URLResponse, Double?)) {
+        guard !didResumeContinuation else { return }
+        didResumeContinuation = true
+        continuation.resume(returning: value)
+    }
+
+    private func resume(throwing error: Error) {
+        guard !didResumeContinuation else { return }
+        didResumeContinuation = true
+        continuation.resume(throwing: error)
+    }
+}
+
+private final class MultipartUploadCancellationToken: @unchecked Sendable {
+    private let lock = NSLock()
+    private var task: URLSessionTask?
+    private var isCancelled = false
+
+    func set(_ task: URLSessionTask) {
+        lock.lock()
+        self.task = task
+        let shouldCancel = isCancelled
+        lock.unlock()
+        if shouldCancel {
+            task.cancel()
+        }
+    }
+
+    func cancel() {
+        lock.lock()
+        isCancelled = true
+        let task = self.task
+        lock.unlock()
+        task?.cancel()
     }
 }

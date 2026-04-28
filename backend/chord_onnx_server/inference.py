@@ -184,7 +184,7 @@ class ChordOnnxInferenceService:
             "duration": round(duration, 3),
             "key": key_result["key"],
             "segments": [s.__dict__ for s in merged_segments],  # raw segments
-            "displaySegments": [s.__dict__ for s in display_segments],
+            "displaySegments": [s.__dict__ for s in simplified_segments],
             "simplifiedDisplaySegments": [s.__dict__ for s in simplified_segments],
             "chordChartSegments": chart_res["chordChartSegments"],
             "debug": {
@@ -200,10 +200,10 @@ class ChordOnnxInferenceService:
                 "keyScores": key_result["top5"],
                 "keyConfidence": key_result["confidence"],
                 "rawSegmentCount": len(merged_segments),
-                "displaySegmentCount": len(display_segments),
+                "displaySegmentCount": len(simplified_segments),
                 "removedShortSegmentCount": display_stats["removed_short_count"],
                 "sameSecondConflictCount": display_stats["same_second_conflict_count"],
-                "displayChordText": self._build_display_chord_text(display_segments, max_lines=20),
+                "displayChordText": self._build_display_chord_text(simplified_segments, max_lines=20),
                 "simplifiedChordText": self._build_display_chord_text(simplified_segments, max_lines=20),
                 "simplifiedSegmentCount": len(simplified_segments),
                 **chart_proc_debug,
@@ -551,26 +551,18 @@ class ChordOnnxInferenceService:
         if not base:
             return chord
 
-        # Explicit rules from product requirement.
-        direct_map = {
-            "Dadd9": "D",
-            "Dsus2": "D",
-            "Esus4": "E",
-        }
-        if base in direct_map:
-            return direct_map[base]
-
-        # Keep dominant 7 as-is.
-        if base.endswith("7") and not base.endswith("maj7") and not base.endswith("m7"):
+        parsed = self._parse_chord(base)
+        if parsed is None:
             return base
+        root_pc, quality = parsed
+        root = NOTE_NAMES[root_pc]
 
-        # Collapse maj7 / m7 families for user-friendly display.
-        if base.endswith("maj7"):
-            return base[:-4]
-        if base.endswith("m7"):
-            return f"{base[:-2]}m"
-
-        return base
+        # Player timeline and reference chart both favor easy-to-play reference chords.
+        if quality in {"minor", "m7", "minor_extension"}:
+            return f"{root}m"
+        if quality == "dominant7":
+            return f"{root}7"
+        return root
 
     def _estimate_key(self, segments: list[Segment]) -> dict[str, Any]:
         if not segments:
@@ -661,6 +653,8 @@ class ChordOnnxInferenceService:
             quality = "maj7"
         elif "m7" in suffix:
             quality = "m7"
+        elif suffix.startswith("m") and any(ext in suffix for ext in ("add", "sus", "9", "11", "13", "6")):
+            quality = "minor_extension"
         elif suffix.startswith("m"):
             quality = "minor"
         elif "7" in suffix:

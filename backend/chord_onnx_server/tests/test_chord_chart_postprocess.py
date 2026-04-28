@@ -66,6 +66,40 @@ class ChordChartPostprocessTests(unittest.TestCase):
         self.assertIn("C Dm Em F", t2)
         self.assertIn("G", t2)
 
+    def test_extended_chords_are_simplified_for_chart(self) -> None:
+        raw = [
+            {"start": 0.0, "end": 2.0, "chord": "Cadd9"},
+            {"start": 2.0, "end": 4.0, "chord": "Dsus4"},
+            {"start": 4.0, "end": 6.0, "chord": "Em9"},
+            {"start": 6.0, "end": 8.0, "chord": "Gmaj7"},
+        ]
+        r = build_chord_chart_segments(raw, estimated_key="C")
+
+        self.assertEqual([s["chord"] for s in r["chordChartSegments"]], ["C", "D", "Em", "G"])
+        self.assertEqual(r["debug"]["simplifiedComplexChordCount"], 4)
+
+    def test_short_complex_chord_is_absorbed(self) -> None:
+        raw = [
+            {"start": 0.0, "end": 2.0, "chord": "C"},
+            {"start": 2.0, "end": 3.2, "chord": "Daug"},
+            {"start": 3.7, "end": 6.0, "chord": "G"},
+        ]
+        r = build_chord_chart_segments(raw, estimated_key="C")
+
+        self.assertNotIn("D", [s["chord"] for s in r["chordChartSegments"]])
+        self.assertGreater(r["debug"]["absorbedComplexChordCount"], 0)
+
+    def test_short_plain_chord_under_one_point_five_seconds_is_absorbed(self) -> None:
+        raw = [
+            {"start": 0.0, "end": 2.0, "chord": "C"},
+            {"start": 2.0, "end": 3.2, "chord": "Dm"},
+            {"start": 3.2, "end": 6.0, "chord": "C"},
+        ]
+        r = build_chord_chart_segments(raw, estimated_key="C")
+
+        self.assertGreater(r["debug"]["absorbedShortChordCount"], 0)
+        self.assertNotIn("Dm", [s["chord"] for s in r["chordChartSegments"]])
+
 
 if __name__ == "__main__":
     unittest.main()

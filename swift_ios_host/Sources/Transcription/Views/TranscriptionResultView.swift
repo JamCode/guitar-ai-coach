@@ -293,6 +293,21 @@ struct TranscriptionResultView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+                Text(LocalizedStringResource("transcribe_result_disclaimer", bundle: .main))
+                    .font(.footnote)
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(SwiftAppTheme.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(SwiftAppTheme.line, lineWidth: 1)
+                    )
+
                 CurrentChordCard(
                     currentSegment: currentSegment,
                     currentTimeMs: vm.currentTimeMs,
@@ -327,7 +342,7 @@ struct TranscriptionResultView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("查看完整和弦谱") {
+                    Button("查看参考和弦谱") {
                         showingFullChordChart = true
                     }
                 } label: {
