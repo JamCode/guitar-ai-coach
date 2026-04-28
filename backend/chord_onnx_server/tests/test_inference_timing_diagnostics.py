@@ -2,8 +2,13 @@
 from __future__ import annotations
 
 import unittest
+import sys
+import types
 
 import numpy as np
+
+sys.modules.setdefault("librosa", types.SimpleNamespace())
+sys.modules.setdefault("onnxruntime", types.SimpleNamespace())
 
 from inference import FRAME_SEC, ChordOnnxInferenceService, Segment
 
