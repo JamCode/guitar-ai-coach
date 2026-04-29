@@ -592,6 +592,7 @@ final class TranscriptionPlayerViewModel: ObservableObject {
             }
             return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
         case .timingPriority:
+            // 播放高亮 / 当前和弦必须与踩点时间轴一致：只用 display（与后端 simplifiedDisplay 同源），禁止 chordChartSegments（谱面二次吸收会破坏踩点）。
             if let t = entry.timingVariants?.timing, !t.displaySegments.isEmpty {
                 return t.displaySegments
             }
@@ -611,6 +612,7 @@ final class TranscriptionPlayerViewModel: ObservableObject {
             }
             return Self.defaultChordChartSource(from: entry)
         case .timingPriority:
+            // 完整参考谱允许使用 chordChartSegments（谱面吸收）；与结果页时间轴数据源分离。
             if let t = entry.timingVariants?.timing {
                 if !t.chordChartSegments.isEmpty { return t.chordChartSegments }
                 if !t.simplifiedDisplaySegments.isEmpty { return t.simplifiedDisplaySegments }
