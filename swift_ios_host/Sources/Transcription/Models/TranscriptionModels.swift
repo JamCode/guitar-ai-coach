@@ -23,19 +23,14 @@ struct TranscriptionTimingVariants: Codable, Equatable, Hashable {
     let normal: TranscriptionTimingVariantBundle
     let noAbsorb: TranscriptionTimingVariantBundle
     let timing: TranscriptionTimingVariantBundle?
+    /// 踩点精简：基于 `timing` 的二次压缩；旧接口无该键。
+    let timingCompact: TranscriptionTimingVariantBundle?
 }
 
 struct TranscriptionTimingVariantStatsRow: Codable, Equatable, Hashable {
     let displayCount: Int
     let simplifiedCount: Int
     let chordChartCount: Int
-}
-
-struct TranscriptionTimingVariantStats: Codable, Equatable, Hashable {
-    let normal: TranscriptionTimingVariantStatsRow
-    let noAbsorb: TranscriptionTimingVariantStatsRow
-    /// 踩点优先变体统计；旧后端无该键时为 nil。
-    let timing: TranscriptionTimingPriorityStatsRow?
 }
 
 /// `timingVariantStats.timing`：含吸收/保留短段/吸附边界计数。
@@ -48,11 +43,30 @@ struct TranscriptionTimingPriorityStatsRow: Codable, Equatable, Hashable {
     let snappedBoundaryCount: Int
 }
 
-/// 扒歌结果页 DEBUG：默认 / 原始边界 / 踩点优先（不影响音频播放）。
+/// `timingVariantStats.timingCompact`：踩点精简统计。
+struct TranscriptionTimingCompactStatsRow: Codable, Equatable, Hashable {
+    let displayCount: Int
+    let simplifiedCount: Int
+    let chordChartCount: Int
+    let compressedCount: Int
+    let preservedTransitionCount: Int
+}
+
+struct TranscriptionTimingVariantStats: Codable, Equatable, Hashable {
+    let normal: TranscriptionTimingVariantStatsRow
+    let noAbsorb: TranscriptionTimingVariantStatsRow
+    /// 踩点优先变体统计；旧后端无该键时为 nil。
+    let timing: TranscriptionTimingPriorityStatsRow?
+    /// 踩点精简统计；旧后端无该键时为 nil。
+    let timingCompact: TranscriptionTimingCompactStatsRow?
+}
+
+/// 扒歌结果页 DEBUG：默认 / 原始边界 / 踩点优先 / 踩点精简（不影响音频播放）。
 enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Equatable {
     case normal
     case noAbsorbRawEdges
     case timingPriority
+    case timingCompact
 
     var id: String { rawValue }
 
@@ -61,6 +75,7 @@ enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Eq
         case .normal: return "默认"
         case .noAbsorbRawEdges: return "原始边界"
         case .timingPriority: return "踩点优先"
+        case .timingCompact: return "踩点精简"
         }
     }
 
@@ -70,6 +85,9 @@ enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Eq
         #if DEBUG
         if entry.timingVariants?.timing != nil {
             arr.append(.timingPriority)
+        }
+        if entry.timingVariants?.timingCompact != nil {
+            arr.append(.timingCompact)
         }
         #endif
         return arr
