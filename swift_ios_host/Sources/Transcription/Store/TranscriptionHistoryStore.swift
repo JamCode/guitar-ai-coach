@@ -144,6 +144,32 @@ actor TranscriptionHistoryStore {
         try writeAll(remaining)
     }
 
+    /// 更新历史记录自定义名称；找不到对应 id 时静默返回。
+    func rename(id: String, customName: String) async throws {
+        let trimmed = customName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        var all = await loadAll()
+        guard let idx = all.firstIndex(where: { $0.id == id }) else { return }
+        let old = all[idx]
+        all[idx] = TranscriptionHistoryEntry(
+            id: old.id,
+            sourceType: old.sourceType,
+            fileName: old.fileName,
+            customName: trimmed,
+            storedMediaPath: old.storedMediaPath,
+            durationMs: old.durationMs,
+            originalKey: old.originalKey,
+            createdAtMs: old.createdAtMs,
+            segments: old.segments,
+            displaySegments: old.displaySegments,
+            chordChartSegments: old.chordChartSegments,
+            backend: old.backend,
+            waveform: old.waveform
+        )
+        try writeAll(all)
+    }
+
     /// 将索引中的 `storedMediaPath` 解析为当前沙盒下可访问的绝对 URL（含旧数据兼容）。
     func resolveMediaURL(for entry: TranscriptionHistoryEntry) throws -> URL? {
         let root = try docsRoot()

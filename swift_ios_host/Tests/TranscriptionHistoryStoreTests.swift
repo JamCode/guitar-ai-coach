@@ -136,4 +136,35 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
         let afterRemove = await store.loadAll()
         XCTAssertTrue(afterRemove.isEmpty)
     }
+
+    func testRename_updatesCustomNameAndKeepsDisplayFallback() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let media = root.appendingPathComponent("rename-demo.m4a")
+        try Data([3, 4, 5]).write(to: media)
+
+        let store = TranscriptionHistoryStore(rootOverride: root)
+        let entry = try await store.saveResult(
+            sourceURL: media,
+            sourceType: .files,
+            fileName: "rename-demo.m4a",
+            customName: "旧名字",
+            durationMs: 1_000,
+            originalKey: "G",
+            segments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "G")],
+            displaySegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "G")],
+            chordChartSegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "G")],
+            backend: "remote",
+            waveform: [0.1]
+        )
+
+        try await store.rename(id: entry.id, customName: "新名字")
+        let renamed = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(renamed?.customName, "新名字")
+        XCTAssertEqual(renamed?.displayName, "新名字")
+
+        try await store.rename(id: entry.id, customName: "   ")
+        let unchanged = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(unchanged?.customName, "新名字")
+    }
 }
