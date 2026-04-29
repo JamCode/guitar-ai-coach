@@ -171,6 +171,9 @@ public struct IntervalEarView: View {
         }
         .navigationTitle("音程识别")
         .appPageBackground()
+        .onAppear {
+            AudioStartupWarmup.shared.schedulePlaybackReadinessRefresh()
+        }
         .onDisappear {
             viewModel.cancelPlayback()
         }

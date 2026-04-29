@@ -70,9 +70,15 @@ struct TranscriptionHomeView: View {
             if !vm.recentHistory.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(LocalizedStringResource("transcribe_toolbar_history", bundle: .main)) {
-                        TranscriptionHistoryView(entries: vm.recentHistory) { entry in
-                            Task { await vm.delete(entry) }
-                        }
+                        TranscriptionHistoryView(
+                            entries: vm.recentHistory,
+                            onDelete: { entry in
+                                Task { await vm.delete(entry) }
+                            },
+                            onRename: { entry, newName in
+                                Task { await vm.rename(entry, to: newName) }
+                            }
+                        )
                     }
                 }
             }
@@ -193,6 +199,22 @@ final class TranscriptionHomeViewModel: ObservableObject {
     func delete(_ entry: TranscriptionHistoryEntry) async {
         do {
             try await historyStore.remove(id: entry.id)
+            await reload()
+        } catch {
+            alertMessage = error.localizedDescription
+            showingAlert = true
+        }
+    }
+
+    func rename(_ entry: TranscriptionHistoryEntry, to newName: String) async {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            alertMessage = "名称不能为空"
+            showingAlert = true
+            return
+        }
+        do {
+            try await historyStore.rename(id: entry.id, customName: trimmed)
             await reload()
         } catch {
             alertMessage = error.localizedDescription

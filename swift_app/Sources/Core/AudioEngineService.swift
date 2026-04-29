@@ -55,14 +55,7 @@ public protocol AudioEngineServing: AnyObject {
 
 enum GuitarPlaybackHumanizer {
     static func velocity(base: UInt8, midi: Int, noteIndex: Int? = nil, totalNotes: Int? = nil) -> UInt8 {
-        let baseValue = max(1, min(127, Int(base)))
-        let pitchBias = if midi <= 47 {
-            5
-        } else if midi <= 59 {
-            2
-        } else {
-            0
-        }
+        let baseValue = pitchShapedBaseVelocity(base: base, midi: midi)
         let edgeBias: Int = if let noteIndex, let totalNotes, totalNotes > 1 {
             noteIndex == 0 ? 3 : (noteIndex == totalNotes - 1 ? 1 : 0)
         } else {
@@ -70,7 +63,27 @@ enum GuitarPlaybackHumanizer {
         }
         // 真随机 ±10% velocity 偏移（约 ±12 级），替代原来仅 ±2 的确定性循环偏移，消除机器感。
         let randomOffset = Int.random(in: -13...13)
-        return UInt8(max(1, min(127, baseValue + pitchBias + edgeBias + randomOffset)))
+        return UInt8(max(1, min(127, baseValue + edgeBias + randomOffset)))
+    }
+
+    static func pitchShapedBaseVelocity(base: UInt8, midi: Int) -> Int {
+        let baseValue = max(1, min(127, Int(base)))
+        let pitchBias = if midi <= 47 {
+            5
+        } else if midi <= 59 {
+            2
+        } else if midi >= 92 {
+            -18
+        } else if midi >= 84 {
+            -12
+        } else if midi >= 76 {
+            -6
+        } else if midi >= 69 {
+            -3
+        } else {
+            0
+        }
+        return max(1, min(127, baseValue + pitchBias))
     }
 
     static func gate(base: Double, midi: Int, noteIndex: Int? = nil, totalNotes: Int? = nil) -> Double {
