@@ -13,6 +13,7 @@ import numpy as np
 import onnxruntime as ort
 
 from chord_chart_postprocess import build_chord_chart_segments
+from playable_compact_postprocess import build_playable_compact_segments
 from timing_compact_postprocess import build_timing_compact_segments
 from timing_segment_postprocess import build_timing_priority_segments
 
@@ -226,8 +227,26 @@ class ChordOnnxInferenceService:
             estimated_key=key_result.get("key"),
             enable_segment_absorption=True,
         )
+        playable_build = build_playable_compact_segments(
+            y=y,
+            sr=int(sr),
+            timing_compact_segments=compact_segments,
+            merged_segments=merged_segments,
+            hop_length=HOP_LENGTH,
+        )
+        playable_seg_dicts = playable_build["segments"]
+        playable_segments = [
+            Segment(start=float(d["start"]), end=float(d["end"]), chord=str(d["chord"]))
+            for d in playable_seg_dicts
+        ]
+        chart_playable_compact = build_chord_chart_segments(
+            [dict(d) for d in playable_seg_dicts],
+            estimated_key=key_result.get("key"),
+            enable_segment_absorption=True,
+        )
         timing_stats_extra = timing_build["stats"]
         compact_stats_extra = compact_build["stats"]
+        playable_stats_extra = playable_build["stats"]
         chart_proc_debug = dict(chart_res["debug"])
         chart_proc_debug["chordChartSourceSegmentCount"] = chart_proc_debug.pop(
             "rawSegmentCount", len(simplified_segments)
@@ -237,6 +256,7 @@ class ChordOnnxInferenceService:
         no_absorb_display_payload = [s.__dict__ for s in no_absorb_simplified]
         timing_display_payload = [s.__dict__ for s in timing_segments]
         timing_compact_payload = [s.__dict__ for s in compact_segments]
+        playable_compact_payload = [s.__dict__ for s in playable_segments]
         timing_variants: dict[str, Any] = {
             "normal": {
                 "displaySegments": normal_display_payload,
@@ -257,6 +277,11 @@ class ChordOnnxInferenceService:
                 "displaySegments": timing_compact_payload,
                 "simplifiedDisplaySegments": timing_compact_payload,
                 "chordChartSegments": chart_timing_compact["chordChartSegments"],
+            },
+            "playableCompact": {
+                "displaySegments": playable_compact_payload,
+                "simplifiedDisplaySegments": playable_compact_payload,
+                "chordChartSegments": chart_playable_compact["chordChartSegments"],
             },
         }
         timing_variant_stats: dict[str, Any] = {
@@ -284,6 +309,15 @@ class ChordOnnxInferenceService:
                 "chordChartCount": len(chart_timing_compact["chordChartSegments"]),
                 "compressedCount": compact_stats_extra["compressedCount"],
                 "preservedTransitionCount": compact_stats_extra["preservedTransitionCount"],
+            },
+            "playableCompact": {
+                "displayCount": len(playable_compact_payload),
+                "simplifiedCount": len(playable_compact_payload),
+                "chordChartCount": len(chart_playable_compact["chordChartSegments"]),
+                "compressedCount": playable_stats_extra["compressedCount"],
+                "simplifiedChordNameCount": playable_stats_extra["simplifiedChordNameCount"],
+                "preservedTransitionCount": playable_stats_extra["preservedTransitionCount"],
+                "targetDensityAppliedCount": playable_stats_extra["targetDensityAppliedCount"],
             },
         }
 
@@ -318,6 +352,7 @@ class ChordOnnxInferenceService:
                 **chart_proc_debug,
                 **timing_build["debug"],
                 **compact_build["debug"],
+                **playable_build["debug"],
             },
         }
 

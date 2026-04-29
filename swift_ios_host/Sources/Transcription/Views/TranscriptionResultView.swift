@@ -602,6 +602,11 @@ final class TranscriptionPlayerViewModel: ObservableObject {
                 return tc.displaySegments
             }
             return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
+        case .playableCompact:
+            if let pc = entry.timingVariants?.playableCompact, !pc.displaySegments.isEmpty {
+                return pc.displaySegments
+            }
+            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
         }
     }
 
@@ -631,6 +636,13 @@ final class TranscriptionPlayerViewModel: ObservableObject {
                 if !tc.displaySegments.isEmpty { return tc.displaySegments }
             }
             return Self.defaultChordChartSource(from: entry)
+        case .playableCompact:
+            if let pc = entry.timingVariants?.playableCompact {
+                if !pc.chordChartSegments.isEmpty { return pc.chordChartSegments }
+                if !pc.simplifiedDisplaySegments.isEmpty { return pc.simplifiedDisplaySegments }
+                if !pc.displaySegments.isEmpty { return pc.displaySegments }
+            }
+            return Self.defaultChordChartSource(from: entry)
         }
     }
 
@@ -642,6 +654,9 @@ final class TranscriptionPlayerViewModel: ObservableObject {
             return .backendNoShortAbsorptionEdges
         }
         if chordBoundaryDebugMode == .timingCompact, entry.timingVariants?.timingCompact != nil {
+            return .backendNoShortAbsorptionEdges
+        }
+        if chordBoundaryDebugMode == .playableCompact, entry.timingVariants?.playableCompact != nil {
             return .backendNoShortAbsorptionEdges
         }
         return .fullClientPipeline

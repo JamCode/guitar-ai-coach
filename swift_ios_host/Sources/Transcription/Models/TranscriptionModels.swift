@@ -25,6 +25,8 @@ struct TranscriptionTimingVariants: Codable, Equatable, Hashable {
     let timing: TranscriptionTimingVariantBundle?
     /// 踩点精简：基于 `timing` 的二次压缩；旧接口无该键。
     let timingCompact: TranscriptionTimingVariantBundle?
+    /// 可弹精简：面向完整和弦谱可读性，允许更强压缩。
+    let playableCompact: TranscriptionTimingVariantBundle?
 }
 
 struct TranscriptionTimingVariantStatsRow: Codable, Equatable, Hashable {
@@ -52,6 +54,17 @@ struct TranscriptionTimingCompactStatsRow: Codable, Equatable, Hashable {
     let preservedTransitionCount: Int
 }
 
+/// `timingVariantStats.playableCompact`：可弹精简统计。
+struct TranscriptionPlayableCompactStatsRow: Codable, Equatable, Hashable {
+    let displayCount: Int
+    let simplifiedCount: Int
+    let chordChartCount: Int
+    let compressedCount: Int
+    let simplifiedChordNameCount: Int
+    let preservedTransitionCount: Int
+    let targetDensityAppliedCount: Int
+}
+
 struct TranscriptionTimingVariantStats: Codable, Equatable, Hashable {
     let normal: TranscriptionTimingVariantStatsRow
     let noAbsorb: TranscriptionTimingVariantStatsRow
@@ -59,6 +72,8 @@ struct TranscriptionTimingVariantStats: Codable, Equatable, Hashable {
     let timing: TranscriptionTimingPriorityStatsRow?
     /// 踩点精简统计；旧后端无该键时为 nil。
     let timingCompact: TranscriptionTimingCompactStatsRow?
+    /// 可弹精简统计；旧后端无该键时为 nil。
+    let playableCompact: TranscriptionPlayableCompactStatsRow?
 }
 
 /// 扒歌结果页 DEBUG：默认 / 原始边界 / 踩点优先 / 踩点精简（不影响音频播放）。
@@ -67,6 +82,7 @@ enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Eq
     case noAbsorbRawEdges
     case timingPriority
     case timingCompact
+    case playableCompact
 
     var id: String { rawValue }
 
@@ -76,6 +92,7 @@ enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Eq
         case .noAbsorbRawEdges: return "原始边界"
         case .timingPriority: return "踩点优先"
         case .timingCompact: return "踩点精简"
+        case .playableCompact: return "可弹精简"
         }
     }
 
@@ -88,6 +105,9 @@ enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Eq
         }
         if entry.timingVariants?.timingCompact != nil {
             arr.append(.timingCompact)
+        }
+        if entry.timingVariants?.playableCompact != nil {
+            arr.append(.playableCompact)
         }
         #endif
         return arr

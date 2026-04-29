@@ -141,13 +141,15 @@ private struct RemoteChordTimingVariantsDTO: Decodable {
     let noAbsorb: RemoteChordTimingVariantBundleDTO
     let timing: RemoteChordTimingVariantBundleDTO?
     let timingCompact: RemoteChordTimingVariantBundleDTO?
+    let playableCompact: RemoteChordTimingVariantBundleDTO?
 
     func toModel() -> TranscriptionTimingVariants {
         TranscriptionTimingVariants(
             normal: normal.toModel(),
             noAbsorb: noAbsorb.toModel(),
             timing: timing?.toModel(),
-            timingCompact: timingCompact?.toModel()
+            timingCompact: timingCompact?.toModel(),
+            playableCompact: playableCompact?.toModel()
         )
     }
 }
@@ -209,13 +211,37 @@ private struct RemoteChordTimingVariantStatsDTO: Decodable {
     let noAbsorb: RemoteChordTimingVariantStatsRowDTO
     let timing: RemoteChordTimingPriorityStatsRowDTO?
     let timingCompact: RemoteChordTimingCompactStatsRowDTO?
+    let playableCompact: RemoteChordPlayableCompactStatsRowDTO?
 
     func toModel() -> TranscriptionTimingVariantStats {
         TranscriptionTimingVariantStats(
             normal: normal.toModel(),
             noAbsorb: noAbsorb.toModel(),
             timing: timing?.toModel(),
-            timingCompact: timingCompact?.toModel()
+            timingCompact: timingCompact?.toModel(),
+            playableCompact: playableCompact?.toModel()
+        )
+    }
+}
+
+private struct RemoteChordPlayableCompactStatsRowDTO: Decodable {
+    let displayCount: Int
+    let simplifiedCount: Int
+    let chordChartCount: Int
+    let compressedCount: Int
+    let simplifiedChordNameCount: Int
+    let preservedTransitionCount: Int
+    let targetDensityAppliedCount: Int
+
+    func toModel() -> TranscriptionPlayableCompactStatsRow {
+        TranscriptionPlayableCompactStatsRow(
+            displayCount: displayCount,
+            simplifiedCount: simplifiedCount,
+            chordChartCount: chordChartCount,
+            compressedCount: compressedCount,
+            simplifiedChordNameCount: simplifiedChordNameCount,
+            preservedTransitionCount: preservedTransitionCount,
+            targetDensityAppliedCount: targetDensityAppliedCount
         )
     }
 }

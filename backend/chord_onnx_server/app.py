@@ -212,12 +212,14 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
         na_stats = tv_stats.get("noAbsorb") or {}
         t_stats = tv_stats.get("timing") or {}
         tc_stats = tv_stats.get("timingCompact") or {}
+        pc_stats = tv_stats.get("playableCompact") or {}
         logger.info(
             "[timing_variants] normal display=%s simplified=%s chart=%s | "
             "noAbsorb display=%s simplified=%s chart=%s | "
             "delta_na display=%s simplified=%s chart=%s | "
             "timing display=%s chart=%s absorbed=%s keptShort=%s snapped=%s | "
-            "timingCompact display=%s chart=%s compressed=%s preservedTrans=%s",
+            "timingCompact display=%s chart=%s compressed=%s preservedTrans=%s | "
+            "playableCompact display=%s chart=%s compressed=%s simplifiedNames=%s preservedTrans=%s targetDensity=%s",
             n_stats.get("displayCount"),
             n_stats.get("simplifiedCount"),
             n_stats.get("chordChartCount"),
@@ -236,6 +238,12 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
             tc_stats.get("chordChartCount"),
             tc_stats.get("compressedCount"),
             tc_stats.get("preservedTransitionCount"),
+            pc_stats.get("displayCount"),
+            pc_stats.get("chordChartCount"),
+            pc_stats.get("compressedCount"),
+            pc_stats.get("simplifiedChordNameCount"),
+            pc_stats.get("preservedTransitionCount"),
+            pc_stats.get("targetDensityAppliedCount"),
         )
         report_path = OUTPUT_DIR / f"{req_id}.json"
         with report_path.open("w", encoding="utf-8") as f:
