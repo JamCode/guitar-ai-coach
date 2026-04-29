@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 import traceback
 import uuid
@@ -27,6 +28,12 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 logger = logging.getLogger("chord_onnx")
 app = FastAPI(title="Chord ONNX Server", version="0.1.0")
 service = ChordOnnxInferenceService(model_path=MODEL_PATH)
+ENABLE_RESPONSE_DEBUG = os.getenv("CHORD_ONNX_RESPONSE_DEBUG", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 # 仅用于响应前调试日志：与 chord 字段做精确匹配（不改识别/后处理）。
 _CHORD_DEBUG_WATCHLIST: tuple[str, ...] = (
@@ -248,12 +255,13 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
         report_path = OUTPUT_DIR / f"{req_id}.json"
         with report_path.open("w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
-        _chord_debug_log_response_payload(
-            req_id=req_id,
-            upload_filename=file.filename,
-            result=result,
-            payload=payload,
-        )
+        if ENABLE_RESPONSE_DEBUG:
+            _chord_debug_log_response_payload(
+                req_id=req_id,
+                upload_filename=file.filename,
+                result=result,
+                payload=payload,
+            )
         return JSONResponse(content=payload)
     except InferenceInputShapeError as exc:
         logger.warning(
@@ -300,4 +308,3 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
                 # Best effort: do not fail the request because cleanup failed.
                 pass
         await file.close()
-

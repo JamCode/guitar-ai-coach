@@ -32,6 +32,8 @@ TRANSITION_FORCE_BLOCK = 0.62
 CANDIDATE_MAX_DUR = 1.5
 CANDIDATE_CONF = 0.52
 SANDWICH_MAX_DUR = 2.0
+SANDWICH_FORCE_MAX_DUR = 0.65
+SANDWICH_FORCE_MAX_TRANSITION = 0.28
 
 NOTE_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
 
@@ -404,6 +406,38 @@ def build_timing_compact_segments(
                     rec["reason"],
                 )
                 continue
+
+            if (
+                rec["sameFunctionScore"] >= 0.78
+                and rec["sandwichNoiseScore"] >= 0.7
+                and mid.dur <= SANDWICH_FORCE_MAX_DUR
+                and trans <= SANDWICH_FORCE_MAX_TRANSITION
+            ):
+                side, why = _pick_compress_side(prev, mid, nxt, merged)
+                if side == "triple":
+                    chord = _compress_chord_triple(prev, mid, nxt)
+                    rec["decision"] = "compress"
+                    rec["compressInto"] = "both"
+                    rec["reason"] = f"sandwich_force:{why}"
+                    debug_rows.append(rec)
+                    _apply_triple_merge(segs, i, chord)
+                elif side == "prev":
+                    chord = _choose_chord_compress(prev, mid, nxt, True)
+                    rec["decision"] = "compress"
+                    rec["compressInto"] = "previous"
+                    rec["reason"] = f"sandwich_force:{why}"
+                    debug_rows.append(rec)
+                    _apply_merge_into_prev(segs, i, chord)
+                else:
+                    chord = _choose_chord_compress(prev, mid, nxt, False)
+                    rec["decision"] = "compress"
+                    rec["compressInto"] = "next"
+                    rec["reason"] = f"sandwich_force:{why}"
+                    debug_rows.append(rec)
+                    _apply_merge_into_next(segs, i, chord)
+                compressed += 1
+                changed = True
+                break
 
             if rem < REMOVABLE_THRESHOLD and not force:
                 rec["decision"] = "preserve"

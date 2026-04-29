@@ -22,9 +22,14 @@ ONSET_WINDOW_SEC = 0.22
 CHROMA_PRE_SEC = 0.15
 CHROMA_POST_SEC = 0.15
 SNAP_RADIUS_SEC = 0.45
-SNAP_MAX_MOVE_SEC = 0.5
+SNAP_MAX_MOVE_SEC = 0.35
+SNAP_PREFERRED_MAX_MOVE_SEC = 0.32
+SNAP_LARGE_MOVE_MIN_GAIN = 0.22
 SNAP_IMPROVE_EPS = 0.08
+SNAP_DISTANCE_PENALTY_PER_SEC = 0.22
 MIN_SEGMENT_SEC = 0.45
+SEAL_GAP_SEC = 0.9
+ANCHOR_GAP_FILL_MAX_SEC = 2.2
 HOP_LENGTH_DEFAULT = 512
 
 
@@ -104,10 +109,14 @@ def _noise_penalty(prev: _Seg | None, seg: _Seg, nxt: _Seg | None) -> float:
 
 
 def _onset_peak_score(t: float, onset_norm: np.ndarray, sr: int, hop: int) -> float:
+    if onset_norm.size == 0:
+        return 0.35
     fc = _time_to_frame(t, sr, hop)
     w = max(1, int(round(ONSET_WINDOW_SEC * sr / hop)))
     lo = max(0, fc - w)
     hi = min(len(onset_norm) - 1, fc + w)
+    if hi < lo:
+        return 0.35
     return float(np.max(onset_norm[lo : hi + 1]))
 
 
@@ -240,6 +249,20 @@ def _merge_adjacent_same(segs: list[_Seg], tolerance_sec: float = 0.0) -> list[_
     return out
 
 
+def _parse_segments(items: Sequence[Any]) -> list[_Seg]:
+    segs: list[_Seg] = []
+    for s in items:
+        if isinstance(s, dict):
+            chord = str(s.get("chord", "") or "")
+            segs.append(_Seg(start=float(s["start"]), end=float(s["end"]), chord=chord))
+        else:
+            chord = str(getattr(s, "chord", "") or "")
+            segs.append(_Seg(start=float(getattr(s, "start")), end=float(getattr(s, "end")), chord=chord))
+    segs = [s for s in segs if s.end > s.start + 1e-6]
+    segs.sort(key=lambda x: (x.start, x.end))
+    return segs
+
+
 def _event_aware_absorb(
     segs: list[_Seg],
     merged: Sequence[_Seg],
@@ -329,9 +352,12 @@ def _snap_boundaries(
                 continue
             if t2 >= segs[k + 1].end - MIN_SEGMENT_SEC:
                 continue
-            s2 = _boundary_evidence_score(t2, onset_norm, chroma, beat_times, sr, hop)
-            if s2 > best_s + SNAP_IMPROVE_EPS:
-                best_s = s2
+            raw_score = _boundary_evidence_score(t2, onset_norm, chroma, beat_times, sr, hop)
+            if abs(dt) > SNAP_PREFERRED_MAX_MOVE_SEC and raw_score < base + SNAP_LARGE_MOVE_MIN_GAIN:
+                continue
+            penalized_score = raw_score - SNAP_DISTANCE_PENALTY_PER_SEC * abs(dt)
+            if penalized_score > best_s + SNAP_IMPROVE_EPS:
+                best_s = penalized_score
                 best_t = t2
         if abs(best_t - t) > 1e-4:
             left_dur = best_t - segs[k].start
@@ -353,6 +379,76 @@ def _snap_boundaries(
             snapped += 1
     segs[:] = _merge_adjacent_same(segs, 0.0)
     return snapped, snaps
+
+
+def _seal_short_gaps(segs: list[_Seg]) -> list[_Seg]:
+    if len(segs) <= 1:
+        return segs
+    out: list[_Seg] = [segs[0]]
+    for cur in segs[1:]:
+        prev = out[-1]
+        gap = cur.start - prev.end
+        if gap < -1e-6:
+            boundary = round((prev.end + cur.start) / 2.0, 3)
+            out[-1] = _Seg(start=prev.start, end=max(prev.start, boundary), chord=prev.chord)
+            cur = _Seg(start=max(boundary, out[-1].end), end=cur.end, chord=cur.chord)
+        elif gap <= SEAL_GAP_SEC + 1e-6:
+            if prev.chord == cur.chord or _simplify_label(prev.chord) == _simplify_label(cur.chord):
+                out[-1] = _Seg(start=prev.start, end=max(prev.end, cur.end), chord=_merge_pair_chord(prev, cur))
+                continue
+            boundary = round((prev.end + cur.start) / 2.0, 3)
+            out[-1] = _Seg(start=prev.start, end=max(prev.start, boundary), chord=prev.chord)
+            cur = _Seg(start=max(boundary, out[-1].end), end=cur.end, chord=cur.chord)
+        out.append(cur)
+    return _merge_adjacent_same(out, 0.0)
+
+
+def _best_anchor_for_gap(start: float, end: float, anchors: Sequence[_Seg]) -> _Seg | None:
+    if not anchors or end <= start:
+        return None
+    mid = (start + end) / 2.0
+    covering = [a for a in anchors if a.start - 1e-6 <= mid <= a.end + 1e-6]
+    if covering:
+        covering.sort(key=lambda a: (a.dur, a.end - a.start), reverse=True)
+        return covering[0]
+    best: _Seg | None = None
+    best_overlap = 0.0
+    for a in anchors:
+        ov = min(a.end, end) - max(a.start, start)
+        if ov > best_overlap + 1e-6:
+            best_overlap = ov
+            best = a
+    return best
+
+
+def _fill_gaps_from_anchor(segs: list[_Seg], anchors: Sequence[_Seg]) -> list[_Seg]:
+    if len(segs) <= 1 or not anchors:
+        return segs
+    out: list[_Seg] = [segs[0]]
+    for cur in segs[1:]:
+        prev = out[-1]
+        gap = cur.start - prev.end
+        if gap <= SEAL_GAP_SEC + 1e-6 or gap > ANCHOR_GAP_FILL_MAX_SEC + 1e-6:
+            out.append(cur)
+            continue
+        anchor = _best_anchor_for_gap(prev.end, cur.start, anchors)
+        if anchor is None:
+            out.append(cur)
+            continue
+        anchor_label = anchor.chord
+        prev_label = prev.chord
+        next_label = cur.chord
+        if _simplify_label(anchor_label) == _simplify_label(prev_label):
+            out[-1] = _Seg(start=prev.start, end=cur.start, chord=prev.chord)
+            out.append(cur)
+            continue
+        if _simplify_label(anchor_label) == _simplify_label(next_label):
+            cur = _Seg(start=prev.end, end=cur.end, chord=cur.chord)
+            out.append(cur)
+            continue
+        out.append(_Seg(start=round(prev.end, 3), end=round(cur.start, 3), chord=anchor_label))
+        out.append(cur)
+    return _merge_adjacent_same(out, 0.0)
 
 
 def _enforce_monotone_min_len(segs: list[_Seg]) -> list[_Seg]:
@@ -389,40 +485,16 @@ def build_timing_priority_segments(
     sr: int,
     no_absorb_simplified: Sequence[Any],
     merged_segments: Sequence[Any],
+    anchor_segments: Sequence[Any] | None = None,
     hop_length: int = HOP_LENGTH_DEFAULT,
 ) -> dict[str, Any]:
     """
     no_absorb_simplified / merged_segments: items with .start, .end, .chord or dict keys.
     返回 segments 为 list[dict]（start/end/chord/confidence），供 inference 转为 Segment。
     """
-    segs: list[_Seg] = []
-    for s in no_absorb_simplified:
-        if isinstance(s, dict):
-            chord = str(s.get("chord", "") or "")
-            segs.append(_Seg(start=float(s["start"]), end=float(s["end"]), chord=chord))
-        else:
-            chord = str(getattr(s, "chord", "") or "")
-            segs.append(_Seg(start=float(getattr(s, "start")), end=float(getattr(s, "end")), chord=chord))
-    segs = [s for s in segs if s.end > s.start + 1e-6]
-    segs.sort(key=lambda x: (x.start, x.end))
-    merged: list[_Seg] = []
-    for m in merged_segments:
-        if isinstance(m, dict):
-            merged.append(
-                _Seg(
-                    start=float(m["start"]),
-                    end=float(m["end"]),
-                    chord=str(m.get("chord", "") or ""),
-                )
-            )
-        else:
-            merged.append(
-                _Seg(
-                    start=float(getattr(m, "start")),
-                    end=float(getattr(m, "end")),
-                    chord=str(getattr(m, "chord", "") or ""),
-                )
-            )
+    segs = _parse_segments(no_absorb_simplified)
+    merged = _parse_segments(merged_segments)
+    anchors = _parse_segments(anchor_segments or [])
 
     hop = hop_length
     onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop)
@@ -436,6 +508,8 @@ def build_timing_priority_segments(
 
     absorbed, kept_short, absorbed_log = _event_aware_absorb(segs, merged, onset_norm, chroma, beat_times, sr, hop)
     snapped, snap_log = _snap_boundaries(segs, onset_norm, chroma, beat_times, sr, hop)
+    segs[:] = _seal_short_gaps(segs)
+    segs[:] = _fill_gaps_from_anchor(segs, anchors)
     final_list = _enforce_monotone_min_len(segs)
     segments_payload = [
         {"start": round(s.start, 3), "end": round(s.end, 3), "chord": s.chord, "confidence": 1.0} for s in final_list

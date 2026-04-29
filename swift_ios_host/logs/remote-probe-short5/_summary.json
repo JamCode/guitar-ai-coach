@@ -1,0 +1,14 @@
+[
+  {
+    "chordChartSegments" : 12,
+    "compressed" : "\/Users\/wanghan\/Documents\/guitar-ai-coach\/swift_ios_host\/logs\/remote-probe-short5\/yanyuan-60s-30s-compressed.m4a",
+    "displaySegments" : 12,
+    "http_status" : 200,
+    "input" : "\/Users\/wanghan\/Documents\/guitar-ai-coach\/swift_ios_host\/logs\/fixtures\/yanyuan-60s-30s.mp4",
+    "response" : "\/Users\/wanghan\/Documents\/guitar-ai-coach\/swift_ios_host\/logs\/remote-probe-short5\/yanyuan-60s-30s.json",
+    "segments" : 93,
+    "success" : true,
+    "upload_sec" : 39.232364892959595,
+    "wall_sec" : 40.68717098236084
+  }
+]

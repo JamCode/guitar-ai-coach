@@ -46,8 +46,8 @@ class ChordChartPostprocessTests(unittest.TestCase):
     def test_low_confidence_short_absorbed(self) -> None:
         raw = [
             {"start": 0.0, "end": 2.0, "chord": "A"},
-            {"start": 2.0, "end": 3.5, "chord": "D", "confidence": 0.2},
-            {"start": 3.5, "end": 6.0, "chord": "A"},
+            {"start": 2.0, "end": 3.4, "chord": "D", "confidence": 0.2},
+            {"start": 3.4, "end": 6.0, "chord": "A"},
         ]
         r = build_chord_chart_segments(raw, estimated_key="A")
         d = r["debug"]
@@ -89,7 +89,18 @@ class ChordChartPostprocessTests(unittest.TestCase):
         self.assertNotIn("D", [s["chord"] for s in r["chordChartSegments"]])
         self.assertGreater(r["debug"]["absorbedComplexChordCount"], 0)
 
-    def test_short_plain_chord_under_one_point_five_seconds_is_absorbed(self) -> None:
+    def test_very_short_plain_chord_is_absorbed(self) -> None:
+        raw = [
+            {"start": 0.0, "end": 2.0, "chord": "C"},
+            {"start": 2.0, "end": 2.3, "chord": "Dm"},
+            {"start": 2.3, "end": 6.0, "chord": "C"},
+        ]
+        r = build_chord_chart_segments(raw, estimated_key="C")
+
+        self.assertGreater(r["debug"]["absorbedShortChordCount"], 0)
+        self.assertNotIn("Dm", [s["chord"] for s in r["chordChartSegments"]])
+
+    def test_mid_length_plain_chord_is_kept(self) -> None:
         raw = [
             {"start": 0.0, "end": 2.0, "chord": "C"},
             {"start": 2.0, "end": 3.2, "chord": "Dm"},
@@ -97,8 +108,8 @@ class ChordChartPostprocessTests(unittest.TestCase):
         ]
         r = build_chord_chart_segments(raw, estimated_key="C")
 
-        self.assertGreater(r["debug"]["absorbedShortChordCount"], 0)
-        self.assertNotIn("Dm", [s["chord"] for s in r["chordChartSegments"]])
+        self.assertEqual(r["debug"]["absorbedShortChordCount"], 0)
+        self.assertIn("Dm", [s["chord"] for s in r["chordChartSegments"]])
 
     def test_absorption_disabled_keeps_short_segments(self) -> None:
         raw = [

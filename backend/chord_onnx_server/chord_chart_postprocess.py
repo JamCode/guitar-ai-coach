@@ -9,10 +9,10 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 # 谱面展示偏“弹唱参考”，比逐帧识别更积极地吸收短暂经过/误判片段。
-SHORT_CHORD_ABSORB_SEC = 1.5
-OUT_OF_KEY_ABSORB_SEC = 2.0
-COMPLEX_CHORD_ABSORB_SEC = 2.0
-LOW_CONFIDENCE_ABSORB_SEC = 2.0
+SHORT_CHORD_ABSORB_SEC = 0.45
+OUT_OF_KEY_ABSORB_SEC = 1.35
+COMPLEX_CHORD_ABSORB_SEC = 1.35
+LOW_CONFIDENCE_ABSORB_SEC = 1.5
 ADJACENT_MERGE_TOLERANCE_SEC = 0.2
 
 # 常见大调的主干和声（与产品约定一致，可扩展）

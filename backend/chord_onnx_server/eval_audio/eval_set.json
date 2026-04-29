@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "description": "Fixed local chord-eval set for regression checks.",
+  "items": [
+    {
+      "id": "yanyuan_short_30s",
+      "path": "eval_audio/fixed_clips/yanyuan-short-30s.wav",
+      "kind": "clip",
+      "notes": "Fast smoke clip for iteration."
+    },
+    {
+      "id": "yanyuan_full",
+      "path": "eval_audio/apple_m4a/yanyuan-compressed.m4a",
+      "kind": "full_song",
+      "notes": "Primary full-song regression case."
+    },
+    {
+      "id": "zouzou_full",
+      "path": "eval_audio/apple_m4a/zouzou-compressed.m4a",
+      "kind": "full_song",
+      "notes": "Secondary full-song regression case."
+    }
+  ]
+}

@@ -30,6 +30,10 @@ TARGET_CHANGES_PER_MIN = 35.0
 MAX_CHANGES_PER_MIN = 50.0
 WINDOW_FALLBACK_SEC = 2.2
 MIN_TRANSITION_SEC = 0.45
+WINDOW_COMPACT_REMOVABLE_MIN = 0.5
+SOFT_PASS_MAX_DUR = 0.9
+SOFT_PASS_MAX_CONF = 0.62
+SOFT_PASS_MAX_TRANSITION = 0.45
 
 NOTE_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
 
@@ -392,7 +396,7 @@ def build_playable_compact_segments(
             + 0.20 * (1.0 - it.strong_event)
             - 0.35 * it.transition_importance
         )
-        if removable < 0.54:
+        if removable < WINDOW_COMPACT_REMOVABLE_MIN:
             i += 1
             continue
         tgt, why = _pick_merge_target(items, i)
@@ -485,7 +489,11 @@ def build_playable_compact_segments(
         i = 1
         while i < len(items) - 1 and changes_per_min(items) > target_chord_changes_per_minute:
             it = items[i]
-            if it.dur < 0.75 and it.confidence < 0.55 and it.transition_importance < 0.5:
+            if (
+                it.dur < SOFT_PASS_MAX_DUR
+                and it.confidence < SOFT_PASS_MAX_CONF
+                and it.transition_importance < SOFT_PASS_MAX_TRANSITION
+            ):
                 tgt, why = _pick_merge_target(items, i)
                 if tgt is not None:
                     debug_rows.append(
@@ -526,4 +534,3 @@ def build_playable_compact_segments(
         },
         "debug": {"playableCompactActions": debug_rows},
     }
-

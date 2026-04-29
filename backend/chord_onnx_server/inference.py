@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import uuid
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,38 @@ BINS_PER_OCTAVE = 24
 CHUNK_DURATION_SEC = 20.0
 CHUNK_SAMPLES = int(TARGET_SR * CHUNK_DURATION_SEC)
 CHUNK_FRAMES = int(np.ceil(CHUNK_SAMPLES / HOP_LENGTH))
+FRAME_LABEL_ROOT_CONF_MIN = 0.33
+FRAME_LABEL_ROOT_MARGIN_MIN = 0.025
+FRAME_LABEL_CONF_MIN = 0.50
+FRAME_LABEL_COMPLEX_CONF_MIN = 0.64
+FRAME_LABEL_SLASH_CONF_MIN = 0.70
+FRAME_LABEL_MIN_MEMBER_PROB = 0.42
+STABILIZE_MAJORITY_RADIUS = 3
+STABILIZE_MAX_FLIP_FRAMES = 4
+STABILIZE_MIN_RUN_FRAMES = 5
+STABILIZE_LOW_CONF_MAX = 0.58
+STABILIZE_JOIN_GAP_FRAMES = 3
+STABILIZE_SWITCH_CONFIRM_FRAMES = 3
+STABILIZE_SWITCH_CONFIRM_CONF_MIN = 0.67
+STABILIZE_EDGE_TRIM_MAX_FRAMES = 3
+STABILIZE_EDGE_TRIM_CONF_MAX = 0.62
+STABILIZE_EDGE_KEEP_MIN_FRAMES = 3
+STABILIZE_MAX_PASSES = 4
+DISPLAY_KEEP_DOMINANT7_MIN_SEC = 2.4
+ENABLE_BOUNDARY_DIAGNOSTICS = os.getenv("CHORD_ONNX_BOUNDARY_DIAGNOSTICS", "").strip().lower() in {"1", "true", "yes", "on"}
+
+CHORD_QUALITY_CANDIDATES = (
+    {"suffix": "", "intervals": (0, 4, 7), "penalties": (3,), "kind": "basic"},
+    {"suffix": "m", "intervals": (0, 3, 7), "penalties": (4,), "kind": "basic"},
+    {"suffix": "7", "intervals": (0, 4, 7, 10), "penalties": (3, 11), "kind": "extended"},
+    {"suffix": "m7", "intervals": (0, 3, 7, 10), "penalties": (4, 11), "kind": "extended"},
+    {"suffix": "maj7", "intervals": (0, 4, 7, 11), "penalties": (3, 10), "kind": "color"},
+    {"suffix": "sus4", "intervals": (0, 5, 7), "penalties": (3, 4), "kind": "color"},
+    {"suffix": "sus2", "intervals": (0, 2, 7), "penalties": (3, 4, 5), "kind": "color"},
+    {"suffix": "dim", "intervals": (0, 3, 6), "penalties": (4, 7), "kind": "color"},
+    {"suffix": "aug", "intervals": (0, 4, 8), "penalties": (3, 7), "kind": "color"},
+    {"suffix": "5", "intervals": (0, 7), "penalties": (3, 4), "kind": "basic"},
+)
 
 
 def ffmpeg_available() -> bool:
@@ -202,7 +235,8 @@ class ChordOnnxInferenceService:
             final_segments=simplified_segments,
             radius_sec=1.0,
         )
-        self._log_boundary_frame_diagnostics(boundary_frame_diagnostics)
+        if ENABLE_BOUNDARY_DIAGNOSTICS:
+            self._log_boundary_frame_diagnostics(boundary_frame_diagnostics)
         key_result = self._estimate_key(merged_segments)
         chart_res = build_chord_chart_segments(
             [
@@ -225,6 +259,7 @@ class ChordOnnxInferenceService:
             sr=int(sr),
             no_absorb_simplified=no_absorb_simplified,
             merged_segments=merged_segments,
+            anchor_segments=simplified_segments,
             hop_length=HOP_LENGTH,
         )
         timing_seg_dicts = timing_build["segments"]
@@ -491,25 +526,39 @@ class ChordOnnxInferenceService:
         chroma_2d = self._reshape_to_2d(chord_logits, class_count=12)
 
         frame_count = min(root_2d.shape[0], bass_2d.shape[0], chroma_2d.shape[0])
-        root_idx = np.argmax(root_2d[:frame_count], axis=1)
-        bass_idx = np.argmax(bass_2d[:frame_count], axis=1)
+        root_slice = root_2d[:frame_count]
+        bass_slice = bass_2d[:frame_count]
+        root_idx = np.argmax(root_slice, axis=1)
+        bass_idx = np.argmax(bass_slice, axis=1)
         chroma_prob = 1.0 / (1.0 + np.exp(-chroma_2d[:frame_count]))
+        root_prob = self._softmax(root_slice)
+        bass_prob = self._softmax(bass_slice)
 
-        labels = [self._decode_frame_label(int(r), int(b), chroma_prob[i]) for i, (r, b) in enumerate(zip(root_idx, bass_idx))]
-        root_conf = self._softmax_max(root_2d[:frame_count])
+        predictions = [
+            self._decode_frame_prediction(
+                root=int(root_idx[i]),
+                bass=int(bass_idx[i]),
+                chroma_prob=chroma_prob[i],
+                root_prob=root_prob[i],
+                bass_prob=bass_prob[i],
+            )
+            for i in range(frame_count)
+        ]
+        labels = [pred["label"] for pred in predictions]
+        label_conf = np.asarray([pred["confidence"] for pred in predictions], dtype=np.float32)
+        smoothed_labels = self._stabilize_frame_labels(labels, label_conf)
         frame_diagnostics = [
             {
                 "frameIndex": i,
                 "timeSec": round(i * frame_sec, 6),
                 "rootPrediction": NOTE_NAMES[int(root_idx[i])] if int(root_idx[i]) < 12 else "N",
                 "chordLabel": labels[i],
-                "confidence": round(float(root_conf[i]), 6),
-                # There is currently no frame-level moving-average/median/majority smoothing.
-                "smoothedLabel": labels[i],
+                "confidence": round(float(label_conf[i]), 6),
+                "smoothedLabel": smoothed_labels[i],
             }
             for i in range(frame_count)
         ]
-        segments = self._merge_labels(labels, frame_sec=frame_sec)
+        segments = self._merge_labels(smoothed_labels, frame_sec=frame_sec)
         return {
             "key": "C",
             "segments": segments,
@@ -520,10 +569,16 @@ class ChordOnnxInferenceService:
     def _softmax_max(self, logits: np.ndarray) -> np.ndarray:
         if logits.size == 0:
             return np.zeros((0,), dtype=np.float32)
+        probs = self._softmax(logits)
+        return np.max(probs, axis=1)
+
+    def _softmax(self, logits: np.ndarray) -> np.ndarray:
+        if logits.size == 0:
+            return np.zeros_like(logits, dtype=np.float32)
         stable = logits - np.max(logits, axis=1, keepdims=True)
         exp = np.exp(stable)
-        denom = np.sum(exp, axis=1)
-        return np.max(exp, axis=1) / np.maximum(denom, 1e-12)
+        denom = np.sum(exp, axis=1, keepdims=True)
+        return (exp / np.maximum(denom, 1e-12)).astype(np.float32)
 
     def _reshape_to_2d(self, arr: np.ndarray, class_count: int) -> np.ndarray:
         arr = np.asarray(arr)
@@ -538,46 +593,343 @@ class ChordOnnxInferenceService:
             return np.zeros((0, class_count), dtype=np.float32)
         return flat[: frame_count * class_count].reshape(frame_count, class_count).astype(np.float32)
 
-    def _decode_frame_label(self, root: int, bass: int, chroma_prob: np.ndarray) -> str:
+    def _decode_frame_prediction(
+        self,
+        *,
+        root: int,
+        bass: int,
+        chroma_prob: np.ndarray,
+        root_prob: np.ndarray,
+        bass_prob: np.ndarray,
+    ) -> dict[str, Any]:
         if root >= 12:
-            return "N"
+            return {"label": "N", "confidence": 0.0}
 
-        intervals = {0}
-        for abs_note in np.where(chroma_prob >= 0.5)[0]:
-            intervals.add((int(abs_note) - root) % 12)
+        root_conf = float(root_prob[root])
+        root_margin = self._top1_margin(root_prob)
+        if root_conf < FRAME_LABEL_ROOT_CONF_MIN or root_margin < FRAME_LABEL_ROOT_MARGIN_MIN:
+            return {"label": "N", "confidence": max(0.0, root_conf)}
 
-        suffix = self._classify_suffix(intervals)
+        rel_prob = np.asarray(
+            [float(chroma_prob[(root + interval) % 12]) for interval in range(12)],
+            dtype=np.float32,
+        )
+        candidate = self._select_quality_candidate(rel_prob)
+        if candidate is None:
+            return {"label": "N", "confidence": root_conf}
+
+        quality_conf = float(candidate["score"])
+        combined_conf = (
+            0.38 * root_conf
+            + 0.22 * min(1.0, root_margin / 0.18)
+            + 0.40 * quality_conf
+        )
+        combined_conf = round(float(np.clip(combined_conf, 0.0, 1.0)), 6)
+        min_member_prob = float(candidate["min_member_prob"])
+        required_conf = FRAME_LABEL_COMPLEX_CONF_MIN if candidate["kind"] != "basic" else FRAME_LABEL_CONF_MIN
+        if combined_conf < required_conf or min_member_prob < FRAME_LABEL_MIN_MEMBER_PROB:
+            fallback = self._fallback_basic_candidate(rel_prob)
+            if fallback is None:
+                return {"label": "N", "confidence": combined_conf}
+            candidate = fallback
+            quality_conf = float(candidate["score"])
+            combined_conf = round(
+                float(
+                    np.clip(
+                        0.42 * root_conf
+                        + 0.18 * min(1.0, root_margin / 0.18)
+                        + 0.40 * quality_conf,
+                        0.0,
+                        1.0,
+                    )
+                ),
+                6,
+            )
+            min_member_prob = float(candidate["min_member_prob"])
+            if combined_conf < FRAME_LABEL_CONF_MIN or min_member_prob < FRAME_LABEL_MIN_MEMBER_PROB:
+                return {"label": "N", "confidence": combined_conf}
+
+        suffix = str(candidate["suffix"])
         base = f"{NOTE_NAMES[root]}{suffix}"
         if bass < 12 and bass != root:
-            return f"{base}/{NOTE_NAMES[bass]}"
-        return base
+            bass_conf = float(bass_prob[bass])
+            bass_rel_prob = float(rel_prob[(bass - root) % 12])
+            if (
+                combined_conf >= FRAME_LABEL_SLASH_CONF_MIN
+                and bass_conf >= 0.40
+                and bass_rel_prob >= 0.40
+            ):
+                base = f"{base}/{NOTE_NAMES[bass]}"
+        return {"label": base, "confidence": combined_conf}
 
-    def _classify_suffix(self, intervals: set[int]) -> str:
-        if {0, 4, 7}.issubset(intervals):
-            if 11 in intervals:
-                return "maj7"
-            if 10 in intervals:
-                return "7"
-            if 2 in intervals:
-                return "add9"
-            return ""
-        if {0, 3, 7}.issubset(intervals):
-            if 10 in intervals:
-                return "m7"
-            if 2 in intervals:
-                return "m9"
-            return "m"
-        if {0, 5, 7}.issubset(intervals):
-            return "sus4"
-        if {0, 2, 7}.issubset(intervals):
-            return "sus2"
-        if {0, 3, 6}.issubset(intervals):
-            return "dim"
-        if {0, 4, 8}.issubset(intervals):
-            return "aug"
-        if {0, 7}.issubset(intervals):
-            return "5"
-        return ""
+    def _select_quality_candidate(self, rel_prob: np.ndarray) -> dict[str, Any] | None:
+        candidates = [self._score_quality_candidate(rel_prob, spec) for spec in CHORD_QUALITY_CANDIDATES]
+        if not candidates:
+            return None
+        candidates.sort(key=lambda item: (item["score"], item["min_member_prob"]), reverse=True)
+        best = candidates[0]
+        if best["score"] < 0.44:
+            return None
+        return best
+
+    def _fallback_basic_candidate(self, rel_prob: np.ndarray) -> dict[str, Any] | None:
+        basic = [
+            self._score_quality_candidate(rel_prob, spec)
+            for spec in CHORD_QUALITY_CANDIDATES
+            if spec["kind"] == "basic"
+        ]
+        if not basic:
+            return None
+        basic.sort(key=lambda item: (item["score"], item["min_member_prob"]), reverse=True)
+        return basic[0]
+
+    def _score_quality_candidate(self, rel_prob: np.ndarray, spec: dict[str, Any]) -> dict[str, Any]:
+        members = np.asarray(spec["intervals"], dtype=np.int32)
+        penalties = np.asarray(spec["penalties"], dtype=np.int32)
+        member_prob = rel_prob[members]
+        member_mean = float(np.mean(member_prob))
+        member_min = float(np.min(member_prob))
+        penalty_mean = float(np.mean(rel_prob[penalties])) if penalties.size else 0.0
+        outsider_mask = np.ones(12, dtype=bool)
+        outsider_mask[members] = False
+        outsider_top = float(np.max(rel_prob[outsider_mask])) if np.any(outsider_mask) else 0.0
+        score = (
+            0.62 * member_mean
+            + 0.28 * member_min
+            - 0.18 * penalty_mean
+            - 0.08 * outsider_top
+        )
+        score = float(np.clip(score, 0.0, 1.0))
+        return {
+            "suffix": spec["suffix"],
+            "kind": spec["kind"],
+            "score": score,
+            "min_member_prob": member_min,
+        }
+
+    def _top1_margin(self, prob: np.ndarray) -> float:
+        if prob.size <= 1:
+            return 0.0
+        top2 = np.partition(prob, -2)[-2:]
+        return float(top2[-1] - top2[-2])
+
+    def _stabilize_frame_labels(self, labels: list[str], confidences: np.ndarray) -> list[str]:
+        if not labels:
+            return []
+        smoothed = self._majority_vote_labels(labels, confidences, radius=STABILIZE_MAJORITY_RADIUS)
+        smoothed = self._collapse_short_runs(smoothed, confidences)
+        smoothed = self._confirm_label_switches(smoothed, confidences)
+        smoothed = self._trim_unstable_run_edges(smoothed, confidences)
+        smoothed = self._join_short_gaps(smoothed, confidences)
+        smoothed = self._collapse_short_runs(smoothed, confidences)
+        return smoothed
+
+    def _majority_vote_labels(self, labels: list[str], confidences: np.ndarray, *, radius: int) -> list[str]:
+        if radius <= 0 or len(labels) <= 2:
+            return list(labels)
+        out = list(labels)
+        for idx, current in enumerate(labels):
+            lo = max(0, idx - radius)
+            hi = min(len(labels), idx + radius + 1)
+            weights: dict[str, float] = {}
+            for j in range(lo, hi):
+                label = labels[j]
+                if label == "N":
+                    continue
+                distance_boost = 1.0 / (1.0 + abs(j - idx))
+                weights[label] = weights.get(label, 0.0) + float(confidences[j]) * distance_boost
+            if not weights:
+                continue
+            best_label, best_weight = max(weights.items(), key=lambda item: item[1])
+            current_weight = weights.get(current, 0.0)
+            if current == "N":
+                if best_weight >= 0.95:
+                    out[idx] = best_label
+                continue
+            if best_label != current and best_weight >= current_weight + 0.18:
+                out[idx] = best_label
+        return out
+
+    def _collapse_short_runs(self, labels: list[str], confidences: np.ndarray) -> list[str]:
+        out = list(labels)
+        for _ in range(STABILIZE_MAX_PASSES):
+            runs = self._label_runs(out)
+            changed = False
+            for idx, run in enumerate(runs):
+                run_len = run["end"] - run["start"]
+                run_conf = float(np.mean(confidences[run["start"]:run["end"]]))
+                prev_run = runs[idx - 1] if idx > 0 else None
+                next_run = runs[idx + 1] if idx + 1 < len(runs) else None
+                if (
+                    prev_run is not None
+                    and next_run is not None
+                    and prev_run["label"] == next_run["label"]
+                    and run_len <= STABILIZE_MAX_FLIP_FRAMES
+                    and run_conf <= 0.66
+                ):
+                    for pos in range(run["start"], run["end"]):
+                        out[pos] = prev_run["label"]
+                    changed = True
+                    break
+                if run["label"] == "N":
+                    continue
+                if run_len >= STABILIZE_MIN_RUN_FRAMES or run_conf > STABILIZE_LOW_CONF_MAX:
+                    continue
+                replacement = None
+                if prev_run is not None and next_run is not None:
+                    prev_score = (prev_run["end"] - prev_run["start"], float(np.mean(confidences[prev_run["start"]:prev_run["end"]])))
+                    next_score = (next_run["end"] - next_run["start"], float(np.mean(confidences[next_run["start"]:next_run["end"]])))
+                    replacement = prev_run["label"] if prev_score >= next_score else next_run["label"]
+                elif prev_run is not None:
+                    replacement = prev_run["label"]
+                elif next_run is not None:
+                    replacement = next_run["label"]
+                if replacement is None:
+                    continue
+                for pos in range(run["start"], run["end"]):
+                    out[pos] = replacement
+                changed = True
+                break
+            if not changed:
+                return out
+        return out
+
+    def _join_short_gaps(self, labels: list[str], confidences: np.ndarray) -> list[str]:
+        out = list(labels)
+        for _ in range(STABILIZE_MAX_PASSES):
+            runs = self._label_runs(out)
+            changed = False
+            for idx, run in enumerate(runs):
+                if run["label"] != "N":
+                    continue
+                prev_run = runs[idx - 1] if idx > 0 else None
+                next_run = runs[idx + 1] if idx + 1 < len(runs) else None
+                if prev_run is None or next_run is None or prev_run["label"] != next_run["label"]:
+                    continue
+                run_len = run["end"] - run["start"]
+                run_conf = float(np.mean(confidences[run["start"]:run["end"]]))
+                if run_len > STABILIZE_JOIN_GAP_FRAMES or run_conf > 0.62:
+                    continue
+                for pos in range(run["start"], run["end"]):
+                    out[pos] = prev_run["label"]
+                changed = True
+                break
+            if not changed:
+                return out
+        return out
+
+    def _confirm_label_switches(self, labels: list[str], confidences: np.ndarray) -> list[str]:
+        out = list(labels)
+        if len(out) <= 1:
+            return out
+        runs = self._label_runs(out)
+        for idx, run in enumerate(runs):
+            if idx == 0 or run["label"] == "N":
+                continue
+            prev_run = runs[idx - 1]
+            if prev_run["label"] == "N" or prev_run["label"] == run["label"]:
+                continue
+            confirm_at = self._find_switch_confirmation_index(run, confidences)
+            if confirm_at is None:
+                continue
+            for pos in range(run["start"], confirm_at):
+                out[pos] = prev_run["label"]
+        return out
+
+    def _find_switch_confirmation_index(
+        self,
+        run: dict[str, Any],
+        confidences: np.ndarray,
+    ) -> int | None:
+        run_start = int(run["start"])
+        run_end = int(run["end"])
+        run_len = run_end - run_start
+        if run_len <= STABILIZE_SWITCH_CONFIRM_FRAMES:
+            return None
+        streak = 0
+        for pos in range(run_start, run_end):
+            if float(confidences[pos]) >= STABILIZE_SWITCH_CONFIRM_CONF_MIN:
+                streak += 1
+            else:
+                streak = 0
+            if streak >= STABILIZE_SWITCH_CONFIRM_FRAMES:
+                confirm_at = pos - STABILIZE_SWITCH_CONFIRM_FRAMES + 1
+                if confirm_at > run_start:
+                    return confirm_at
+                return None
+        max_delay = max(0, run_len - STABILIZE_EDGE_KEEP_MIN_FRAMES)
+        if max_delay <= 0:
+            return None
+        delay = min(max_delay, STABILIZE_EDGE_TRIM_MAX_FRAMES)
+        return run_start + delay if delay > 0 else None
+
+    def _trim_unstable_run_edges(self, labels: list[str], confidences: np.ndarray) -> list[str]:
+        out = list(labels)
+        for _ in range(STABILIZE_MAX_PASSES):
+            runs = self._label_runs(out)
+            changed = False
+            for idx, run in enumerate(runs):
+                if run["label"] == "N":
+                    continue
+                prev_run = runs[idx - 1] if idx > 0 else None
+                next_run = runs[idx + 1] if idx + 1 < len(runs) else None
+                run_len = run["end"] - run["start"]
+                if run_len <= STABILIZE_EDGE_KEEP_MIN_FRAMES:
+                    continue
+
+                max_start_trim = min(
+                    STABILIZE_EDGE_TRIM_MAX_FRAMES,
+                    max(0, run_len - STABILIZE_EDGE_KEEP_MIN_FRAMES),
+                )
+                trim_start = 0
+                if prev_run is not None and prev_run["label"] != run["label"]:
+                    while trim_start < max_start_trim:
+                        pos = run["start"] + trim_start
+                        if float(confidences[pos]) > STABILIZE_EDGE_TRIM_CONF_MAX:
+                            break
+                        trim_start += 1
+
+                max_end_trim = min(
+                    STABILIZE_EDGE_TRIM_MAX_FRAMES,
+                    max(0, run_len - STABILIZE_EDGE_KEEP_MIN_FRAMES - trim_start),
+                )
+                trim_end = 0
+                if next_run is not None and next_run["label"] != run["label"]:
+                    while trim_end < max_end_trim:
+                        pos = run["end"] - 1 - trim_end
+                        if float(confidences[pos]) > STABILIZE_EDGE_TRIM_CONF_MAX:
+                            break
+                        trim_end += 1
+
+                if trim_start == 0 and trim_end == 0:
+                    continue
+
+                if prev_run is not None and trim_start > 0:
+                    for pos in range(run["start"], run["start"] + trim_start):
+                        out[pos] = prev_run["label"]
+                if next_run is not None and trim_end > 0:
+                    for pos in range(run["end"] - trim_end, run["end"]):
+                        out[pos] = next_run["label"]
+                changed = True
+                break
+            if not changed:
+                return out
+        return out
+
+    def _label_runs(self, labels: list[str]) -> list[dict[str, Any]]:
+        if not labels:
+            return []
+        runs: list[dict[str, Any]] = []
+        start = 0
+        current = labels[0]
+        for idx in range(1, len(labels)):
+            if labels[idx] == current:
+                continue
+            runs.append({"label": current, "start": start, "end": idx})
+            current = labels[idx]
+            start = idx
+        runs.append({"label": current, "start": start, "end": len(labels)})
+        return runs
 
     def _merge_labels(self, labels: list[str], frame_sec: float) -> list[Segment]:
         if not labels:
@@ -834,27 +1186,30 @@ class ChordOnnxInferenceService:
                 Segment(
                     start=seg.start,
                     end=seg.end,
-                    chord=self._simplify_chord(seg.chord),
+                    chord=self._simplify_display_chord(seg),
                 )
             )
         return self._merge_adjacent_segments(mapped, tolerance_sec=0.2)
 
-    def _simplify_chord(self, chord: str) -> str:
-        base = chord.split("/", 1)[0].strip()
+    def _simplify_display_chord(self, seg: Segment) -> str:
+        base = seg.chord.split("/", 1)[0].strip()
         if not base:
-            return chord
+            return seg.chord
 
         parsed = self._parse_chord(base)
         if parsed is None:
             return base
         root_pc, quality = parsed
         root = NOTE_NAMES[root_pc]
+        duration = max(0.0, seg.end - seg.start)
 
         # Player timeline and reference chart both favor easy-to-play reference chords.
         if quality in {"minor", "m7", "minor_extension"}:
             return f"{root}m"
         if quality == "dominant7":
-            return f"{root}7"
+            if duration >= DISPLAY_KEEP_DOMINANT7_MIN_SEC:
+                return f"{root}7"
+            return root
         return root
 
     def _estimate_key(self, segments: list[Segment]) -> dict[str, Any]:
