@@ -24,9 +24,6 @@
 # 本脚本可在 Debug 真机安装时注入 `LOCAL_IAP_BYPASS` 编译标记，仅用于本地开发排查。
 # 该标记默认不会用于 Release/Archive/TestFlight/App Store。
 #
-# OnnxRuntime 为本地 Swift 包（LocalPackages/…），与模拟器共用；bootstrap 默认不会删已下载目录（/--force 除外），见 LocalPackages/README.md
-# 不能常连 GitHub 时用 U 盘 + --from-dir，见 bootstrap --help
-#
 # Team ID 在哪里看（10 位字母数字）：
 #   • Xcode → Settings（或 Preferences）→ Accounts → 选中左侧 Apple ID → 右侧 Team 名称后面括号里
 #   • 或浏览器打开 https://developer.apple.com/account → Membership → Team ID
@@ -181,15 +178,6 @@ if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
   echo "或 https://developer.apple.com/account → Membership。" >&2
   exit 1
 fi
-
-if [[ ! -f "${HOST_DIR}/LocalPackages/onnxruntime-swift-package-manager/Package.swift" ]]; then
-  echo "缺少本地 Onnx Swift 包。访问 GitHub 不稳定时，请从有网环境拷贝目录后：" >&2
-  echo "  cd \"${HOST_DIR}\" && ./bootstrap-onnx-local-package.sh --from-dir <目录>" >&2
-  echo "说明:  ./bootstrap-onnx-local-package.sh --help" >&2
-  exit 1
-fi
-# shellcheck disable=SC1091
-source "${HOST_DIR}/scripts/onnx-local-env.sh"
 
 DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostDeviceBuild-${USER}}"
 echo "==> xcodebuild（${CONFIGURATION} / generic iOS）→ ${DERIVED}"

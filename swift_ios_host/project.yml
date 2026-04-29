@@ -7,8 +7,6 @@ options:
 packages:
   GuitarAICoach:
     path: ../swift_app
-  OnnxRuntime:
-    path: LocalPackages/onnxruntime-swift-package-manager
 targets:
   SwiftEarHost:
     type: application
@@ -16,7 +14,6 @@ targets:
     sources:
       - Sources
     resources:
-      - Sources/Transcription/Resources
       - Sources/Resources/Localization
     settings:
       base:
@@ -53,8 +50,6 @@ targets:
         product: Practice
       - package: GuitarAICoach
         product: Metronome
-      - package: OnnxRuntime
-        product: onnxruntime
 
   SwiftEarHostTests:
     type: bundle.unit-test
@@ -67,3 +62,14 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.wanghan.guitarhelper.tests
     dependencies:
       - target: SwiftEarHost
+
+schemes:
+  SwiftEarHost:
+    build:
+      targets:
+        SwiftEarHost: all
+    test:
+      targets:
+        - SwiftEarHostTests
+    run:
+      config: Debug

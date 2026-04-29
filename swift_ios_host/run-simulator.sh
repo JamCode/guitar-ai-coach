@@ -73,14 +73,6 @@ fi
 
 mkdir -p "${SPM_CLONES_DIR}"
 
-if [[ ! -f "${HOST_DIR}/LocalPackages/onnxruntime-swift-package-manager/Package.swift" ]]; then
-  echo "缺少本地 Onnx Swift 包目录（不依赖 Xcode 每次访问 GitHub）。" >&2
-  echo "请执行：cd \"${HOST_DIR}\" && ./bootstrap-onnx-local-package.sh --from-dir <目录>" >&2
-  exit 1
-fi
-# shellcheck disable=SC1091
-source "${HOST_DIR}/scripts/onnx-local-env.sh"
-
 if [[ ! -f "${STOREKIT_CONFIG}" ]]; then
   echo "❌ StoreKitConfig 不存在：${STOREKIT_CONFIG}" >&2
   echo "请创建并保存 StoreKit 配置文件后重试。" >&2
