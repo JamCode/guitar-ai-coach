@@ -108,48 +108,6 @@ struct RemoteServerTiming: Decodable, Sendable {
     }
 }
 
-struct RemoteChordRecognitionResult: Decodable {
-    let success: Bool
-    let duration: Double?
-    let key: String?
-    let segments: [RemoteChordSegment]
-    let displaySegments: [RemoteChordSegment]
-    let simplifiedDisplaySegments: [RemoteChordSegment]?
-    let chordChartSegments: [RemoteChordSegment]?
-    let timing: RemoteServerTiming?
-
-    private enum CodingKeys: String, CodingKey {
-        case success
-        case duration
-        case key
-        case segments
-        case displaySegments
-        case simplifiedDisplaySegments
-        case chordChartSegments
-        case timing
-    }
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        success = try c.decodeIfPresent(Bool.self, forKey: .success) ?? false
-        duration = try c.decodeIfPresent(Double.self, forKey: .duration)
-        key = try c.decodeIfPresent(String.self, forKey: .key)
-        segments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .segments) ?? []
-        displaySegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .displaySegments) ?? []
-        simplifiedDisplaySegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .simplifiedDisplaySegments)
-        chordChartSegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .chordChartSegments)
-        timing = try c.decodeIfPresent(RemoteServerTiming.self, forKey: .timing)
-    }
-}
-
-struct RemoteChordTranscribeOutcome: Sendable {
-    let result: RemoteChordRecognitionResult
-    let originalMediaBytes: Int?
-    let uploadFileBytes: Int
-    let uploadSeconds: Double?
-    let clientTotalSeconds: Double
-}
-
 struct RemoteChordSegment: Decodable {
     let start: Double
     let end: Double
@@ -162,6 +120,108 @@ struct RemoteChordSegment: Decodable {
             chord: chord
         )
     }
+}
+
+private struct RemoteChordTimingVariantBundleDTO: Decodable {
+    let displaySegments: [RemoteChordSegment]
+    let simplifiedDisplaySegments: [RemoteChordSegment]
+    let chordChartSegments: [RemoteChordSegment]
+
+    func toModel() -> TranscriptionTimingVariantBundle {
+        TranscriptionTimingVariantBundle(
+            displaySegments: displaySegments.map { $0.toTranscriptionSegment() },
+            simplifiedDisplaySegments: simplifiedDisplaySegments.map { $0.toTranscriptionSegment() },
+            chordChartSegments: chordChartSegments.map { $0.toTranscriptionSegment() }
+        )
+    }
+}
+
+private struct RemoteChordTimingVariantsDTO: Decodable {
+    let normal: RemoteChordTimingVariantBundleDTO
+    let noAbsorb: RemoteChordTimingVariantBundleDTO
+
+    func toModel() -> TranscriptionTimingVariants {
+        TranscriptionTimingVariants(normal: normal.toModel(), noAbsorb: noAbsorb.toModel())
+    }
+}
+
+private struct RemoteChordTimingVariantStatsRowDTO: Decodable {
+    let displayCount: Int
+    let simplifiedCount: Int
+    let chordChartCount: Int
+
+    func toModel() -> TranscriptionTimingVariantStatsRow {
+        TranscriptionTimingVariantStatsRow(
+            displayCount: displayCount,
+            simplifiedCount: simplifiedCount,
+            chordChartCount: chordChartCount
+        )
+    }
+}
+
+private struct RemoteChordTimingVariantStatsDTO: Decodable {
+    let normal: RemoteChordTimingVariantStatsRowDTO
+    let noAbsorb: RemoteChordTimingVariantStatsRowDTO
+
+    func toModel() -> TranscriptionTimingVariantStats {
+        TranscriptionTimingVariantStats(normal: normal.toModel(), noAbsorb: noAbsorb.toModel())
+    }
+}
+
+struct RemoteChordRecognitionResult: Decodable {
+    let success: Bool
+    let duration: Double?
+    let key: String?
+    let segments: [RemoteChordSegment]
+    let displaySegments: [RemoteChordSegment]
+    let simplifiedDisplaySegments: [RemoteChordSegment]?
+    let chordChartSegments: [RemoteChordSegment]?
+    let timingVariants: TranscriptionTimingVariants?
+    let timingVariantStats: TranscriptionTimingVariantStats?
+    let timing: RemoteServerTiming?
+
+    private enum CodingKeys: String, CodingKey {
+        case success
+        case duration
+        case key
+        case segments
+        case displaySegments
+        case simplifiedDisplaySegments
+        case chordChartSegments
+        case timingVariants
+        case timingVariantStats
+        case timing
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        success = try c.decodeIfPresent(Bool.self, forKey: .success) ?? false
+        duration = try c.decodeIfPresent(Double.self, forKey: .duration)
+        key = try c.decodeIfPresent(String.self, forKey: .key)
+        segments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .segments) ?? []
+        displaySegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .displaySegments) ?? []
+        simplifiedDisplaySegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .simplifiedDisplaySegments)
+        chordChartSegments = try c.decodeIfPresent([RemoteChordSegment].self, forKey: .chordChartSegments)
+        if let dto = try c.decodeIfPresent(RemoteChordTimingVariantsDTO.self, forKey: .timingVariants) {
+            timingVariants = dto.toModel()
+        } else {
+            timingVariants = nil
+        }
+        if let dto = try c.decodeIfPresent(RemoteChordTimingVariantStatsDTO.self, forKey: .timingVariantStats) {
+            timingVariantStats = dto.toModel()
+        } else {
+            timingVariantStats = nil
+        }
+        timing = try c.decodeIfPresent(RemoteServerTiming.self, forKey: .timing)
+    }
+}
+
+struct RemoteChordTranscribeOutcome: Sendable {
+    let result: RemoteChordRecognitionResult
+    let originalMediaBytes: Int?
+    let uploadFileBytes: Int
+    let uploadSeconds: Double?
+    let clientTotalSeconds: Double
 }
 
 enum RemoteChordRecognitionService {

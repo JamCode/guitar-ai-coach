@@ -166,7 +166,13 @@ class ChordOnnxInferenceService:
 
         merged_segments = self._merge_adjacent_segments(all_segments, tolerance_sec=HOP_LENGTH / TARGET_SR)
         display_segments, display_stats = self._make_display_segments(merged_segments)
+        no_absorb_display, _ = self._make_display_segments(
+            merged_segments,
+            short_absorb=False,
+            boundary_refinement=False,
+        )
         simplified_segments = self._make_simplified_segments(display_segments)
+        no_absorb_simplified = self._make_simplified_segments(no_absorb_display)
         key_result = self._estimate_key(merged_segments)
         chart_res = build_chord_chart_segments(
             [
@@ -174,11 +180,47 @@ class ChordOnnxInferenceService:
                 for s in simplified_segments
             ],
             estimated_key=key_result.get("key"),
+            enable_segment_absorption=True,
+        )
+        chart_no_absorb = build_chord_chart_segments(
+            [
+                {"start": s.start, "end": s.end, "chord": s.chord, "confidence": 1.0}
+                for s in no_absorb_simplified
+            ],
+            estimated_key=key_result.get("key"),
+            enable_segment_absorption=False,
         )
         chart_proc_debug = dict(chart_res["debug"])
         chart_proc_debug["chordChartSourceSegmentCount"] = chart_proc_debug.pop(
             "rawSegmentCount", len(simplified_segments)
         )
+
+        normal_display_payload = [s.__dict__ for s in simplified_segments]
+        no_absorb_display_payload = [s.__dict__ for s in no_absorb_simplified]
+        timing_variants: dict[str, Any] = {
+            "normal": {
+                "displaySegments": normal_display_payload,
+                "simplifiedDisplaySegments": normal_display_payload,
+                "chordChartSegments": chart_res["chordChartSegments"],
+            },
+            "noAbsorb": {
+                "displaySegments": no_absorb_display_payload,
+                "simplifiedDisplaySegments": no_absorb_display_payload,
+                "chordChartSegments": chart_no_absorb["chordChartSegments"],
+            },
+        }
+        timing_variant_stats: dict[str, Any] = {
+            "normal": {
+                "displayCount": len(normal_display_payload),
+                "simplifiedCount": len(normal_display_payload),
+                "chordChartCount": len(chart_res["chordChartSegments"]),
+            },
+            "noAbsorb": {
+                "displayCount": len(no_absorb_display_payload),
+                "simplifiedCount": len(no_absorb_display_payload),
+                "chordChartCount": len(chart_no_absorb["chordChartSegments"]),
+            },
+        }
 
         return {
             "duration": round(duration, 3),
@@ -187,6 +229,8 @@ class ChordOnnxInferenceService:
             "displaySegments": [s.__dict__ for s in simplified_segments],
             "simplifiedDisplaySegments": [s.__dict__ for s in simplified_segments],
             "chordChartSegments": chart_res["chordChartSegments"],
+            "timingVariants": timing_variants,
+            "timingVariantStats": timing_variant_stats,
             "debug": {
                 "duration": round(duration, 3),
                 "chunkDuration": CHUNK_DURATION_SEC,
@@ -419,7 +463,13 @@ class ChordOnnxInferenceService:
                 merged.append(seg)
         return merged
 
-    def _make_display_segments(self, raw_segments: list[Segment]) -> tuple[list[Segment], dict[str, int]]:
+    def _make_display_segments(
+        self,
+        raw_segments: list[Segment],
+        *,
+        short_absorb: bool = True,
+        boundary_refinement: bool = True,
+    ) -> tuple[list[Segment], dict[str, int]]:
         min_display_duration = 0.5
         if not raw_segments:
             return [], {"removed_short_count": 0, "same_second_conflict_count": 0}
@@ -432,51 +482,52 @@ class ChordOnnxInferenceService:
         working = self._merge_adjacent_segments(working, tolerance_sec=0.2)
 
         removed_short = 0
-        changed = True
-        while changed and working:
-            changed = False
-            i = 0
-            while i < len(working):
-                seg = working[i]
-                dur = seg.end - seg.start
-                if dur >= min_display_duration:
-                    i += 1
-                    continue
+        if short_absorb:
+            changed = True
+            while changed and working:
+                changed = False
+                i = 0
+                while i < len(working):
+                    seg = working[i]
+                    dur = seg.end - seg.start
+                    if dur >= min_display_duration:
+                        i += 1
+                        continue
 
-                prev_idx = i - 1 if i > 0 else None
-                next_idx = i + 1 if i + 1 < len(working) else None
-                if prev_idx is None and next_idx is None:
-                    i += 1
-                    continue
+                    prev_idx = i - 1 if i > 0 else None
+                    next_idx = i + 1 if i + 1 < len(working) else None
+                    if prev_idx is None and next_idx is None:
+                        i += 1
+                        continue
 
-                def merge_pair(a: Segment, b: Segment) -> Segment:
-                    keep = a.chord if (a.end - a.start) >= (b.end - b.start) else b.chord
-                    return Segment(start=min(a.start, b.start), end=max(a.end, b.end), chord=keep)
+                    def merge_pair(a: Segment, b: Segment) -> Segment:
+                        keep = a.chord if (a.end - a.start) >= (b.end - b.start) else b.chord
+                        return Segment(start=min(a.start, b.start), end=max(a.end, b.end), chord=keep)
 
-                target = None
-                if prev_idx is not None and working[prev_idx].chord == seg.chord:
-                    target = prev_idx
-                elif next_idx is not None and working[next_idx].chord == seg.chord:
-                    target = next_idx
-                elif prev_idx is not None and next_idx is not None:
-                    target = prev_idx if (working[prev_idx].end - working[prev_idx].start) >= (working[next_idx].end - working[next_idx].start) else next_idx
-                else:
-                    target = prev_idx if prev_idx is not None else next_idx
+                    target = None
+                    if prev_idx is not None and working[prev_idx].chord == seg.chord:
+                        target = prev_idx
+                    elif next_idx is not None and working[next_idx].chord == seg.chord:
+                        target = next_idx
+                    elif prev_idx is not None and next_idx is not None:
+                        target = prev_idx if (working[prev_idx].end - working[prev_idx].start) >= (working[next_idx].end - working[next_idx].start) else next_idx
+                    else:
+                        target = prev_idx if prev_idx is not None else next_idx
 
-                if target is None:
-                    i += 1
-                    continue
+                    if target is None:
+                        i += 1
+                        continue
 
-                first = min(i, target)
-                second = max(i, target)
-                merged = merge_pair(working[i], working[target])
-                working[second] = merged
-                working.pop(first)
-                removed_short += 1
-                changed = True
-                i = max(0, first - 1)
+                    first = min(i, target)
+                    second = max(i, target)
+                    merged = merge_pair(working[i], working[target])
+                    working[second] = merged
+                    working.pop(first)
+                    removed_short += 1
+                    changed = True
+                    i = max(0, first - 1)
 
-            working = self._merge_adjacent_segments(working, tolerance_sec=0.2)
+                working = self._merge_adjacent_segments(working, tolerance_sec=0.2)
 
         # same-second conflict resolution
         by_second: dict[int, list[Segment]] = {}
@@ -498,6 +549,15 @@ class ChordOnnxInferenceService:
 
         resolved = sorted(resolved, key=lambda s: (s.start, s.end))
         resolved = self._merge_adjacent_segments(resolved, tolerance_sec=0.2)
+        if not boundary_refinement:
+            rounded = [
+                Segment(start=round(seg.start, 3), end=round(seg.end, 3), chord=seg.chord) for seg in resolved
+            ]
+            return rounded, {
+                "removed_short_count": removed_short,
+                "same_second_conflict_count": same_second_conflicts,
+            }
+
         # enforce monotonic and positive duration
         normalized: list[Segment] = []
         for seg in resolved:

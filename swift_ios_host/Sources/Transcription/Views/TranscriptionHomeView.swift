@@ -525,6 +525,8 @@ final class TranscriptionHomeViewModel: ObservableObject {
             segments: rawSegments,
             displaySegments: displaySegments,
             chordChartSegments: resolvedChartSegments,
+            timingVariants: remote.timingVariants,
+            timingVariantStats: remote.timingVariantStats,
             backend: "remote",
             waveform: []
         )

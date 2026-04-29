@@ -197,6 +197,8 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
             "displaySegments": result.get("displaySegments", []),
             "simplifiedDisplaySegments": result.get("simplifiedDisplaySegments", []),
             "chordChartSegments": result.get("chordChartSegments", []),
+            "timingVariants": result.get("timingVariants"),
+            "timingVariantStats": result.get("timingVariantStats"),
             "debug": result.get("debug", {}),
             "timing": {
                 "receive_sec": receive_sec,
@@ -205,6 +207,23 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
                 "total_sec": elapsed,
             },
         }
+        tv_stats = result.get("timingVariantStats") or {}
+        n_stats = tv_stats.get("normal") or {}
+        na_stats = tv_stats.get("noAbsorb") or {}
+        logger.info(
+            "[timing_variants] normal display=%s simplified=%s chart=%s | "
+            "noAbsorb display=%s simplified=%s chart=%s | "
+            "delta display=%s simplified=%s chart=%s",
+            n_stats.get("displayCount"),
+            n_stats.get("simplifiedCount"),
+            n_stats.get("chordChartCount"),
+            na_stats.get("displayCount"),
+            na_stats.get("simplifiedCount"),
+            na_stats.get("chordChartCount"),
+            (na_stats.get("displayCount") or 0) - (n_stats.get("displayCount") or 0),
+            (na_stats.get("simplifiedCount") or 0) - (n_stats.get("simplifiedCount") or 0),
+            (na_stats.get("chordChartCount") or 0) - (n_stats.get("chordChartCount") or 0),
+        )
         report_path = OUTPUT_DIR / f"{req_id}.json"
         with report_path.open("w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)

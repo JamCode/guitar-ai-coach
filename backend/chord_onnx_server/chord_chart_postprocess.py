@@ -308,11 +308,16 @@ def build_chord_chart_text(chord_names: list[str]) -> str:
 def build_chord_chart_segments(
     raw_segments: list[Mapping[str, Any] | _Seg] | list[Any],
     estimated_key: str | None = None,
+    *,
+    enable_segment_absorption: bool = True,
 ) -> dict[str, Any]:
     """
     从时间轴 raw segments 构建 chord chart 用片段与文字。
 
     每个输入 segment 建议包含: start, end, chord；可选 confidence（缺省 1.0）。
+
+    enable_segment_absorption:
+      为 False 时跳过 B/D/C/E 段吸收（短和弦、离调、复杂、低置信），仍保留和弦名简化与相邻同和弦合并。
 
     返回:
       - chordChartSegments: list[dict]（含 confidence）
@@ -357,9 +362,18 @@ def build_chord_chart_segments(
     working = _merge_adjacent_same(segs, ADJACENT_MERGE_TOLERANCE_SEC)
     core = _core_set_for_key(estimated_key)
 
-    absorb_stats = _run_absorption_loop(working, core)
-    # F. 再合并
-    final = _merge_adjacent_same(working, 0.0)
+    if enable_segment_absorption:
+        absorb_stats = _run_absorption_loop(working, core)
+        # F. 再合并
+        final = _merge_adjacent_same(working, 0.0)
+    else:
+        absorb_stats = {
+            "absorbedShortChordCount": 0,
+            "absorbedOutOfKeyCount": 0,
+            "absorbedComplexChordCount": 0,
+            "absorbedLowConfidenceCount": 0,
+        }
+        final = _merge_adjacent_same(working, 0.0)
     names = [s.chord for s in final]
     text = build_chord_chart_text(names)
     out_segs = _to_output_dicts(final)

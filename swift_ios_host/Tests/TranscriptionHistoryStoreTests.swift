@@ -116,6 +116,8 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
             segments: list[0].segments,
             displaySegments: list[0].displaySegments,
             chordChartSegments: list[0].chordChartSegments,
+            timingVariants: list[0].timingVariants,
+            timingVariantStats: list[0].timingVariantStats,
             backend: list[0].backend,
             waveform: list[0].waveform
         )

@@ -11,6 +11,38 @@ struct TranscriptionSegment: Codable, Equatable, Hashable {
     let chord: String
 }
 
+/// 与后端 `timingVariants.*` 对齐的一组展示用时间轴与和弦谱片段。
+struct TranscriptionTimingVariantBundle: Codable, Equatable, Hashable {
+    let displaySegments: [TranscriptionSegment]
+    let simplifiedDisplaySegments: [TranscriptionSegment]
+    let chordChartSegments: [TranscriptionSegment]
+}
+
+/// 后端一次返回的 normal / noAbsorb 两套边界结果，用于调试对比。
+struct TranscriptionTimingVariants: Codable, Equatable, Hashable {
+    let normal: TranscriptionTimingVariantBundle
+    let noAbsorb: TranscriptionTimingVariantBundle
+}
+
+struct TranscriptionTimingVariantStatsRow: Codable, Equatable, Hashable {
+    let displayCount: Int
+    let simplifiedCount: Int
+    let chordChartCount: Int
+}
+
+struct TranscriptionTimingVariantStats: Codable, Equatable, Hashable {
+    let normal: TranscriptionTimingVariantStatsRow
+    let noAbsorb: TranscriptionTimingVariantStatsRow
+}
+
+/// 扒歌结果页调试：在默认边界与后端 `noAbsorb` 变体之间切换（不影响音频播放）。
+enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Equatable {
+    case normal
+    case noAbsorbRawEdges
+
+    var id: String { rawValue }
+}
+
 enum TranscriptionProgressStage: String, Equatable, Sendable {
     case preparing
     case uploading
@@ -108,6 +140,10 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
     let displaySegments: [TranscriptionSegment]
     /// User-facing segments for full chord chart.
     let chordChartSegments: [TranscriptionSegment]
+    /// 远程 ONNX 返回的 A/B 边界变体；旧数据或本地识别为 nil。
+    let timingVariants: TranscriptionTimingVariants?
+    /// 与 `timingVariants` 配套的计数统计（可选持久化便于排查）。
+    let timingVariantStats: TranscriptionTimingVariantStats?
     /// Recognition backend source marker. e.g. "remote", "local".
     let backend: String
     let waveform: [Double]
@@ -129,6 +165,8 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         case segments
         case displaySegments
         case chordChartSegments
+        case timingVariants
+        case timingVariantStats
         case backend
         case waveform
     }
@@ -145,6 +183,8 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         segments: [TranscriptionSegment],
         displaySegments: [TranscriptionSegment],
         chordChartSegments: [TranscriptionSegment],
+        timingVariants: TranscriptionTimingVariants? = nil,
+        timingVariantStats: TranscriptionTimingVariantStats? = nil,
         backend: String,
         waveform: [Double]
     ) {
@@ -159,6 +199,8 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         self.segments = segments
         self.displaySegments = displaySegments
         self.chordChartSegments = chordChartSegments
+        self.timingVariants = timingVariants
+        self.timingVariantStats = timingVariantStats
         self.backend = backend
         self.waveform = waveform
     }
@@ -177,6 +219,8 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         let display = try c.decodeIfPresent([TranscriptionSegment].self, forKey: .displaySegments) ?? segments
         displaySegments = display
         chordChartSegments = try c.decodeIfPresent([TranscriptionSegment].self, forKey: .chordChartSegments) ?? display
+        timingVariants = try c.decodeIfPresent(TranscriptionTimingVariants.self, forKey: .timingVariants)
+        timingVariantStats = try c.decodeIfPresent(TranscriptionTimingVariantStats.self, forKey: .timingVariantStats)
         backend = try c.decodeIfPresent(String.self, forKey: .backend) ?? "local"
         waveform = try c.decodeIfPresent([Double].self, forKey: .waveform) ?? []
     }

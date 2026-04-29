@@ -25,6 +25,12 @@ enum PlaybackSyncResolver {
 }
 
 enum TranscriptionChordResolver {
+    /// 结果页时间轴后处理：默认与历史行为一致；`backendNoShortAbsorptionEdges` 用于已关闭短段吸收的后端变体，避免客户端再次吸收。
+    enum DisplayTimelineSanitizer: Equatable {
+        case fullClientPipeline
+        case backendNoShortAbsorptionEdges
+    }
+
     struct DisplayTuning {
         static let minDisplayChordDurationMs = 500
         static let sameSecondConflictWindowMs = 1000
@@ -41,7 +47,14 @@ enum TranscriptionChordResolver {
         return filtered.isEmpty ? sorted : filtered
     }
 
-    static func makeDisplayChordSegments(rawSegments: [TranscriptionSegment]) -> [TranscriptionSegment] {
+    static func makeDisplayChordSegments(
+        rawSegments: [TranscriptionSegment],
+        sanitizer: DisplayTimelineSanitizer = .fullClientPipeline
+    ) -> [TranscriptionSegment] {
+        if sanitizer == .backendNoShortAbsorptionEdges {
+            return mergeAdjacentSameChords(preparedSegments(from: rawSegments))
+        }
+
         let sorted = rawSegments.sorted { lhs, rhs in
             if lhs.startMs == rhs.startMs { return lhs.endMs < rhs.endMs }
             return lhs.startMs < rhs.startMs
@@ -138,7 +151,7 @@ enum TranscriptionChordResolver {
         !ChordFingeringResolver.isInvalidChordName(chord)
     }
 
-    private static func mergeAdjacentSameChords(_ segments: [TranscriptionSegment]) -> [TranscriptionSegment] {
+    static func mergeAdjacentSameChords(_ segments: [TranscriptionSegment]) -> [TranscriptionSegment] {
         guard !segments.isEmpty else { return [] }
         var merged: [TranscriptionSegment] = [segments[0]]
         for seg in segments.dropFirst() {
@@ -273,9 +286,16 @@ struct TranscriptionResultView: View {
         _vm = StateObject(wrappedValue: TranscriptionPlayerViewModel(entry: entry))
     }
 
+    private var preparedFullChordChartSegments: [TranscriptionSegment] {
+        let raw = vm.activeChordChartSource(from: entry)
+        let sanitizer = vm.displaySanitizer(for: entry)
+        return TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: raw, sanitizer: sanitizer)
+    }
+
     var body: some View {
-        let baseSegments = entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
-        let prepared = TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: baseSegments)
+        let timelineRaw = vm.activeTimelineSegments(from: entry)
+        let sanitizer = vm.displaySanitizer(for: entry)
+        let prepared = TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: timelineRaw, sanitizer: sanitizer)
         let currentIndex = PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: prepared)
         let currentSegment = TranscriptionChordResolver.nearestValidSegment(at: vm.currentTimeMs, in: prepared)
         let upcomingSegments = PlaybackSyncResolver.upcomingSegments(for: vm.currentTimeMs, segments: prepared, limit: 3)
@@ -307,6 +327,29 @@ struct TranscriptionResultView: View {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .stroke(SwiftAppTheme.line, lineWidth: 1)
                     )
+
+                #if DEBUG
+                if entry.timingVariants != nil {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("边界模式")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                        Picker(
+                            "边界模式",
+                            selection: Binding(
+                                get: { vm.chordBoundaryDebugMode },
+                                set: { vm.chordBoundaryDebugMode = $0 }
+                            )
+                        ) {
+                            Text("默认").tag(TranscriptionChordBoundaryDebugMode.normal)
+                            Text("原始边界").tag(TranscriptionChordBoundaryDebugMode.noAbsorbRawEdges)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 2)
+                }
+                #endif
 
                 CurrentChordCard(
                     currentSegment: currentSegment,
@@ -351,7 +394,7 @@ struct TranscriptionResultView: View {
             }
         }
         .navigationDestination(isPresented: $showingFullChordChart) {
-            FullChordChartView(entry: entry, vm: vm)
+            FullChordChartView(entry: entry, vm: vm, preparedChartSegments: preparedFullChordChartSegments)
         }
         .task { vm.prepareIfNeeded() }
         .onReceive(
@@ -405,6 +448,8 @@ final class TranscriptionPlayerViewModel: ObservableObject {
     @Published var isLooping = false
     @Published var showingPlaybackError = false
     @Published var playbackErrorMessage = ""
+    /// DEBUG：在默认与 `timingVariants.noAbsorb` 之间切换时间轴/谱面数据源（Release 下不展示入口，属性保持默认）。
+    @Published var chordBoundaryDebugMode: TranscriptionChordBoundaryDebugMode = .normal
 
     private let entry: TranscriptionHistoryEntry
     private var player: AVPlayer?
@@ -534,5 +579,43 @@ final class TranscriptionPlayerViewModel: ObservableObject {
 
     private func syncIdleTimer() {
         UIApplication.shared.isIdleTimerDisabled = isPlaying
+    }
+
+    func activeTimelineSegments(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
+        switch chordBoundaryDebugMode {
+        case .normal:
+            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
+        case .noAbsorbRawEdges:
+            if let no = entry.timingVariants?.noAbsorb, !no.displaySegments.isEmpty {
+                return no.displaySegments
+            }
+            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
+        }
+    }
+
+    func activeChordChartSource(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
+        switch chordBoundaryDebugMode {
+        case .normal:
+            return Self.defaultChordChartSource(from: entry)
+        case .noAbsorbRawEdges:
+            if let no = entry.timingVariants?.noAbsorb {
+                if !no.chordChartSegments.isEmpty { return no.chordChartSegments }
+                if !no.simplifiedDisplaySegments.isEmpty { return no.simplifiedDisplaySegments }
+                if !no.displaySegments.isEmpty { return no.displaySegments }
+            }
+            return Self.defaultChordChartSource(from: entry)
+        }
+    }
+
+    func displaySanitizer(for entry: TranscriptionHistoryEntry) -> TranscriptionChordResolver.DisplayTimelineSanitizer {
+        if chordBoundaryDebugMode == .noAbsorbRawEdges, entry.timingVariants?.noAbsorb != nil {
+            return .backendNoShortAbsorptionEdges
+        }
+        return .fullClientPipeline
+    }
+
+    private static func defaultChordChartSource(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
+        if !entry.chordChartSegments.isEmpty { return entry.chordChartSegments }
+        return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
     }
 }

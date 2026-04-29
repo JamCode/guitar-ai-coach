@@ -91,6 +91,8 @@ actor TranscriptionHistoryStore {
         segments: [TranscriptionSegment],
         displaySegments: [TranscriptionSegment],
         chordChartSegments: [TranscriptionSegment],
+        timingVariants: TranscriptionTimingVariants? = nil,
+        timingVariantStats: TranscriptionTimingVariantStats? = nil,
         backend: String,
         waveform: [Double]
     ) async throws -> TranscriptionHistoryEntry {
@@ -116,6 +118,8 @@ actor TranscriptionHistoryStore {
             segments: segments,
             displaySegments: displaySegments,
             chordChartSegments: chordChartSegments,
+            timingVariants: timingVariants,
+            timingVariantStats: timingVariantStats,
             backend: backend,
             waveform: waveform
         )

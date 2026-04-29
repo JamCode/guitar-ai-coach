@@ -4,25 +4,18 @@ import Combine
 
 struct FullChordChartView: View {
     let entry: TranscriptionHistoryEntry
-    let vm: TranscriptionPlayerViewModel
+    @ObservedObject var vm: TranscriptionPlayerViewModel
+    /// 已由结果页按当前「边界模式」做过时间轴清洗后的和弦谱片段。
+    let preparedChartSegments: [TranscriptionSegment]
 
     @State private var currentSegmentIndex: Int? = nil
     @State private var currentRowIndex: Int? = nil
     @State private var currentChordIndexInRow: Int? = nil
 
-    private let sortedSegments: [TranscriptionSegment]
-    private let rows: [[TranscriptionSegment]]
-
-    init(entry: TranscriptionHistoryEntry, vm: TranscriptionPlayerViewModel) {
-        self.entry = entry
-        self.vm = vm
-        let source = entry.chordChartSegments.isEmpty
-            ? (entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments)
-            : entry.chordChartSegments
-        let sorted = TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: source)
-        self.sortedSegments = sorted
-        self.rows = stride(from: 0, to: sorted.count, by: 4).map { start in
-            Array(sorted[start..<min(start + 4, sorted.count)])
+    private var sortedSegments: [TranscriptionSegment] { preparedChartSegments }
+    private var rows: [[TranscriptionSegment]] {
+        stride(from: 0, to: sortedSegments.count, by: 4).map { start in
+            Array(sortedSegments[start..<min(start + 4, sortedSegments.count)])
         }
     }
 
@@ -91,6 +84,27 @@ struct FullChordChartView: View {
             Text("参考调：\(entry.originalKey)")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.brand)
+            #if DEBUG
+            if entry.timingVariants != nil {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("边界模式")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.muted)
+                    Picker(
+                        "边界模式",
+                        selection: Binding(
+                            get: { vm.chordBoundaryDebugMode },
+                            set: { vm.chordBoundaryDebugMode = $0 }
+                        )
+                    ) {
+                        Text("默认").tag(TranscriptionChordBoundaryDebugMode.normal)
+                        Text("原始边界").tag(TranscriptionChordBoundaryDebugMode.noAbsorbRawEdges)
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.top, 6)
+            }
+            #endif
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

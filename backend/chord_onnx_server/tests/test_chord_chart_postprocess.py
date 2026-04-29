@@ -100,6 +100,21 @@ class ChordChartPostprocessTests(unittest.TestCase):
         self.assertGreater(r["debug"]["absorbedShortChordCount"], 0)
         self.assertNotIn("Dm", [s["chord"] for s in r["chordChartSegments"]])
 
+    def test_absorption_disabled_keeps_short_segments(self) -> None:
+        raw = [
+            {"start": 0.0, "end": 2.0, "chord": "C"},
+            {"start": 2.0, "end": 3.2, "chord": "Dm"},
+            {"start": 3.2, "end": 6.0, "chord": "C"},
+        ]
+        r = build_chord_chart_segments(raw, estimated_key="C", enable_segment_absorption=False)
+        d = r["debug"]
+        self.assertEqual(d.get("absorbedShortChordCount", 0), 0)
+        self.assertEqual(d.get("absorbedOutOfKeyCount", 0), 0)
+        self.assertEqual(d.get("absorbedComplexChordCount", 0), 0)
+        self.assertEqual(d.get("absorbedLowConfidenceCount", 0), 0)
+        names = [s["chord"] for s in r["chordChartSegments"]]
+        self.assertIn("Dm", names)
+
 
 if __name__ == "__main__":
     unittest.main()
