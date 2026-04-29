@@ -11,8 +11,13 @@ import Core
 /// 「帮助与反馈」默认收件人；发版前请改为可收信地址。
 /// 若 Xcode Target → Info 增加自定义键 **`AIGuitarFeedbackEmail`**（String），将优先使用该值。
 private let kFeedbackMailRecipient = "23766856@qq.com"
-/// 隐私政策公开页面；若链接变更，仅需修改此常量。
-private let kPrivacyPolicyURLString = "https://jamcode.github.io/wanle-guitar-privacy/"
+
+/// 外部页面链接统一配置。
+/// 发布前请将占位地址替换为真实 HTTPS 域名。
+private enum AppLinks {
+    static let privacyURL = "https://wanghanai.xyz/privacy.html"
+    static let supportURL = "https://wanghanai.xyz/support.html"
+}
 
 private func resolvedFeedbackRecipient() -> String {
     if let raw = Bundle.main.object(forInfoDictionaryKey: "AIGuitarFeedbackEmail") as? String {
@@ -188,6 +193,7 @@ private struct ToolsTabView: View {
 
     @State private var aboutVersionText: String = "--"
     @State private var showMailOpenFailed = false
+    @State private var showSupportOpenFailed = false
     @State private var showPrivacyPolicyOpenFailed = false
 
     var body: some View {
@@ -218,13 +224,7 @@ private struct ToolsTabView: View {
                         title: AppL10n.t("tools_chord_lookup_title"),
                         subtitle: AppL10n.t("tools_chord_lookup_subtitle"),
                         icon: "pianokeys"
-                    ) { ChordLookupView() }
-                    gridTile(
-                        title: AppL10n.t("tools_chord_chart_title"),
-                        subtitle: AppL10n.t("tools_chord_chart_subtitle"),
-                        icon: "tablecells"
-                    ) { ChordChartView() }
-                    .gridCellColumns(2)
+                    ) { ChordLookupMergedHostView() }
                 }
 
                 Text(LocalizedStringResource("section_app_support", bundle: .main))
@@ -234,6 +234,10 @@ private struct ToolsTabView: View {
 
                 VStack(spacing: 0) {
                     toolsSupportFeedbackMailRow()
+                    Divider()
+                        .overlay(SwiftAppTheme.line)
+                        .padding(.leading, 52)
+                    toolsSupportExternalSupportRow()
                     Divider()
                         .overlay(SwiftAppTheme.line)
                         .padding(.leading, 52)
@@ -264,10 +268,52 @@ private struct ToolsTabView: View {
         } message: {
             Text(LocalizedStringResource("alert_cannot_open_mail_message", bundle: .main))
         }
+        .alert("无法打开技术支持页面", isPresented: $showSupportOpenFailed) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) {}
+        } message: {
+            Text("请稍后重试，或在浏览器中手动访问。")
+        }
         .alert(LocalizedStringResource("alert_cannot_open_privacy_title", bundle: .main), isPresented: $showPrivacyPolicyOpenFailed) {
             Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) {}
         } message: {
             Text(LocalizedStringResource("alert_cannot_open_privacy_message", bundle: .main))
+        }
+    }
+
+    private struct ChordLookupMergedHostView: View {
+        private enum Mode: String, CaseIterable, Identifiable {
+            case quick
+            case custom
+            var id: String { rawValue }
+            var title: String {
+                switch self {
+                case .quick: return "常用和弦"
+                case .custom: return "自定义速查"
+                }
+            }
+        }
+
+        @State private var mode: Mode = .quick
+
+        var body: some View {
+            VStack(spacing: 0) {
+                Picker("模式", selection: $mode) {
+                    ForEach(Mode.allCases) { m in
+                        Text(m.title).tag(m)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, SwiftAppTheme.pagePadding)
+                .padding(.top, 8)
+
+                if mode == .quick {
+                    ChordChartView()
+                } else {
+                    ChordLookupView()
+                }
+            }
+            .navigationTitle(AppL10n.t("tools_chord_lookup_title"))
+            .appPageBackground()
         }
     }
 
@@ -325,8 +371,50 @@ private struct ToolsTabView: View {
         .buttonStyle(.plain)
     }
 
+    private func makeSupportURL() -> URL? {
+        URL(string: AppLinks.supportURL)
+    }
+
+    private func toolsSupportExternalSupportRow() -> some View {
+        Button {
+            guard let url = makeSupportURL() else {
+                showSupportOpenFailed = true
+                return
+            }
+            UIApplication.shared.open(url, options: [:]) { success in
+                if !success {
+                    Task { @MainActor in
+                        showSupportOpenFailed = true
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "lifepreserver")
+                    .frame(width: 24)
+                    .foregroundStyle(SwiftAppTheme.brand)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("技术支持")
+                        .font(.headline)
+                        .foregroundStyle(SwiftAppTheme.text)
+                    Text("查看常见问题与云端处理说明")
+                        .font(.subheadline)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "arrow.up.right.square")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+    }
+
     private func makePrivacyPolicyURL() -> URL? {
-        URL(string: kPrivacyPolicyURLString)
+        URL(string: AppLinks.privacyURL)
     }
 
     private func toolsSupportPrivacyPolicyRow() -> some View {

@@ -660,6 +660,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 7R8RS88G2M;
 				GENERATE_INFOPLIST_FILE = YES;
+				CHORD_ONNX_APP_TOKEN = wang;
 				INFOPLIST_KEY_CFBundleDisplayName = "Wanle Guitar";
 				INFOPLIST_KEY_CFBundleName = "Wanle Guitar";
 				INFOPLIST_KEY_CHORD_ONNX_APP_TOKEN = "$(CHORD_ONNX_APP_TOKEN)";
@@ -672,6 +673,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = 1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wanghan.guitarhelper;
 				PRODUCT_NAME = SwiftEarHost;
 				SDKROOT = iphoneos;
@@ -823,6 +826,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 7R8RS88G2M;
 				GENERATE_INFOPLIST_FILE = YES;
+				CHORD_ONNX_APP_TOKEN = wang;
 				INFOPLIST_KEY_CFBundleDisplayName = "Wanle Guitar";
 				INFOPLIST_KEY_CFBundleName = "Wanle Guitar";
 				INFOPLIST_KEY_CHORD_ONNX_APP_TOKEN = "$(CHORD_ONNX_APP_TOKEN)";
@@ -835,6 +839,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = 1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wanghan.guitarhelper;
 				PRODUCT_NAME = SwiftEarHost;
 				SDKROOT = iphoneos;

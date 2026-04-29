@@ -22,6 +22,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wanghan.guitarhelper
         PRODUCT_NAME: SwiftEarHost
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        CHORD_ONNX_APP_TOKEN: wang
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Wanle Guitar
         INFOPLIST_KEY_CFBundleName: Wanle Guitar

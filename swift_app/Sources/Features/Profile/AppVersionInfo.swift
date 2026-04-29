@@ -17,8 +17,12 @@ public struct AppVersionInfo: Sendable {
 public enum AppVersionInfoLoader {
     /// Read app version from bundle and provide safe fallback.
     public static func load(bundle: Bundle = .main) -> AppVersionInfo {
-        let version = (bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0.0.0"
-        let buildNumber = (bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "0"
+        let version = ((bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines))
+            .flatMap { $0.isEmpty ? nil : $0 } ?? "1.0.0"
+        let buildNumber = ((bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines))
+            .flatMap { $0.isEmpty ? nil : $0 } ?? "1"
 #if DEBUG
         let channel = "Debug"
 #else

@@ -401,7 +401,7 @@ private struct SheetDetailView: View {
         ) { scale, offset in
             currentPageScale = scale
             currentPageOffset = offset
-        )
+        }
     }
 
     private var allowsPageSwipe: Bool {

@@ -78,21 +78,12 @@ public struct ToolsHomeView: View {
                     )
                 }
                 NavigationLink {
-                    ChordLookupView()
+                    ChordLookupMergedView()
                 } label: {
                     toolsRow(
                         title: AppL10n.t("tools_chord_lookup_title"),
                         subtitle: AppL10n.t("tools_chord_lookup_subtitle"),
                         systemImage: "pianokeys"
-                    )
-                }
-                NavigationLink {
-                    ChordChartView()
-                } label: {
-                    toolsRow(
-                        title: AppL10n.t("tools_chord_chart_title"),
-                        subtitle: AppL10n.t("tools_chord_chart_subtitle"),
-                        systemImage: "tablecells"
                     )
                 }
             }

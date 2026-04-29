@@ -66,15 +66,32 @@ enum RemoteChordRecognitionError: LocalizedError {
     case timeout
     case invalidResponse
     case backendFailed
+    case unauthorized
+    case serviceUnavailable(String?)
+    case httpStatus(Int, String?)
 
     var errorDescription: String? {
         switch self {
+        case .unauthorized:
+            return "鉴权失败：请升级到最新版本后重试"
+        case let .serviceUnavailable(detail):
+            return detail?.isEmpty == false ? "服务暂不可用：\(detail!)" : "服务暂不可用，请稍后重试"
+        case let .httpStatus(code, detail):
+            if let detail, !detail.isEmpty {
+                return "识别失败（\(code)）：\(detail)"
+            }
+            return "识别失败（\(code)），请稍后重试"
         case .network, .invalidResponse, .backendFailed:
             return "识别失败，请稍后重试"
         case .timeout:
             return "识别超时，请稍后重试"
         }
     }
+}
+
+private struct RemoteErrorBody: Decodable {
+    let detail: String?
+    let error: String?
 }
 
 struct RemoteServerTiming: Decodable, Sendable {
@@ -198,6 +215,8 @@ enum RemoteChordRecognitionService {
         #if DEBUG
         if appToken.isEmpty {
             print("[RemoteChord] missing CHORD_ONNX_APP_TOKEN build setting; upload may be rejected")
+        } else {
+            print("[RemoteChord] using app token length=\(appToken.count)")
         }
         #endif
 
@@ -225,8 +244,20 @@ enum RemoteChordRecognitionService {
         }
 
         let clientTotalSeconds = Date().timeIntervalSince(clientStarted)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+        guard let http = response as? HTTPURLResponse else {
             throw RemoteChordRecognitionError.network
+        }
+        if !(200...299).contains(http.statusCode) {
+            let errBody = try? JSONDecoder().decode(RemoteErrorBody.self, from: data)
+            let detail = errBody?.detail ?? errBody?.error
+            switch http.statusCode {
+            case 401:
+                throw RemoteChordRecognitionError.unauthorized
+            case 503:
+                throw RemoteChordRecognitionError.serviceUnavailable(detail)
+            default:
+                throw RemoteChordRecognitionError.httpStatus(http.statusCode, detail)
+            }
         }
         let decoded: RemoteChordRecognitionResult
         do {
