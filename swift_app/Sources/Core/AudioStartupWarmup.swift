@@ -22,7 +22,7 @@ public final class AudioStartupWarmup: @unchecked Sendable {
         self.warmup = warmup
     }
 
-    /// 幂等调度：同一进程内最多安排一次后台预热，避免重复拉起共享音频图。
+    /// 幂等调度：同一进程内最多安排一次后台预热，避免启动阶段重复拉起共享音频图。
     public func scheduleIfNeeded() {
         lock.lock()
         let shouldSchedule = !hasScheduled
@@ -32,6 +32,13 @@ public final class AudioStartupWarmup: @unchecked Sendable {
         lock.unlock()
 
         guard shouldSchedule else { return }
+        queue.async { [warmup] in
+            warmup()
+        }
+    }
+
+    /// 页面级预热：共享引擎可能被调音器等功能 `stop()`，再次进入依赖采样吉他的页面时需要低成本重备。
+    public func schedulePlaybackReadinessRefresh() {
         queue.async { [warmup] in
             warmup()
         }

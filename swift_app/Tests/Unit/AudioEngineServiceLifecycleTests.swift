@@ -54,6 +54,12 @@ final class GuitarPlaybackHumanizerTests: XCTestCase {
         }
     }
 
+    func testHighMidiVelocityIsSoftenedBeforeRandomization() {
+        XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 72), 94)
+        XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 84), 88)
+        XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 96), 82)
+    }
+
     func testVelocityIsNotAlwaysIdentical() {
         // 真随机：同样入参多次调用，结果不应全部相同（概率极低的误判在统计上可接受）。
         let results = (0..<30).map {
