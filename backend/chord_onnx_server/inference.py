@@ -18,6 +18,7 @@ from chord_chart_postprocess import build_chord_chart_segments
 NOTE_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
 TARGET_SR = 22050
 HOP_LENGTH = 512
+FRAME_SEC = HOP_LENGTH / TARGET_SR
 DEFAULT_N_BINS = 144
 BINS_PER_OCTAVE = 24
 CHUNK_DURATION_SEC = 20.0
@@ -112,6 +113,7 @@ class ChordOnnxInferenceService:
         duration = float(len(y) / TARGET_SR)
         chunk_count = max(1, int(np.ceil(len(y) / CHUNK_SAMPLES)))
         all_segments: list[Segment] = []
+        all_frame_diagnostics: list[dict[str, Any]] = []
         chunk_debug: list[dict[str, Any]] = []
         decode_mode = "simple_root_bass_chroma"
         raw_preview: dict[str, Any] = {}
@@ -131,7 +133,7 @@ class ChordOnnxInferenceService:
             outputs = self.session.run(None, {self.input_meta.name: prepared})
             out_map = {meta.name: arr for meta, arr in zip(self.output_meta, outputs)}
 
-            decode_result = self._decode_outputs(out_map, frame_sec=HOP_LENGTH / TARGET_SR)
+            decode_result = self._decode_outputs(out_map, frame_sec=FRAME_SEC)
             decode_mode = decode_result["decode_mode"]
             raw_preview = decode_result.get("raw_preview", {})
             last_output_shapes = {k: list(v.shape) for k, v in out_map.items()}
@@ -142,6 +144,23 @@ class ChordOnnxInferenceService:
             chunk_end_sec = chunk_end_sample / TARGET_SR
             local_segments: list[Segment] = decode_result["segments"]
             shifted: list[Segment] = []
+            local_duration_sec = chunk_end_sec - chunk_start_sec
+            local_frame_diagnostics = decode_result.get("frame_diagnostics", [])
+            for frame_debug in local_frame_diagnostics:
+                local_time_sec = float(frame_debug["timeSec"])
+                if local_time_sec >= local_duration_sec:
+                    continue
+                global_time_sec = chunk_start_sec + local_time_sec
+                all_frame_diagnostics.append(
+                    {
+                        **frame_debug,
+                        "frameIndex": int(round(global_time_sec / FRAME_SEC)),
+                        "localFrameIndex": frame_debug["frameIndex"],
+                        "timeSec": round(global_time_sec, 6),
+                        "chunkIndex": chunk_idx,
+                        "chunkStartSec": round(chunk_start_sec, 6),
+                    }
+                )
             for seg in local_segments:
                 global_start = chunk_start_sec + seg.start
                 global_end = min(chunk_start_sec + seg.end, chunk_end_sec)
@@ -161,12 +180,20 @@ class ChordOnnxInferenceService:
                     "start": round(chunk_start_sec, 3),
                     "end": round(chunk_end_sec, 3),
                     "segment_count": len(shifted),
+                    "diagnostic_frame_count": len(local_frame_diagnostics),
                 }
             )
 
-        merged_segments = self._merge_adjacent_segments(all_segments, tolerance_sec=HOP_LENGTH / TARGET_SR)
+        merged_segments = self._merge_adjacent_segments(all_segments, tolerance_sec=FRAME_SEC)
         display_segments, display_stats = self._make_display_segments(merged_segments)
         simplified_segments = self._make_simplified_segments(display_segments)
+        boundary_frame_diagnostics = self._collect_boundary_frame_diagnostics(
+            frames=all_frame_diagnostics,
+            boundary_segments=merged_segments,
+            final_segments=simplified_segments,
+            radius_sec=1.0,
+        )
+        self._log_boundary_frame_diagnostics(boundary_frame_diagnostics)
         key_result = self._estimate_key(merged_segments)
         chart_res = build_chord_chart_segments(
             [
@@ -192,6 +219,15 @@ class ChordOnnxInferenceService:
                 "chunkDuration": CHUNK_DURATION_SEC,
                 "chunkCount": chunk_count,
                 "chunks": chunk_debug,
+                "sampleRate": TARGET_SR,
+                "hopLength": HOP_LENGTH,
+                "frameSec": FRAME_SEC,
+                "frameTimeFormula": "frameIndex * hopLength / sampleRate",
+                "featureFrameTimestampSemantic": "librosa_cqt_center_at_frameIndex_hop_sampleRate",
+                "segmentTimestampSemantic": "current_decoder_uses_frameIndex_hop_sampleRate_as_segment_boundary",
+                "featureWindowSec": None,
+                "featureWindowSemantic": "librosa_cqt_frequency_dependent_centered_windows",
+                "boundaryFrameDiagnosticCount": len(boundary_frame_diagnostics),
                 "input_feature_shape": input_feature_shape,
                 "model_input_shape": model_input_shape,
                 "output_shapes": last_output_shapes,
@@ -314,12 +350,34 @@ class ChordOnnxInferenceService:
         chroma_prob = 1.0 / (1.0 + np.exp(-chroma_2d[:frame_count]))
 
         labels = [self._decode_frame_label(int(r), int(b), chroma_prob[i]) for i, (r, b) in enumerate(zip(root_idx, bass_idx))]
+        root_conf = self._softmax_max(root_2d[:frame_count])
+        frame_diagnostics = [
+            {
+                "frameIndex": i,
+                "timeSec": round(i * frame_sec, 6),
+                "rootPrediction": NOTE_NAMES[int(root_idx[i])] if int(root_idx[i]) < 12 else "N",
+                "chordLabel": labels[i],
+                "confidence": round(float(root_conf[i]), 6),
+                # There is currently no frame-level moving-average/median/majority smoothing.
+                "smoothedLabel": labels[i],
+            }
+            for i in range(frame_count)
+        ]
         segments = self._merge_labels(labels, frame_sec=frame_sec)
         return {
             "key": "C",
             "segments": segments,
             "decode_mode": "simple_root_bass_chroma",
+            "frame_diagnostics": frame_diagnostics,
         }
+
+    def _softmax_max(self, logits: np.ndarray) -> np.ndarray:
+        if logits.size == 0:
+            return np.zeros((0,), dtype=np.float32)
+        stable = logits - np.max(logits, axis=1, keepdims=True)
+        exp = np.exp(stable)
+        denom = np.sum(exp, axis=1)
+        return np.max(exp, axis=1) / np.maximum(denom, 1e-12)
 
     def _reshape_to_2d(self, arr: np.ndarray, class_count: int) -> np.ndarray:
         arr = np.asarray(arr)
@@ -403,6 +461,79 @@ class ChordOnnxInferenceService:
                 )
             )
         return out
+
+    def _collect_boundary_frame_diagnostics(
+        self,
+        *,
+        frames: list[dict[str, Any]],
+        boundary_segments: list[Segment],
+        final_segments: list[Segment],
+        radius_sec: float,
+    ) -> list[dict[str, Any]]:
+        if not frames or len(boundary_segments) < 2:
+            return []
+
+        rows: list[dict[str, Any]] = []
+        seen: set[tuple[float, int]] = set()
+        boundaries = [
+            round(boundary_segments[i].start, 6)
+            for i in range(1, len(boundary_segments))
+        ]
+        for boundary_sec in boundaries:
+            for frame in frames:
+                time_sec = float(frame["timeSec"])
+                if abs(time_sec - boundary_sec) > radius_sec:
+                    continue
+                key = (boundary_sec, int(frame["frameIndex"]))
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append(
+                    {
+                        "segmentBoundarySec": round(boundary_sec, 6),
+                        "frameIndex": frame["frameIndex"],
+                        "timeSec": round(time_sec, 6),
+                        "rootPrediction": frame["rootPrediction"],
+                        "chordLabel": frame["chordLabel"],
+                        "confidence": frame["confidence"],
+                        "smoothedLabel": frame["smoothedLabel"],
+                        "finalSegmentLabel": self._label_at_time(final_segments, time_sec),
+                        "chunkIndex": frame["chunkIndex"],
+                        "chunkStartSec": frame["chunkStartSec"],
+                    }
+                )
+        return sorted(rows, key=lambda r: (r["segmentBoundarySec"], r["timeSec"], r["frameIndex"]))
+
+    def _label_at_time(self, segments: list[Segment], time_sec: float) -> str:
+        for seg in segments:
+            if seg.start <= time_sec < seg.end:
+                return seg.chord
+        return "-"
+
+    def _log_boundary_frame_diagnostics(self, rows: list[dict[str, Any]]) -> None:
+        if not rows:
+            print("[CHORD_TIMING] no segment boundary frame diagnostics")
+            return
+
+        print(
+            "[CHORD_TIMING] boundary diagnostics "
+            "columns=boundarySec | frameIndex | timeSec | rootPrediction | chordLabel | "
+            "confidence | smoothedLabel | finalSegmentLabel | chunkIndex | chunkStartSec"
+        )
+        for row in rows:
+            print(
+                "[CHORD_TIMING] "
+                f"{row['segmentBoundarySec']:.6f} | "
+                f"{row['frameIndex']} | "
+                f"{row['timeSec']:.6f} | "
+                f"{row['rootPrediction']} | "
+                f"{row['chordLabel']} | "
+                f"{row['confidence']:.6f} | "
+                f"{row['smoothedLabel']} | "
+                f"{row['finalSegmentLabel']} | "
+                f"{row['chunkIndex']} | "
+                f"{row['chunkStartSec']:.6f}"
+            )
 
     def _merge_adjacent_segments(self, segments: list[Segment], tolerance_sec: float) -> list[Segment]:
         if not segments:
