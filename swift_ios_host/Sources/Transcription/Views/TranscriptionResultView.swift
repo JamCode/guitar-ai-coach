@@ -341,8 +341,9 @@ struct TranscriptionResultView: View {
                                 set: { vm.chordBoundaryDebugMode = $0 }
                             )
                         ) {
-                            Text("默认").tag(TranscriptionChordBoundaryDebugMode.normal)
-                            Text("原始边界").tag(TranscriptionChordBoundaryDebugMode.noAbsorbRawEdges)
+                            ForEach(TranscriptionChordBoundaryDebugMode.debugPickerModes(for: entry), id: \.self) { mode in
+                                Text(mode.pickerLabel).tag(mode)
+                            }
                         }
                         .pickerStyle(.segmented)
                     }
@@ -590,6 +591,11 @@ final class TranscriptionPlayerViewModel: ObservableObject {
                 return no.displaySegments
             }
             return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
+        case .timingPriority:
+            if let t = entry.timingVariants?.timing, !t.displaySegments.isEmpty {
+                return t.displaySegments
+            }
+            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
         }
     }
 
@@ -604,11 +610,21 @@ final class TranscriptionPlayerViewModel: ObservableObject {
                 if !no.displaySegments.isEmpty { return no.displaySegments }
             }
             return Self.defaultChordChartSource(from: entry)
+        case .timingPriority:
+            if let t = entry.timingVariants?.timing {
+                if !t.chordChartSegments.isEmpty { return t.chordChartSegments }
+                if !t.simplifiedDisplaySegments.isEmpty { return t.simplifiedDisplaySegments }
+                if !t.displaySegments.isEmpty { return t.displaySegments }
+            }
+            return Self.defaultChordChartSource(from: entry)
         }
     }
 
     func displaySanitizer(for entry: TranscriptionHistoryEntry) -> TranscriptionChordResolver.DisplayTimelineSanitizer {
         if chordBoundaryDebugMode == .noAbsorbRawEdges, entry.timingVariants?.noAbsorb != nil {
+            return .backendNoShortAbsorptionEdges
+        }
+        if chordBoundaryDebugMode == .timingPriority, entry.timingVariants?.timing != nil {
             return .backendNoShortAbsorptionEdges
         }
         return .fullClientPipeline

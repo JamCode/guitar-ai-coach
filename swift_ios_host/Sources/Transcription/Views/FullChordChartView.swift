@@ -97,8 +97,9 @@ struct FullChordChartView: View {
                             set: { vm.chordBoundaryDebugMode = $0 }
                         )
                     ) {
-                        Text("默认").tag(TranscriptionChordBoundaryDebugMode.normal)
-                        Text("原始边界").tag(TranscriptionChordBoundaryDebugMode.noAbsorbRawEdges)
+                        ForEach(TranscriptionChordBoundaryDebugMode.debugPickerModes(for: entry), id: \.self) { mode in
+                            Text(mode.pickerLabel).tag(mode)
+                        }
                     }
                     .pickerStyle(.segmented)
                 }

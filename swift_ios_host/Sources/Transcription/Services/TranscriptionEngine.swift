@@ -139,9 +139,14 @@ private struct RemoteChordTimingVariantBundleDTO: Decodable {
 private struct RemoteChordTimingVariantsDTO: Decodable {
     let normal: RemoteChordTimingVariantBundleDTO
     let noAbsorb: RemoteChordTimingVariantBundleDTO
+    let timing: RemoteChordTimingVariantBundleDTO?
 
     func toModel() -> TranscriptionTimingVariants {
-        TranscriptionTimingVariants(normal: normal.toModel(), noAbsorb: noAbsorb.toModel())
+        TranscriptionTimingVariants(
+            normal: normal.toModel(),
+            noAbsorb: noAbsorb.toModel(),
+            timing: timing?.toModel()
+        )
     }
 }
 
@@ -159,12 +164,37 @@ private struct RemoteChordTimingVariantStatsRowDTO: Decodable {
     }
 }
 
+private struct RemoteChordTimingPriorityStatsRowDTO: Decodable {
+    let displayCount: Int
+    let simplifiedCount: Int
+    let chordChartCount: Int
+    let absorbedCount: Int
+    let keptShortCount: Int
+    let snappedBoundaryCount: Int
+
+    func toModel() -> TranscriptionTimingPriorityStatsRow {
+        TranscriptionTimingPriorityStatsRow(
+            displayCount: displayCount,
+            simplifiedCount: simplifiedCount,
+            chordChartCount: chordChartCount,
+            absorbedCount: absorbedCount,
+            keptShortCount: keptShortCount,
+            snappedBoundaryCount: snappedBoundaryCount
+        )
+    }
+}
+
 private struct RemoteChordTimingVariantStatsDTO: Decodable {
     let normal: RemoteChordTimingVariantStatsRowDTO
     let noAbsorb: RemoteChordTimingVariantStatsRowDTO
+    let timing: RemoteChordTimingPriorityStatsRowDTO?
 
     func toModel() -> TranscriptionTimingVariantStats {
-        TranscriptionTimingVariantStats(normal: normal.toModel(), noAbsorb: noAbsorb.toModel())
+        TranscriptionTimingVariantStats(
+            normal: normal.toModel(),
+            noAbsorb: noAbsorb.toModel(),
+            timing: timing?.toModel()
+        )
     }
 }
 

@@ -18,10 +18,11 @@ struct TranscriptionTimingVariantBundle: Codable, Equatable, Hashable {
     let chordChartSegments: [TranscriptionSegment]
 }
 
-/// 后端一次返回的 normal / noAbsorb 两套边界结果，用于调试对比。
+/// 后端返回的 normal / noAbsorb / timing（踩点优先）变体；旧接口可能缺少 `timing`。
 struct TranscriptionTimingVariants: Codable, Equatable, Hashable {
     let normal: TranscriptionTimingVariantBundle
     let noAbsorb: TranscriptionTimingVariantBundle
+    let timing: TranscriptionTimingVariantBundle?
 }
 
 struct TranscriptionTimingVariantStatsRow: Codable, Equatable, Hashable {
@@ -33,14 +34,46 @@ struct TranscriptionTimingVariantStatsRow: Codable, Equatable, Hashable {
 struct TranscriptionTimingVariantStats: Codable, Equatable, Hashable {
     let normal: TranscriptionTimingVariantStatsRow
     let noAbsorb: TranscriptionTimingVariantStatsRow
+    /// 踩点优先变体统计；旧后端无该键时为 nil。
+    let timing: TranscriptionTimingPriorityStatsRow?
 }
 
-/// 扒歌结果页调试：在默认边界与后端 `noAbsorb` 变体之间切换（不影响音频播放）。
+/// `timingVariantStats.timing`：含吸收/保留短段/吸附边界计数。
+struct TranscriptionTimingPriorityStatsRow: Codable, Equatable, Hashable {
+    let displayCount: Int
+    let simplifiedCount: Int
+    let chordChartCount: Int
+    let absorbedCount: Int
+    let keptShortCount: Int
+    let snappedBoundaryCount: Int
+}
+
+/// 扒歌结果页 DEBUG：默认 / 原始边界 / 踩点优先（不影响音频播放）。
 enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Equatable {
     case normal
     case noAbsorbRawEdges
+    case timingPriority
 
     var id: String { rawValue }
+
+    var pickerLabel: String {
+        switch self {
+        case .normal: return "默认"
+        case .noAbsorbRawEdges: return "原始边界"
+        case .timingPriority: return "踩点优先"
+        }
+    }
+
+    /// DEBUG 结果页可选边界模式（无 `timing` 变体时不展示「踩点优先」）。
+    static func debugPickerModes(for entry: TranscriptionHistoryEntry) -> [TranscriptionChordBoundaryDebugMode] {
+        var arr: [TranscriptionChordBoundaryDebugMode] = [.normal, .noAbsorbRawEdges]
+        #if DEBUG
+        if entry.timingVariants?.timing != nil {
+            arr.append(.timingPriority)
+        }
+        #endif
+        return arr
+    }
 }
 
 enum TranscriptionProgressStage: String, Equatable, Sendable {

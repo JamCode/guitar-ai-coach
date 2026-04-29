@@ -210,10 +210,12 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
         tv_stats = result.get("timingVariantStats") or {}
         n_stats = tv_stats.get("normal") or {}
         na_stats = tv_stats.get("noAbsorb") or {}
+        t_stats = tv_stats.get("timing") or {}
         logger.info(
             "[timing_variants] normal display=%s simplified=%s chart=%s | "
             "noAbsorb display=%s simplified=%s chart=%s | "
-            "delta display=%s simplified=%s chart=%s",
+            "delta_na display=%s simplified=%s chart=%s | "
+            "timing display=%s chart=%s absorbed=%s keptShort=%s snapped=%s",
             n_stats.get("displayCount"),
             n_stats.get("simplifiedCount"),
             n_stats.get("chordChartCount"),
@@ -223,6 +225,11 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
             (na_stats.get("displayCount") or 0) - (n_stats.get("displayCount") or 0),
             (na_stats.get("simplifiedCount") or 0) - (n_stats.get("simplifiedCount") or 0),
             (na_stats.get("chordChartCount") or 0) - (n_stats.get("chordChartCount") or 0),
+            t_stats.get("displayCount"),
+            t_stats.get("chordChartCount"),
+            t_stats.get("absorbedCount"),
+            t_stats.get("keptShortCount"),
+            t_stats.get("snappedBoundaryCount"),
         )
         report_path = OUTPUT_DIR / f"{req_id}.json"
         with report_path.open("w", encoding="utf-8") as f:
