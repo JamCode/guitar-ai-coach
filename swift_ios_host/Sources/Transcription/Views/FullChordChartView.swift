@@ -33,18 +33,18 @@ struct FullChordChartView: View {
     }
 
     private var originalPreparedChartRows: [[TranscriptionSegment]] {
-        chunkRows(from: originalPreparedChartSegments)
+        TranscriptionChordChartRowLayout.chunkRows(from: originalPreparedChartSegments)
     }
 
     private var persistedChartRows: [[TranscriptionSegment]] {
         if didLoadPersistedEditedState {
             if let edited = loadedEditedSegments, !edited.isEmpty {
-                return rebuildRows(from: edited, rowSizes: loadedEditedRowSizes)
+                return TranscriptionChordChartRowLayout.rebuildRows(from: edited, rowSizes: loadedEditedRowSizes)
             }
             return originalPreparedChartRows
         }
         if let edited = entry.editedChordChartSegments, !edited.isEmpty {
-            return rebuildRows(from: edited, rowSizes: entry.editedChordChartRowSizes)
+            return TranscriptionChordChartRowLayout.rebuildRows(from: edited, rowSizes: entry.editedChordChartRowSizes)
         }
         return originalPreparedChartRows
     }
@@ -54,7 +54,7 @@ struct FullChordChartView: View {
     }
 
     private var sortedSegments: [TranscriptionSegment] {
-        flattenRows(displayedRows)
+        TranscriptionChordChartRowLayout.flattenRows(displayedRows)
     }
 
     private var hasUnsavedChanges: Bool {
@@ -433,7 +433,7 @@ struct FullChordChartView: View {
     }
 
     private func saveWorkingChanges() async {
-        let flattened = flattenRows(workingRows)
+        let flattened = TranscriptionChordChartRowLayout.flattenRows(workingRows)
         guard !flattened.isEmpty else {
             saveErrorMessage = "至少保留一个和弦后再保存。"
             showingSaveError = true
@@ -465,37 +465,6 @@ struct FullChordChartView: View {
             saveErrorMessage = error.localizedDescription
             showingSaveError = true
         }
-    }
-
-    private func chunkRows(from segments: [TranscriptionSegment]) -> [[TranscriptionSegment]] {
-        guard !segments.isEmpty else { return [] }
-        return stride(from: 0, to: segments.count, by: 4).map { start in
-            Array(segments[start..<min(start + 4, segments.count)])
-        }
-    }
-
-    private func rebuildRows(from segments: [TranscriptionSegment], rowSizes: [Int]?) -> [[TranscriptionSegment]] {
-        guard !segments.isEmpty else { return [] }
-        guard let rowSizes, !rowSizes.isEmpty else {
-            return chunkRows(from: segments)
-        }
-
-        var rows: [[TranscriptionSegment]] = []
-        var cursor = 0
-        for size in rowSizes where size > 0 {
-            guard cursor < segments.count else { break }
-            let end = min(cursor + size, segments.count)
-            rows.append(Array(segments[cursor..<end]))
-            cursor = end
-        }
-        if cursor < segments.count {
-            rows.append(contentsOf: chunkRows(from: Array(segments[cursor...])))
-        }
-        return rows.isEmpty ? chunkRows(from: segments) : rows
-    }
-
-    private func flattenRows(_ rows: [[TranscriptionSegment]]) -> [TranscriptionSegment] {
-        rows.flatMap { $0 }
     }
 
     private func updateCurrentHighlight(for flattenedIndex: Int?) {
@@ -608,6 +577,52 @@ private struct ChordRowView: View, Equatable {
 struct ChordRowPosition: Equatable {
     let rowIndex: Int
     let chordIndex: Int
+}
+
+enum TranscriptionChordChartRowLayout {
+    static func chunkRows(
+        from segments: [TranscriptionSegment],
+        defaultRowWidth: Int = 4
+    ) -> [[TranscriptionSegment]] {
+        guard !segments.isEmpty else { return [] }
+        guard defaultRowWidth > 0 else { return [segments] }
+        return stride(from: 0, to: segments.count, by: defaultRowWidth).map { start in
+            Array(segments[start..<min(start + defaultRowWidth, segments.count)])
+        }
+    }
+
+    static func rebuildRows(
+        from segments: [TranscriptionSegment],
+        rowSizes: [Int]?,
+        defaultRowWidth: Int = 4
+    ) -> [[TranscriptionSegment]] {
+        guard !segments.isEmpty else { return [] }
+        guard let rowSizes, !rowSizes.isEmpty else {
+            return chunkRows(from: segments, defaultRowWidth: defaultRowWidth)
+        }
+
+        var rows: [[TranscriptionSegment]] = []
+        var cursor = 0
+        for size in rowSizes where size > 0 {
+            guard cursor < segments.count else { break }
+            let end = min(cursor + size, segments.count)
+            rows.append(Array(segments[cursor..<end]))
+            cursor = end
+        }
+        if cursor < segments.count {
+            rows.append(
+                contentsOf: chunkRows(
+                    from: Array(segments[cursor...]),
+                    defaultRowWidth: defaultRowWidth
+                )
+            )
+        }
+        return rows.isEmpty ? chunkRows(from: segments, defaultRowWidth: defaultRowWidth) : rows
+    }
+
+    static func flattenRows(_ rows: [[TranscriptionSegment]]) -> [TranscriptionSegment] {
+        rows.flatMap { $0 }
+    }
 }
 
 private struct CompactPlaybackBarHost: View {

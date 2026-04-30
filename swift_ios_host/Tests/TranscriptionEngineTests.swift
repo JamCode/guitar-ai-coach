@@ -43,6 +43,45 @@ final class TranscriptionEngineTests: XCTestCase {
         XCTAssertEqual(result.segments[0], TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"))
         XCTAssertFalse(result.waveform.isEmpty)
     }
+
+    func testRemoteChordRecognitionResult_decodesPlayableCompactVariant() throws {
+        let json = """
+        {
+          "success": true,
+          "key": "B",
+          "segments": [{"start": 0.0, "end": 1.0, "chord": "B"}],
+          "displaySegments": [{"start": 0.0, "end": 1.0, "chord": "B"}],
+          "chordChartSegments": [{"start": 0.0, "end": 1.0, "chord": "B"}],
+          "timingVariants": {
+            "normal": {
+              "displaySegments": [{"start": 0.0, "end": 1.0, "chord": "B"}],
+              "simplifiedDisplaySegments": [{"start": 0.0, "end": 1.0, "chord": "B"}],
+              "chordChartSegments": [{"start": 0.0, "end": 1.0, "chord": "B"}]
+            },
+            "noAbsorb": {
+              "displaySegments": [{"start": 0.0, "end": 1.0, "chord": "B"}],
+              "simplifiedDisplaySegments": [{"start": 0.0, "end": 1.0, "chord": "B"}],
+              "chordChartSegments": [{"start": 0.0, "end": 1.0, "chord": "B"}]
+            },
+            "playableCompact": {
+              "displaySegments": [{"start": 0.0, "end": 2.0, "chord": "B"}],
+              "simplifiedDisplaySegments": [{"start": 0.0, "end": 2.0, "chord": "B"}],
+              "chordChartSegments": [{"start": 0.0, "end": 2.0, "chord": "B"}]
+            }
+          }
+        }
+        """
+
+        let decoded = try JSONDecoder().decode(
+            RemoteChordRecognitionResult.self,
+            from: Data(json.utf8)
+        )
+
+        XCTAssertTrue(decoded.success)
+        XCTAssertEqual(decoded.key, "B")
+        XCTAssertEqual(decoded.timingVariants?.playableCompact?.displaySegments.first?.chord, "B")
+        XCTAssertEqual(decoded.timingVariants?.playableCompact?.displaySegments.first?.endMs, 2_000)
+    }
 }
 
 private struct FakeChordRecognizer: ChordRecognizer {

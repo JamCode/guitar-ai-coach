@@ -366,4 +366,36 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
             )
         )
     }
+
+    func testChordChartRowLayout_rebuildRows_preservesSavedRowSizes() {
+        let flattened = [
+            TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"),
+            TranscriptionSegment(startMs: 1_000, endMs: 2_000, chord: "B"),
+            TranscriptionSegment(startMs: 2_000, endMs: 3_000, chord: "C#m"),
+            TranscriptionSegment(startMs: 3_000, endMs: 4_000, chord: "A"),
+        ]
+
+        let rebuilt = TranscriptionChordChartRowLayout.rebuildRows(
+            from: flattened,
+            rowSizes: [3, 1]
+        )
+
+        XCTAssertEqual(rebuilt.map(\.count), [3, 1])
+        XCTAssertEqual(TranscriptionChordChartRowLayout.flattenRows(rebuilt), flattened)
+    }
+
+    func testChordChartRowLayout_rebuildRows_fallsBackToDefaultChunkingWhenRowSizesMissing() {
+        let flattened = [
+            TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"),
+            TranscriptionSegment(startMs: 1_000, endMs: 2_000, chord: "B"),
+            TranscriptionSegment(startMs: 2_000, endMs: 3_000, chord: "C#m"),
+            TranscriptionSegment(startMs: 3_000, endMs: 4_000, chord: "A"),
+            TranscriptionSegment(startMs: 4_000, endMs: 5_000, chord: "F#"),
+        ]
+
+        let rebuilt = TranscriptionChordChartRowLayout.rebuildRows(from: flattened, rowSizes: nil)
+
+        XCTAssertEqual(rebuilt.map(\.count), [4, 1])
+        XCTAssertEqual(TranscriptionChordChartRowLayout.flattenRows(rebuilt), flattened)
+    }
 }
