@@ -280,21 +280,19 @@ struct TranscriptionResultView: View {
     let entry: TranscriptionHistoryEntry
     @StateObject private var vm: TranscriptionPlayerViewModel
     @State private var showingFullChordChart = false
+    @State private var latestPersistedEntry: TranscriptionHistoryEntry? = nil
+
+    private let historyStore = TranscriptionHistoryStore()
 
     init(entry: TranscriptionHistoryEntry) {
         self.entry = entry
         _vm = StateObject(wrappedValue: TranscriptionPlayerViewModel(entry: entry))
     }
 
-    private var preparedFullChordChartSegments: [TranscriptionSegment] {
-        let raw = vm.activeChordChartSource(from: entry)
-        let sanitizer = vm.displaySanitizer(for: entry)
-        return TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: raw, sanitizer: sanitizer)
-    }
-
     var body: some View {
-        let timelineRaw = vm.activeTimelineSegments(from: entry)
-        let sanitizer = vm.displaySanitizer(for: entry)
+        let displayEntry = latestPersistedEntry ?? entry
+        let timelineRaw = vm.activeTimelineSegments(from: displayEntry)
+        let sanitizer = vm.displaySanitizer(for: displayEntry)
         let prepared = TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: timelineRaw, sanitizer: sanitizer)
         let currentIndex = PlaybackSyncResolver.currentIndex(for: vm.currentTimeMs, segments: prepared)
         let currentSegment = TranscriptionChordResolver.nearestValidSegment(at: vm.currentTimeMs, in: prepared)
@@ -303,11 +301,11 @@ struct TranscriptionResultView: View {
         ScrollView {
             VStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.displayName)
+                    Text(displayEntry.displayName)
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(SwiftAppTheme.text)
                         .lineLimit(1)
-                    Text(String(format: AppL10n.t("transcribe_original_key"), entry.originalKey))
+                    Text(String(format: AppL10n.t("transcribe_original_key"), displayEntry.originalKey))
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(SwiftAppTheme.brand)
                 }
@@ -328,34 +326,10 @@ struct TranscriptionResultView: View {
                             .stroke(SwiftAppTheme.line, lineWidth: 1)
                     )
 
-                #if DEBUG
-                if entry.timingVariants != nil {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("边界模式")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(SwiftAppTheme.muted)
-                        Picker(
-                            "边界模式",
-                            selection: Binding(
-                                get: { vm.chordBoundaryDebugMode },
-                                set: { vm.chordBoundaryDebugMode = $0 }
-                            )
-                        ) {
-                            ForEach(TranscriptionChordBoundaryDebugMode.debugPickerModes(for: entry), id: \.self) { mode in
-                                Text(mode.pickerLabel).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 2)
-                }
-                #endif
-
                 CurrentChordCard(
                     currentSegment: currentSegment,
                     currentTimeMs: vm.currentTimeMs,
-                    durationMs: entry.durationMs
+                    durationMs: displayEntry.durationMs
                 )
 
                 ChordTimelineView(
@@ -367,7 +341,7 @@ struct TranscriptionResultView: View {
 
                 PlaybackControlsView(
                     currentTimeMs: $vm.currentTimeMs,
-                    durationMs: entry.durationMs,
+                    durationMs: displayEntry.durationMs,
                     isPlaying: vm.isPlaying,
                     onSeek: vm.seek,
                     onTogglePlay: vm.togglePlay
@@ -386,7 +360,7 @@ struct TranscriptionResultView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("查看参考和弦谱") {
+                    Button("查看和编辑和弦谱") {
                         showingFullChordChart = true
                     }
                 } label: {
@@ -395,9 +369,16 @@ struct TranscriptionResultView: View {
             }
         }
         .navigationDestination(isPresented: $showingFullChordChart) {
-            FullChordChartView(entry: entry, vm: vm, preparedChartSegments: preparedFullChordChartSegments)
+            FullChordChartView(entry: displayEntry, vm: vm)
         }
-        .task { vm.prepareIfNeeded() }
+        .task {
+            vm.prepareIfNeeded()
+            await loadLatestPersistedEntry()
+        }
+        .onChange(of: showingFullChordChart) { _, isPresented in
+            guard !isPresented else { return }
+            Task { await loadLatestPersistedEntry() }
+        }
         .onReceive(
             vm.$currentTimeMs
                 .map { timeMs in
@@ -439,6 +420,13 @@ struct TranscriptionResultView: View {
             Text(vm.playbackErrorMessage)
         }
     }
+
+    private func loadLatestPersistedEntry() async {
+        guard let latest = await historyStore.load(id: entry.id) else { return }
+        await MainActor.run {
+            latestPersistedEntry = latest
+        }
+    }
 }
 
 @MainActor
@@ -449,9 +437,6 @@ final class TranscriptionPlayerViewModel: ObservableObject {
     @Published var isLooping = false
     @Published var showingPlaybackError = false
     @Published var playbackErrorMessage = ""
-    /// DEBUG：在默认与 `timingVariants.noAbsorb` 之间切换时间轴/谱面数据源（Release 下不展示入口，属性保持默认）。
-    @Published var chordBoundaryDebugMode: TranscriptionChordBoundaryDebugMode = .normal
-
     private let entry: TranscriptionHistoryEntry
     private var player: AVPlayer?
     private var timeObserver: Any?
@@ -583,86 +568,39 @@ final class TranscriptionPlayerViewModel: ObservableObject {
     }
 
     func activeTimelineSegments(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
-        switch chordBoundaryDebugMode {
-        case .normal:
-            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
-        case .noAbsorbRawEdges:
-            if let no = entry.timingVariants?.noAbsorb, !no.displaySegments.isEmpty {
-                return no.displaySegments
-            }
-            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
-        case .timingPriority:
-            // 播放高亮 / 当前和弦必须与踩点时间轴一致：只用 display（与后端 simplifiedDisplay 同源），禁止 chordChartSegments（谱面二次吸收会破坏踩点）。
-            if let t = entry.timingVariants?.timing, !t.displaySegments.isEmpty {
-                return t.displaySegments
-            }
-            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
-        case .timingCompact:
-            if let tc = entry.timingVariants?.timingCompact, !tc.displaySegments.isEmpty {
-                return tc.displaySegments
-            }
-            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
-        case .playableCompact:
-            if let pc = entry.timingVariants?.playableCompact, !pc.displaySegments.isEmpty {
-                return pc.displaySegments
-            }
-            return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
+        if let edited = entry.editedChordChartSegments, !edited.isEmpty {
+            return edited
         }
+        return Self.basePlayableTimelineSource(from: entry)
     }
 
     func activeChordChartSource(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
-        switch chordBoundaryDebugMode {
-        case .normal:
-            return Self.defaultChordChartSource(from: entry)
-        case .noAbsorbRawEdges:
-            if let no = entry.timingVariants?.noAbsorb {
-                if !no.chordChartSegments.isEmpty { return no.chordChartSegments }
-                if !no.simplifiedDisplaySegments.isEmpty { return no.simplifiedDisplaySegments }
-                if !no.displaySegments.isEmpty { return no.displaySegments }
-            }
-            return Self.defaultChordChartSource(from: entry)
-        case .timingPriority:
-            // 完整参考谱允许使用 chordChartSegments（谱面吸收）；与结果页时间轴数据源分离。
-            if let t = entry.timingVariants?.timing {
-                if !t.chordChartSegments.isEmpty { return t.chordChartSegments }
-                if !t.simplifiedDisplaySegments.isEmpty { return t.simplifiedDisplaySegments }
-                if !t.displaySegments.isEmpty { return t.displaySegments }
-            }
-            return Self.defaultChordChartSource(from: entry)
-        case .timingCompact:
-            if let tc = entry.timingVariants?.timingCompact {
-                if !tc.chordChartSegments.isEmpty { return tc.chordChartSegments }
-                if !tc.simplifiedDisplaySegments.isEmpty { return tc.simplifiedDisplaySegments }
-                if !tc.displaySegments.isEmpty { return tc.displaySegments }
-            }
-            return Self.defaultChordChartSource(from: entry)
-        case .playableCompact:
-            if let pc = entry.timingVariants?.playableCompact {
-                if !pc.chordChartSegments.isEmpty { return pc.chordChartSegments }
-                if !pc.simplifiedDisplaySegments.isEmpty { return pc.simplifiedDisplaySegments }
-                if !pc.displaySegments.isEmpty { return pc.displaySegments }
-            }
-            return Self.defaultChordChartSource(from: entry)
-        }
+        Self.basePlayableChordChartSource(from: entry)
     }
 
     func displaySanitizer(for entry: TranscriptionHistoryEntry) -> TranscriptionChordResolver.DisplayTimelineSanitizer {
-        if chordBoundaryDebugMode == .noAbsorbRawEdges, entry.timingVariants?.noAbsorb != nil {
+        if entry.editedChordChartSegments?.isEmpty == false {
             return .backendNoShortAbsorptionEdges
         }
-        if chordBoundaryDebugMode == .timingPriority, entry.timingVariants?.timing != nil {
-            return .backendNoShortAbsorptionEdges
-        }
-        if chordBoundaryDebugMode == .timingCompact, entry.timingVariants?.timingCompact != nil {
-            return .backendNoShortAbsorptionEdges
-        }
-        if chordBoundaryDebugMode == .playableCompact, entry.timingVariants?.playableCompact != nil {
+        if entry.timingVariants?.playableCompact != nil {
             return .backendNoShortAbsorptionEdges
         }
         return .fullClientPipeline
     }
 
-    private static func defaultChordChartSource(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
+    private static func basePlayableTimelineSource(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
+        if let pc = entry.timingVariants?.playableCompact, !pc.displaySegments.isEmpty {
+            return pc.displaySegments
+        }
+        return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
+    }
+
+    private static func basePlayableChordChartSource(from entry: TranscriptionHistoryEntry) -> [TranscriptionSegment] {
+        if let pc = entry.timingVariants?.playableCompact {
+            if !pc.chordChartSegments.isEmpty { return pc.chordChartSegments }
+            if !pc.simplifiedDisplaySegments.isEmpty { return pc.simplifiedDisplaySegments }
+            if !pc.displaySegments.isEmpty { return pc.displaySegments }
+        }
         if !entry.chordChartSegments.isEmpty { return entry.chordChartSegments }
         return entry.displaySegments.isEmpty ? entry.segments : entry.displaySegments
     }

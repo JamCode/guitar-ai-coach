@@ -118,6 +118,9 @@ actor TranscriptionHistoryStore {
             segments: segments,
             displaySegments: displaySegments,
             chordChartSegments: chordChartSegments,
+            editedChordChartSegments: nil,
+            editedChordChartRowSizes: nil,
+            editedAtMs: nil,
             timingVariants: timingVariants,
             timingVariantStats: timingVariantStats,
             backend: backend,
@@ -168,10 +171,77 @@ actor TranscriptionHistoryStore {
             segments: old.segments,
             displaySegments: old.displaySegments,
             chordChartSegments: old.chordChartSegments,
+            editedChordChartSegments: old.editedChordChartSegments,
+            editedChordChartRowSizes: old.editedChordChartRowSizes,
+            editedAtMs: old.editedAtMs,
+            timingVariants: old.timingVariants,
+            timingVariantStats: old.timingVariantStats,
             backend: old.backend,
             waveform: old.waveform
         )
         try writeAll(all)
+    }
+
+    func updateEditedChordChartSegments(
+        id: String,
+        segments: [TranscriptionSegment],
+        rowSizes: [Int]? = nil
+    ) async throws {
+        var all = await loadAll()
+        guard let idx = all.firstIndex(where: { $0.id == id }) else { return }
+        let old = all[idx]
+        all[idx] = TranscriptionHistoryEntry(
+            id: old.id,
+            sourceType: old.sourceType,
+            fileName: old.fileName,
+            customName: old.customName,
+            storedMediaPath: old.storedMediaPath,
+            durationMs: old.durationMs,
+            originalKey: old.originalKey,
+            createdAtMs: old.createdAtMs,
+            segments: old.segments,
+            displaySegments: old.displaySegments,
+            chordChartSegments: old.chordChartSegments,
+            editedChordChartSegments: segments,
+            editedChordChartRowSizes: rowSizes,
+            editedAtMs: Int(Date().timeIntervalSince1970 * 1000),
+            timingVariants: old.timingVariants,
+            timingVariantStats: old.timingVariantStats,
+            backend: old.backend,
+            waveform: old.waveform
+        )
+        try writeAll(all)
+    }
+
+    func clearEditedChordChartSegments(id: String) async throws {
+        var all = await loadAll()
+        guard let idx = all.firstIndex(where: { $0.id == id }) else { return }
+        let old = all[idx]
+        all[idx] = TranscriptionHistoryEntry(
+            id: old.id,
+            sourceType: old.sourceType,
+            fileName: old.fileName,
+            customName: old.customName,
+            storedMediaPath: old.storedMediaPath,
+            durationMs: old.durationMs,
+            originalKey: old.originalKey,
+            createdAtMs: old.createdAtMs,
+            segments: old.segments,
+            displaySegments: old.displaySegments,
+            chordChartSegments: old.chordChartSegments,
+            editedChordChartSegments: nil,
+            editedChordChartRowSizes: nil,
+            editedAtMs: nil,
+            timingVariants: old.timingVariants,
+            timingVariantStats: old.timingVariantStats,
+            backend: old.backend,
+            waveform: old.waveform
+        )
+        try writeAll(all)
+    }
+
+    func load(id: String) async -> TranscriptionHistoryEntry? {
+        await loadAll().first(where: { $0.id == id })
     }
 
     /// 将索引中的 `storedMediaPath` 解析为当前沙盒下可访问的绝对 URL（含旧数据兼容）。

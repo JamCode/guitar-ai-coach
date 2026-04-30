@@ -211,6 +211,12 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
     let displaySegments: [TranscriptionSegment]
     /// User-facing segments for full chord chart.
     let chordChartSegments: [TranscriptionSegment]
+    /// 用户修订后的参考和弦谱；仅影响参考和弦谱页面。
+    let editedChordChartSegments: [TranscriptionSegment]?
+    /// 用户修订后的参考和弦谱分行结构；用于保留“不满 4 个和弦也不自动补齐”的布局。
+    let editedChordChartRowSizes: [Int]?
+    /// 用户最近一次保存参考和弦谱编辑的时间戳（毫秒）。
+    let editedAtMs: Int?
     /// 远程 ONNX 返回的 A/B 边界变体；旧数据或本地识别为 nil。
     let timingVariants: TranscriptionTimingVariants?
     /// 与 `timingVariants` 配套的计数统计（可选持久化便于排查）。
@@ -236,6 +242,9 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         case segments
         case displaySegments
         case chordChartSegments
+        case editedChordChartSegments
+        case editedChordChartRowSizes
+        case editedAtMs
         case timingVariants
         case timingVariantStats
         case backend
@@ -254,6 +263,9 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         segments: [TranscriptionSegment],
         displaySegments: [TranscriptionSegment],
         chordChartSegments: [TranscriptionSegment],
+        editedChordChartSegments: [TranscriptionSegment]? = nil,
+        editedChordChartRowSizes: [Int]? = nil,
+        editedAtMs: Int? = nil,
         timingVariants: TranscriptionTimingVariants? = nil,
         timingVariantStats: TranscriptionTimingVariantStats? = nil,
         backend: String,
@@ -270,6 +282,9 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         self.segments = segments
         self.displaySegments = displaySegments
         self.chordChartSegments = chordChartSegments
+        self.editedChordChartSegments = editedChordChartSegments
+        self.editedChordChartRowSizes = editedChordChartRowSizes
+        self.editedAtMs = editedAtMs
         self.timingVariants = timingVariants
         self.timingVariantStats = timingVariantStats
         self.backend = backend
@@ -290,6 +305,9 @@ struct TranscriptionHistoryEntry: Codable, Equatable, Identifiable, Hashable {
         let display = try c.decodeIfPresent([TranscriptionSegment].self, forKey: .displaySegments) ?? segments
         displaySegments = display
         chordChartSegments = try c.decodeIfPresent([TranscriptionSegment].self, forKey: .chordChartSegments) ?? display
+        editedChordChartSegments = try c.decodeIfPresent([TranscriptionSegment].self, forKey: .editedChordChartSegments)
+        editedChordChartRowSizes = try c.decodeIfPresent([Int].self, forKey: .editedChordChartRowSizes)
+        editedAtMs = try c.decodeIfPresent(Int.self, forKey: .editedAtMs)
         timingVariants = try c.decodeIfPresent(TranscriptionTimingVariants.self, forKey: .timingVariants)
         timingVariantStats = try c.decodeIfPresent(TranscriptionTimingVariantStats.self, forKey: .timingVariantStats)
         backend = try c.decodeIfPresent(String.self, forKey: .backend) ?? "local"

@@ -5,18 +5,79 @@ import Combine
 struct FullChordChartView: View {
     let entry: TranscriptionHistoryEntry
     @ObservedObject var vm: TranscriptionPlayerViewModel
-    /// 已由结果页按当前「边界模式」做过时间轴清洗后的和弦谱片段。
-    let preparedChartSegments: [TranscriptionSegment]
 
     @State private var currentSegmentIndex: Int? = nil
     @State private var currentRowIndex: Int? = nil
     @State private var currentChordIndexInRow: Int? = nil
+    @State private var isEditing = false
+    @State private var workingRows: [[TranscriptionSegment]] = []
+    @State private var loadedEditedSegments: [TranscriptionSegment]? = nil
+    @State private var loadedEditedRowSizes: [Int]? = nil
+    @State private var didLoadPersistedEditedState = false
+    @State private var selectedPosition: ChordRowPosition? = nil
+    @State private var chordNameDraft = ""
+    @State private var showingChordActions = false
+    @State private var showingRenameAlert = false
+    @State private var showingDiscardChangesDialog = false
+    @State private var showingRestoreOriginalDialog = false
+    @State private var showingSaveError = false
+    @State private var saveErrorMessage = ""
+    @State private var isSaving = false
 
-    private var sortedSegments: [TranscriptionSegment] { preparedChartSegments }
-    private var rows: [[TranscriptionSegment]] {
-        stride(from: 0, to: sortedSegments.count, by: 4).map { start in
-            Array(sortedSegments[start..<min(start + 4, sortedSegments.count)])
+    private let historyStore = TranscriptionHistoryStore()
+
+    private var originalPreparedChartSegments: [TranscriptionSegment] {
+        let raw = vm.activeChordChartSource(from: entry)
+        let sanitizer = vm.displaySanitizer(for: entry)
+        return TranscriptionChordResolver.makeDisplayChordSegments(rawSegments: raw, sanitizer: sanitizer)
+    }
+
+    private var originalPreparedChartRows: [[TranscriptionSegment]] {
+        chunkRows(from: originalPreparedChartSegments)
+    }
+
+    private var persistedChartRows: [[TranscriptionSegment]] {
+        if didLoadPersistedEditedState {
+            if let edited = loadedEditedSegments, !edited.isEmpty {
+                return rebuildRows(from: edited, rowSizes: loadedEditedRowSizes)
+            }
+            return originalPreparedChartRows
         }
+        if let edited = entry.editedChordChartSegments, !edited.isEmpty {
+            return rebuildRows(from: edited, rowSizes: entry.editedChordChartRowSizes)
+        }
+        return originalPreparedChartRows
+    }
+
+    private var displayedRows: [[TranscriptionSegment]] {
+        isEditing ? workingRows : persistedChartRows
+    }
+
+    private var sortedSegments: [TranscriptionSegment] {
+        flattenRows(displayedRows)
+    }
+
+    private var hasUnsavedChanges: Bool {
+        isEditing && workingRows != persistedChartRows
+    }
+
+    private var canSaveChanges: Bool {
+        isEditing && !sortedSegments.isEmpty && hasUnsavedChanges && !isSaving
+    }
+
+    private var canRestoreOriginal: Bool {
+        guard isEditing else { return false }
+        if workingRows != originalPreparedChartRows {
+            return true
+        }
+        if didLoadPersistedEditedState {
+            return (loadedEditedSegments?.isEmpty == false) || (loadedEditedRowSizes?.isEmpty == false)
+        }
+        return (entry.editedChordChartSegments?.isEmpty == false) || (entry.editedChordChartRowSizes?.isEmpty == false)
+    }
+
+    private var rows: [[TranscriptionSegment]] {
+        displayedRows
     }
 
     var body: some View {
@@ -26,20 +87,12 @@ struct FullChordChartView: View {
 
                 LazyVStack(spacing: 8) {
                     ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
-                        ChordRowView(
-                            rowIndex: rowIndex,
-                            row: row,
-                            isCurrentRow: rowIndex == currentRowIndex,
-                            currentChordIndexInRow: rowIndex == currentRowIndex ? currentChordIndexInRow : nil,
-                            onTapRow: {
-                                if let first = row.first { vm.seek(first.startMs) }
-                            },
-                            onTapChord: { seg in
-                                vm.seek(seg.startMs)
-                            }
-                        )
-                        .id("row-\(rowIndex)")
+                        chordRow(rowIndex: rowIndex, row: row)
                     }
+                }
+
+                if isEditing {
+                    editorActionBar
                 }
             }
             .padding(SwiftAppTheme.pagePadding)
@@ -48,6 +101,9 @@ struct FullChordChartView: View {
         .onAppear {
             applyHighlight(for: vm.currentTimeMs)
         }
+        .task(id: entry.id) {
+            await loadLatestEditedSegments()
+        }
         .onReceive(
             vm.$currentTimeMs
                 .map { timeMs in
@@ -55,24 +111,108 @@ struct FullChordChartView: View {
                 }
                 .removeDuplicates()
         ) { idx in
-            currentSegmentIndex = idx
-            if let idx {
-                currentRowIndex = idx / 4
-                currentChordIndexInRow = idx % 4
-            } else {
-                currentRowIndex = nil
-                currentChordIndexInRow = nil
-            }
+            updateCurrentHighlight(for: idx)
         }
-        .navigationTitle("参考和弦谱")
+        .onChange(of: sortedSegments) { _, _ in
+            applyHighlight(for: vm.currentTimeMs)
+        }
+        .navigationTitle("我的和弦谱")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if isEditing {
+                    Button("完成") {
+                        finishEditingTapped()
+                    }
+                    .disabled(isSaving)
+                } else {
+                    Button("编辑") {
+                        beginEditing()
+                    }
+                    .disabled(sortedSegments.isEmpty)
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             CompactPlaybackBarHost(vm: vm, durationMs: entry.durationMs)
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
         }
         .appPageBackground()
+        .confirmationDialog(
+            "编辑和弦",
+            isPresented: $showingChordActions,
+            titleVisibility: .visible
+        ) {
+            Button("修改和弦") {
+                guard let selectedSegment else { return }
+                chordNameDraft = selectedSegment.chord
+                showingRenameAlert = true
+            }
+            Button("删除") {
+                applyDelete()
+            }
+            Button("向前合并") {
+                applyMergeBackward()
+            }
+            .disabled(!canMergeBackward)
+            Button("向后合并") {
+                applyMergeForward()
+            }
+            .disabled(!canMergeForward)
+            Button("取消", role: .cancel) {
+                selectedPosition = nil
+            }
+        } message: {
+            if let selectedSegment {
+                Text(selectedSegment.chord)
+            }
+        }
+        .alert("修改和弦", isPresented: $showingRenameAlert) {
+            TextField("例如：C#m", text: $chordNameDraft)
+            Button("取消", role: .cancel) {
+                selectedPosition = nil
+            }
+            Button("保存") {
+                applyRename()
+            }
+        } message: {
+            Text("只会修改这个和弦名称，不会改变时间位置。")
+        }
+        .confirmationDialog(
+            "还有未保存的修改",
+            isPresented: $showingDiscardChangesDialog,
+            titleVisibility: .visible
+        ) {
+            Button("保存修改") {
+                Task { await saveWorkingChanges() }
+            }
+            Button("放弃修改", role: .destructive) {
+                cancelEditing()
+            }
+            Button("继续编辑", role: .cancel) {}
+        } message: {
+            Text("离开编辑模式前，先决定是否保留这次修改。")
+        }
+        .confirmationDialog(
+            "恢复 AI 初始和弦谱",
+            isPresented: $showingRestoreOriginalDialog,
+            titleVisibility: .visible
+        ) {
+            Button("恢复 AI 初始和弦谱", role: .destructive) {
+                workingRows = originalPreparedChartRows
+                selectedPosition = nil
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("这会把当前草稿改回 AI 生成的初始和弦谱；点击“保存修改”后才会真正生效。")
+        }
+        .alert("保存失败", isPresented: $showingSaveError) {
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text(saveErrorMessage)
+        }
     }
 
     private var headerCard: some View {
@@ -84,28 +224,12 @@ struct FullChordChartView: View {
             Text("参考调：\(entry.originalKey)")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.brand)
-            #if DEBUG
-            if entry.timingVariants != nil {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("边界模式")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(SwiftAppTheme.muted)
-                    Picker(
-                        "边界模式",
-                        selection: Binding(
-                            get: { vm.chordBoundaryDebugMode },
-                            set: { vm.chordBoundaryDebugMode = $0 }
-                        )
-                    ) {
-                        ForEach(TranscriptionChordBoundaryDebugMode.debugPickerModes(for: entry), id: \.self) { mode in
-                            Text(mode.pickerLabel).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                .padding(.top, 6)
+            if isEditing {
+                Text("你修改并保存后，主页面和这里都会显示这份和弦谱；播放时间轴不会改变。")
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .padding(.top, 2)
             }
-            #endif
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -121,28 +245,303 @@ struct FullChordChartView: View {
 
     private func applyHighlight(for currentTimeMs: Int) {
         let idx = PlaybackSyncResolver.currentIndex(for: currentTimeMs, segments: sortedSegments)
-        currentSegmentIndex = idx
-        if let idx {
-            currentRowIndex = idx / 4
-            currentChordIndexInRow = idx % 4
-        } else {
+        updateCurrentHighlight(for: idx)
+    }
+
+    @ViewBuilder
+    private func chordRow(rowIndex: Int, row: [TranscriptionSegment]) -> some View {
+        let isCurrentRow = rowIndex == currentRowIndex
+        let currentChord = isCurrentRow ? currentChordIndexInRow : nil
+        ChordRowView(
+            rowIndex: rowIndex,
+            row: row,
+            isEditing: isEditing,
+            isCurrentRow: isCurrentRow,
+            currentChordIndexInRow: currentChord,
+            onTapRow: {
+                guard !isEditing, let first = row.first else { return }
+                vm.seek(first.startMs)
+            },
+            onTapChord: { idxInRow, seg in
+                if isEditing {
+                    selectedPosition = ChordRowPosition(rowIndex: rowIndex, chordIndex: idxInRow)
+                    showingChordActions = true
+                } else {
+                    vm.seek(seg.startMs)
+                }
+            }
+        )
+        .id("row-\(rowIndex)")
+    }
+
+    private var selectedSegment: TranscriptionSegment? {
+        guard
+            let selectedPosition,
+            workingRows.indices.contains(selectedPosition.rowIndex),
+            workingRows[selectedPosition.rowIndex].indices.contains(selectedPosition.chordIndex)
+        else {
+            return nil
+        }
+        return workingRows[selectedPosition.rowIndex][selectedPosition.chordIndex]
+    }
+
+    private var canMergeBackward: Bool {
+        guard
+            let selectedPosition,
+            workingRows.indices.contains(selectedPosition.rowIndex)
+        else {
+            return false
+        }
+        return selectedPosition.chordIndex > 0
+    }
+
+    private var canMergeForward: Bool {
+        guard
+            let selectedPosition,
+            workingRows.indices.contains(selectedPosition.rowIndex)
+        else {
+            return false
+        }
+        return selectedPosition.chordIndex + 1 < workingRows[selectedPosition.rowIndex].count
+    }
+
+    @ViewBuilder
+    private var editorActionBar: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                Button(role: .destructive) {
+                    showingRestoreOriginalDialog = true
+                } label: {
+                    Text("恢复 AI 初始")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(!canRestoreOriginal || isSaving)
+
+                Button {
+                    Task { await saveWorkingChanges() }
+                } label: {
+                    if isSaving {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Text("保存修改")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!canSaveChanges)
+            }
+
+            Text("支持：改和弦名、删除、向前合并、向后合并。修改只在点击“保存修改”后生效。")
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(SwiftAppTheme.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(SwiftAppTheme.line, lineWidth: 1)
+        )
+    }
+
+    private func beginEditing() {
+        workingRows = persistedChartRows
+        selectedPosition = nil
+        isEditing = true
+    }
+
+    private func finishEditingTapped() {
+        if hasUnsavedChanges {
+            showingDiscardChangesDialog = true
+            return
+        }
+        cancelEditing()
+    }
+
+    private func cancelEditing() {
+        selectedPosition = nil
+        chordNameDraft = ""
+        workingRows = []
+        isEditing = false
+    }
+
+    private func applyRename() {
+        guard
+            let selectedPosition,
+            let updated = TranscriptionChordChartEditing.rename(
+                rows: workingRows,
+                at: selectedPosition,
+                to: chordNameDraft
+            )
+        else {
+            return
+        }
+        workingRows = updated
+    }
+
+    private func applyDelete() {
+        guard
+            let selectedPosition,
+            let updated = TranscriptionChordChartEditing.delete(rows: workingRows, at: selectedPosition)
+        else {
+            return
+        }
+        workingRows = updated
+        self.selectedPosition = nil
+    }
+
+    private func applyMergeBackward() {
+        guard
+            let selectedPosition,
+            let updated = TranscriptionChordChartEditing.mergeBackward(rows: workingRows, at: selectedPosition)
+        else {
+            return
+        }
+        workingRows = updated
+        self.selectedPosition = ChordRowPosition(
+            rowIndex: selectedPosition.rowIndex,
+            chordIndex: max(0, selectedPosition.chordIndex - 1)
+        )
+    }
+
+    private func applyMergeForward() {
+        guard
+            let selectedPosition,
+            let updated = TranscriptionChordChartEditing.mergeForward(rows: workingRows, at: selectedPosition)
+        else {
+            return
+        }
+        workingRows = updated
+        self.selectedPosition = ChordRowPosition(
+            rowIndex: selectedPosition.rowIndex,
+            chordIndex: min(selectedPosition.chordIndex, max(0, updated[selectedPosition.rowIndex].count - 1))
+        )
+    }
+
+    private func loadLatestEditedSegments() async {
+        guard let latest = await historyStore.load(id: entry.id) else { return }
+        await MainActor.run {
+            loadedEditedSegments = latest.editedChordChartSegments
+            loadedEditedRowSizes = latest.editedChordChartRowSizes
+            didLoadPersistedEditedState = true
+        }
+    }
+
+    private func saveWorkingChanges() async {
+        let flattened = flattenRows(workingRows)
+        guard !flattened.isEmpty else {
+            saveErrorMessage = "至少保留一个和弦后再保存。"
+            showingSaveError = true
+            return
+        }
+        guard !isSaving else { return }
+
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            if workingRows == originalPreparedChartRows {
+                try await historyStore.clearEditedChordChartSegments(id: entry.id)
+                loadedEditedSegments = nil
+                loadedEditedRowSizes = nil
+            } else {
+                let rowSizes = workingRows.map(\.count)
+                try await historyStore.updateEditedChordChartSegments(
+                    id: entry.id,
+                    segments: flattened,
+                    rowSizes: rowSizes
+                )
+                loadedEditedSegments = flattened
+                loadedEditedRowSizes = rowSizes
+            }
+            didLoadPersistedEditedState = true
+            cancelEditing()
+        } catch {
+            saveErrorMessage = error.localizedDescription
+            showingSaveError = true
+        }
+    }
+
+    private func chunkRows(from segments: [TranscriptionSegment]) -> [[TranscriptionSegment]] {
+        guard !segments.isEmpty else { return [] }
+        return stride(from: 0, to: segments.count, by: 4).map { start in
+            Array(segments[start..<min(start + 4, segments.count)])
+        }
+    }
+
+    private func rebuildRows(from segments: [TranscriptionSegment], rowSizes: [Int]?) -> [[TranscriptionSegment]] {
+        guard !segments.isEmpty else { return [] }
+        guard let rowSizes, !rowSizes.isEmpty else {
+            return chunkRows(from: segments)
+        }
+
+        var rows: [[TranscriptionSegment]] = []
+        var cursor = 0
+        for size in rowSizes where size > 0 {
+            guard cursor < segments.count else { break }
+            let end = min(cursor + size, segments.count)
+            rows.append(Array(segments[cursor..<end]))
+            cursor = end
+        }
+        if cursor < segments.count {
+            rows.append(contentsOf: chunkRows(from: Array(segments[cursor...])))
+        }
+        return rows.isEmpty ? chunkRows(from: segments) : rows
+    }
+
+    private func flattenRows(_ rows: [[TranscriptionSegment]]) -> [TranscriptionSegment] {
+        rows.flatMap { $0 }
+    }
+
+    private func updateCurrentHighlight(for flattenedIndex: Int?) {
+        currentSegmentIndex = flattenedIndex
+        guard
+            let flattenedIndex,
+            let position = rowPosition(forFlattenedIndex: flattenedIndex, in: displayedRows)
+        else {
             currentRowIndex = nil
             currentChordIndexInRow = nil
+            return
         }
+        currentRowIndex = position.rowIndex
+        currentChordIndexInRow = position.chordIndex
+    }
+
+    private func rowPosition(
+        forFlattenedIndex flattenedIndex: Int,
+        in rows: [[TranscriptionSegment]]
+    ) -> ChordRowPosition? {
+        guard flattenedIndex >= 0 else { return nil }
+        var cursor = 0
+        for (rowIndex, row) in rows.enumerated() {
+            let nextCursor = cursor + row.count
+            if flattenedIndex < nextCursor {
+                return ChordRowPosition(rowIndex: rowIndex, chordIndex: flattenedIndex - cursor)
+            }
+            cursor = nextCursor
+        }
+        return nil
     }
 }
 
 private struct ChordRowView: View, Equatable {
     let rowIndex: Int
     let row: [TranscriptionSegment]
+    let isEditing: Bool
     let isCurrentRow: Bool
     let currentChordIndexInRow: Int?
     let onTapRow: () -> Void
-    let onTapChord: (TranscriptionSegment) -> Void
+    let onTapChord: (Int, TranscriptionSegment) -> Void
 
     static func == (lhs: ChordRowView, rhs: ChordRowView) -> Bool {
         lhs.rowIndex == rhs.rowIndex
             && lhs.row == rhs.row
+            && lhs.isEditing == rhs.isEditing
             && lhs.isCurrentRow == rhs.isCurrentRow
             && lhs.currentChordIndexInRow == rhs.currentChordIndexInRow
     }
@@ -158,7 +557,7 @@ private struct ChordRowView: View, Equatable {
                 ForEach(Array(row.enumerated()), id: \.offset) { idx, segment in
                     let isCurrentChord = currentChordIndexInRow == idx
                     Button {
-                        onTapChord(segment)
+                        onTapChord(idx, segment)
                     } label: {
                         Text(segment.chord)
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
@@ -194,13 +593,21 @@ private struct ChordRowView: View, Equatable {
                 )
         )
         .contentShape(Rectangle())
-        .onTapGesture(perform: onTapRow)
+        .onTapGesture {
+            guard !isEditing else { return }
+            onTapRow()
+        }
     }
 
     private func formatMs(_ ms: Int) -> String {
         let totalSeconds = max(0, ms / 1000)
         return String(format: "%02d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
+}
+
+struct ChordRowPosition: Equatable {
+    let rowIndex: Int
+    let chordIndex: Int
 }
 
 private struct CompactPlaybackBarHost: View {
@@ -219,6 +626,96 @@ private struct CompactPlaybackBarHost: View {
             onToggleLoop: { vm.toggleLoop() },
             onChangeRate: { vm.cyclePlaybackRate() }
         )
+    }
+}
+
+enum TranscriptionChordChartEditing {
+    static func rename(
+        rows: [[TranscriptionSegment]],
+        at position: ChordRowPosition,
+        to chord: String
+    ) -> [[TranscriptionSegment]]? {
+        guard
+            rows.indices.contains(position.rowIndex),
+            rows[position.rowIndex].indices.contains(position.chordIndex)
+        else {
+            return nil
+        }
+        let trimmed = chord.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        var updated = rows
+        let current = updated[position.rowIndex][position.chordIndex]
+        updated[position.rowIndex][position.chordIndex] = TranscriptionSegment(
+            startMs: current.startMs,
+            endMs: current.endMs,
+            chord: trimmed
+        )
+        return updated
+    }
+
+    static func delete(
+        rows: [[TranscriptionSegment]],
+        at position: ChordRowPosition
+    ) -> [[TranscriptionSegment]]? {
+        guard
+            rows.indices.contains(position.rowIndex),
+            rows[position.rowIndex].indices.contains(position.chordIndex)
+        else {
+            return nil
+        }
+        var updated = rows
+        updated[position.rowIndex].remove(at: position.chordIndex)
+        if updated[position.rowIndex].isEmpty {
+            updated.remove(at: position.rowIndex)
+        }
+        return updated
+    }
+
+    static func mergeBackward(
+        rows: [[TranscriptionSegment]],
+        at position: ChordRowPosition
+    ) -> [[TranscriptionSegment]]? {
+        guard
+            rows.indices.contains(position.rowIndex),
+            position.chordIndex > 0,
+            rows[position.rowIndex].indices.contains(position.chordIndex)
+        else {
+            return nil
+        }
+        var updated = rows
+        let prev = updated[position.rowIndex][position.chordIndex - 1]
+        let current = updated[position.rowIndex][position.chordIndex]
+        updated[position.rowIndex][position.chordIndex - 1] = TranscriptionSegment(
+            startMs: prev.startMs,
+            endMs: current.endMs,
+            chord: prev.chord
+        )
+        updated[position.rowIndex].remove(at: position.chordIndex)
+        return updated
+    }
+
+    static func mergeForward(
+        rows: [[TranscriptionSegment]],
+        at position: ChordRowPosition
+    ) -> [[TranscriptionSegment]]? {
+        guard
+            rows.indices.contains(position.rowIndex),
+            rows[position.rowIndex].indices.contains(position.chordIndex),
+            position.chordIndex + 1 < rows[position.rowIndex].count
+        else {
+            return nil
+        }
+        var updated = rows
+        let current = updated[position.rowIndex][position.chordIndex]
+        let next = updated[position.rowIndex][position.chordIndex + 1]
+        updated[position.rowIndex][position.chordIndex + 1] = TranscriptionSegment(
+            startMs: current.startMs,
+            endMs: next.endMs,
+            chord: next.chord
+        )
+        updated[position.rowIndex].remove(at: position.chordIndex)
+        return updated
     }
 }
 

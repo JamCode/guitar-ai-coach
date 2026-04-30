@@ -116,6 +116,9 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
             segments: list[0].segments,
             displaySegments: list[0].displaySegments,
             chordChartSegments: list[0].chordChartSegments,
+            editedChordChartSegments: list[0].editedChordChartSegments,
+            editedChordChartRowSizes: list[0].editedChordChartRowSizes,
+            editedAtMs: list[0].editedAtMs,
             timingVariants: list[0].timingVariants,
             timingVariantStats: list[0].timingVariantStats,
             backend: list[0].backend,
@@ -168,5 +171,199 @@ final class TranscriptionHistoryStoreTests: XCTestCase {
         try await store.rename(id: entry.id, customName: "   ")
         let unchanged = await store.loadAll().first(where: { $0.id == entry.id })
         XCTAssertEqual(unchanged?.customName, "新名字")
+    }
+
+    func testUpdateEditedChordChartSegments_persistsEditedChartAndCanBeCleared() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let media = root.appendingPathComponent("edited-demo.m4a")
+        try Data([8, 9, 0]).write(to: media)
+
+        let store = TranscriptionHistoryStore(rootOverride: root)
+        let entry = try await store.saveResult(
+            sourceURL: media,
+            sourceType: .files,
+            fileName: "edited-demo.m4a",
+            customName: "演员",
+            durationMs: 1_000,
+            originalKey: "B",
+            segments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "B")],
+            displaySegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "B")],
+            chordChartSegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "B")],
+            backend: "remote",
+            waveform: [0.4]
+        )
+
+        let edited = [
+            TranscriptionSegment(startMs: 0, endMs: 500, chord: "B"),
+            TranscriptionSegment(startMs: 500, endMs: 1_000, chord: "F#"),
+        ]
+        try await store.updateEditedChordChartSegments(id: entry.id, segments: edited, rowSizes: [1, 1])
+
+        let saved = await store.load(id: entry.id)
+        XCTAssertEqual(saved?.editedChordChartSegments, edited)
+        XCTAssertEqual(saved?.editedChordChartRowSizes, [1, 1])
+        XCTAssertNotNil(saved?.editedAtMs)
+
+        try await store.clearEditedChordChartSegments(id: entry.id)
+        let cleared = await store.load(id: entry.id)
+        XCTAssertNil(cleared?.editedChordChartSegments)
+        XCTAssertNil(cleared?.editedChordChartRowSizes)
+        XCTAssertNil(cleared?.editedAtMs)
+        XCTAssertEqual(cleared?.chordChartSegments, entry.chordChartSegments)
+    }
+
+    func testRename_preservesEditedChordChartSegments() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let media = root.appendingPathComponent("rename-edited-demo.m4a")
+        try Data([1, 3, 5]).write(to: media)
+
+        let store = TranscriptionHistoryStore(rootOverride: root)
+        let entry = try await store.saveResult(
+            sourceURL: media,
+            sourceType: .files,
+            fileName: "rename-edited-demo.m4a",
+            customName: "旧名字",
+            durationMs: 1_000,
+            originalKey: "E",
+            segments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "E")],
+            displaySegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "E")],
+            chordChartSegments: [TranscriptionSegment(startMs: 0, endMs: 500, chord: "E")],
+            backend: "remote",
+            waveform: [0.2]
+        )
+        let edited = [
+            TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E")
+        ]
+        try await store.updateEditedChordChartSegments(id: entry.id, segments: edited, rowSizes: [1])
+
+        try await store.rename(id: entry.id, customName: "新名字")
+        let renamed = await store.load(id: entry.id)
+        XCTAssertEqual(renamed?.customName, "新名字")
+        XCTAssertEqual(renamed?.editedChordChartSegments, edited)
+        XCTAssertEqual(renamed?.editedChordChartRowSizes, [1])
+        XCTAssertNotNil(renamed?.editedAtMs)
+    }
+
+    func testChordChartEditing_rename_onlyUpdatesChordNameWithinSameRow() {
+        let rows = [
+            [
+                TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"),
+                TranscriptionSegment(startMs: 1_000, endMs: 2_000, chord: "B"),
+            ],
+            [
+                TranscriptionSegment(startMs: 2_000, endMs: 3_000, chord: "C#m")
+            ]
+        ]
+
+        let updated = TranscriptionChordChartEditing.rename(
+            rows: rows,
+            at: ChordRowPosition(rowIndex: 0, chordIndex: 1),
+            to: "C#m"
+        )
+
+        XCTAssertEqual(
+            updated,
+            [
+                [
+                    TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"),
+                    TranscriptionSegment(startMs: 1_000, endMs: 2_000, chord: "C#m"),
+                ],
+                [
+                    TranscriptionSegment(startMs: 2_000, endMs: 3_000, chord: "C#m")
+                ]
+            ]
+        )
+    }
+
+    func testChordChartEditing_delete_keepsLaterRowsInPlace() {
+        let rows = [
+            [
+                TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"),
+                TranscriptionSegment(startMs: 1_000, endMs: 2_000, chord: "B"),
+                TranscriptionSegment(startMs: 2_000, endMs: 3_000, chord: "C#m"),
+                TranscriptionSegment(startMs: 3_000, endMs: 4_000, chord: "A"),
+            ],
+            [
+                TranscriptionSegment(startMs: 4_000, endMs: 5_000, chord: "F#")
+            ]
+        ]
+
+        let updated = TranscriptionChordChartEditing.delete(
+            rows: rows,
+            at: ChordRowPosition(rowIndex: 0, chordIndex: 1)
+        )
+
+        XCTAssertEqual(
+            updated,
+            [
+                [
+                    TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"),
+                    TranscriptionSegment(startMs: 2_000, endMs: 3_000, chord: "C#m"),
+                    TranscriptionSegment(startMs: 3_000, endMs: 4_000, chord: "A"),
+                ],
+                [
+                    TranscriptionSegment(startMs: 4_000, endMs: 5_000, chord: "F#")
+                ]
+            ]
+        )
+    }
+
+    func testChordChartEditing_mergeBehaviors_stayWithinCurrentRow() {
+        let rows = [
+            [
+                TranscriptionSegment(startMs: 0, endMs: 1_000, chord: "E"),
+                TranscriptionSegment(startMs: 1_000, endMs: 2_500, chord: "B"),
+            ],
+            [
+                TranscriptionSegment(startMs: 2_500, endMs: 3_500, chord: "C#m")
+            ]
+        ]
+
+        let backward = TranscriptionChordChartEditing.mergeBackward(
+            rows: rows,
+            at: ChordRowPosition(rowIndex: 0, chordIndex: 1)
+        )
+        XCTAssertEqual(
+            backward,
+            [
+                [
+                    TranscriptionSegment(startMs: 0, endMs: 2_500, chord: "E")
+                ],
+                [
+                    TranscriptionSegment(startMs: 2_500, endMs: 3_500, chord: "C#m")
+                ]
+            ]
+        )
+
+        let forward = TranscriptionChordChartEditing.mergeForward(
+            rows: rows,
+            at: ChordRowPosition(rowIndex: 0, chordIndex: 0)
+        )
+        XCTAssertEqual(
+            forward,
+            [
+                [
+                    TranscriptionSegment(startMs: 0, endMs: 2_500, chord: "B")
+                ],
+                [
+                    TranscriptionSegment(startMs: 2_500, endMs: 3_500, chord: "C#m")
+                ]
+            ]
+        )
+
+        XCTAssertNil(
+            TranscriptionChordChartEditing.mergeBackward(
+                rows: rows,
+                at: ChordRowPosition(rowIndex: 1, chordIndex: 0)
+            )
+        )
+        XCTAssertNil(
+            TranscriptionChordChartEditing.mergeForward(
+                rows: rows,
+                at: ChordRowPosition(rowIndex: 0, chordIndex: 1)
+            )
+        )
     }
 }
