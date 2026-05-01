@@ -73,6 +73,18 @@ targets:
     dependencies:
       - target: SwiftEarHost
 
+  SwiftEarHostUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.wanghan.guitarhelper.uitests
+    dependencies:
+      - target: SwiftEarHost
+
 schemes:
   SwiftEarHost:
     build:
@@ -81,5 +93,6 @@ schemes:
     test:
       targets:
         - SwiftEarHostTests
+        - SwiftEarHostUITests
     run:
       config: Debug

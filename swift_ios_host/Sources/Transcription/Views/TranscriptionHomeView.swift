@@ -32,8 +32,10 @@ struct TranscriptionHomeView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .appPrimaryButton()
+                        .accessibilityIdentifier("transcription.unlockButton")
                     }
                     .padding(.vertical, 4)
+                    .accessibilityIdentifier("transcription.lockedCard")
                 }
             }
 
@@ -49,6 +51,7 @@ struct TranscriptionHomeView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .appPrimaryButton()
+                .accessibilityIdentifier("transcription.importPhotos")
                 .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .videos)
 
                 Button {
@@ -62,6 +65,7 @@ struct TranscriptionHomeView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .appSecondaryButton()
+                .accessibilityIdentifier("transcription.importFiles")
                 Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
@@ -164,6 +168,7 @@ struct TranscriptionHomeView: View {
         .sheet(isPresented: $showingPurchase) {
             PurchaseView()
         }
+        .accessibilityIdentifier("screen.transcription.home")
     }
 
     private var unlockButtonTitle: String {

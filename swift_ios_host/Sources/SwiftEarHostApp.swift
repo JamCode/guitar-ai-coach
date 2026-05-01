@@ -147,32 +147,40 @@ private struct RootTabView: View {
             }
             .tabItem {
                 Label(LocalizedStringResource("tab_practice", bundle: .main), systemImage: "figure.strengthtraining.traditional")
+                    .accessibilityIdentifier("tab.practice")
             }
             .tag(0)
+            .accessibilityIdentifier("screen.practice")
 
             NavigationStack {
                 SheetLibraryView(vm: sheetLibraryVM)
             }
             .tabItem {
                 Label(LocalizedStringResource("tab_mine_sheets", bundle: .main), systemImage: "music.note.list")
+                    .accessibilityIdentifier("tab.sheets")
             }
             .tag(1)
+            .accessibilityIdentifier("screen.sheets")
 
             NavigationStack {
                 TranscriptionHomeView()
             }
             .tabItem {
                 Label(LocalizedStringResource("tab_transcribe", bundle: .main), systemImage: "waveform.path.ecg")
+                    .accessibilityIdentifier("tab.transcription")
             }
             .tag(2)
+            .accessibilityIdentifier("screen.transcription")
 
             NavigationStack {
                 ToolsTabView()
             }
             .tabItem {
                 Label(LocalizedStringResource("tab_tools", bundle: .main), systemImage: "wrench.and.screwdriver")
+                    .accessibilityIdentifier("tab.tools")
             }
             .tag(3)
+            .accessibilityIdentifier("screen.tools")
         }
         .transaction { transaction in
             transaction.animation = nil
@@ -208,22 +216,26 @@ private struct ToolsTabView: View {
                     gridTile(
                         title: AppL10n.t("tools_metronome_title"),
                         subtitle: AppL10n.t("tools_metronome_subtitle"),
-                        icon: "metronome"
+                        icon: "metronome",
+                        accessibilityIdentifier: "tools.metronome"
                     ) { MetronomeView() }
                     gridTile(
                         title: AppL10n.t("tools_tuner_title"),
                         subtitle: AppL10n.t("tools_tuner_subtitle"),
-                        icon: "waveform"
+                        icon: "waveform",
+                        accessibilityIdentifier: "tools.tuner"
                     ) { TunerView() }
                     gridTile(
                         title: AppL10n.t("tools_fretboard_title"),
                         subtitle: AppL10n.t("tools_fretboard_subtitle"),
-                        icon: "square.grid.3x3"
+                        icon: "square.grid.3x3",
+                        accessibilityIdentifier: "tools.fretboard"
                     ) { FretboardView() }
                     gridTile(
                         title: AppL10n.t("tools_chord_lookup_title"),
                         subtitle: AppL10n.t("tools_chord_lookup_subtitle"),
-                        icon: "pianokeys"
+                        icon: "pianokeys",
+                        accessibilityIdentifier: "tools.chordLookup"
                     ) { ChordLookupMergedHostView() }
                 }
 
@@ -492,6 +504,7 @@ private struct ToolsTabView: View {
         title: String,
         subtitle: String,
         icon: String,
+        accessibilityIdentifier: String,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
         NavigationLink {
@@ -528,6 +541,7 @@ private struct ToolsTabView: View {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
         .aspectRatio(cardAspectRatio, contentMode: .fit)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 

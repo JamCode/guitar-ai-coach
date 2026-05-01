@@ -50,6 +50,17 @@
                ReferencedContainer = "container:SwiftEarHost.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DCCC2D6732E8D79BA296802C"
+               BuildableName = "SwiftEarHostUITests.xctest"
+               BlueprintName = "SwiftEarHostUITests"
+               ReferencedContainer = "container:SwiftEarHost.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

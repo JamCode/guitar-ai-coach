@@ -37,6 +37,7 @@
 		58DFFB7E3A268E1547F86174 /* StrummingPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */; };
 		682303963F7DBBEA6CBE3F4A /* RecommendationHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0944BA0BAA6C603F2C127D /* RecommendationHistoryStore.swift */; };
 		6B1CE0D318D4540734D8B755 /* ScaleWarmupDrill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECE95D73D9DFEC3EBB60E6B /* ScaleWarmupDrill.swift */; };
+		6C1870E16CD488FD0AE52A61 /* SwiftEarHostUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177FBAE326961BC78A364662 /* SwiftEarHostUITests.swift */; };
 		6C61AD5387584DE05CBAEEFC /* Tuner in Frameworks */ = {isa = PBXBuildFile; productRef = D68C530C664DD0805DDA1187 /* Tuner */; };
 		7A1A7A19018CB5C4774DE4D5 /* RhythmStrummingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C849930EEBA4B913F9D21D21 /* RhythmStrummingView.swift */; };
 		7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */; };
@@ -83,6 +84,13 @@
 			remoteGlobalIDString = E4F091E7E88A92D591ADDD40;
 			remoteInfo = SwiftEarHost;
 		};
+		DEE16A9D4AA28E5A0507700C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D2576BB33B51DF91E04753D1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E4F091E7E88A92D591ADDD40;
+			remoteInfo = SwiftEarHost;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -91,6 +99,7 @@
 		117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftEarHostApp.swift; sourceTree = "<group>"; };
 		119222F862F03CC58F905D72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1197509EA1DAFB3E6F4E6004 /* TranscriptionImportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionImportServiceTests.swift; sourceTree = "<group>"; };
+		177FBAE326961BC78A364662 /* SwiftEarHostUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftEarHostUITests.swift; sourceTree = "<group>"; };
 		1BC3FAF5DB303FC85D919D9E /* TranscriptionPlayerComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionPlayerComponents.swift; sourceTree = "<group>"; };
 		1E1113A563A237477AFD4E68 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1FEE6B960D44ECFD5930467C /* RecommendationHistoryMerging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationHistoryMerging.swift; sourceTree = "<group>"; };
@@ -103,6 +112,7 @@
 		44471F8A97B071DF5D17B507 /* TranscriptionHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryStore.swift; sourceTree = "<group>"; };
 		4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSessionView.swift; sourceTree = "<group>"; };
 		49ADCBE8857A402135DD33A4 /* PracticeTimerSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeTimerSessionView.swift; sourceTree = "<group>"; };
+		4CDF5B05729FFF747C520D71 /* SwiftEarHostUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SwiftEarHostUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4ECE95D73D9DFEC3EBB60E6B /* ScaleWarmupDrill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleWarmupDrill.swift; sourceTree = "<group>"; };
 		5949CDF8018DDF958DB27304 /* TranscriptionMediaDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionMediaDecoder.swift; sourceTree = "<group>"; };
 		66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeFinishDialog.swift; sourceTree = "<group>"; };
@@ -274,11 +284,20 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		5539D6DCED59156BB7A325EA /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				177FBAE326961BC78A364662 /* SwiftEarHostUITests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
 		56B1476CE7B8BBAD15CA17E0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				95FB8986AD18C574ADA77797 /* SwiftEarHost.app */,
 				40962FBB227FF51EC6BCDD77 /* SwiftEarHostTests.xctest */,
+				4CDF5B05729FFF747C520D71 /* SwiftEarHostUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -341,6 +360,7 @@
 				3095ACC0B41E928A4E3B2270 /* Packages */,
 				E3B619BA47B7442D39430D3E /* Sources */,
 				29962DBF58EB2463CE139E04 /* Tests */,
+				5539D6DCED59156BB7A325EA /* UITests */,
 				56B1476CE7B8BBAD15CA17E0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -425,6 +445,24 @@
 			productReference = 40962FBB227FF51EC6BCDD77 /* SwiftEarHostTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		DCCC2D6732E8D79BA296802C /* SwiftEarHostUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 15B3231A2DA841557592C817 /* Build configuration list for PBXNativeTarget "SwiftEarHostUITests" */;
+			buildPhases = (
+				C8ACB56AA0234B4EA2187CF6 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7EDA2AF62CD26FBEE01F4456 /* PBXTargetDependency */,
+			);
+			name = SwiftEarHostUITests;
+			packageProductDependencies = (
+			);
+			productName = SwiftEarHostUITests;
+			productReference = 4CDF5B05729FFF747C520D71 /* SwiftEarHostUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		E4F091E7E88A92D591ADDD40 /* SwiftEarHost */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2090FAAF0A9E07A5FD2A6AF8 /* Build configuration list for PBXNativeTarget "SwiftEarHost" */;
@@ -462,6 +500,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					DCCC2D6732E8D79BA296802C = {
+						TestTargetID = E4F091E7E88A92D591ADDD40;
+					};
 				};
 			};
 			buildConfigurationList = 43D286647678C3CDA6C5E5F6 /* Build configuration list for PBXProject "SwiftEarHost" */;
@@ -484,6 +525,7 @@
 			targets = (
 				E4F091E7E88A92D591ADDD40 /* SwiftEarHost */,
 				B0F6284D7B542D03F1E07836 /* SwiftEarHostTests */,
+				DCCC2D6732E8D79BA296802C /* SwiftEarHostUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -526,6 +568,14 @@
 				1B3BD61690F455B11CFC2C9E /* TranscriptionImportServiceTests.swift in Sources */,
 				366D5519F058FDE98D9D3161 /* TranscriptionPlaybackSyncTests.swift in Sources */,
 				4A01A95A6053A24A9234596E /* TranscriptionWaveformServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C8ACB56AA0234B4EA2187CF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6C1870E16CD488FD0AE52A61 /* SwiftEarHostUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -585,6 +635,11 @@
 			target = E4F091E7E88A92D591ADDD40 /* SwiftEarHost */;
 			targetProxy = 73EF80EBC654D5CD6F0F5505 /* PBXContainerItemProxy */;
 		};
+		7EDA2AF62CD26FBEE01F4456 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E4F091E7E88A92D591ADDD40 /* SwiftEarHost */;
+			targetProxy = DEE16A9D4AA28E5A0507700C /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -638,7 +693,7 @@
 					UIInterfaceOrientationLandscapeLeft,
 					UIInterfaceOrientationLandscapeRight,
 				);
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = (
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
 					UIInterfaceOrientationPortrait,
 					UIInterfaceOrientationPortraitUpsideDown,
 					UIInterfaceOrientationLandscapeLeft,
@@ -673,6 +728,23 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SwiftEarHost.app/SwiftEarHost";
 			};
 			name = Debug;
+		};
+		9EEF06E8414384E890436FC4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.wanghan.guitarhelper.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SwiftEarHost;
+			};
+			name = Release;
 		};
 		AC5BED3701568B3E8A08E9DD /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -793,6 +865,23 @@
 			};
 			name = Release;
 		};
+		D9E7C45D716F2BFF31E3434E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.wanghan.guitarhelper.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SwiftEarHost;
+			};
+			name = Debug;
+		};
 		F0993B151A142CB3024EE246 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -814,7 +903,7 @@
 					UIInterfaceOrientationLandscapeLeft,
 					UIInterfaceOrientationLandscapeRight,
 				);
-				"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = (
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
 					UIInterfaceOrientationPortrait,
 					UIInterfaceOrientationPortraitUpsideDown,
 					UIInterfaceOrientationLandscapeLeft,
@@ -836,6 +925,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		15B3231A2DA841557592C817 /* Build configuration list for PBXNativeTarget "SwiftEarHostUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9E7C45D716F2BFF31E3434E /* Debug */,
+				9EEF06E8414384E890436FC4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		2090FAAF0A9E07A5FD2A6AF8 /* Build configuration list for PBXNativeTarget "SwiftEarHost" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -44,6 +44,7 @@ struct SheetLibraryView: View {
                     Image(systemName: "plus")
                 }
                 .accessibilityLabel(LocalizedStringResource("sheets_a11y_add_from_album", bundle: .main))
+                .accessibilityIdentifier("sheets.addFromAlbum")
             }
         }
         .photosPicker(
@@ -81,6 +82,7 @@ struct SheetLibraryView: View {
                 SheetDetailView(entry: entry, store: vm.store)
             }
         }
+        .accessibilityIdentifier("screen.sheets.library")
     }
 
     private var listView: some View {

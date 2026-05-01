@@ -66,6 +66,7 @@ struct PurchaseView: View {
                         .font(.headline)
                         .appPrimaryButton()
                         .disabled(isPrimaryPurchaseDisabled)
+                        .accessibilityIdentifier("purchase.buyButton")
 
                         Button {
                             Task { await purchase.restore() }
@@ -77,6 +78,7 @@ struct PurchaseView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(purchase.isPurchaseInFlight || purchase.runtimeEnvironment == .localDebugBypass)
+                        .accessibilityIdentifier("purchase.restoreButton")
                     }
                 }
                 .padding(SwiftAppTheme.pagePadding)
@@ -94,6 +96,7 @@ struct PurchaseView: View {
         .onChange(of: purchase.isUnlocked) { _, unlocked in
             if unlocked { dismiss() }
         }
+        .accessibilityIdentifier("screen.purchase")
     }
 
     /// 主按钮文案：有 `Product.displayPrice` 时为「购买 $x.xx」/「Buy $x.xx」；加载中或处理中显示状态；否则为无价格短文案（不出现占位符「一」或「—」）。

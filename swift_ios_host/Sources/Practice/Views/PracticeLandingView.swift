@@ -64,7 +64,8 @@ struct PracticeLandingView: View {
                 PracticeLinkCard(
                     title: AppL10n.t("task_interval_ear_name"),
                     subtitle: AppL10n.t("practice_link_interval_sub"),
-                    icon: "play.circle"
+                    icon: "play.circle",
+                    accessibilityIdentifier: "practice.intervalEar"
                 ) {
                     ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
                         IntervalEarView()
@@ -73,7 +74,8 @@ struct PracticeLandingView: View {
                 PracticeLinkCard(
                     title: AppL10n.t("task_ear_chord_mcq_name"),
                     subtitle: AppL10n.t("practice_link_ear_chord_sub"),
-                    icon: "pianokeys"
+                    icon: "pianokeys",
+                    accessibilityIdentifier: "practice.chordEar"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: AppL10n.t("task_ear_chord_mcq_name"), bank: "A")
@@ -82,7 +84,8 @@ struct PracticeLandingView: View {
                 PracticeLinkCard(
                     title: AppL10n.t("task_ear_progression_mcq_name"),
                     subtitle: AppL10n.t("practice_link_ear_prog_sub"),
-                    icon: "music.note.list"
+                    icon: "music.note.list",
+                    accessibilityIdentifier: "practice.progressionEar"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: AppL10n.t("task_ear_progression_mcq_name"), bank: "B")
@@ -92,7 +95,8 @@ struct PracticeLandingView: View {
                     PracticeLinkCard(
                         title: AppL10n.t("task_sight_singing_name"),
                         subtitle: AppL10n.t("task_ear_mcq_sight_subtitle"),
-                        icon: "mic"
+                        icon: "mic",
+                        accessibilityIdentifier: "practice.sightSinging"
                     ) {
                         ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
                             SightSingingSessionView()
@@ -107,7 +111,8 @@ struct PracticeLandingView: View {
                     PracticeLinkCard(
                         title: task.localizedName,
                         subtitle: task.localizedDescription,
-                        icon: practiceHomeIcon(for: task.id)
+                        icon: practiceHomeIcon(for: task.id),
+                        accessibilityIdentifier: "practice.\(task.id)"
                     ) {
                         PracticeTaskRouterScreen(task: task)
                     }
@@ -332,7 +337,8 @@ private struct EarPracticeHubScreen: View {
                 PracticeLinkCard(
                     title: AppL10n.t("task_interval_ear_name"),
                     subtitle: AppL10n.t("practice_link_interval_sub"),
-                    icon: "play.circle"
+                    icon: "play.circle",
+                    accessibilityIdentifier: "practice.intervalEar"
                 ) {
                     ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
                         IntervalEarView()
@@ -341,7 +347,8 @@ private struct EarPracticeHubScreen: View {
                 PracticeLinkCard(
                     title: AppL10n.t("task_ear_chord_mcq_name"),
                     subtitle: AppL10n.t("practice_link_ear_chord_sub"),
-                    icon: "pianokeys"
+                    icon: "pianokeys",
+                    accessibilityIdentifier: "practice.chordEar"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: AppL10n.t("task_ear_chord_mcq_name"), bank: "A")
@@ -350,7 +357,8 @@ private struct EarPracticeHubScreen: View {
                 PracticeLinkCard(
                     title: AppL10n.t("task_ear_progression_mcq_name"),
                     subtitle: AppL10n.t("practice_link_ear_prog_sub"),
-                    icon: "music.note.list"
+                    icon: "music.note.list",
+                    accessibilityIdentifier: "practice.progressionEar"
                 ) {
                     ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
                         EarMcqSessionView(title: AppL10n.t("task_ear_progression_mcq_name"), bank: "B")
@@ -360,7 +368,8 @@ private struct EarPracticeHubScreen: View {
                     PracticeLinkCard(
                         title: AppL10n.t("task_sight_singing_name"),
                         subtitle: AppL10n.t("task_ear_mcq_sight_subtitle"),
-                        icon: "mic"
+                        icon: "mic",
+                        accessibilityIdentifier: "practice.sightSinging"
                     ) {
                         ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
                             SightSingingSessionView()
@@ -553,6 +562,7 @@ private struct PracticeLinkCard<Destination: View>: View {
     let title: String
     let subtitle: String
     let icon: String
+    let accessibilityIdentifier: String
     @ViewBuilder let destination: () -> Destination
 
     var body: some View {
@@ -577,6 +587,7 @@ private struct PracticeLinkCard<Destination: View>: View {
             .appCard()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 
