@@ -465,7 +465,10 @@ final class TranscriptionPlayerViewModel: ObservableObject {
         let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
-            currentTimeMs = Int((time.seconds * 1000).rounded())
+            let currentTimeMs = Int((time.seconds * 1000).rounded())
+            Task { @MainActor in
+                self.currentTimeMs = currentTimeMs
+            }
         }
 
         if !didRegisterEndObserver {

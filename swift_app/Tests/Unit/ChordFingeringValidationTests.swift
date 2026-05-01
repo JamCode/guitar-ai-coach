@@ -79,6 +79,7 @@ final class ChordFingeringValidationTests: XCTestCase {
         let actualSet = Set(actual)
         let required = parsed.requiredPCs
         let requiredSet = Set(required)
+        let optionalSet = Set(parsed.optionalPCs)
         let actualNotes = noteNames(actual)
         let expectedNotes = noteNames(required)
 
@@ -90,7 +91,7 @@ final class ChordFingeringValidationTests: XCTestCase {
             level = .error
         }
 
-        let missingRequired = requiredSet.subtracting(actualSet)
+        let missingRequired = requiredSet.subtracting(actualSet).subtracting(optionalSet)
         if !missingRequired.isEmpty {
             // 缺三音视为 ERROR，其它缺失先 WARNING
             if missingRequired.contains(parsed.thirdPC) {
@@ -185,6 +186,10 @@ final class ChordFingeringValidationTests: XCTestCase {
             intervals = [0, 3, 6]
             third = 3
             forbiddenThird = 4
+        case "dim7":
+            intervals = [0, 3, 6, 9]
+            third = 3
+            forbiddenThird = 4
         case "aug":
             intervals = [0, 4, 8]
             third = 4
@@ -237,13 +242,49 @@ final class ChordFingeringValidationTests: XCTestCase {
             intervals = [0, 4, 7, 11, 2]
             third = 4
             forbiddenThird = 3
+        case "11":
+            // Guitar 11 voicings commonly omit the third/fifth/ninth and keep b7 + 11.
+            intervals = [0, 10, 5]
+            third = 5
+            forbiddenThird = nil
+        case "13":
+            // Compact dominant 13 grips normally require root/3/b7/13 and omit 5/9/11.
+            intervals = [0, 4, 10, 9]
+            third = 4
+            forbiddenThird = 3
+        case "7b9":
+            intervals = [0, 4, 7, 10, 1]
+            third = 4
+            forbiddenThird = 3
+        case "7#9":
+            intervals = [0, 4, 7, 10, 3]
+            third = 4
+            forbiddenThird = nil
+        case "7#11":
+            intervals = [0, 4, 7, 10, 6]
+            third = 4
+            forbiddenThird = 3
+        case "7b5":
+            intervals = [0, 4, 6, 10]
+            third = 4
+            forbiddenThird = 3
         default:
             return nil
         }
 
         let required = intervals.map { (rootPC + $0) % 12 }
+        let optionalFifthQualities: Set<String> = [
+            "6", "add6", "7", "maj7", "m7", "9", "m9", "maj9", "7b9", "7#9", "7#11"
+        ]
+        let optionalPCs = optionalFifthQualities.contains(quality) ? [(rootPC + 7) % 12] : []
         let slashBassPC = slash.flatMap(pc(of:))
-        return ParsedChord(requiredPCs: required, thirdPC: (rootPC + third) % 12, forbiddenThirdPC: forbiddenThird.map { (rootPC + $0) % 12 }, slashBassPC: slashBassPC)
+        return ParsedChord(
+            requiredPCs: required,
+            optionalPCs: optionalPCs,
+            thirdPC: (rootPC + third) % 12,
+            forbiddenThirdPC: forbiddenThird.map { (rootPC + $0) % 12 },
+            slashBassPC: slashBassPC
+        )
     }
 
     private func pc(of note: String) -> Int? {
@@ -293,6 +334,7 @@ final class ChordFingeringValidationTests: XCTestCase {
 
 private struct ParsedChord {
     let requiredPCs: [Int]
+    let optionalPCs: [Int]
     let thirdPC: Int
     let forbiddenThirdPC: Int?
     let slashBassPC: Int?

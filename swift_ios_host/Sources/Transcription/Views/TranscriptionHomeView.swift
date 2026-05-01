@@ -42,9 +42,6 @@ struct TranscriptionHomeView: View {
                 Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
-                Text("内购环境：\(purchaseManager.runtimeEnvironment.rawValue)")
-                    .font(.caption2)
-                    .foregroundStyle(SwiftAppTheme.muted)
             }
 
             if !vm.recentHistory.isEmpty {

@@ -47,7 +47,7 @@ enum TranscriptionMediaDecoder {
         let format = try await track.load(.formatDescriptions)
         guard
             let firstDescription = format.first,
-            let asbdPointer = CMAudioFormatDescriptionGetStreamBasicDescription(firstDescription as! CMAudioFormatDescription)
+            let asbdPointer = CMAudioFormatDescriptionGetStreamBasicDescription(firstDescription)
         else {
             throw TranscriptionImportError.audioTrackReadFailed
         }
@@ -300,15 +300,13 @@ enum TranscriptionMediaDecoder {
 
         writerInput.markAsFinished()
         let sem = DispatchSemaphore(value: 0)
-        var finishError: Error?
         writer.finishWriting {
-            if writer.status == .failed {
-                finishError = writer.error ?? TranscriptionImportError.audioExportFailed
-            }
             sem.signal()
         }
         sem.wait()
-        if let finishError { throw finishError }
+        if writer.status == .failed {
+            throw writer.error ?? TranscriptionImportError.audioExportFailed
+        }
         guard writer.status == .completed else {
             throw TranscriptionImportError.audioExportFailed
         }

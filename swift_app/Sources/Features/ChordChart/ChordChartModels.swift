@@ -121,11 +121,11 @@ public enum ChordChartData {
             entries: [
                 ChordChartEntry(symbol: "C9", frets: [-1, 3, 2, 3, 3, -1], theory: "9 和弦；属功能上加 9 度色彩。", voicing: "5～2 弦紧凑按法。"),
                 ChordChartEntry(symbol: "Cm9", frets: [-1, 3, 1, 3, 3, -1], theory: "小九和弦；柔和且深邃。", voicing: "5 弦根紧凑按法。"),
-                ChordChartEntry(symbol: "G9", frets: [3, -1, 3, 4, 3, -1], theory: "9 和弦；蓝调与 Funk 常见。", voicing: "6～3 弦根部按法。"),
+                ChordChartEntry(symbol: "G9", frets: [3, 2, 3, 2, 3, 3], theory: "9 和弦；蓝调与 Funk 常见。", voicing: "6 弦根部按法。"),
                 ChordChartEntry(symbol: "D9", frets: [-1, 5, 4, 5, 5, -1], theory: "9 和弦；流行与爵士都常见。", voicing: "5 品紧凑按法。"),
-                ChordChartEntry(symbol: "A9", frets: [5, -1, 5, 6, 5, -1], theory: "9 和弦；律动型伴奏好用。", voicing: "6 弦根按法。"),
+                ChordChartEntry(symbol: "A9", frets: [5, 4, 5, 4, 5, 5], theory: "9 和弦；律动型伴奏好用。", voicing: "6 弦根按法。"),
                 ChordChartEntry(symbol: "Cmaj9", frets: [-1, 3, 2, 4, 3, 0], theory: "大九和弦；温暖高级。", voicing: "开放 + 延伸混合形态。"),
-                ChordChartEntry(symbol: "Fmaj9", frets: [1, -1, 2, 2, 1, 0], theory: "大九和弦；梦幻抒情。", voicing: "低把位紧凑形态。"),
+                ChordChartEntry(symbol: "Fmaj9", frets: [1, -1, 2, 2, 1, 3], theory: "大九和弦；梦幻抒情。", voicing: "低把位紧凑形态。"),
                 ChordChartEntry(symbol: "C11", frets: [-1, 3, 3, 3, 1, 1], theory: "11 和弦；开放而悬浮。", voicing: "5 弦根延伸按法。"),
                 ChordChartEntry(symbol: "D11", frets: [-1, 5, 5, 5, 5, -1], theory: "11 和弦；铺垫感强。", voicing: "5 品横按简化形态。"),
                 ChordChartEntry(symbol: "G13", frets: [3, -1, 3, 4, 5, -1], theory: "13 和弦；厚实且具律动感。", voicing: "6 弦根紧凑按法。"),
@@ -138,11 +138,11 @@ public enum ChordChartData {
             entries: [
                 ChordChartEntry(symbol: "E7b9", frets: [0, 2, 0, 1, 0, 1], theory: "7b9；经典紧张感。", voicing: "开放 E7b9。"),
                 ChordChartEntry(symbol: "E7#9", frets: [0, 2, 0, 1, 3, 3], theory: "7#9；布鲁斯/摇滚标志音色。", voicing: "Hendrix 常用按法。"),
-                ChordChartEntry(symbol: "C7#11", frets: [-1, 3, 2, 3, 2, 0], theory: "7#11；Lydian dominant 味道。", voicing: "开放 C7#11。"),
-                ChordChartEntry(symbol: "C7b5", frets: [-1, 3, 2, 3, 0, 1], theory: "7b5；不稳定、导向性强。", voicing: "开放 C7b5。"),
+                ChordChartEntry(symbol: "C7#11", frets: [-1, 3, 2, 3, -1, 2], theory: "7#11；Lydian dominant 味道。", voicing: "5 弦根紧凑按法。"),
+                ChordChartEntry(symbol: "C7b5", frets: [-1, 3, 4, 3, 5, -1], theory: "7b5；不稳定、导向性强。", voicing: "5 弦根紧凑按法。"),
                 ChordChartEntry(symbol: "A7b9", frets: [5, -1, 5, 6, 5, 6], theory: "7b9；弗拉门戈与爵士常见。", voicing: "6 弦根紧凑按法。"),
-                ChordChartEntry(symbol: "G7#9", frets: [3, -1, 3, 4, 4, -1], theory: "7#9；布鲁斯经典色彩。", voicing: "6 弦根按法。"),
-                ChordChartEntry(symbol: "D7#11", frets: [-1, 5, 4, 5, 4, -1], theory: "7#11；明亮而紧张。", voicing: "5 品紧凑按法。"),
+                ChordChartEntry(symbol: "G7#9", frets: [3, -1, 3, 4, 3, 6], theory: "7#9；布鲁斯经典色彩。", voicing: "6 弦根按法。"),
+                ChordChartEntry(symbol: "D7#11", frets: [-1, 5, 4, 5, 3, 4], theory: "7#11；明亮而紧张。", voicing: "5 品紧凑按法。"),
                 ChordChartEntry(symbol: "G7b5", frets: [3, -1, 3, 4, 2, -1], theory: "7b5；导向性强的调味和弦。", voicing: "6 弦根按法。")
             ]
         )
@@ -165,4 +165,3 @@ extension ChordChartData {
         entryBySymbol[symbol]
     }
 }
-

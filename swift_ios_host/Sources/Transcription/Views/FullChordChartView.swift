@@ -1,4 +1,5 @@
 import SwiftUI
+import Chords
 import Core
 import Combine
 
@@ -21,6 +22,7 @@ struct FullChordChartView: View {
     @State private var showingDiscardChangesDialog = false
     @State private var showingRestoreOriginalDialog = false
     @State private var showingSaveError = false
+    @State private var showingSongChordFingerings = true
     @State private var saveErrorMessage = ""
     @State private var isSaving = false
 
@@ -80,10 +82,19 @@ struct FullChordChartView: View {
         displayedRows
     }
 
+    private var songChordFingerings: [SongChordFingeringItem] {
+        SongChordFingeringItem.makeItems(from: sortedSegments)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 headerCard
+
+                SongChordFingeringSection(
+                    items: songChordFingerings,
+                    isExpanded: $showingSongChordFingerings
+                )
 
                 LazyVStack(spacing: 8) {
                     ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
@@ -577,6 +588,140 @@ private struct ChordRowView: View, Equatable {
 struct ChordRowPosition: Equatable {
     let rowIndex: Int
     let chordIndex: Int
+}
+
+private struct SongChordFingeringItem: Identifiable, Equatable {
+    let id: String
+    let displaySymbol: String
+    let resolved: ResolvedChordFingering?
+
+    static func makeItems(from segments: [TranscriptionSegment]) -> [SongChordFingeringItem] {
+        var seen = Set<String>()
+        var items: [SongChordFingeringItem] = []
+
+        for segment in segments {
+            let normalized = ChordFingeringResolver.normalizeChordName(segment.chord)
+            guard !ChordFingeringResolver.isInvalidChordName(normalized) else { continue }
+            let key = normalized.lowercased()
+            guard seen.insert(key).inserted else { continue }
+
+            let resolved = ChordFingeringResolver.resolve(normalized)
+            items.append(
+                SongChordFingeringItem(
+                    id: key,
+                    displaySymbol: resolved?.symbol ?? normalized,
+                    resolved: resolved
+                )
+            )
+        }
+
+        return items
+    }
+}
+
+private struct SongChordFingeringSection: View {
+    let items: [SongChordFingeringItem]
+    @Binding var isExpanded: Bool
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 104, maximum: 132), spacing: 10, alignment: .top)
+    ]
+
+    var body: some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("本曲和弦指法")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(SwiftAppTheme.text)
+                            Text("\(items.count) 种和弦，按首次出现顺序排列")
+                                .font(.caption)
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.down")
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .rotationEffect(.degrees(isExpanded ? 0 : -90))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if isExpanded {
+                    LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
+                        ForEach(items) { item in
+                            SongChordFingeringCard(item: item)
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(SwiftAppTheme.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(SwiftAppTheme.line, lineWidth: 1)
+            )
+        }
+    }
+}
+
+private struct SongChordFingeringCard: View {
+    let item: SongChordFingeringItem
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(item.displaySymbol)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(SwiftAppTheme.text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity)
+
+            if let resolved = item.resolved {
+                ChordDiagramView(frets: resolved.frets)
+                    .frame(height: 124)
+
+                if let bassHint = resolved.bassHint {
+                    Text("低音 \(bassHint)")
+                        .font(.caption2)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .lineLimit(1)
+                }
+            } else {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(SwiftAppTheme.surfaceSoft)
+                    .overlay(
+                        Text("暂无指法")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                    )
+                    .frame(height: 124)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(SwiftAppTheme.surfaceSoft.opacity(0.75))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(SwiftAppTheme.line.opacity(0.9), lineWidth: 1)
+        )
+    }
 }
 
 enum TranscriptionChordChartRowLayout {

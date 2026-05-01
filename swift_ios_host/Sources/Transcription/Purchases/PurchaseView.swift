@@ -31,10 +31,6 @@ struct PurchaseView: View {
                         RoundedRectangle(cornerRadius: SwiftAppTheme.cardRadius, style: .continuous)
                             .stroke(SwiftAppTheme.line, lineWidth: 1)
                     )
-                    Text("内购环境：\(purchase.runtimeEnvironment.rawValue)")
-                        .font(.caption)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
                     if purchase.runtimeEnvironment == .localDebugBypass {
                         Text("当前为本地调试绕过：已视为解锁，不会发起真实 App Store 购买。")
                             .font(.footnote)

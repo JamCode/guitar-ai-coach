@@ -1,4 +1,5 @@
 import SwiftUI
+import Core
 import Chords
 import ChordChart
 

@@ -55,7 +55,8 @@ final class GuitarPlaybackHumanizerTests: XCTestCase {
     }
 
     func testHighMidiVelocityIsSoftenedBeforeRandomization() {
-        XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 72), 94)
+        XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 72), 97)
+        XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 76), 94)
         XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 84), 88)
         XCTAssertEqual(GuitarPlaybackHumanizer.pitchShapedBaseVelocity(base: 100, midi: 96), 82)
     }

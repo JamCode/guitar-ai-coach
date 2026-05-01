@@ -30,6 +30,16 @@ targets:
         INFOPLIST_KEY_NSMicrophoneUsageDescription: Wanle Guitar needs the microphone for tuning and some sound input exercises.
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Allow photo library access to import sheet music images or videos.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: false
+        INFOPLIST_KEY_UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         SWIFT_VERSION: 5.10
     dependencies:
       - package: GuitarAICoach

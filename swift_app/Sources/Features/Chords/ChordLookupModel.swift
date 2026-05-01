@@ -269,7 +269,16 @@ public enum OfflineChordBuilder {
     private static func syntheticPair(root: String, quality: String) -> [[Int]] {
         guard let rootPc = keyToPc[root] else { return [[0, 2, 2, 1, 0, 0], [0, 7, 6, 7, 7, 0]] }
         let f = (rootPc - 4 + 12) % 12
+        if quality == "7" {
+            return [[f, f + 2, f, f + 1, f, f], [f + 3, f + 5, f + 3, f + 4, f + 3, f + 3]]
+        }
+        if quality == "maj7" {
+            return [[f, f + 2, f + 1, f + 1, f, f], [f + 3, f + 5, f + 4, f + 4, f + 3, f + 3]]
+        }
         if quality == "m" || quality == "m7" {
+            if quality == "m7" {
+                return [[f, f + 2, f, f, f, f], [f + 3, f + 5, f + 3, f + 3, f + 3, f + 3]]
+            }
             return [[f, f + 2, f + 2, f, f, f], [f + 3, f + 5, f + 5, f + 3, f + 3, f + 3]]
         }
         return [[f, f + 2, f + 2, f + 1, f, f], [f + 3, f + 5, f + 5, f + 4, f + 3, f + 3]]
@@ -280,4 +289,3 @@ public enum OfflineChordBuilder {
         return "\(main)/\(slash)"
     }
 }
-
