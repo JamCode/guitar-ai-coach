@@ -33,7 +33,9 @@ final class PurchaseManager: ObservableObject {
 
     private init() {
         runtimeEnvironment = Self.detectRuntimeEnvironment()
-        isUnlocked = UserDefaults.standard.bool(forKey: Self.userDefaultsUnlockedKey)
+        // Release/TestFlight must not trust a local flag left by earlier debug installs.
+        // StoreKit entitlements are the source of truth outside the explicit debug bypass.
+        isUnlocked = false
         print("[IAP] runtime environment = \(runtimeEnvironment.rawValue)")
         if runtimeEnvironment == .localDebugBypass {
             setUnlocked(true, persist: false)
@@ -108,7 +110,11 @@ final class PurchaseManager: ObservableObject {
     private func setUnlocked(_ value: Bool, persist: Bool) {
         isUnlocked = value
         if persist {
-            UserDefaults.standard.set(value, forKey: Self.userDefaultsUnlockedKey)
+            if value {
+                UserDefaults.standard.set(true, forKey: Self.userDefaultsUnlockedKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Self.userDefaultsUnlockedKey)
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 import OSLog
 import SwiftUI
 import PhotosUI
+import StoreKit
 import UniformTypeIdentifiers
 import Core
 
@@ -14,6 +15,28 @@ struct TranscriptionHomeView: View {
 
     var body: some View {
         List {
+            if !purchaseManager.canAccessTranscription {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("解锁扒歌功能")
+                            .font(.headline)
+                            .foregroundStyle(SwiftAppTheme.text)
+                        Text("购买后可从相册或文件导入音频/视频，自动生成当前和弦、附近变化与参考和弦谱。")
+                            .font(.footnote)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button {
+                            showingPurchase = true
+                        } label: {
+                            Text(unlockButtonTitle)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .appPrimaryButton()
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
             Section {
                 Button {
                     if purchaseManager.canAccessTranscription {
@@ -80,7 +103,12 @@ struct TranscriptionHomeView: View {
                 }
             }
         }
-        .task { await vm.reload() }
+        .task {
+            await vm.reload()
+            if !purchaseManager.canAccessTranscription {
+                await purchaseManager.loadProduct()
+            }
+        }
         .appPageBackground()
         .onChange(of: selectedPhotoItem) { _, newValue in
             guard let newValue else { return }
@@ -136,6 +164,16 @@ struct TranscriptionHomeView: View {
         .sheet(isPresented: $showingPurchase) {
             PurchaseView()
         }
+    }
+
+    private var unlockButtonTitle: String {
+        if purchaseManager.isFetchingProduct {
+            return "正在加载内购..."
+        }
+        if let product = purchaseManager.product {
+            return "解锁扒歌功能 \(product.displayPrice)"
+        }
+        return "解锁扒歌功能"
     }
 }
 
