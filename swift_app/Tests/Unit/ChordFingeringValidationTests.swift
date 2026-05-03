@@ -6,6 +6,26 @@ final class ChordFingeringValidationTests: XCTestCase {
     // E A D G B E, 6->1 string pitch classes
     private let standardTuningPC = [4, 9, 2, 7, 11, 4]
 
+    func testOfflineLookupPrefersOpenShapesForCommonDominantSeventhChords() {
+        let expectedFirstVoicings = [
+            "C7": [-1, 3, 2, 3, 1, 0],
+            "G7": [3, 2, 0, 0, 0, 1],
+            "D7": [-1, -1, 0, 2, 1, 2],
+            "A7": [-1, 0, 2, 0, 2, 0],
+            "E7": [0, 2, 0, 1, 0, 0],
+            "B7": [-1, 2, 1, 2, 0, 2]
+        ]
+
+        for (symbol, expectedFrets) in expectedFirstVoicings {
+            let payload = OfflineChordBuilder.buildPayload(displaySymbol: symbol)
+            XCTAssertEqual(
+                payload?.voicings.first?.explain.frets,
+                expectedFrets,
+                "\(symbol) should prefer the common open-position grip before generated barre alternatives."
+            )
+        }
+    }
+
     func testCriticalChordSet_NoErrorAndReportWarnings() {
         let criticalSymbols = [
             "C", "D", "E", "F", "G", "A", "B",
