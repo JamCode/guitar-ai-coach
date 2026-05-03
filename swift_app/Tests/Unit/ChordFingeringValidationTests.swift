@@ -6,14 +6,30 @@ final class ChordFingeringValidationTests: XCTestCase {
     // E A D G B E, 6->1 string pitch classes
     private let standardTuningPC = [4, 9, 2, 7, 11, 4]
 
-    func testOfflineLookupPrefersOpenShapesForCommonDominantSeventhChords() {
+    func testOfflineLookupPrefersChartShapesForSupportedCommonChords() {
         let expectedFirstVoicings = [
+            "Bb": [-1, 1, 3, 3, 3, 1],
+            "Bm": [-1, 2, 4, 4, 3, 2],
+            "Cm": [-1, 3, 5, 5, 4, 3],
+            "Gm": [3, 5, 5, 3, 3, 3],
             "C7": [-1, 3, 2, 3, 1, 0],
             "G7": [3, 2, 0, 0, 0, 1],
             "D7": [-1, -1, 0, 2, 1, 2],
             "A7": [-1, 0, 2, 0, 2, 0],
             "E7": [0, 2, 0, 1, 0, 0],
-            "B7": [-1, 2, 1, 2, 0, 2]
+            "B7": [-1, 2, 1, 2, 0, 2],
+            "Cmaj7": [-1, 3, 2, 0, 0, 0],
+            "Gmaj7": [3, 2, 0, 0, 0, 2],
+            "Dmaj7": [-1, -1, 0, 2, 2, 2],
+            "Amaj7": [-1, 0, 2, 1, 2, 0],
+            "Emaj7": [0, 2, 1, 1, 0, 0],
+            "Am7": [-1, 0, 2, 0, 1, 0],
+            "Dm7": [-1, -1, 0, 2, 1, 1],
+            "Em7": [0, 2, 2, 0, 3, 0],
+            "Bm7": [-1, 2, 4, 2, 3, 2],
+            "Cm7": [-1, 3, 5, 3, 4, 3],
+            "Bbm7": [-1, 1, 3, 1, 2, 1],
+            "C#m7": [-1, 4, 6, 4, 5, 4]
         ]
 
         for (symbol, expectedFrets) in expectedFirstVoicings {
@@ -21,7 +37,7 @@ final class ChordFingeringValidationTests: XCTestCase {
             XCTAssertEqual(
                 payload?.voicings.first?.explain.frets,
                 expectedFrets,
-                "\(symbol) should prefer the common open-position grip before generated barre alternatives."
+                "\(symbol) should prefer the curated chart grip before generated barre alternatives."
             )
         }
     }
