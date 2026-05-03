@@ -15,7 +15,7 @@
 #   ./install-device.sh --device E0846AB6-0894-5A3F-AA3F-3885DB11B978
 #   ./install-device.sh --device "iPhone"   # devicectl 支持设备名称
 #   ./install-device.sh --device "iPad"     # 同上，可装到 iPad（与 iPhone 同一 iOS 产物）
-#   ./install-device.sh --ipad               # 自动选：仅保留名称里含 iPad 的已配对真机
+#   ./install-device.sh --ipad               # 自动选 iPad（会忽略脚本里的 DEFAULT_DEVICE_ID，除非同时写了 --device）
 #   ./install-device.sh --iphone             # 自动选：排除 iPad，在剩余已配对真机里选唯一一台（多为 iPhone）
 #   DEVICE="iPhone" ./install-device.sh
 #   ./install-device.sh --release           # Release 配置
@@ -44,7 +44,7 @@ SCHEME="SwiftEarHost"
 BUNDLE_ID="com.wanghan.guitarhelper"
 
 # ========== 仅自用一台机时可写死（省掉 export / install-device.local.env）==========
-# 优先级低于：命令行 --device、环境变量 DEVICE / DEVICE_UDID / DEVELOPMENT_TEAM、install-device.local.env
+# 优先级：--device > 环境变量 DEVICE / DEVICE_UDID >（有 --ipad/--iphone 时跳过本行）DEFAULT_DEVICE_ID > 自动发现
 # 换手机或换团队后请改下面两行；若推公共仓库建议改回空串或勿提交
 DEFAULT_DEVELOPMENT_TEAM="7R8RS88G2M"
 DEFAULT_DEVICE_ID="E0846AB6-0894-5A3F-AA3F-3885DB11B978"
@@ -74,6 +74,7 @@ CONFIGURATION="Debug"
 DO_PULL=0
 LIST_ONLY=0
 DEVICE_REF=""
+DEVICE_FROM_CLI=0
 ENABLE_LOCAL_IAP_BYPASS=1
 # 自动发现多机时按设备类型过滤：空 | ipad | iphone
 DEVICE_FAMILY_FILTER=""
@@ -103,6 +104,7 @@ while [[ $# -gt 0 ]]; do
     --device)
       if [[ $# -lt 2 ]]; then echo "缺少 --device 参数值" >&2; exit 1; fi
       DEVICE_REF="$2"
+      DEVICE_FROM_CLI=1
       shift 2
       ;;
     -h|--help)
@@ -175,12 +177,14 @@ if [[ "${DO_PULL}" -eq 1 ]]; then
   git -C "${REPO_ROOT}" pull --rebase
 fi
 
-if [[ -z "${DEVICE_REF}" ]]; then
-  DEVICE_REF="${DEVICE:-${DEVICE_UDID:-}}"
-fi
-
-if [[ -z "${DEVICE_REF}" && -n "${DEFAULT_DEVICE_ID}" ]]; then
-  DEVICE_REF="${DEFAULT_DEVICE_ID}"
+if [[ "${DEVICE_FROM_CLI}" -eq 0 ]]; then
+  if [[ -z "${DEVICE_REF}" ]]; then
+    DEVICE_REF="${DEVICE:-${DEVICE_UDID:-}}"
+  fi
+  # --ipad / --iphone 表示要按类型选机，不得被脚本默认手机 UDID 盖掉
+  if [[ -z "${DEVICE_REF}" && -z "${DEVICE_FAMILY_FILTER:-}" && -n "${DEFAULT_DEVICE_ID}" ]]; then
+    DEVICE_REF="${DEFAULT_DEVICE_ID}"
+  fi
 fi
 
 if [[ -z "${DEVICE_REF}" ]]; then
