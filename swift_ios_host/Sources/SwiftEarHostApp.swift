@@ -107,14 +107,14 @@ private struct HostRootWithFirstLaunchTour: View {
 }
 
 private struct RootTabView: View {
-    /// Tab 顺序：练习(0) → 我的谱(1) → 扒歌(2) → 工具(3)。默认落在「练习」。
+    /// Tab 顺序：AI扒歌(0) → 扒歌练习(1) → 我的谱(2) → 工具(3)。默认落在「AI扒歌」。
     @State private var selectedTab: Int = 0
-    /// 练习为首位 Tab，首屏即挂载真实页面，避免占位与标题闪动。
-    @State private var practiceTabMounted: Bool = true
+    /// 练习页延迟挂载；第一次切到「扒歌练习」时再加载，避免首页 AI 扒歌被练习页初始化拖慢。
+    @State private var practiceTabMounted: Bool = false
     @StateObject private var sheetLibraryVM = SheetLibraryViewModel()
     @State private var didScheduleAudioWarmup = false
     
-    /// 自定义 Tab 选择绑定：切到「练习」时在同一事务内先完成挂载，
+    /// 自定义 Tab 选择绑定：切到「扒歌练习」时在同一事务内先完成挂载，
     /// 避免先显示占位页再切到真实页面造成导航标题闪动。
     private var tabSelection: Binding<Int> {
         Binding(
@@ -124,7 +124,7 @@ private struct RootTabView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    if newValue == 0 {
+                    if newValue == 1 {
                         practiceTabMounted = true
                     }
                     selectedTab = newValue
@@ -135,6 +135,16 @@ private struct RootTabView: View {
 
     var body: some View {
         TabView(selection: tabSelection) {
+            NavigationStack {
+                TranscriptionHomeView()
+            }
+            .tabItem {
+                Label(LocalizedStringResource("tab_transcribe", bundle: .main), systemImage: "waveform.path.ecg")
+                    .accessibilityIdentifier("tab.transcription")
+            }
+            .tag(0)
+            .accessibilityIdentifier("screen.transcription")
+
             NavigationStack {
                 if practiceTabMounted {
                     PracticeHomeView()
@@ -149,7 +159,7 @@ private struct RootTabView: View {
                 Label(LocalizedStringResource("tab_practice", bundle: .main), systemImage: "figure.strengthtraining.traditional")
                     .accessibilityIdentifier("tab.practice")
             }
-            .tag(0)
+            .tag(1)
             .accessibilityIdentifier("screen.practice")
 
             NavigationStack {
@@ -159,18 +169,8 @@ private struct RootTabView: View {
                 Label(LocalizedStringResource("tab_mine_sheets", bundle: .main), systemImage: "music.note.list")
                     .accessibilityIdentifier("tab.sheets")
             }
-            .tag(1)
-            .accessibilityIdentifier("screen.sheets")
-
-            NavigationStack {
-                TranscriptionHomeView()
-            }
-            .tabItem {
-                Label(LocalizedStringResource("tab_transcribe", bundle: .main), systemImage: "waveform.path.ecg")
-                    .accessibilityIdentifier("tab.transcription")
-            }
             .tag(2)
-            .accessibilityIdentifier("screen.transcription")
+            .accessibilityIdentifier("screen.sheets")
 
             NavigationStack {
                 ToolsTabView()

@@ -12,6 +12,7 @@
 #
 # 用法：
 #   ./run-simulator.sh
+#   ./run-simulator.sh --ipad          # 自动选择一台可用的 iPad 模拟器
 #   SIMULATOR_UDID=<udid> ./run-simulator.sh
 #   ./run-simulator.sh --pull
 #   ./run-simulator.sh --open-xcode   # 仅构建安装后打开 Xcode，用 Cmd+R 跑 StoreKit 配置
@@ -43,11 +44,13 @@ if [[ -z "${STOREKIT_CONFIG}" ]]; then
 fi
 
 DO_PULL=0
+USE_IPAD=0
 # 默认直接 simctl 启动；仅 StoreKit Xcode 注入时用 --open-xcode
 DO_SIMCTL_LAUNCH=1
 for arg in "$@"; do
   case "${arg}" in
     --pull) DO_PULL=1 ;;
+    --ipad) USE_IPAD=1 ;;
     --open-xcode) DO_SIMCTL_LAUNCH=0 ;;
     --simctl-launch)
       # 兼容旧参数：现为默认行为，可忽略
@@ -58,13 +61,56 @@ for arg in "$@"; do
       exit 0
       ;;
     *)
-      echo "未知参数: ${arg}（支持 --pull / --open-xcode）" >&2
+      echo "未知参数: ${arg}（支持 --ipad / --pull / --open-xcode）" >&2
       exit 1
       ;;
   esac
 done
 
 UDID="${SIMULATOR_UDID:-${DEFAULT_SIMULATOR_UDID}}"
+SIMULATOR_LABEL="默认模拟器"
+
+if [[ "${USE_IPAD}" -eq 1 && -z "${SIMULATOR_UDID:-}" ]]; then
+  SIMCTL_DEVICES_JSON="$(xcrun simctl list devices available --json)" || {
+    echo "❌ 无法读取本机 iOS 模拟器列表。" >&2
+    exit 1
+  }
+  IPAD_SELECTION="$(python3 - "${SIMCTL_DEVICES_JSON}" <<'PY'
+import json, sys
+
+data = json.loads(sys.argv[1])
+ipads = []
+for runtime, devices in data.get("devices", {}).items():
+    for device in devices:
+        name = device.get("name", "")
+        device_type = device.get("deviceTypeIdentifier", "")
+        if "iPad" not in name and "iPad" not in device_type:
+            continue
+        if device.get("isAvailable") is False:
+            continue
+        ipads.append({
+            "udid": device.get("udid", ""),
+            "name": name,
+            "runtime": runtime,
+            "state": device.get("state", ""),
+        })
+
+if not ipads:
+    sys.exit(1)
+
+booted = [device for device in ipads if device["state"] == "Booted"]
+selected = (booted or ipads)[0]
+print(f'{selected["udid"]}\t{selected["name"]} / {selected["runtime"]}')
+PY
+)" || {
+    echo "❌ 未找到可用的 iPad 模拟器。" >&2
+    echo "可先在 Xcode 安装 iPad 模拟器，或用 SIMULATOR_UDID=<udid> 手动指定。" >&2
+    exit 1
+  }
+  IFS=$'\t' read -r UDID SIMULATOR_LABEL <<< "${IPAD_SELECTION}"
+elif [[ "${USE_IPAD}" -eq 1 ]]; then
+  SIMULATOR_LABEL="SIMULATOR_UDID 显式指定（--ipad 不覆盖）"
+fi
 
 if [[ "${DO_PULL}" -eq 1 ]]; then
   echo "==> git pull（仓库根: ${REPO_ROOT}）"
@@ -116,6 +162,7 @@ echo "    Project: ${PROJECT}"
 echo "    Scheme: ${SCHEME}"
 echo "    Configuration: Debug（含 SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG）"
 echo "    Simulator UDID: ${UDID}"
+echo "    Simulator: ${SIMULATOR_LABEL}"
 echo "    Bundle ID: ${BUNDLE_ID}"
 echo "    StoreKitConfig: ${STOREKIT_CONFIG}"
 echo "    StoreKitConfig exists: YES"

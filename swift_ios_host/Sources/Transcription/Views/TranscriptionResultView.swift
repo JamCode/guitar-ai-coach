@@ -352,6 +352,8 @@ struct TranscriptionResultView: View {
                     currentTimeMs: vm.currentTimeMs,
                     onOpenFullChordChart: { showingFullChordChart = true }
                 )
+
+                referenceChartHintCard
             }
             .padding(SwiftAppTheme.pagePadding)
         }
@@ -419,6 +421,46 @@ struct TranscriptionResultView: View {
         } message: {
             Text(vm.playbackErrorMessage)
         }
+    }
+
+    private var referenceChartHintCard: some View {
+        Button {
+            showingFullChordChart = true
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "music.note.list")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(SwiftAppTheme.brand)
+                    .frame(width: 28, alignment: .center)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("保存并编辑参考和弦谱")
+                        .font(.headline)
+                        .foregroundStyle(SwiftAppTheme.text)
+                    Text("可作为自己的练习谱，支持修改、删除、合并和弦；AI 原始结果会保留。")
+                        .font(.footnote)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(SwiftAppTheme.muted)
+                    .padding(.top, 3)
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(SwiftAppTheme.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(SwiftAppTheme.line, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("transcription.referenceChartHint")
     }
 
     private func loadLatestPersistedEntry() async {

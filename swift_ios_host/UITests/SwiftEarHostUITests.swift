@@ -12,7 +12,7 @@ final class SwiftEarHostUITests: XCTestCase {
         ]
         addSystemPermissionHandlers()
         app.launch()
-        XCTAssertTrue(waitForElement(id: "screen.practice", timeout: 10))
+        XCTAssertTrue(waitForElement(id: "screen.transcription.home", timeout: 10))
     }
 
     override func tearDownWithError() throws {
@@ -20,21 +20,24 @@ final class SwiftEarHostUITests: XCTestCase {
     }
 
     func testMainTabsLoad() {
-        openTab(id: "tab.practice", labels: ["练习", "Practice"])
+        XCTAssertTrue(waitForElement(id: "screen.transcription.home"))
+        XCTAssertTrue(waitForElement(id: "transcription.heroCard"))
+
+        openTab(id: "tab.transcription", labels: ["AI扒歌", "AI Transcribe"])
+        XCTAssertTrue(waitForElement(id: "screen.transcription.home"))
+
+        openTab(id: "tab.practice", labels: ["扒歌练习", "Song Practice"])
         XCTAssertTrue(waitForElement(id: "screen.practice"))
 
         openTab(id: "tab.sheets", labels: ["我的谱", "My sheets"])
         XCTAssertTrue(waitForElement(id: "screen.sheets.library"))
-
-        openTab(id: "tab.transcription", labels: ["扒歌", "Transcribe"])
-        XCTAssertTrue(waitForElement(id: "screen.transcription.home"))
 
         openTab(id: "tab.tools", labels: ["工具", "Tools"])
         XCTAssertTrue(waitForElement(id: "screen.tools"))
     }
 
     func testPracticeEntryPointsOpen() {
-        openTab(id: "tab.practice", labels: ["练习", "Practice"])
+        openTab(id: "tab.practice", labels: ["扒歌练习", "Song Practice"])
 
         openPracticeEntry(id: "practice.intervalEar", expectedTexts: ["音程识别", "Interval"])
         openPracticeEntry(id: "practice.chordEar", expectedTexts: ["和弦听辨", "Chord"])
@@ -54,7 +57,7 @@ final class SwiftEarHostUITests: XCTestCase {
     }
 
     func testTranscriptionLockedPurchaseEntryPoints() {
-        openTab(id: "tab.transcription", labels: ["扒歌", "Transcribe"])
+        openTab(id: "tab.transcription", labels: ["AI扒歌", "AI Transcribe"])
         XCTAssertTrue(waitForElement(id: "screen.transcription.home"))
 
         let unlockButton = element(id: "transcription.unlockButton")

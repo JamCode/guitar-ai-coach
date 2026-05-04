@@ -15,70 +15,39 @@ struct TranscriptionHomeView: View {
 
     var body: some View {
         List {
-            if !purchaseManager.canAccessTranscription {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("解锁扒歌功能")
-                            .font(.headline)
-                            .foregroundStyle(SwiftAppTheme.text)
-                        Text("购买后可从相册或文件导入音频/视频，自动生成当前和弦、附近变化与参考和弦谱。")
-                            .font(.footnote)
-                            .foregroundStyle(SwiftAppTheme.muted)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button {
-                            showingPurchase = true
-                        } label: {
-                            Text(unlockButtonTitle)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .appPrimaryButton()
-                        .accessibilityIdentifier("transcription.unlockButton")
-                    }
-                    .padding(.vertical, 4)
-                    .accessibilityIdentifier("transcription.lockedCard")
-                }
+            Section {
+                transcriptionHeroCard
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
             }
 
             Section {
-                Button {
-                    if purchaseManager.canAccessTranscription {
-                        showingPhotoPicker = true
-                    } else {
-                        showingPurchase = true
-                    }
-                } label: {
-                    Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
-                        .frame(maxWidth: .infinity)
-                }
-                .appPrimaryButton()
-                .accessibilityIdentifier("transcription.importPhotos")
-                .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .videos)
-
-                Button {
-                    if purchaseManager.canAccessTranscription {
-                        showingFileImporter = true
-                    } else {
-                        showingPurchase = true
-                    }
-                } label: {
-                    Text("从文件导入音频/视频")
-                        .frame(maxWidth: .infinity)
-                }
-                .appSecondaryButton()
-                .accessibilityIdentifier("transcription.importFiles")
-                Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
-                    .font(.footnote)
-                    .foregroundStyle(SwiftAppTheme.muted)
+                startTranscriptionCard
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
+            } header: {
+                Text("开始扒歌")
             }
 
-            if !vm.recentHistory.isEmpty {
-                Section {
+            Section {
+                if vm.recentHistory.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("还没有 AI 扒歌谱")
+                            .font(.headline)
+                            .foregroundStyle(SwiftAppTheme.text)
+                        Text("导入一首歌后，AI 生成的和弦时间轴和参考和弦谱会保存在这里。")
+                            .font(.footnote)
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 6)
+                } else {
                     ForEach(vm.recentHistory.prefix(3), id: \.id) { entry in
                         TranscriptionHomeRecentRow(entry: entry, onDelete: { await vm.delete(entry) })
                     }
-                } header: {
-                    Text(LocalizedStringResource("transcribe_section_recent", bundle: .main))
                 }
+            } header: {
+                Text("我的 AI 扒歌谱")
             }
 
             Section {
@@ -171,14 +140,131 @@ struct TranscriptionHomeView: View {
         .accessibilityIdentifier("screen.transcription.home")
     }
 
+    private var transcriptionHeroCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AI 扒歌生成参考和弦谱")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .accessibilityIdentifier("transcription.heroCard")
+                    Text("导入音频/视频，生成带时间轴的和弦，并保存、编辑成自己的练习谱。")
+                        .font(.subheadline)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 12)
+                Image(systemName: "waveform.path.ecg")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(SwiftAppTheme.brand)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                capabilityRow("识别当前和弦与后续变化")
+                capabilityRow("生成可弹精简参考和弦谱")
+                capabilityRow("支持修改、删除、合并和弦，并保留 AI 原始结果")
+            }
+
+            if !purchaseManager.canAccessTranscription {
+                Button {
+                    showingPurchase = true
+                } label: {
+                    Text(unlockButtonTitle)
+                        .frame(maxWidth: .infinity)
+                }
+                .appPrimaryButton()
+                .accessibilityIdentifier("transcription.unlockButton")
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(SwiftAppTheme.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(SwiftAppTheme.line, lineWidth: 1)
+        )
+    }
+
+    private var startTranscriptionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("选择一段歌曲音频或视频")
+                .font(.headline)
+                .foregroundStyle(SwiftAppTheme.text)
+
+            Button {
+                if purchaseManager.canAccessTranscription {
+                    showingPhotoPicker = true
+                } else {
+                    showingPurchase = true
+                }
+            } label: {
+                Text(LocalizedStringResource("transcribe_import_from_photos", bundle: .main))
+                    .frame(maxWidth: .infinity)
+            }
+            .appPrimaryButton()
+            .accessibilityIdentifier("transcription.importPhotos")
+            .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .videos)
+
+            Button {
+                if purchaseManager.canAccessTranscription {
+                    showingFileImporter = true
+                } else {
+                    showingPurchase = true
+                }
+            } label: {
+                Text("从文件导入音频/视频")
+                    .frame(maxWidth: .infinity)
+            }
+            .appSecondaryButton()
+            .accessibilityIdentifier("transcription.importFiles")
+
+            Text(LocalizedStringResource("transcribe_formats_hint", bundle: .main))
+                .font(.footnote)
+                .foregroundStyle(SwiftAppTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !purchaseManager.canAccessTranscription {
+                Text("未解锁时点击导入会打开购买页。")
+                    .font(.caption)
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(SwiftAppTheme.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(SwiftAppTheme.line, lineWidth: 1)
+        )
+        .accessibilityIdentifier("transcription.startCard")
+    }
+
+    private func capabilityRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(SwiftAppTheme.brand)
+                .padding(.top, 1)
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(SwiftAppTheme.text)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private var unlockButtonTitle: String {
         if purchaseManager.isFetchingProduct {
             return "正在加载内购..."
         }
         if let product = purchaseManager.product {
-            return "解锁扒歌功能 \(product.displayPrice)"
+            return "解锁 AI 扒歌 \(product.displayPrice)"
         }
-        return "解锁扒歌功能"
+        return "解锁 AI 扒歌"
     }
 }
 
@@ -192,6 +278,7 @@ private struct TranscriptionHomeRecentRow: View {
             TranscriptionResultView(entry: entry)
         } label: {
             VStack(alignment: .leading, spacing: 4) {
+                TranscriptionHistoryBadge(entry: entry)
                 Text(entry.displayName)
                     .foregroundStyle(SwiftAppTheme.text)
                 Text(keyLine)
@@ -206,6 +293,27 @@ private struct TranscriptionHomeRecentRow: View {
                 Label("删除", systemImage: "trash")
             }
         }
+    }
+}
+
+struct TranscriptionHistoryBadge: View {
+    let entry: TranscriptionHistoryEntry
+
+    private var title: String {
+        if entry.editedChordChartSegments?.isEmpty == false {
+            return "已编辑参考谱"
+        }
+        return "AI 扒歌谱"
+    }
+
+    var body: some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(SwiftAppTheme.brand)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(SwiftAppTheme.brand.opacity(0.16))
+            .clipShape(Capsule())
     }
 }
 
