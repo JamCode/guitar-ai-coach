@@ -42,4 +42,27 @@ final class SheetsStoreAndParserTests: XCTestCase {
         let unchanged = await store.loadAll().first(where: { $0.id == entry.id })
         XCTAssertEqual(unchanged?.displayName, "新谱名")
     }
+
+    func testReorderPages_persistsNewPageOrderWithoutChangingPageSet() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let sources = try (0..<3).map { idx in
+            let source = root.appendingPathComponent("source-\(idx).jpg")
+            try Data([UInt8(idx)]).write(to: source)
+            return source
+        }
+
+        let store = SheetLibraryStore(rootOverride: root)
+        let entry = try await store.importSheetPages(sources: sources, displayName: "多页谱")
+        let reordered = [entry.storedFileNames[2], entry.storedFileNames[0], entry.storedFileNames[1]]
+
+        try await store.reorderPages(id: entry.id, storedFileNames: reordered)
+        let loaded = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(loaded?.storedFileNames, reordered)
+        XCTAssertEqual(loaded?.displayName, "多页谱")
+
+        try await store.reorderPages(id: entry.id, storedFileNames: [entry.storedFileNames[0]])
+        let unchanged = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(unchanged?.storedFileNames, reordered)
+    }
 }

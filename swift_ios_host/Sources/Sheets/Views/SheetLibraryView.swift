@@ -377,6 +377,8 @@ private struct SheetDetailView: View {
     @State private var currentPageScale: CGFloat = 1
     @State private var currentPageOffset: CGSize = .zero
     @State private var pageTurnDirection: SheetPageTurnDirection = .forward
+    @State private var showingPageOrderEditor = false
+    @State private var detailNotice: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let practiceStore = PracticeLocalStore()
 
@@ -409,6 +411,29 @@ private struct SheetDetailView: View {
         }
         .navigationTitle(entry.displayName)
         .toolbar(immersiveReading ? .hidden : .automatic, for: .navigationBar)
+        .toolbar {
+            if pageImages.count > 1 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(LocalizedStringResource("sheets_reorder_toolbar", bundle: .main)) {
+                        showingPageOrderEditor = true
+                    }
+                    .accessibilityIdentifier("sheets.reorderPages")
+                }
+            }
+        }
+        .sheet(isPresented: $showingPageOrderEditor) {
+            SheetPageOrderEditor(
+                pageItems: pageOrderItems,
+                onSave: { names in
+                    await savePageOrder(names)
+                }
+            )
+        }
+        .alert(LocalizedStringResource("common_notice_title", bundle: .main), isPresented: Binding(get: { detailNotice != nil }, set: { if !$0 { detailNotice = nil } })) {
+            Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) { detailNotice = nil }
+        } message: {
+            Text(detailNotice ?? "")
+        }
         .task {
             await load()
         }
@@ -481,6 +506,15 @@ private struct SheetDetailView: View {
     private static let immersiveSpring = Animation.spring(response: 0.32, dampingFraction: 0.94)
     private static let pageTurnAnimation = Animation.spring(response: 0.26, dampingFraction: 0.9)
 
+    private var pageOrderItems: [SheetPageOrderItem] {
+        files.enumerated().map { idx, url in
+            SheetPageOrderItem(
+                storedFileName: url.lastPathComponent,
+                image: pageImages.indices.contains(idx) ? pageImages[idx] : nil
+            )
+        }
+    }
+
     @ViewBuilder
     private func sheetPage(image: UIImage?, pageIndex: Int, containerSize: CGSize) -> some View {
         ZoomableSheetPage(
@@ -546,6 +580,17 @@ private struct SheetDetailView: View {
         }
     }
 
+    private func savePageOrder(_ storedFileNames: [String]) async -> Bool {
+        do {
+            try await store.reorderPages(id: entry.id, storedFileNames: storedFileNames)
+            await load()
+            return true
+        } catch {
+            detailNotice = String(format: AppL10n.t("sheets_reorder_failed"), error.localizedDescription)
+            return false
+        }
+    }
+
     private func logGesture(_ message: String) {
         print(
             "[SheetImageViewer] \(message) scale=\(format(currentPageScale)) offset=\(format(currentPageOffset)) allowPageSwipe=\(allowsPageSwipe) allowImageDrag=\(!allowsPageSwipe)"
@@ -566,6 +611,103 @@ private enum SheetImageGesturePolicy {
     static let pagingScaleThreshold: CGFloat = 1.02
     static let maxScale: CGFloat = 4
     static let doubleTapScale: CGFloat = 2
+}
+
+struct SheetPageOrderItem: Identifiable, Equatable {
+    let storedFileName: String
+    let image: UIImage?
+
+    var id: String { storedFileName }
+
+    static func == (lhs: SheetPageOrderItem, rhs: SheetPageOrderItem) -> Bool {
+        lhs.storedFileName == rhs.storedFileName
+    }
+}
+
+private struct SheetPageOrderEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var pageItems: [SheetPageOrderItem]
+    @State private var saving = false
+    let onSave: ([String]) async -> Bool
+
+    init(pageItems: [SheetPageOrderItem], onSave: @escaping ([String]) async -> Bool) {
+        _pageItems = State(initialValue: pageItems)
+        self.onSave = onSave
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(Array(pageItems.enumerated()), id: \.element.id) { idx, item in
+                        HStack(spacing: 12) {
+                            Text("\(idx + 1)")
+                                .font(.headline.monospacedDigit())
+                                .foregroundStyle(SwiftAppTheme.muted)
+                                .frame(width: 28, alignment: .trailing)
+                            pageThumbnail(item.image)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(String(format: AppL10n.t("sheets_reorder_page_title"), Int64(idx + 1)))
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                Text(AppL10n.t("sheets_reorder_drag_hint"))
+                                    .font(.caption)
+                                    .foregroundStyle(SwiftAppTheme.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "line.3.horizontal")
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
+                        .accessibilityLabel(String(format: AppL10n.t("sheets_reorder_page_title"), Int64(idx + 1)))
+                    }
+                    .onMove { source, destination in
+                        pageItems.move(fromOffsets: source, toOffset: destination)
+                    }
+                } footer: {
+                    Text(LocalizedStringResource("sheets_reorder_footer", bundle: .main))
+                }
+            }
+            .navigationTitle(LocalizedStringResource("sheets_reorder_title", bundle: .main))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(LocalizedStringResource("sheets_draft_cancel", bundle: .main)) { dismiss() }
+                        .disabled(saving)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(LocalizedStringResource("sheets_reorder_save", bundle: .main)) {
+                        Task { await save() }
+                    }
+                    .disabled(saving)
+                }
+            }
+            .environment(\.editMode, .constant(.active))
+        }
+    }
+
+    @ViewBuilder
+    private func pageThumbnail(_ image: UIImage?) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8).fill(SwiftAppTheme.surface)
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: "photo")
+                    .foregroundStyle(SwiftAppTheme.muted)
+            }
+        }
+        .frame(width: 56, height: 76)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func save() async {
+        saving = true
+        let didSave = await onSave(pageItems.map(\.storedFileName))
+        saving = false
+        if didSave {
+            dismiss()
+        }
+    }
 }
 
 private struct ZoomableSheetPage: View {
