@@ -358,6 +358,29 @@ enum SheetPageTurnAnimation {
     }
 }
 
+enum SheetReadingMode {
+    case paged
+    case continuous
+
+    var toggled: SheetReadingMode {
+        switch self {
+        case .paged:
+            return .continuous
+        case .continuous:
+            return .paged
+        }
+    }
+
+    var toolbarTitleKey: String {
+        switch self {
+        case .paged:
+            return "sheets_reading_mode_continuous"
+        case .continuous:
+            return "sheets_reading_mode_paged"
+        }
+    }
+}
+
 private struct SheetDetailView: View {
     let entry: SheetEntry
     let store: SheetLibraryStore
@@ -377,6 +400,7 @@ private struct SheetDetailView: View {
     @State private var currentPageScale: CGFloat = 1
     @State private var currentPageOffset: CGSize = .zero
     @State private var pageTurnDirection: SheetPageTurnDirection = .forward
+    @State private var readingMode: SheetReadingMode = .paged
     @State private var showingPageOrderEditor = false
     @State private var detailNotice: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -391,28 +415,19 @@ private struct SheetDetailView: View {
             } else if files.isEmpty {
                 Text(AppL10n.t("sheets_no_images")).foregroundStyle(SwiftAppTheme.muted)
             } else {
-                GeometryReader { geo in
-                    let size = geo.size
-                    ZStack {
-                        Color.black
-                            .opacity(immersiveReading ? 1 : 0)
-                            .allowsHitTesting(false)
-                        if pageImages.indices.contains(currentPageIndex) {
-                            sheetPage(image: pageImages[currentPageIndex], pageIndex: currentPageIndex + 1, containerSize: size)
-                                .id(currentPageIndex)
-                                .transition(SheetPageTurnAnimation.transition(direction: pageTurnDirection, reduceMotion: reduceMotion))
-                                .gesture(pageDragGesture, including: allowsPageSwipe ? .gesture : .none)
-                        }
-                    }
-                    .frame(width: size.width, height: size.height)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                sheetReader
             }
         }
         .navigationTitle(entry.displayName)
         .toolbar(immersiveReading ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
-            if pageImages.count > 1 {
+            if pageImages.count > 1 && !immersiveReading {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(AppL10n.t(readingMode.toolbarTitleKey)) {
+                        toggleReadingMode()
+                    }
+                    .accessibilityIdentifier("sheets.toggleReadingMode")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(LocalizedStringResource("sheets_reorder_toolbar", bundle: .main)) {
                         showingPageOrderEditor = true
@@ -516,6 +531,53 @@ private struct SheetDetailView: View {
     }
 
     @ViewBuilder
+    private var sheetReader: some View {
+        switch readingMode {
+        case .paged:
+            pagedReader
+        case .continuous:
+            continuousReader
+        }
+    }
+
+    private var pagedReader: some View {
+        GeometryReader { geo in
+            let size = geo.size
+            ZStack {
+                Color.black
+                    .opacity(immersiveReading ? 1 : 0)
+                    .allowsHitTesting(false)
+                if pageImages.indices.contains(currentPageIndex) {
+                    sheetPage(image: pageImages[currentPageIndex], pageIndex: currentPageIndex + 1, containerSize: size)
+                        .id(currentPageIndex)
+                        .transition(SheetPageTurnAnimation.transition(direction: pageTurnDirection, reduceMotion: reduceMotion))
+                        .gesture(pageDragGesture, including: allowsPageSwipe ? .gesture : .none)
+                }
+            }
+            .frame(width: size.width, height: size.height)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var continuousReader: some View {
+        ScrollView(.vertical) {
+            LazyVStack(spacing: 10) {
+                ForEach(Array(pageImages.enumerated()), id: \.offset) { idx, image in
+                    ContinuousSheetPage(
+                        image: image,
+                        pageIndex: idx + 1,
+                        totalPages: pageImages.count,
+                        immersiveReading: $immersiveReading
+                    )
+                }
+            }
+            .padding(.vertical, immersiveReading ? 0 : 10)
+        }
+        .background(Color.black.opacity(immersiveReading ? 1 : 0))
+        .scrollIndicators(immersiveReading ? .hidden : .automatic)
+    }
+
+    @ViewBuilder
     private func sheetPage(image: UIImage?, pageIndex: Int, containerSize: CGSize) -> some View {
         ZoomableSheetPage(
             image: image,
@@ -578,6 +640,13 @@ private struct SheetDetailView: View {
         } else {
             withAnimation(Self.pageTurnAnimation, updates)
         }
+    }
+
+    private func toggleReadingMode() {
+        readingMode = readingMode.toggled
+        immersiveReading = false
+        currentPageScale = Self.minReadableScale
+        currentPageOffset = .zero
     }
 
     private func savePageOrder(_ storedFileNames: [String]) async -> Bool {
@@ -707,6 +776,54 @@ private struct SheetPageOrderEditor: View {
         if didSave {
             dismiss()
         }
+    }
+}
+
+private struct ContinuousSheetPage: View {
+    let image: UIImage?
+    let pageIndex: Int
+    let totalPages: Int
+    @Binding var immersiveReading: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity)
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(SwiftAppTheme.surface)
+                    .frame(height: 280)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .foregroundStyle(SwiftAppTheme.muted)
+                    }
+                    .padding(.horizontal, 12)
+            }
+        }
+        .background(Color.black.opacity(immersiveReading ? 1 : 0))
+        .overlay(alignment: .bottomTrailing) {
+            Text(String(format: AppL10n.t("sheets_page_indicator"), pageIndex, totalPages))
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
+                .padding(8)
+                .background(.ultraThinMaterial, in: Capsule())
+                .padding(8)
+                .opacity(immersiveReading ? 0 : 1)
+                .allowsHitTesting(!immersiveReading)
+        }
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            TapGesture(count: 1).onEnded {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.94)) {
+                    immersiveReading.toggle()
+                }
+            }
+        )
+        .accessibilityLabel(String(format: AppL10n.t("sheets_reorder_page_title"), Int64(pageIndex)))
+        .accessibilityHint(AppL10n.t("sheets_a11y_toggle_chrome"))
     }
 }
 

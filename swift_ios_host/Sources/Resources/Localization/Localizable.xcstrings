@@ -2330,6 +2330,40 @@
         }
       }
     },
+    "sheets_reading_mode_continuous": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuous"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续"
+          }
+        }
+      }
+    },
+    "sheets_reading_mode_paged": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paged"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分页"
+          }
+        }
+      }
+    },
     "sheets_draft_name_placeholder": {
       "extractionState": "manual",
       "localizations": {
