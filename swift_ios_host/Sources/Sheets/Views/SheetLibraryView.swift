@@ -11,6 +11,7 @@ struct SheetLibraryView: View {
     @State private var showingPhotoLibrary = false
     @State private var showingDraft = false
     @State private var draftImageData: [Data] = []
+    @State private var renameDraft = ""
 
     var body: some View {
         Group {
@@ -77,6 +78,21 @@ struct SheetLibraryView: View {
         } message: {
             Text(vm.toast ?? "")
         }
+        .alert(LocalizedStringResource("sheets_rename_title", bundle: .main), isPresented: Binding(get: { vm.renamingEntry != nil }, set: { if !$0 { vm.renamingEntry = nil } })) {
+            TextField(AppL10n.t("sheets_rename_placeholder"), text: $renameDraft)
+            Button(LocalizedStringResource("sheets_draft_cancel", bundle: .main), role: .cancel) {
+                vm.renamingEntry = nil
+            }
+            Button(LocalizedStringResource("sheets_rename_confirm", bundle: .main)) {
+                Task { await vm.confirmRename(to: renameDraft) }
+            }
+            .disabled(renameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        } message: {
+            Text(LocalizedStringResource("sheets_rename_message", bundle: .main))
+        }
+        .onChange(of: vm.renamingEntry) { _, entry in
+            renameDraft = entry?.displayName ?? ""
+        }
         .navigationDestination(item: $vm.selectedEntry) { entry in
             TabBarHiddenContainer {
                 SheetDetailView(entry: entry, store: vm.store)
@@ -118,6 +134,14 @@ struct SheetLibraryView: View {
                         } label: {
                             Text(LocalizedStringResource("sheets_action_delete", bundle: .main))
                         }
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                        Button {
+                            vm.startRename(entry)
+                        } label: {
+                            Text(LocalizedStringResource("sheets_action_rename", bundle: .main))
+                        }
+                        .tint(.blue)
                     }
                 }
             } footer: {
@@ -163,6 +187,7 @@ final class SheetLibraryViewModel: ObservableObject {
     @Published var error: String?
     @Published var toast: String?
     @Published var selectedEntry: SheetEntry?
+    @Published var renamingEntry: SheetEntry?
 
     let store = SheetLibraryStore()
 
@@ -197,6 +222,31 @@ final class SheetLibraryViewModel: ObservableObject {
             await reload()
         } catch {
             toast = String(format: AppL10n.t("sheets_toast_delete_failed"), error.localizedDescription)
+        }
+    }
+
+    func startRename(_ entry: SheetEntry) {
+        renamingEntry = entry
+    }
+
+    func confirmRename(to displayName: String) async {
+        guard let entry = renamingEntry else { return }
+        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            renamingEntry = nil
+            toast = AppL10n.t("sheets_toast_rename_empty")
+            return
+        }
+        do {
+            try await store.rename(id: entry.id, displayName: trimmed)
+            renamingEntry = nil
+            await reload()
+            if selectedEntry?.id == entry.id {
+                selectedEntry = entries.first(where: { $0.id == entry.id })
+            }
+        } catch {
+            renamingEntry = nil
+            toast = String(format: AppL10n.t("sheets_toast_rename_failed"), error.localizedDescription)
         }
     }
 
