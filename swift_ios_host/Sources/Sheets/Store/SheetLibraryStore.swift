@@ -102,6 +102,29 @@ actor SheetLibraryStore {
         try writeAll(entries: keep)
     }
 
+    /// Updates only the user-facing sheet name. Stored image filenames remain stable.
+    func rename(id: String, displayName: String) async throws {
+        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        var all = await loadAll()
+        guard let idx = all.firstIndex(where: { $0.id == id }) else { return }
+        all[idx].displayName = trimmed
+        try writeAll(entries: all)
+    }
+
+    /// Reorders pages for a sheet while preserving the exact same stored files.
+    func reorderPages(id: String, storedFileNames: [String]) async throws {
+        var all = await loadAll()
+        guard let idx = all.firstIndex(where: { $0.id == id }) else { return }
+        let current = all[idx].storedFileNames
+        guard current.count == storedFileNames.count else { return }
+        guard Set(current) == Set(storedFileNames) else { return }
+
+        all[idx].storedFileNames = storedFileNames
+        try writeAll(entries: all)
+    }
+
     func loadParsed(sheetId: String) async -> SheetParsedData? {
         guard let f = try? parsedFileURL(sheetId: sheetId) else { return nil }
         guard fileManager.fileExists(atPath: f.path) else { return nil }
