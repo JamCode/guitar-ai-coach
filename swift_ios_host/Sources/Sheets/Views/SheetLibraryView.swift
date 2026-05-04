@@ -323,6 +323,41 @@ private struct SheetDraftView: View {
     }
 }
 
+enum SheetPageTurnDirection {
+    case forward
+    case backward
+
+    var insertionEdge: Edge {
+        switch self {
+        case .forward:
+            return .trailing
+        case .backward:
+            return .leading
+        }
+    }
+
+    var removalEdge: Edge {
+        switch self {
+        case .forward:
+            return .leading
+        case .backward:
+            return .trailing
+        }
+    }
+}
+
+enum SheetPageTurnAnimation {
+    static func transition(direction: SheetPageTurnDirection, reduceMotion: Bool) -> AnyTransition {
+        if reduceMotion {
+            return .opacity
+        }
+        return .asymmetric(
+            insertion: .move(edge: direction.insertionEdge).combined(with: .opacity),
+            removal: .move(edge: direction.removalEdge).combined(with: .opacity)
+        )
+    }
+}
+
 private struct SheetDetailView: View {
     let entry: SheetEntry
     let store: SheetLibraryStore
@@ -341,6 +376,8 @@ private struct SheetDetailView: View {
     @State private var currentPageIndex = 0
     @State private var currentPageScale: CGFloat = 1
     @State private var currentPageOffset: CGSize = .zero
+    @State private var pageTurnDirection: SheetPageTurnDirection = .forward
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let practiceStore = PracticeLocalStore()
 
     /// 至少多少秒才落一条记录，避免点进即返回产生噪声。
@@ -361,6 +398,7 @@ private struct SheetDetailView: View {
                         if pageImages.indices.contains(currentPageIndex) {
                             sheetPage(image: pageImages[currentPageIndex], pageIndex: currentPageIndex + 1, containerSize: size)
                                 .id(currentPageIndex)
+                                .transition(SheetPageTurnAnimation.transition(direction: pageTurnDirection, reduceMotion: reduceMotion))
                                 .gesture(pageDragGesture, including: allowsPageSwipe ? .gesture : .none)
                         }
                     }
@@ -441,6 +479,7 @@ private struct SheetDetailView: View {
 
     private static let minReadableScale: CGFloat = 1
     private static let immersiveSpring = Animation.spring(response: 0.32, dampingFraction: 0.94)
+    private static let pageTurnAnimation = Animation.spring(response: 0.26, dampingFraction: 0.9)
 
     @ViewBuilder
     private func sheetPage(image: UIImage?, pageIndex: Int, containerSize: CGSize) -> some View {
@@ -480,21 +519,31 @@ private struct SheetDetailView: View {
                 }
 
                 if horizontalEnough, translation.width < -60, currentPageIndex < pageImages.count - 1 {
-                    currentPageIndex += 1
+                    turnPage(to: currentPageIndex + 1, direction: .forward)
                     didChangePage = true
                 } else if horizontalEnough, translation.width > 60, currentPageIndex > 0 {
-                    currentPageIndex -= 1
+                    turnPage(to: currentPageIndex - 1, direction: .backward)
                     didChangePage = true
                 }
 
-                if didChangePage {
-                    currentPageScale = Self.minReadableScale
-                    currentPageOffset = .zero
-                }
                 logGesture(
                     "page drag ended translation=\(format(translation)) horizontalEnough=\(horizontalEnough) from=\(previousIndex + 1) to=\(currentPageIndex + 1) didChangePage=\(didChangePage)"
                 )
             }
+    }
+
+    private func turnPage(to newIndex: Int, direction: SheetPageTurnDirection) {
+        pageTurnDirection = direction
+        let updates = {
+            currentPageIndex = newIndex
+            currentPageScale = Self.minReadableScale
+            currentPageOffset = .zero
+        }
+        if reduceMotion {
+            withAnimation(.easeOut(duration: 0.14), updates)
+        } else {
+            withAnimation(Self.pageTurnAnimation, updates)
+        }
     }
 
     private func logGesture(_ message: String) {
