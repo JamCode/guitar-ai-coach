@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import Core
+import Metronome
 import Practice
 import UIKit
 
@@ -460,8 +461,11 @@ private struct SheetDetailView: View {
     @State private var currentPageOffset: CGSize = .zero
     @State private var pageTurnDirection: SheetPageTurnDirection = .forward
     @State private var readingMode: SheetReadingMode = .paged
+    @State private var continuousAutoScrollEnabled = false
+    @State private var continuousAutoScrollSpeed: Double = SheetAutoScrollConfig.defaultSpeed
     @State private var showingPageOrderEditor = false
     @State private var detailNotice: String?
+    @StateObject private var metronomeVM = MetronomeViewModel()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let practiceStore = PracticeLocalStore()
 
@@ -516,13 +520,19 @@ private struct SheetDetailView: View {
             case .active:
                 resumeForegroundClockIfEligible()
             case .inactive, .background:
+                continuousAutoScrollEnabled = false
+                metronomeVM.stop()
                 pauseForegroundClock()
             @unknown default:
+                continuousAutoScrollEnabled = false
+                metronomeVM.stop()
                 pauseForegroundClock()
             }
         }
         .onDisappear {
             immersiveReading = false
+            continuousAutoScrollEnabled = false
+            metronomeVM.stop()
             pauseForegroundClock()
             let totalForeground = accumulatedForegroundSeconds
             Task {
@@ -620,21 +630,26 @@ private struct SheetDetailView: View {
     }
 
     private var continuousReader: some View {
-        ScrollView(.vertical) {
-            LazyVStack(spacing: 10) {
-                ForEach(Array(pageImages.enumerated()), id: \.offset) { idx, image in
-                    ContinuousSheetPage(
-                        image: image,
-                        pageIndex: idx + 1,
-                        totalPages: pageImages.count,
-                        immersiveReading: $immersiveReading
-                    )
-                }
+        ZStack(alignment: .bottom) {
+            ContinuousZoomableSheetReader(
+                images: pageImages,
+                immersiveReading: $immersiveReading,
+                autoScrollEnabled: $continuousAutoScrollEnabled,
+                autoScrollSpeed: continuousAutoScrollSpeed
+            )
+
+            if !immersiveReading {
+                SheetContinuousPracticeControls(
+                    autoScrollEnabled: $continuousAutoScrollEnabled,
+                    autoScrollSpeed: $continuousAutoScrollSpeed,
+                    metronomeVM: metronomeVM
+                )
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .padding(.vertical, immersiveReading ? 0 : 10)
         }
         .background(Color.black.opacity(immersiveReading ? 1 : 0))
-        .scrollIndicators(immersiveReading ? .hidden : .automatic)
     }
 
     @ViewBuilder
@@ -705,6 +720,10 @@ private struct SheetDetailView: View {
     private func toggleReadingMode() {
         readingMode = readingMode.toggled
         immersiveReading = false
+        if readingMode != .continuous {
+            continuousAutoScrollEnabled = false
+            metronomeVM.stop()
+        }
         currentPageScale = Self.minReadableScale
         currentPageOffset = .zero
     }
@@ -742,6 +761,12 @@ private enum SheetImageGesturePolicy {
     static let doubleTapScale: CGFloat = 2
 }
 
+private enum SheetAutoScrollConfig {
+    static let minSpeed: Double = 18
+    static let maxSpeed: Double = 140
+    static let defaultSpeed: Double = 46
+}
+
 struct SheetPageOrderItem: Identifiable, Equatable {
     let storedFileName: String
     let image: UIImage?
@@ -750,6 +775,307 @@ struct SheetPageOrderItem: Identifiable, Equatable {
 
     static func == (lhs: SheetPageOrderItem, rhs: SheetPageOrderItem) -> Bool {
         lhs.storedFileName == rhs.storedFileName
+    }
+}
+
+private struct ContinuousZoomableSheetReader: UIViewRepresentable {
+    let images: [UIImage?]
+    @Binding var immersiveReading: Bool
+    @Binding var autoScrollEnabled: Bool
+    let autoScrollSpeed: Double
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(
+            immersiveReading: $immersiveReading,
+            autoScrollEnabled: $autoScrollEnabled
+        )
+    }
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.delegate = context.coordinator
+        scrollView.backgroundColor = .clear
+        scrollView.minimumZoomScale = SheetImageGesturePolicy.minScale
+        scrollView.maximumZoomScale = SheetImageGesturePolicy.maxScale
+        scrollView.bouncesZoom = true
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.delaysContentTouches = false
+
+        let contentView = UIView()
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(contentView)
+
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = 10
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
+            stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
+        ])
+
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.toggleChrome))
+        tap.numberOfTapsRequired = 1
+        tap.cancelsTouchesInView = false
+        scrollView.addGestureRecognizer(tap)
+
+        context.coordinator.scrollView = scrollView
+        context.coordinator.contentView = contentView
+        context.coordinator.stackView = stackView
+        context.coordinator.rebuildPages(images)
+        context.coordinator.applyChrome(immersiveReading)
+        context.coordinator.updateAutoScroll(enabled: autoScrollEnabled, speed: autoScrollSpeed)
+        return scrollView
+    }
+
+    func updateUIView(_ scrollView: UIScrollView, context: Context) {
+        context.coordinator.immersiveReading = $immersiveReading
+        context.coordinator.autoScrollEnabled = $autoScrollEnabled
+        context.coordinator.rebuildPagesIfNeeded(images)
+        context.coordinator.applyChrome(immersiveReading)
+        context.coordinator.updateAutoScroll(enabled: autoScrollEnabled, speed: autoScrollSpeed)
+    }
+
+    final class Coordinator: NSObject, UIScrollViewDelegate {
+        var immersiveReading: Binding<Bool>
+        var autoScrollEnabled: Binding<Bool>
+        weak var scrollView: UIScrollView?
+        weak var contentView: UIView?
+        weak var stackView: UIStackView?
+
+        private var displayLink: CADisplayLink?
+        private var lastTick: CFTimeInterval?
+        private var currentSpeed: Double = SheetAutoScrollConfig.defaultSpeed
+        private var imageSignature: [String] = []
+
+        init(immersiveReading: Binding<Bool>, autoScrollEnabled: Binding<Bool>) {
+            self.immersiveReading = immersiveReading
+            self.autoScrollEnabled = autoScrollEnabled
+        }
+
+        deinit {
+            displayLink?.invalidate()
+        }
+
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+            contentView
+        }
+
+        func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+            if autoScrollEnabled.wrappedValue {
+                autoScrollEnabled.wrappedValue = false
+                updateAutoScroll(enabled: false, speed: currentSpeed)
+            }
+        }
+
+        @objc func toggleChrome() {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.94)) {
+                immersiveReading.wrappedValue.toggle()
+            }
+        }
+
+        func rebuildPagesIfNeeded(_ images: [UIImage?]) {
+            let next = signature(for: images)
+            guard next != imageSignature else { return }
+            rebuildPages(images)
+        }
+
+        func rebuildPages(_ images: [UIImage?]) {
+            imageSignature = signature(for: images)
+            guard let stackView else { return }
+            stackView.arrangedSubviews.forEach { view in
+                stackView.removeArrangedSubview(view)
+                view.removeFromSuperview()
+            }
+
+            for (idx, image) in images.enumerated() {
+                stackView.addArrangedSubview(makePageView(image: image, pageIndex: idx + 1, totalPages: images.count))
+            }
+        }
+
+        func applyChrome(_ immersive: Bool) {
+            scrollView?.showsVerticalScrollIndicator = !immersive
+            scrollView?.backgroundColor = immersive ? .black : .clear
+            stackView?.spacing = immersive ? 0 : 10
+            stackView?.layoutMargins = .zero
+        }
+
+        func updateAutoScroll(enabled: Bool, speed: Double) {
+            currentSpeed = min(SheetAutoScrollConfig.maxSpeed, max(SheetAutoScrollConfig.minSpeed, speed))
+            if enabled {
+                startDisplayLinkIfNeeded()
+            } else {
+                stopDisplayLink()
+            }
+        }
+
+        private func startDisplayLinkIfNeeded() {
+            guard displayLink == nil else { return }
+            lastTick = nil
+            let link = CADisplayLink(target: self, selector: #selector(tick(_:)))
+            link.add(to: .main, forMode: .common)
+            displayLink = link
+        }
+
+        private func stopDisplayLink() {
+            displayLink?.invalidate()
+            displayLink = nil
+            lastTick = nil
+        }
+
+        @objc private func tick(_ link: CADisplayLink) {
+            guard let scrollView else { return }
+            guard scrollView.window != nil else { return }
+            let previous = lastTick ?? link.timestamp
+            let dt = max(0, min(0.08, link.timestamp - previous))
+            lastTick = link.timestamp
+
+            let maxY = max(
+                -scrollView.adjustedContentInset.top,
+                scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom
+            )
+            let nextY = min(maxY, scrollView.contentOffset.y + CGFloat(currentSpeed * dt))
+            scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: nextY), animated: false)
+
+            if nextY >= maxY - 0.5 {
+                autoScrollEnabled.wrappedValue = false
+                updateAutoScroll(enabled: false, speed: currentSpeed)
+            }
+        }
+
+        private func makePageView(image: UIImage?, pageIndex: Int, totalPages: Int) -> UIView {
+            let container = UIView()
+            container.backgroundColor = .clear
+            container.translatesAutoresizingMaskIntoConstraints = false
+
+            if let image {
+                let imageView = UIImageView(image: image)
+                imageView.contentMode = .scaleAspectFit
+                imageView.backgroundColor = .systemBackground
+                imageView.translatesAutoresizingMaskIntoConstraints = false
+                container.addSubview(imageView)
+                NSLayoutConstraint.activate([
+                    imageView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                    imageView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                    imageView.topAnchor.constraint(equalTo: container.topAnchor),
+                    imageView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                    imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: image.size.height / max(image.size.width, 1))
+                ])
+            } else {
+                let placeholder = UIImageView(image: UIImage(systemName: "photo"))
+                placeholder.contentMode = .center
+                placeholder.tintColor = .secondaryLabel
+                placeholder.backgroundColor = .secondarySystemBackground
+                placeholder.translatesAutoresizingMaskIntoConstraints = false
+                container.addSubview(placeholder)
+                NSLayoutConstraint.activate([
+                    placeholder.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+                    placeholder.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+                    placeholder.topAnchor.constraint(equalTo: container.topAnchor),
+                    placeholder.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+                    placeholder.heightAnchor.constraint(equalToConstant: 280)
+                ])
+            }
+
+            container.accessibilityLabel = String(format: AppL10n.t("sheets_page_indicator"), pageIndex, totalPages)
+            return container
+        }
+
+        private func signature(for images: [UIImage?]) -> [String] {
+            images.map { image in
+                guard let image else { return "nil" }
+                return "\(Int(image.size.width))x\(Int(image.size.height))-\(image.hash)"
+            }
+        }
+    }
+}
+
+private struct SheetContinuousPracticeControls: View {
+    @Binding var autoScrollEnabled: Bool
+    @Binding var autoScrollSpeed: Double
+    @ObservedObject var metronomeVM: MetronomeViewModel
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                Button {
+                    autoScrollEnabled.toggle()
+                } label: {
+                    Image(systemName: autoScrollEnabled ? "pause.fill" : "play.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 34, height: 34)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .background(SwiftAppTheme.brand, in: Circle())
+                .accessibilityLabel(autoScrollEnabled ? "暂停自动下滑" : "开始自动下滑")
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("自动下滑 \(Int(autoScrollSpeed.rounded()))")
+                        .font(.caption.weight(.semibold))
+                    Slider(
+                        value: $autoScrollSpeed,
+                        in: SheetAutoScrollConfig.minSpeed...SheetAutoScrollConfig.maxSpeed,
+                        step: 1
+                    )
+                    .tint(SwiftAppTheme.brand)
+                }
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    metronomeVM.toggleStartPause()
+                } label: {
+                    Label(metronomeVM.transport == .running ? "节拍暂停" : "节拍开始", systemImage: "metronome")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(SwiftAppTheme.brand)
+
+                Stepper("\(metronomeVM.config.bpm) BPM", value: Binding(
+                    get: { metronomeVM.config.bpm },
+                    set: { metronomeVM.setBPM($0) }
+                ), in: MetronomeConfig.bpmRange, step: 1)
+                .font(.caption)
+
+                Picker("拍号", selection: Binding(
+                    get: { metronomeVM.config.timeSignature },
+                    set: { metronomeVM.setTimeSignature($0) }
+                )) {
+                    Text("4/4").tag(MetronomeTimeSignature.fourFour)
+                    Text("3/4").tag(MetronomeTimeSignature.threeFour)
+                    Text("6/8").tag(MetronomeTimeSignature.sixEight)
+                }
+                .pickerStyle(.menu)
+                .font(.caption)
+            }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(SwiftAppTheme.line.opacity(0.6), lineWidth: 1)
+        }
+        .alert("提示", isPresented: Binding(
+            get: { metronomeVM.errorMessage != nil },
+            set: { if !$0 { metronomeVM.errorMessage = nil } }
+        )) {
+            Button("知道了", role: .cancel) { metronomeVM.errorMessage = nil }
+        } message: {
+            Text(metronomeVM.errorMessage ?? "")
+        }
     }
 }
 
@@ -836,54 +1162,6 @@ private struct SheetPageOrderEditor: View {
         if didSave {
             dismiss()
         }
-    }
-}
-
-private struct ContinuousSheetPage: View {
-    let image: UIImage?
-    let pageIndex: Int
-    let totalPages: Int
-    @Binding var immersiveReading: Bool
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(SwiftAppTheme.surface)
-                    .frame(height: 280)
-                    .overlay {
-                        Image(systemName: "photo")
-                            .foregroundStyle(SwiftAppTheme.muted)
-                    }
-                    .padding(.horizontal, 12)
-            }
-        }
-        .background(Color.black.opacity(immersiveReading ? 1 : 0))
-        .overlay(alignment: .bottomTrailing) {
-            Text(String(format: AppL10n.t("sheets_page_indicator"), pageIndex, totalPages))
-                .font(.caption)
-                .foregroundStyle(SwiftAppTheme.muted)
-                .padding(8)
-                .background(.ultraThinMaterial, in: Capsule())
-                .padding(8)
-                .opacity(immersiveReading ? 0 : 1)
-                .allowsHitTesting(!immersiveReading)
-        }
-        .contentShape(Rectangle())
-        .simultaneousGesture(
-            TapGesture(count: 1).onEnded {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.94)) {
-                    immersiveReading.toggle()
-                }
-            }
-        )
-        .accessibilityLabel(String(format: AppL10n.t("sheets_reorder_page_title"), Int64(pageIndex)))
-        .accessibilityHint(AppL10n.t("sheets_a11y_toggle_chrome"))
     }
 }
 
