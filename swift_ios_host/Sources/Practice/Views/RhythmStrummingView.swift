@@ -291,6 +291,7 @@ struct RhythmStrummingView: View {
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
+                sheetId: nil,
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
@@ -414,4 +415,3 @@ private extension Array {
         return self[idx]
     }
 }
-

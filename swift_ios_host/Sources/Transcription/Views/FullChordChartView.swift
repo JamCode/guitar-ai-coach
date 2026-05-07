@@ -510,6 +510,8 @@ struct FullChordChartView: View {
 }
 
 private struct ChordRowView: View, Equatable {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let rowIndex: Int
     let row: [TranscriptionSegment]
     let isEditing: Bool
@@ -531,7 +533,9 @@ private struct ChordRowView: View, Equatable {
             Text(formatMs(row.first?.startMs ?? 0))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(isCurrentRow ? SwiftAppTheme.brand : SwiftAppTheme.muted)
-                .frame(width: 44, alignment: .leading)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(width: timeColumnWidth, alignment: .leading)
 
             HStack(spacing: 6) {
                 ForEach(Array(row.enumerated()), id: \.offset) { idx, segment in
@@ -582,6 +586,10 @@ private struct ChordRowView: View, Equatable {
     private func formatMs(_ ms: Int) -> String {
         let totalSeconds = max(0, ms / 1000)
         return String(format: "%02d:%02d", totalSeconds / 60, totalSeconds % 60)
+    }
+
+    private var timeColumnWidth: CGFloat {
+        horizontalSizeClass == .regular ? 58 : 44
     }
 }
 

@@ -70,6 +70,24 @@ final class PracticeLocalStoreTests: XCTestCase {
         XCTAssertEqual(sessions.first?.scaleWarmupDrillId, "crawl_b_6_4_68")
     }
 
+    func testDecodeSessions_acceptsSheetId() {
+        let raw: [String: Any] = [
+            "id": "1",
+            "taskId": "sheet-practice",
+            "taskName": "我的谱",
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-01T00:01:00Z",
+            "durationSeconds": 60,
+            "completed": true,
+            "difficulty": 3,
+            "sheetId": "sheet-1",
+        ]
+        let data = try! JSONSerialization.data(withJSONObject: [raw], options: [])
+        let sessions = decodeSessions(String(data: data, encoding: .utf8)!)
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions.first?.sheetId, "sheet-1")
+    }
+
     func testComputeSummary_todayCounts_completedOnly() async throws {
         let calendar = Calendar(identifier: .gregorian)
         let now = ISO8601DateFormatter().date(from: "2026-01-02T12:00:00Z")!
@@ -286,4 +304,3 @@ final class PracticeLocalStoreTests: XCTestCase {
         XCTAssertEqual(latestCompletedPracticeEndedAt(sessions), t2)
     }
 }
-

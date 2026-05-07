@@ -56,6 +56,7 @@ struct ForegroundPracticeSessionTracker<Content: View>: View {
                         completed: true,
                         difficulty: 3,
                         note: note,
+                        sheetId: nil,
                         progressionId: nil,
                         musicKey: nil,
                         complexity: nil,

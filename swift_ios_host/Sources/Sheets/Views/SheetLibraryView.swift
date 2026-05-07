@@ -93,6 +93,10 @@ struct SheetLibraryView: View {
         .onChange(of: vm.renamingEntry) { _, entry in
             renameDraft = entry?.displayName ?? ""
         }
+        .onChange(of: vm.selectedEntry) { _, entry in
+            guard entry == nil else { return }
+            Task { await vm.reloadPracticeDurations() }
+        }
         .navigationDestination(item: $vm.selectedEntry) { entry in
             TabBarHiddenContainer {
                 SheetDetailView(entry: entry, store: vm.store)
@@ -122,26 +126,49 @@ struct SheetLibraryView: View {
                                 Text(String(format: AppL10n.t("sheets_status_line_format"), localizedSheetParseStatus(entry.parseStatus)))
                                     .font(.caption2)
                                     .foregroundStyle(SwiftAppTheme.muted)
+                                if let seconds = vm.practiceDurationSeconds(for: entry), seconds > 0 {
+                                    Label(formatPracticeDuration(seconds), systemImage: "timer")
+                                        .font(.caption2)
+                                        .foregroundStyle(SwiftAppTheme.muted)
+                                }
                             }
                             Spacer()
                             Image(systemName: "chevron.right").foregroundStyle(SwiftAppTheme.muted)
                         }
                     }
                     .buttonStyle(.plain)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            Task { await vm.remove(entry: entry) }
-                        } label: {
-                            Text(LocalizedStringResource("sheets_action_delete", bundle: .main))
-                        }
-                    }
-                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button {
                             vm.startRename(entry)
                         } label: {
                             Text(LocalizedStringResource("sheets_action_rename", bundle: .main))
                         }
                         .tint(.blue)
+
+                        Button(role: .destructive) {
+                            Task { await vm.remove(entry: entry) }
+                        } label: {
+                            Text(LocalizedStringResource("sheets_action_delete", bundle: .main))
+                        }
+                    }
+                    .contextMenu {
+                        Button {
+                            vm.startRename(entry)
+                        } label: {
+                            Label(
+                                LocalizedStringResource("sheets_action_rename", bundle: .main),
+                                systemImage: "pencil"
+                            )
+                        }
+
+                        Button(role: .destructive) {
+                            Task { await vm.remove(entry: entry) }
+                        } label: {
+                            Label(
+                                LocalizedStringResource("sheets_action_delete", bundle: .main),
+                                systemImage: "trash"
+                            )
+                        }
                     }
                 }
             } footer: {
@@ -167,6 +194,22 @@ struct SheetLibraryView: View {
         return f.string(from: date)
     }
 
+    private func formatPracticeDuration(_ seconds: Int) -> String {
+        let minutes = max(0, seconds) / 60
+        if minutes < 1 {
+            return AppL10n.t("sheets_practice_duration_under_minute")
+        }
+        let hours = minutes / 60
+        let remainMinutes = minutes % 60
+        if hours > 0, remainMinutes > 0 {
+            return String(format: AppL10n.t("sheets_practice_duration_hours_minutes"), Int64(hours), Int64(remainMinutes))
+        }
+        if hours > 0 {
+            return String(format: AppL10n.t("sheets_practice_duration_hours"), Int64(hours))
+        }
+        return String(format: AppL10n.t("sheets_practice_duration_minutes"), Int64(minutes))
+    }
+
     private func decodePhotosItems(_ items: [PhotosPickerItem]) async -> [Data] {
         var out: [Data] = []
         for item in items {
@@ -190,6 +233,8 @@ final class SheetLibraryViewModel: ObservableObject {
     @Published var renamingEntry: SheetEntry?
 
     let store = SheetLibraryStore()
+    private let practiceStore = PracticeLocalStore()
+    private var practiceDurationBySheet: [String: Int] = [:]
 
     func reload() async {
         if !hasLoadedOnce {
@@ -197,8 +242,22 @@ final class SheetLibraryViewModel: ObservableObject {
         }
         error = nil
         entries = await store.loadAll()
+        await reloadPracticeDurations()
         loading = false
         hasLoadedOnce = true
+    }
+
+    func reloadPracticeDurations() async {
+        let sessions = (try? await practiceStore.loadSessions()) ?? []
+        practiceDurationBySheet = sessions.reduce(into: [String: Int]()) { acc, session in
+            guard session.completed, session.taskId == kSheetPracticeTask.id, let sheetId = session.sheetId else { return }
+            acc[sheetId, default: 0] += max(0, session.durationSeconds)
+        }
+        objectWillChange.send()
+    }
+
+    func practiceDurationSeconds(for entry: SheetEntry) -> Int? {
+        practiceDurationBySheet[entry.id]
     }
 
     func saveDraft(name: String, imagesData: [Data]) async {
@@ -479,6 +538,7 @@ private struct SheetDetailView: View {
                     completed: true,
                     difficulty: 3,
                     note: String(format: AppL10n.t("sheets_practice_note_format"), entry.displayName, Int64(entry.pageCount)),
+                    sheetId: entry.id,
                     progressionId: nil,
                     musicKey: nil,
                     complexity: nil,

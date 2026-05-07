@@ -12,6 +12,7 @@ protocol PracticeSessionStore {
         completed: Bool,
         difficulty: Int,
         note: String?,
+        sheetId: String?,
         progressionId: String?,
         musicKey: String?,
         complexity: String?,
@@ -23,4 +24,3 @@ protocol PracticeSessionStore {
 
     func loadSummary(now: Date?) async throws -> PracticeSummary
 }
-

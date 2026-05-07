@@ -2276,6 +2276,74 @@
         }
       }
     },
+    "sheets_practice_duration_hours": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practiced %lld h"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已练 %lld 小时"
+          }
+        }
+      }
+    },
+    "sheets_practice_duration_hours_minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practiced %lld h %lld min"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已练 %lld 小时 %lld 分钟"
+          }
+        }
+      }
+    },
+    "sheets_practice_duration_minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practiced %lld min"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已练 %lld 分钟"
+          }
+        }
+      }
+    },
+    "sheets_practice_duration_under_minute": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practiced under 1 min"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已练不足 1 分钟"
+          }
+        }
+      }
+    },
     "sheets_privacy_notice": {
       "extractionState": "manual",
       "localizations": {

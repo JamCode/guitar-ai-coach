@@ -93,6 +93,9 @@ struct PracticeSession: Identifiable, Codable, Equatable {
     let difficulty: Int
     let note: String?
 
+    /// 我的谱练习对应的本地曲谱 id（可空，兼容旧数据和非曲谱练习）。
+    let sheetId: String?
+
     /// 和弦进行练习专属字段（可空，兼容旧数据）。
     let progressionId: String?
     let musicKey: String?
@@ -108,6 +111,44 @@ struct PracticeSession: Identifiable, Codable, Equatable {
     let earAnsweredCount: Int?
     /// 练耳答对题数。
     let earCorrectCount: Int?
+
+    init(
+        id: String,
+        taskId: String,
+        taskName: String,
+        startedAt: Date,
+        endedAt: Date,
+        durationSeconds: Int,
+        completed: Bool,
+        difficulty: Int,
+        note: String?,
+        sheetId: String? = nil,
+        progressionId: String?,
+        musicKey: String?,
+        complexity: String?,
+        rhythmPatternId: String?,
+        scaleWarmupDrillId: String?,
+        earAnsweredCount: Int?,
+        earCorrectCount: Int?
+    ) {
+        self.id = id
+        self.taskId = taskId
+        self.taskName = taskName
+        self.startedAt = startedAt
+        self.endedAt = endedAt
+        self.durationSeconds = durationSeconds
+        self.completed = completed
+        self.difficulty = difficulty
+        self.note = note
+        self.sheetId = sheetId
+        self.progressionId = progressionId
+        self.musicKey = musicKey
+        self.complexity = complexity
+        self.rhythmPatternId = rhythmPatternId
+        self.scaleWarmupDrillId = scaleWarmupDrillId
+        self.earAnsweredCount = earAnsweredCount
+        self.earCorrectCount = earCorrectCount
+    }
 }
 
 // MARK: - Summary computation (aligned with Flutter)
@@ -171,4 +212,3 @@ private func isSameDay(_ a: Date, _ b: Date) -> Bool {
     let calendar = Calendar(identifier: .gregorian)
     return calendar.isDate(a, inSameDayAs: b)
 }
-

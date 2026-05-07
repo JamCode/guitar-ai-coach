@@ -28,6 +28,7 @@ final class PracticeLocalStore: PracticeSessionStore {
         completed: Bool,
         difficulty: Int,
         note: String?,
+        sheetId: String? = nil,
         progressionId: String?,
         musicKey: String?,
         complexity: String?,
@@ -48,6 +49,7 @@ final class PracticeLocalStore: PracticeSessionStore {
             completed: completed,
             difficulty: min(5, max(1, difficulty)),
             note: note,
+            sheetId: sheetId,
             progressionId: progressionId,
             musicKey: musicKey,
             complexity: complexity,
@@ -92,6 +94,7 @@ func encodeSessions(_ sessions: [PracticeSession]) -> String {
             "difficulty": s.difficulty,
         ]
         if let note = s.note { m["note"] = note }
+        if let sheetId = s.sheetId { m["sheetId"] = sheetId }
         if let progressionId = s.progressionId { m["progressionId"] = progressionId }
         if let musicKey = s.musicKey { m["musicKey"] = musicKey }
         if let complexity = s.complexity { m["complexity"] = complexity }
@@ -141,6 +144,7 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
     let difficulty = min(5, max(1, asInt(dict["difficulty"], fallback: 3)))
     let note = dict["note"] as? String
 
+    let sheetId = dict["sheetId"] as? String
     let progressionId = dict["progressionId"] as? String
     let musicKey = dict["musicKey"] as? String
     let complexity = dict["complexity"] as? String
@@ -159,6 +163,7 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
         completed: completed,
         difficulty: difficulty,
         note: note,
+        sheetId: sheetId,
         progressionId: progressionId,
         musicKey: musicKey,
         complexity: complexity,
@@ -194,4 +199,3 @@ private func asOptionalInt(_ v: Any?) -> Int? {
     if let n = v as? NSNumber { return n.intValue }
     return nil
 }
-

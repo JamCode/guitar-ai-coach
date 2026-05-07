@@ -197,6 +197,7 @@ struct ScaleWarmupSessionView: View {
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
+                sheetId: nil,
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
