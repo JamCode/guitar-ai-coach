@@ -306,6 +306,12 @@ if [[ ! -d "${APP}" ]]; then
   echo "未找到产物: ${APP}" >&2
   exit 1
 fi
+if [[ ! -d "${APP}/stemseparation.mlpackage" && ! -d "${APP}/stemseparation.mlmodelc" ]]; then
+  echo "错误: 真机安装包缺少本地音轨分离模型 stemseparation.mlpackage / stemseparation.mlmodelc。" >&2
+  echo "请确认 ios_stem_model/stemseparation.mlpackage 存在，并重新运行 xcodegen generate 后再安装。" >&2
+  exit 1
+fi
+echo "==> 已打包本地音轨分离模型"
 
 echo "==> 安装到设备"
 xcrun devicectl device install app --device "${DEVICE_REF}" "${APP}"

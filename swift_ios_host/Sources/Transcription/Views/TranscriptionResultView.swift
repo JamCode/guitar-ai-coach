@@ -281,6 +281,8 @@ struct TranscriptionResultView: View {
     @StateObject private var vm: TranscriptionPlayerViewModel
     @State private var showingFullChordChart = false
     @State private var latestPersistedEntry: TranscriptionHistoryEntry? = nil
+    @State private var showingRenameAlert = false
+    @State private var renameText = ""
 
     private let historyStore = TranscriptionHistoryStore()
 
@@ -362,6 +364,11 @@ struct TranscriptionResultView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    Button("修改名称") {
+                        let currentEntry = latestPersistedEntry ?? entry
+                        renameText = currentEntry.displayName
+                        showingRenameAlert = true
+                    }
                     Button("查看和编辑和弦谱") {
                         showingFullChordChart = true
                     }
@@ -421,6 +428,15 @@ struct TranscriptionResultView: View {
         } message: {
             Text(vm.playbackErrorMessage)
         }
+        .alert("修改记录名称", isPresented: $showingRenameAlert) {
+            TextField("例如：周杰伦-晴天", text: $renameText)
+            Button("取消", role: .cancel) {}
+            Button("保存") {
+                Task { await renameEntry() }
+            }
+        } message: {
+            Text("修改后会在历史列表和结果页显示新名称。")
+        }
     }
 
     private var referenceChartHintCard: some View {
@@ -468,6 +484,14 @@ struct TranscriptionResultView: View {
         await MainActor.run {
             latestPersistedEntry = latest
         }
+    }
+
+    private func renameEntry() async {
+        let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let currentEntry = latestPersistedEntry ?? entry
+        try? await historyStore.rename(id: currentEntry.id, customName: trimmed)
+        await loadLatestPersistedEntry()
     }
 }
 

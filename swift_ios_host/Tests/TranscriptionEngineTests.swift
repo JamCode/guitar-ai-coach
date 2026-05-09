@@ -82,6 +82,33 @@ final class TranscriptionEngineTests: XCTestCase {
         XCTAssertEqual(decoded.timingVariants?.playableCompact?.displaySegments.first?.chord, "B")
         XCTAssertEqual(decoded.timingVariants?.playableCompact?.displaySegments.first?.endMs, 2_000)
     }
+
+    @MainActor
+    func testProcessingMode_defaultsToFastChordRecognition() {
+        let vm = TranscriptionHomeViewModel()
+
+        XCTAssertEqual(vm.selectedProcessingMode, .chordOnlyFast)
+        XCTAssertEqual(TranscriptionProcessingMode.chordOnlyFast.title, "快速扒歌")
+        XCTAssertEqual(TranscriptionProcessingMode.stemSeparationOnly.title, "分离人声/伴奏")
+    }
+
+    func testStemProgressMessagesAreStable() {
+        let separating = TranscriptionProgressState.separatingStems(0.42)
+        XCTAssertEqual(separating.stage, .separatingStems)
+        XCTAssertEqual(separating.percentage, 43)
+        XCTAssertEqual(separating.message, "正在分离人声/伴奏 42%...")
+
+        let saved = TranscriptionProgressState.completedStems()
+        XCTAssertEqual(saved.stage, .completed)
+        XCTAssertEqual(saved.message, "人声/伴奏分离完成")
+    }
+
+    func testStemSeparationModelIsBundledWithApp() {
+        let packageURL = Bundle.main.url(forResource: "stemseparation", withExtension: "mlpackage")
+        let compiledURL = Bundle.main.url(forResource: "stemseparation", withExtension: "mlmodelc")
+
+        XCTAssertTrue(packageURL != nil || compiledURL != nil)
+    }
 }
 
 private struct FakeChordRecognizer: ChordRecognizer {

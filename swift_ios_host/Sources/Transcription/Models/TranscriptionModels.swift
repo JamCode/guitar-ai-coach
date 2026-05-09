@@ -119,6 +119,8 @@ enum TranscriptionProgressStage: String, Equatable, Sendable {
     case uploading
     case analyzing
     case generatingChart
+    case separatingStems
+    case savingStems
     case completed
     case failed
 }
@@ -127,6 +129,7 @@ struct TranscriptionProgressState: Equatable, Sendable {
     let stage: TranscriptionProgressStage
     let progress: Double
     let message: String
+    let estimatedRemainingSeconds: Int?
 
     var clampedProgress: Double {
         min(1.0, max(0.0, progress))
@@ -144,11 +147,17 @@ struct TranscriptionProgressState: Equatable, Sendable {
         stage != .completed && stage != .failed
     }
 
+    var estimatedRemainingText: String? {
+        guard let estimatedRemainingSeconds, isActive else { return nil }
+        return "预计剩余 \(Self.formatRemainingTime(estimatedRemainingSeconds))"
+    }
+
     static func preparing(_ progress: Double = 0.0) -> TranscriptionProgressState {
         TranscriptionProgressState(
             stage: .preparing,
             progress: min(0.10, max(0.0, progress)),
-            message: "正在准备音频..."
+            message: "正在准备音频...",
+            estimatedRemainingSeconds: nil
         )
     }
 
@@ -158,7 +167,8 @@ struct TranscriptionProgressState: Equatable, Sendable {
         return TranscriptionProgressState(
             stage: .uploading,
             progress: 0.10 + fraction * 0.35,
-            message: "正在上传歌曲 \(uploadPercent)%..."
+            message: "正在上传歌曲 \(uploadPercent)%...",
+            estimatedRemainingSeconds: nil
         )
     }
 
@@ -166,7 +176,8 @@ struct TranscriptionProgressState: Equatable, Sendable {
         TranscriptionProgressState(
             stage: .analyzing,
             progress: min(0.88, max(0.45, progress)),
-            message: "正在分析和弦..."
+            message: "正在分析和弦...",
+            estimatedRemainingSeconds: nil
         )
     }
 
@@ -174,7 +185,28 @@ struct TranscriptionProgressState: Equatable, Sendable {
         TranscriptionProgressState(
             stage: .generatingChart,
             progress: min(1.0, max(0.88, progress)),
-            message: "正在生成参考和弦谱..."
+            message: "正在生成参考和弦谱...",
+            estimatedRemainingSeconds: nil
+        )
+    }
+
+    static func separatingStems(_ fraction: Double) -> TranscriptionProgressState {
+        let clamped = min(1.0, max(0.0, fraction))
+        let percent = Int((clamped * 100).rounded())
+        return TranscriptionProgressState(
+            stage: .separatingStems,
+            progress: 0.10 + clamped * 0.78,
+            message: "正在分离人声/伴奏 \(percent)%...",
+            estimatedRemainingSeconds: nil
+        )
+    }
+
+    static func savingStems() -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: .savingStems,
+            progress: 0.92,
+            message: "正在保存分离音轨...",
+            estimatedRemainingSeconds: nil
         )
     }
 
@@ -182,7 +214,17 @@ struct TranscriptionProgressState: Equatable, Sendable {
         TranscriptionProgressState(
             stage: .completed,
             progress: 1.0,
-            message: "参考和弦谱生成完成"
+            message: "参考和弦谱生成完成",
+            estimatedRemainingSeconds: nil
+        )
+    }
+
+    static func completedStems() -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: .completed,
+            progress: 1.0,
+            message: "人声/伴奏分离完成",
+            estimatedRemainingSeconds: nil
         )
     }
 
@@ -190,8 +232,33 @@ struct TranscriptionProgressState: Equatable, Sendable {
         TranscriptionProgressState(
             stage: .failed,
             progress: clampedProgress,
-            message: message
+            message: message,
+            estimatedRemainingSeconds: nil
         )
+    }
+
+    func withEstimatedRemainingSeconds(_ seconds: Int?) -> TranscriptionProgressState {
+        TranscriptionProgressState(
+            stage: stage,
+            progress: progress,
+            message: message,
+            estimatedRemainingSeconds: seconds
+        )
+    }
+
+    private static func formatRemainingTime(_ seconds: Int) -> String {
+        let clamped = max(1, seconds)
+        if clamped < 60 {
+            return "\(clamped) 秒"
+        }
+        let minutes = clamped / 60
+        let remainingSeconds = clamped % 60
+        if minutes < 60 {
+            return remainingSeconds == 0 ? "\(minutes) 分钟" : "\(minutes)分\(remainingSeconds)秒"
+        }
+        let hours = minutes / 60
+        let remainingMinutes = minutes % 60
+        return remainingMinutes == 0 ? "\(hours) 小时" : "\(hours)小时\(remainingMinutes)分钟"
     }
 }
 
