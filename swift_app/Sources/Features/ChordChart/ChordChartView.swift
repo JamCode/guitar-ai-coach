@@ -2,9 +2,13 @@ import SwiftUI
 import Core
 import Chords
 
+private final class ChordChartAudioHolder: ObservableObject {
+    let tonePlayer = ChordVoicingTonePlayer()
+}
+
 public struct ChordChartView: View {
-    @State private var selectedEntry: ChordChartEntry?
-    @State private var expandedSections: Set<String> = [ChordChartData.sections.first?.id ?? ""]
+    @State private var expandedSections: Set<String> = []
+    @StateObject private var chartAudio = ChordChartAudioHolder()
 
     public init() {}
 
@@ -12,8 +16,8 @@ public struct ChordChartView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("关于本表").appSectionTitle()
-                    Text("按和弦类型分组：基础三和弦、七和弦、挂留、加音、延伸与变化和弦。")
+                    Text(LocalizedStringResource("chord_chart_about_title", bundle: .main)).appSectionTitle()
+                    Text(LocalizedStringResource("chord_chart_about_body", bundle: .main))
                         .foregroundStyle(SwiftAppTheme.muted)
                 }
                 .appCard()
@@ -31,8 +35,10 @@ public struct ChordChartView: View {
                         ) {
                             VStack(spacing: 8) {
                                 ForEach(section.entries) { entry in
+                                    let resolved = ChordFingeringProvider.resolve(symbol: entry.symbol)
+                                    let displayFrets = resolved?.frets ?? entry.frets
                                     Button {
-                                        selectedEntry = entry
+                                        chartAudio.tonePlayer.playChordFrets(displayFrets)
                                     } label: {
                                         HStack(alignment: .top, spacing: 10) {
                                             VStack(alignment: .leading, spacing: 4) {
@@ -48,29 +54,26 @@ public struct ChordChartView: View {
                                                         .font(.caption)
                                                         .foregroundStyle(SwiftAppTheme.brand)
                                                 }
-                                                Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
+                                                Text(String(format: AppL10n.t("chord_chart_fret_line_format"), displayFrets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " ")))
                                                     .font(.caption.monospaced())
                                                     .foregroundStyle(SwiftAppTheme.muted)
                                             }
                                             .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.vertical, 6)
+                                            .padding(.horizontal, 10)
+                                            .contentShape(Rectangle())
 
-                                            ChordDiagramView(frets: entry.frets)
-                                                .frame(width: 76, height: 98)
-                                                .padding(6)
-                                                .background(SwiftAppTheme.surface)
-                                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                                        .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
-                                                )
-                                                .accessibilityHidden(true)
+                                            chordDiagramCard(frets: displayFrets)
                                         }
-                                        .padding(.vertical, 6)
-                                        .padding(.horizontal, 10)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
                                         .background(SwiftAppTheme.surfaceSoft)
                                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                     }
                                     .buttonStyle(.plain)
+                                    .accessibilityLabel(String(format: AppL10n.t("chord_chart_a11y_label_format"), entry.symbol))
+                                    .accessibilityHint(AppL10n.t("chord_chart_a11y_hint"))
                                 }
                             }
                             .padding(.top, 10)
@@ -89,31 +92,23 @@ public struct ChordChartView: View {
             }
             .padding(SwiftAppTheme.pagePadding)
         }
-        .navigationTitle("常用和弦")
+        .navigationTitle(Text(LocalizedStringResource("tools_chord_chart_title", bundle: .main)))
         .appPageBackground()
-        .sheet(item: $selectedEntry) { entry in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text(entry.symbol).font(.largeTitle.bold())
-                    Text(entry.theory)
-                    if let voicing = entry.voicing {
-                        Text(voicing).foregroundStyle(SwiftAppTheme.brand)
-                    }
-                    ChordDiagramView(frets: entry.frets)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 240)
-                        .padding(12)
-                        .background(SwiftAppTheme.surfaceSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    Text("指法图（6→1 弦）")
-                        .font(.caption)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                    Text("6→1 弦：\(entry.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " "))")
-                        .font(.body.monospaced())
-                }
-                .padding(20)
-            }
+        .onAppear {
+            chartAudio.tonePlayer.prepare()
         }
     }
-}
 
+    private func chordDiagramCard(frets: [Int]) -> some View {
+        ChordDiagramView(frets: frets)
+            .frame(width: 76, height: 98)
+            .padding(6)
+            .background(SwiftAppTheme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(SwiftAppTheme.line.opacity(0.85), lineWidth: 1)
+            )
+            .accessibilityHidden(true)
+    }
+}

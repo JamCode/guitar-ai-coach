@@ -1,4 +1,5 @@
 import Foundation
+import Practice
 
 /// 练习记录本地仓库：所有数据仅保存到本机 UserDefaults（对齐 Flutter `PracticeLocalStore`）。
 final class PracticeLocalStore: PracticeSessionStore {
@@ -27,11 +28,16 @@ final class PracticeLocalStore: PracticeSessionStore {
         completed: Bool,
         difficulty: Int,
         note: String?,
+        sheetId: String? = nil,
         progressionId: String?,
         musicKey: String?,
         complexity: String?,
-        rhythmPatternId: String?
+        rhythmPatternId: String?,
+        scaleWarmupDrillId: String?,
+        earAnsweredCount: Int?,
+        earCorrectCount: Int?
     ) async throws {
+        guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
         var sessions = try await loadSessions()
         let session = PracticeSession(
             id: UUID().uuidString,
@@ -43,10 +49,14 @@ final class PracticeLocalStore: PracticeSessionStore {
             completed: completed,
             difficulty: min(5, max(1, difficulty)),
             note: note,
+            sheetId: sheetId,
             progressionId: progressionId,
             musicKey: musicKey,
             complexity: complexity,
-            rhythmPatternId: rhythmPatternId
+            rhythmPatternId: rhythmPatternId,
+            scaleWarmupDrillId: scaleWarmupDrillId,
+            earAnsweredCount: earAnsweredCount,
+            earCorrectCount: earCorrectCount
         )
         sessions.append(session)
         defaults.set(encodeSessions(sessions), forKey: key)
@@ -84,10 +94,14 @@ func encodeSessions(_ sessions: [PracticeSession]) -> String {
             "difficulty": s.difficulty,
         ]
         if let note = s.note { m["note"] = note }
+        if let sheetId = s.sheetId { m["sheetId"] = sheetId }
         if let progressionId = s.progressionId { m["progressionId"] = progressionId }
         if let musicKey = s.musicKey { m["musicKey"] = musicKey }
         if let complexity = s.complexity { m["complexity"] = complexity }
         if let rhythmPatternId = s.rhythmPatternId { m["rhythmPatternId"] = rhythmPatternId }
+        if let scaleWarmupDrillId = s.scaleWarmupDrillId { m["scaleWarmupDrillId"] = scaleWarmupDrillId }
+        if let earAnsweredCount = s.earAnsweredCount { m["earAnsweredCount"] = earAnsweredCount }
+        if let earCorrectCount = s.earCorrectCount { m["earCorrectCount"] = earCorrectCount }
         return m
     }
     guard
@@ -130,10 +144,14 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
     let difficulty = min(5, max(1, asInt(dict["difficulty"], fallback: 3)))
     let note = dict["note"] as? String
 
+    let sheetId = dict["sheetId"] as? String
     let progressionId = dict["progressionId"] as? String
     let musicKey = dict["musicKey"] as? String
     let complexity = dict["complexity"] as? String
     let rhythmPatternId = dict["rhythmPatternId"] as? String
+    let scaleWarmupDrillId = dict["scaleWarmupDrillId"] as? String
+    let earAnsweredCount = asOptionalInt(dict["earAnsweredCount"])
+    let earCorrectCount = asOptionalInt(dict["earCorrectCount"])
 
     return PracticeSession(
         id: id,
@@ -145,10 +163,14 @@ private func decodeSessionDict(_ dict: [String: Any]) -> PracticeSession? {
         completed: completed,
         difficulty: difficulty,
         note: note,
+        sheetId: sheetId,
         progressionId: progressionId,
         musicKey: musicKey,
         complexity: complexity,
-        rhythmPatternId: rhythmPatternId
+        rhythmPatternId: rhythmPatternId,
+        scaleWarmupDrillId: scaleWarmupDrillId,
+        earAnsweredCount: earAnsweredCount,
+        earCorrectCount: earCorrectCount
     )
 }
 
@@ -170,3 +192,10 @@ private func asInt(_ v: Any?, fallback: Int) -> Int {
     return fallback
 }
 
+private func asOptionalInt(_ v: Any?) -> Int? {
+    if v == nil { return nil }
+    if let i = v as? Int { return i }
+    if let d = v as? Double { return Int(d) }
+    if let n = v as? NSNumber { return n.intValue }
+    return nil
+}

@@ -14,11 +14,11 @@ let package = Package(
         .library(name: "Tuner", targets: ["Tuner"]),
         .library(name: "Fretboard", targets: ["Fretboard"]),
         .library(name: "Chords", targets: ["Chords"]),
-        .library(name: "ChordsLive", targets: ["ChordsLive"]),
         .library(name: "ChordChart", targets: ["ChordChart"]),
         .library(name: "Profile", targets: ["Profile"]),
         .library(name: "Ear", targets: ["Ear"]),
-        .library(name: "Practice", targets: ["Practice"])
+        .library(name: "Practice", targets: ["Practice"]),
+        .library(name: "Metronome", targets: ["Metronome"])
     ],
     targets: [
         .executableTarget(
@@ -28,16 +28,21 @@ let package = Package(
                 "Tuner",
                 "Fretboard",
                 "Chords",
-                "ChordsLive",
                 "ChordChart",
                 "Ear",
-                "Practice"
+                "Practice",
+                "Metronome"
             ],
             path: "Sources/App"
         ),
         .target(
             name: "Core",
-            path: "Sources/Core"
+            path: "Sources/Core",
+            resources: [
+                .copy("Resources/SteelStringGuitar.sf2"),
+                .copy("Resources/SteelStringGuitar.LICENSE.txt"),
+                .copy("Resources/SteelStringGuitar.README.txt")
+            ]
         ),
         .target(
             name: "Tuner",
@@ -55,11 +60,6 @@ let package = Package(
             path: "Sources/Features/Chords"
         ),
         .target(
-            name: "ChordsLive",
-            dependencies: ["Core"],
-            path: "Sources/Features/ChordsLive"
-        ),
-        .target(
             name: "ChordChart",
             dependencies: ["Core", "Chords"],
             path: "Sources/Features/ChordChart"
@@ -71,7 +71,7 @@ let package = Package(
         ),
         .target(
             name: "Ear",
-            dependencies: ["Core", "Tuner"],
+            dependencies: ["Core", "Tuner", "Chords"],
             path: "Sources/Features/Ear",
             resources: [
                 .process("Resources")
@@ -79,22 +79,27 @@ let package = Package(
         ),
         .target(
             name: "Practice",
-            dependencies: ["Core", "Fretboard"],
+            dependencies: ["Core", "Fretboard", "Chords", "ChordChart", "Metronome"],
             path: "Sources/Features/Practice"
+        ),
+        .target(
+            name: "Metronome",
+            dependencies: ["Core"],
+            path: "Sources/Features/Metronome"
         ),
         .testTarget(
             name: "GuitarAICoachUnitTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice", "Metronome"],
             path: "Tests/Unit"
         ),
         .testTarget(
             name: "GuitarAICoachIntegrationTests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice", "Metronome"],
             path: "Tests/Integration"
         ),
         .testTarget(
             name: "GuitarAICoachUITests",
-            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordsLive", "ChordChart", "Profile", "Ear", "Practice"],
+            dependencies: ["Core", "Tuner", "Fretboard", "Chords", "ChordChart", "Profile", "Ear", "Practice", "Metronome"],
             path: "Tests/UI"
         )
     ]

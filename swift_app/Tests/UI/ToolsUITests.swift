@@ -2,19 +2,20 @@ import XCTest
 @testable import Tuner
 @testable import Fretboard
 @testable import Chords
-@testable import ChordsLive
 @testable import ChordChart
 @testable import Profile
 @testable import Ear
 @testable import Practice
+import Metronome
 
+@MainActor
 final class ToolsUITests: XCTestCase {
     func testViewsCanBeConstructed() {
+        _ = MetronomeView()
         _ = TunerView()
         _ = FretboardView()
         _ = ChordLookupView()
         _ = ChordDiagramView(frets: [-1, 3, 2, 0, 1, 0])
-        _ = LiveChordView()
         _ = ChordChartView()
         _ = ProfileHomeView()
         _ = HelpFeedbackView()
@@ -33,7 +34,9 @@ final class ToolsUITests: XCTestCase {
             pitchRange: "mid",
             includeAccidental: false,
             questionCount: 10,
-            pitchTracker: DefaultSightSingingPitchTracker()
+            pitchTracker: DefaultSightSingingPitchTracker(),
+            intervalPreview: nil,
+            exerciseKind: .singleNoteMimic
         )
     }
 }

@@ -1,0 +1,737 @@
+{
+  "sample_rate": 22050,
+  "cases": [
+    {
+      "id": "single-C4",
+      "category": "single_note",
+      "filename": "single-C4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "C",
+      "notes": "harmonic tone C4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-Cs4",
+      "category": "single_note",
+      "filename": "single-Cs4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "C#",
+      "notes": "harmonic tone C#4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-D4",
+      "category": "single_note",
+      "filename": "single-D4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "D",
+      "notes": "harmonic tone D4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-Ds4",
+      "category": "single_note",
+      "filename": "single-Ds4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "D#",
+      "notes": "harmonic tone D#4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-E4",
+      "category": "single_note",
+      "filename": "single-E4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "E",
+      "notes": "harmonic tone E4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-F4",
+      "category": "single_note",
+      "filename": "single-F4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "F",
+      "notes": "harmonic tone F4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-Fs4",
+      "category": "single_note",
+      "filename": "single-Fs4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "F#",
+      "notes": "harmonic tone F#4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-G4",
+      "category": "single_note",
+      "filename": "single-G4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "G",
+      "notes": "harmonic tone G4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-Gs4",
+      "category": "single_note",
+      "filename": "single-Gs4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "G#",
+      "notes": "harmonic tone G#4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-A4",
+      "category": "single_note",
+      "filename": "single-A4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "A",
+      "notes": "harmonic tone A4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-As4",
+      "category": "single_note",
+      "filename": "single-As4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "A#",
+      "notes": "harmonic tone A#4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "single-B4",
+      "category": "single_note",
+      "filename": "single-B4.wav",
+      "sample_rate": 22050,
+      "duration_ms": 2500,
+      "expected_single_label": "B",
+      "notes": "harmonic tone B4, 6 harmonics",
+      "segments": []
+    },
+    {
+      "id": "triad-C",
+      "category": "triad",
+      "filename": "triad-C.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "C",
+      "notes": "triad C",
+      "segments": []
+    },
+    {
+      "id": "triad-G",
+      "category": "triad",
+      "filename": "triad-G.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "G",
+      "notes": "triad G",
+      "segments": []
+    },
+    {
+      "id": "triad-F",
+      "category": "triad",
+      "filename": "triad-F.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "F",
+      "notes": "triad F",
+      "segments": []
+    },
+    {
+      "id": "triad-D",
+      "category": "triad",
+      "filename": "triad-D.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "D",
+      "notes": "triad D",
+      "segments": []
+    },
+    {
+      "id": "triad-A",
+      "category": "triad",
+      "filename": "triad-A.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "A",
+      "notes": "triad A",
+      "segments": []
+    },
+    {
+      "id": "triad-E",
+      "category": "triad",
+      "filename": "triad-E.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "E",
+      "notes": "triad E",
+      "segments": []
+    },
+    {
+      "id": "triad-Am",
+      "category": "triad",
+      "filename": "triad-Am.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Am",
+      "notes": "triad Am",
+      "segments": []
+    },
+    {
+      "id": "triad-Em",
+      "category": "triad",
+      "filename": "triad-Em.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Em",
+      "notes": "triad Em",
+      "segments": []
+    },
+    {
+      "id": "triad-Dm",
+      "category": "triad",
+      "filename": "triad-Dm.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Dm",
+      "notes": "triad Dm",
+      "segments": []
+    },
+    {
+      "id": "triad-Bm",
+      "category": "triad",
+      "filename": "triad-Bm.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Bm",
+      "notes": "triad Bm",
+      "segments": []
+    },
+    {
+      "id": "triad-Cm",
+      "category": "triad",
+      "filename": "triad-Cm.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Cm",
+      "notes": "triad Cm",
+      "segments": []
+    },
+    {
+      "id": "triad-Gm",
+      "category": "triad",
+      "filename": "triad-Gm.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Gm",
+      "notes": "triad Gm",
+      "segments": []
+    },
+    {
+      "id": "prog-C-G-Am-F",
+      "category": "progression",
+      "filename": "prog-C-G-Am-F.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "C-G-Am-F, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "G"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "Am"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "F"
+        }
+      ]
+    },
+    {
+      "id": "prog-G-D-Em-C",
+      "category": "progression",
+      "filename": "prog-G-D-Em-C.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "G-D-Em-C, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "G"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "D"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "Em"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "C"
+        }
+      ]
+    },
+    {
+      "id": "prog-Am-F-C-G",
+      "category": "progression",
+      "filename": "prog-Am-F-C-G.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "Am-F-C-G, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "Am"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "F"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "G"
+        }
+      ]
+    },
+    {
+      "id": "prog-D-A-Bm-G",
+      "category": "progression",
+      "filename": "prog-D-A-Bm-G.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "D-A-Bm-G, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "D"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "A"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "Bm"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "G"
+        }
+      ]
+    },
+    {
+      "id": "prog-Em-C-G-D",
+      "category": "progression",
+      "filename": "prog-Em-C-G-D.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "Em-C-G-D, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "Em"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "G"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "D"
+        }
+      ]
+    },
+    {
+      "id": "prog-F-C-Dm-Am",
+      "category": "progression",
+      "filename": "prog-F-C-Dm-Am.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "F-C-Dm-Am, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "F"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "Dm"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "Am"
+        }
+      ]
+    },
+    {
+      "id": "prog-C-Am-F-G",
+      "category": "progression",
+      "filename": "prog-C-Am-F-G.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "C-Am-F-G, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "Am"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "F"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "G"
+        }
+      ]
+    },
+    {
+      "id": "prog-G-Em-C-D",
+      "category": "progression",
+      "filename": "prog-G-Em-C-D.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "G-Em-C-D, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "G"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "Em"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "D"
+        }
+      ]
+    },
+    {
+      "id": "prog-Am-G-F-E",
+      "category": "progression",
+      "filename": "prog-Am-G-F-E.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "Am-G-F-E, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "Am"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "G"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "F"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "E"
+        }
+      ]
+    },
+    {
+      "id": "prog-C-F-G-C",
+      "category": "progression",
+      "filename": "prog-C-F-G-C.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "C-F-G-C, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "F"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "G"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "C"
+        }
+      ]
+    },
+    {
+      "id": "prog-Dm-G-C-F",
+      "category": "progression",
+      "filename": "prog-Dm-G-C-F.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "Dm-G-C-F, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "Dm"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "G"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "C"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "F"
+        }
+      ]
+    },
+    {
+      "id": "prog-Em-Am-D-G",
+      "category": "progression",
+      "filename": "prog-Em-Am-D-G.wav",
+      "sample_rate": 22050,
+      "duration_ms": 7940,
+      "expected_single_label": "",
+      "notes": "Em-Am-D-G, each 2000ms, xf 20ms",
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 2000,
+          "chord_label": "Em"
+        },
+        {
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "chord_label": "Am"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6000,
+          "chord_label": "D"
+        },
+        {
+          "start_ms": 6000,
+          "end_ms": 8000,
+          "chord_label": "G"
+        }
+      ]
+    },
+    {
+      "id": "intf-noise-C",
+      "category": "interference",
+      "filename": "intf-noise-C.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "C",
+      "notes": "triad C + white noise @0.25",
+      "segments": []
+    },
+    {
+      "id": "intf-noise-Am",
+      "category": "interference",
+      "filename": "intf-noise-Am.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Am",
+      "notes": "triad Am + white noise @0.25",
+      "segments": []
+    },
+    {
+      "id": "intf-noise-G",
+      "category": "interference",
+      "filename": "intf-noise-G.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "G",
+      "notes": "triad G + white noise @0.25",
+      "segments": []
+    },
+    {
+      "id": "intf-rumble-F",
+      "category": "interference",
+      "filename": "intf-rumble-F.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "F",
+      "notes": "triad F + low-freq rumble @0.45",
+      "segments": []
+    },
+    {
+      "id": "intf-rumble-Em",
+      "category": "interference",
+      "filename": "intf-rumble-Em.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Em",
+      "notes": "triad Em + low-freq rumble @0.45",
+      "segments": []
+    },
+    {
+      "id": "intf-rumble-D",
+      "category": "interference",
+      "filename": "intf-rumble-D.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "D",
+      "notes": "triad D + low-freq rumble @0.45",
+      "segments": []
+    },
+    {
+      "id": "intf-melody-C",
+      "category": "interference",
+      "filename": "intf-melody-C.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "C",
+      "notes": "triad C + melody line @0.35",
+      "segments": []
+    },
+    {
+      "id": "intf-melody-Am",
+      "category": "interference",
+      "filename": "intf-melody-Am.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Am",
+      "notes": "triad Am + melody line @0.35",
+      "segments": []
+    },
+    {
+      "id": "intf-melody-G",
+      "category": "interference",
+      "filename": "intf-melody-G.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "G",
+      "notes": "triad G + melody line @0.35",
+      "segments": []
+    },
+    {
+      "id": "intf-voice-Dm",
+      "category": "interference",
+      "filename": "intf-voice-Dm.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Dm",
+      "notes": "triad Dm + voice-band interference @0.35",
+      "segments": []
+    },
+    {
+      "id": "intf-voice-Bm",
+      "category": "interference",
+      "filename": "intf-voice-Bm.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "Bm",
+      "notes": "triad Bm + voice-band interference @0.35",
+      "segments": []
+    },
+    {
+      "id": "intf-voice-F",
+      "category": "interference",
+      "filename": "intf-voice-F.wav",
+      "sample_rate": 22050,
+      "duration_ms": 3500,
+      "expected_single_label": "F",
+      "notes": "triad F + voice-band interference @0.35",
+      "segments": []
+    }
+  ]
+}

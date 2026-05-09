@@ -1,0 +1,5 @@
+/* Localized versions of user-visible Info.plist keys (see project.yml defaults). */
+"CFBundleDisplayName" = "Wanle Guitar";
+"CFBundleName" = "Wanle Guitar";
+"NSMicrophoneUsageDescription" = "Wanle Guitar needs the microphone for tuning and some sound input exercises.";
+"NSPhotoLibraryUsageDescription" = "Allow photo library access to import sheet music images or videos.";

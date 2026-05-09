@@ -12,12 +12,15 @@ protocol PracticeSessionStore {
         completed: Bool,
         difficulty: Int,
         note: String?,
+        sheetId: String?,
         progressionId: String?,
         musicKey: String?,
         complexity: String?,
-        rhythmPatternId: String?
+        rhythmPatternId: String?,
+        scaleWarmupDrillId: String?,
+        earAnsweredCount: Int?,
+        earCorrectCount: Int?
     ) async throws
 
     func loadSummary(now: Date?) async throws -> PracticeSummary
 }
-

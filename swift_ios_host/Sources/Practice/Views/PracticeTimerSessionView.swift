@@ -1,5 +1,6 @@
 import SwiftUI
 import Core
+import Practice
 
 struct PracticeTimerSessionView: View {
     let task: PracticeTask
@@ -14,7 +15,6 @@ struct PracticeTimerSessionView: View {
     @State private var showFinishSheet: Bool = false
     @State private var noteText: String = ""
 
-    @State private var showLeaveConfirm: Bool = false
     @State private var showNeedStartHint: Bool = false
     @State private var savingError: String?
     @State private var savedToast: Bool = false
@@ -53,26 +53,9 @@ struct PracticeTimerSessionView: View {
         .padding(SwiftAppTheme.pagePadding)
         .navigationTitle(task.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    showLeaveConfirm = true
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-            }
-        }
         .onReceive(ticker) { _ in
             guard running else { return }
             elapsedSeconds += 1
-        }
-        .alert("离开练习？", isPresented: $showLeaveConfirm) {
-            Button("继续练习", role: .cancel) {}
-            Button("放弃返回", role: .destructive) { dismiss() }
-        } message: {
-            Text("当前练习尚未保存，确定要返回吗？")
         }
         .alert("先开始练习再结束哦", isPresented: $showNeedStartHint) {
             Button("知道了", role: .cancel) {}
@@ -115,6 +98,10 @@ struct PracticeTimerSessionView: View {
             showNeedStartHint = true
             return
         }
+        guard elapsedSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else {
+            pause()
+            return
+        }
         pause()
         showFinishSheet = true
     }
@@ -122,6 +109,7 @@ struct PracticeTimerSessionView: View {
     @MainActor
     private func save(result: PracticeFinishResult) async {
         guard let startedAt else { return }
+        guard elapsedSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
         do {
             try await store.saveSession(
                 task: task,
@@ -131,10 +119,14 @@ struct PracticeTimerSessionView: View {
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
+                sheetId: nil,
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
-                rhythmPatternId: nil
+                rhythmPatternId: nil,
+                scaleWarmupDrillId: nil,
+                earAnsweredCount: nil,
+                earCorrectCount: nil
             )
             savedToast = true
         } catch {
@@ -149,4 +141,3 @@ private func formatDuration(_ seconds: Int) -> String {
     let r = String(format: "%02d", s % 60)
     return "\(m):\(r)"
 }
-

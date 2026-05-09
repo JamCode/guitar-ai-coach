@@ -37,6 +37,14 @@ chmod 600 "$ECS_KEY"
 
 以下命令默认在**本机仓库根目录** `guitar-ai-coach/` 下执行。
 
+## Chord ONNX 服务（本机 `127.0.0.1:8000`）
+
+- **一键同步 + 装依赖 + 停旧进程 + 起 uvicorn + health**：在**本机仓库根**执行（先 `chmod 600` 你的私钥）  
+  `ECS_KEY="/path/to/key.pem" ./deploy/ecs/chord_onnx/push-and-setup.sh`  
+  日志默认追加到 **`$HOME/guitar-ai-coach/logs/chord_onnx.log`**（可在 `push-and-setup.sh` 中改 `CHORD_LOG` 默认值）。
+- **GitHub Actions**：仓库工作流 **ECS backend deploy** 在检测到 `backend/chord_onnx_server/**` 变更（或手动 `workflow_dispatch`）时，会 rsync 该目录到 ECS、在 `chord-onnx` conda 环境中装依赖并重启 `:8000` 服务，与上条脚本行为一致。
+- 线上反代见 **`deploy/ecs/nginx/guitar-server.conf`** 中 `location /api/chord-onnx/`。
+
 ---
 
 ## 首次：站点目录 + Nginx 指向（在 ECS 上只需做一次，需 root）
@@ -101,6 +109,52 @@ ssh -i "$ECS_KEY" -o StrictHostKeyChecking=accept-new "${ECS_USER}@${ECS_HOST}" 
 
 ---
 
+## HTTPS（Let's Encrypt，推荐 acme.sh）
+
+当前线上 **`site/.well-known/acme-challenge` 可能为 `root` 属主**，`wanghan` 无法写入校验文件。约定使用 **`/home/wanghan/guitar-ai-coach/acme-webroot`** 作为 Webroot（`wanghan` 可写），Nginx 中 `alias` 到该目录；证书安装到 **`${ECS_PATH}/deploy/ecs/nginx/ssl/`**（与 `guitar-server.conf` 中 `ssl_certificate` 路径一致），**勿提交**私钥到 Git。
+
+**顺序**：先 **安全组放行 443** → 在 ECS 上 **建 `acme-webroot`、安装 acme.sh、签发并 install-cert** → **rsync `guitar-server.conf` 并重载 Nginx**。
+
+1. **安全组**：公网入方向放行 **TCP 443**。
+
+2. **一次性准备目录**（`wanghan` 执行）：
+
+   ```bash
+   mkdir -p /home/wanghan/guitar-ai-coach/acme-webroot/.well-known/acme-challenge
+   mkdir -p /home/wanghan/guitar-ai-coach/deploy/ecs/nginx/ssl
+   ```
+
+3. **安装 acme.sh 并签发**（无需 `sudo`；把邮箱改成你的；默认 CA 为 Let's Encrypt）：
+
+   ```bash
+   curl https://get.acme.sh | sh -s email=you@example.com
+   . "$HOME/.acme.sh/acme.sh.env"
+   ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+   ~/.acme.sh/acme.sh --issue -d wanghanai.xyz -d www.wanghanai.xyz \
+     -w /home/wanghan/guitar-ai-coach/acme-webroot
+   ~/.acme.sh/acme.sh --install-cert -d wanghanai.xyz \
+     --fullchain-file /home/wanghan/guitar-ai-coach/deploy/ecs/nginx/ssl/wanghanai.xyz.fullchain.pem \
+     --key-file /home/wanghan/guitar-ai-coach/deploy/ecs/nginx/ssl/wanghanai.xyz.key \
+     --reloadcmd "sudo nginx -t && sudo systemctl reload nginx"
+   ```
+
+   最后一行依赖当前 ECS 上 **`wanghan` 对 `nginx -t` / `systemctl reload nginx` 的 NOPASSWD sudo**（见上文环境表）。续期时 acme.sh 会再次执行 `install-cert` 与 `reloadcmd`。
+
+4. **同步 Nginx 站点配置并重载**（本机仓库根目录，已设置 `ECS_*`）：
+
+   ```bash
+   rsync -avz -e "ssh -i $ECS_KEY -o StrictHostKeyChecking=accept-new" \
+     deploy/ecs/nginx/guitar-server.conf "${ECS_USER}@${ECS_HOST}:${ECS_PATH}/deploy/ecs/nginx/guitar-server.conf"
+   ssh -i "$ECS_KEY" -o StrictHostKeyChecking=accept-new "${ECS_USER}@${ECS_HOST}" \
+     "sudo nginx -t && sudo systemctl reload nginx"
+   ```
+
+**说明**：若你更想用 **Certbot** 且具备 **`sudo certbot` 免密** 或交互式 `sudo`，可将证书放在 `/etc/letsencrypt/live/...` 并自行改 `ssl_certificate` 路径；本仓库默认按 **acme.sh + 项目内 `ssl/`** 维护，避免与损坏的旧版 `certbot`/Python 依赖冲突。
+
+验证：`curl -I https://wanghanai.xyz/` 应返回 **200** 且证书链完整。
+
+---
+
 ## 部署后端
 
 ### 1. 同步 Python 代码
@@ -153,6 +207,14 @@ rsync -avz -e "ssh -i $ECS_KEY -o StrictHostKeyChecking=accept-new" \
 ```
 
 **注意**：`backend.env` 含 `DASHSCOPE_API_KEY` 等敏感信息，勿推送到公开仓库。
+
+扒歌 ONNX 服务需要在同一个 `backend.env` 中配置固定 App Token：
+
+```bash
+CHORD_ONNX_APP_TOKEN=替换为一段足够长的随机字符串
+```
+
+iOS 构建时也需使用同一个值注入 `CHORD_ONNX_APP_TOKEN` Build Setting（见 `swift_ios_host/install-device.local.env.example` 与 `upload-testflight.local.env.example`）。服务端会校验请求头 `X-App-Token`，Nginx 也会对 `/api/chord-onnx/` 做 IP 限流；该 Token 只是无账号阶段的基础防刷，不应当视为用户身份或强安全凭证。
 
 ### 3. 重启后端服务
 

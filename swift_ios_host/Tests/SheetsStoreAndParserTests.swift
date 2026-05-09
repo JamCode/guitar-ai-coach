@@ -14,19 +14,6 @@ final class SheetsStoreAndParserTests: XCTestCase {
         XCTAssertEqual(entry?.storedFileNames, ["a.jpg"])
     }
 
-    func testOcrParser_splitsChordMelodyLyric() {
-        let input = [
-            OcrLineCandidate(text: "C Dm G7 C", centerY: 10),
-            OcrLineCandidate(text: "1234 5- 67", centerY: 20),
-            OcrLineCandidate(text: "我爱吉他", centerY: 30)
-        ]
-        let out = SheetOcrParser.parseCandidates(input)
-        XCTAssertEqual(out.count, 1)
-        XCTAssertEqual(out[0].chords, ["C", "Dm", "G7", "C"])
-        XCTAssertEqual(out[0].melody, "1234 5- 67")
-        XCTAssertEqual(out[0].lyrics, "我爱吉他")
-    }
-
     func testStoreLoadAll_toleratesBrokenIndex() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -35,5 +22,47 @@ final class SheetsStoreAndParserTests: XCTestCase {
         let store = SheetLibraryStore(rootOverride: root)
         let loaded = await store.loadAll()
         XCTAssertEqual(loaded, [])
+    }
+
+    func testRename_updatesDisplayNameWithoutTouchingStoredFiles() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let source = root.appendingPathComponent("source.jpg")
+        try Data([1, 2, 3]).write(to: source)
+
+        let store = SheetLibraryStore(rootOverride: root)
+        let entry = try await store.importSheetPages(sources: [source], displayName: "旧谱名")
+
+        try await store.rename(id: entry.id, displayName: " 新谱名 ")
+        let renamed = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(renamed?.displayName, "新谱名")
+        XCTAssertEqual(renamed?.storedFileNames, entry.storedFileNames)
+
+        try await store.rename(id: entry.id, displayName: "   ")
+        let unchanged = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(unchanged?.displayName, "新谱名")
+    }
+
+    func testReorderPages_persistsNewPageOrderWithoutChangingPageSet() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let sources = try (0..<3).map { idx in
+            let source = root.appendingPathComponent("source-\(idx).jpg")
+            try Data([UInt8(idx)]).write(to: source)
+            return source
+        }
+
+        let store = SheetLibraryStore(rootOverride: root)
+        let entry = try await store.importSheetPages(sources: sources, displayName: "多页谱")
+        let reordered = [entry.storedFileNames[2], entry.storedFileNames[0], entry.storedFileNames[1]]
+
+        try await store.reorderPages(id: entry.id, storedFileNames: reordered)
+        let loaded = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(loaded?.storedFileNames, reordered)
+        XCTAssertEqual(loaded?.displayName, "多页谱")
+
+        try await store.reorderPages(id: entry.id, storedFileNames: [entry.storedFileNames[0]])
+        let unchanged = await store.loadAll().first(where: { $0.id == entry.id })
+        XCTAssertEqual(unchanged?.storedFileNames, reordered)
     }
 }

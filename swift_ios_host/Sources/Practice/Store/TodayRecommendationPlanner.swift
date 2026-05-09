@@ -1,5 +1,7 @@
-import Foundation
+import Core
 import Ear
+import Foundation
+import Practice
 
 struct TodayRecommendationPlanner {
     private let referenceDate: Date
@@ -184,23 +186,35 @@ struct TodayRecommendationPlanner {
         case .sightSinging:
             switch difficulty {
             case .beginner:
-                return .sightSingingConfig(pitchRange: "mid", includeAccidental: false, questionCount: 6)
+                return .sightSingingConfig(
+                    pitchRange: "mid",
+                    includeAccidental: false,
+                    questionCount: 0,
+                    exerciseKind: .singleNoteMimic
+                )
             case .intermediate:
-                return .sightSingingConfig(pitchRange: "wide", includeAccidental: false, questionCount: 8)
+                return .sightSingingConfig(
+                    pitchRange: "wide",
+                    includeAccidental: false,
+                    questionCount: 0,
+                    exerciseKind: .intervalMimic
+                )
             case .advanced:
-                return .sightSingingConfig(pitchRange: "wide", includeAccidental: true, questionCount: 10)
+                return .sightSingingConfig(
+                    pitchRange: "wide",
+                    includeAccidental: true,
+                    questionCount: 0,
+                    exerciseKind: .intervalMimic
+                )
             }
         case .chordSwitch:
-            let pools: [[String]] = [
-                ["C", "G", "Am", "Em"],
-                ["Dm", "G", "Cmaj7", "Am7", "F"],
-                ["Bb", "Fmaj7", "Gm7", "C7", "Dm7"]
-            ]
-            let idx = difficulty == .beginner ? 0 : (difficulty == .intermediate ? 1 : 2)
-            let pool = pools[idx]
-            let chords = Array(pool.shuffled(using: &rng).prefix(4))
-            let bpm = difficulty == .beginner ? 60 : (difficulty == .intermediate ? 80 : 100)
-            return .chordSwitch(ChordSwitchExercise(chords: chords, bpm: bpm))
+            let mapped: ChordSwitchDifficulty = switch difficulty {
+            case .beginner: .初级
+            case .intermediate: .中级
+            case .advanced: .高级
+            }
+            let ex = ChordSwitchGenerator.buildExercise(difficulty: mapped, using: &rng)
+            return .chordSwitch(ex)
         case .scaleTraining:
             let keys = difficulty == .advanced ? ["C", "G", "D", "A", "E", "F", "Bb"] : ["C", "G", "D", "F"]
             let mode = difficulty == .beginner ? "自然大调" : (difficulty == .intermediate ? "五声音阶大调" : "自然小调")
@@ -235,28 +249,29 @@ struct TodayRecommendationPlanner {
     private func reasonText(for module: RecommendationModuleType, difficulty: RecommendationDifficultyLevel, records: [RecommendationHistoryRecord]) -> String {
         let count = recentRecords(for: module, records: records).count
         if count < 3 {
-            return "最近 7 天样本不足 3 次，默认从初级开始。"
+            return AppL10n.t("rec_reason_few_samples")
         }
-        return "最近 7 天共 \(count) 次相关训练，按完成率与稳定性推荐为\(difficulty.rawValue)。"
+        return String(format: AppL10n.t("rec_reason_enough"), count, difficulty.localizedName)
     }
 
     private func summaryText(for module: RecommendationModuleType, difficulty: RecommendationDifficultyLevel, payload: RecommendationPayload) -> String {
         switch payload {
         case let .intervalQuestion(question):
             let choices = question.choices.map(\.nameZh).joined(separator: " / ")
-            return "\(difficulty.rawValue) · 目标音程：\(question.answer.nameZh) · 选项：\(choices)"
+            return "\(difficulty.localizedName) · 目标音程：\(question.answer.nameZh) · 选项：\(choices)"
         case let .chordQuestion(question):
             let opts = question.options.map(\.label).joined(separator: " / ")
-            return "\(difficulty.rawValue) · \(question.promptZh) · 选项：\(opts)"
-        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount):
+            return "\(difficulty.localizedName) · \(question.promptZh) · 选项：\(opts)"
+        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount, exerciseKind):
             let accidental = includeAccidental ? "含升降号" : "不含升降号"
-            return "\(difficulty.rawValue) · 音域 \(pitchRange) · \(accidental) · \(questionCount) 题"
+            let volume = questionCount <= 0 ? "不限题量" : "\(questionCount) 题"
+            return "\(difficulty.localizedName) · \(exerciseKind.titleZh) · 音域 \(pitchRange) · \(accidental) · \(volume)"
         case let .chordSwitch(exercise):
-            return "\(difficulty.rawValue) · \(exercise.chords.joined(separator: " → ")) · \(exercise.bpm) BPM"
+            return "\(difficulty.localizedName) · \(exercise.flattenedChords.joined(separator: " → ")) · \(exercise.bpmHintZh)"
         case let .scaleTraining(exercise):
-            return "\(difficulty.rawValue) · \(exercise.keyName) \(exercise.modeName) · \(exercise.patternName) · \(exercise.bpm) BPM"
+            return "\(difficulty.localizedName) · \(exercise.keyName) \(exercise.modeName) · \(exercise.patternName) · \(exercise.bpm) BPM"
         case let .traditionalCrawl(exercise):
-            return "\(difficulty.rawValue) · 起始 \(exercise.startFret) 品 · \(exercise.rounds) 轮 · \(exercise.bpm) BPM"
+            return "\(difficulty.localizedName) · 起始 \(exercise.startFret) 品 · \(exercise.rounds) 轮 · \(exercise.bpm) BPM"
         }
     }
 }

@@ -6,7 +6,7 @@ public final class FretboardTonePlayer {
     private let queue = DispatchQueue(label: "guitar-ai-coach.fretboard-tone-player", qos: .userInitiated)
     private var didPrepareAudio = false
 
-    public init(audio: AudioEngineServing = AudioEngineService()) {
+    public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
     }
 
@@ -24,7 +24,6 @@ public final class FretboardTonePlayer {
     }
 
     public func playMidi(_ midi: Int) {
-        let frequency = 440.0 * pow(2.0, Double(midi - 69) / 12.0)
         queue.async { [weak self] in
             guard let self else { return }
             if !self.didPrepareAudio {
@@ -36,8 +35,11 @@ public final class FretboardTonePlayer {
                     return
                 }
             }
-            try? self.audio.playPluckedGuitarString(frequencyHz: frequency, durationSec: 0.48)
+            try? self.audio.playSampledGuitarNote(
+                midi: midi,
+                velocity: 100,
+                gateDurationSec: 1.1
+            )
         }
     }
 }
-

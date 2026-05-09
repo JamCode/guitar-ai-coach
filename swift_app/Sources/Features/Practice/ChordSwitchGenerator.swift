@@ -1,22 +1,87 @@
+import Chords
 import Foundation
 
-// MARK: - 和弦切换自动出题（完全可码规则）
+// MARK: - 和弦切换自动出题（大调功能进行 + 级数；模板基于 C，可按主音移调）
 
 public enum ChordSwitchGenerator {
-    // MARK: 和弦池（与产品约定一致，可按曲库再扩展）
+    /// 模板与级数推理的基准主音（和弦符号在内部先生成于本音上再移调）。
+    public static let templateTonic: String = "C"
 
-    /// 初级：开放和弦，无横按。
-    public static let beginnerPool: [String] = ["C", "G", "Am", "Em", "D"]
+    /// 默认调性文案（主音为 C）。
+    public static var defaultKeyZh: String { keyZhLabel(tonic: defaultTonic) }
 
-    /// 中级：开放 + 小横按 + 简单七和弦。
-    public static let intermediatePool: [String] = [
-        "C", "G", "Am", "Em", "D", "F", "Bb", "Am7", "Cmaj7",
+    /// 默认主音（与设置、出题默认一致）。
+    public static let defaultTonic: String = "C"
+
+    /// 设置里可选的主音列表（与 `ChordTransposeLocal` 根音命名一致）。
+    public static let selectableTonics: [String] = [
+        "C", "G", "D", "A", "E", "B", "F#", "C#",
+        "F", "Bb", "Eb", "Ab", "Db", "Gb",
     ]
 
-    /// 高级：大横按 / 封闭 / 高把位与 maj7、m7、add9 等（符号层，具体品位由指法图模块解释）。
+    public static func keyZhLabel(tonic: String) -> String {
+        "\(tonic) 调"
+    }
+
+    /// 从 `keyZh`（如 `G 调`）解析主音字母；失败时为 `defaultTonic`。
+    public static func parseTonicKey(from keyZh: String) -> String {
+        var s = keyZh.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard s.hasSuffix("调") else { return defaultTonic }
+        s.removeLast()
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return selectableTonics.contains(t) ? t : defaultTonic
+    }
+
+    // MARK: 和弦池（与难度/指法表约定一致；符号相对于 **C 大调模板**，校验时可先移回 C）
+
+    /// 初级：C 大调自然和弦三和弦，开放/常用把位。
+    public static let beginnerPool: [String] = ["C", "Dm", "Em", "F", "G", "Am"]
+
+    /// 中级：自然七和弦与属七等（仍围绕 C 大调功能）。
+    public static let intermediatePool: [String] = [
+        "C", "Dm", "Em", "F", "G", "Am",
+        "Cmaj7", "Dm7", "Em7", "G7", "Am7",
+    ]
+
+    /// 高级：扩展色彩（仍对应 C 大调内的级数功能）。
     public static let advancedPool: [String] = [
-        "F", "Bb", "Bm", "Cm7", "Fmaj7", "Gm7", "Dm7", "Ebmaj7",
-        "Bbm7", "Cadd9", "Aadd9", "Gmaj7", "Am7", "C#m7",
+        "Cmaj7", "Dm7", "Em7", "Fmaj9", "G7", "G9", "G13", "Am7",
+        "Cmaj9", "Gmaj7",
+    ]
+
+    // MARK: 进行模板（级数 + **C 调** 符号）
+
+    private typealias Step = (roman: String, chord: String)
+
+    private static let beginnerTemplates: [[Step]] = [
+        [("I", "C"), ("ii", "Dm"), ("V", "G"), ("I", "C")],
+        [("I", "C"), ("V", "G"), ("vi", "Am"), ("IV", "F")],
+        [("vi", "Am"), ("IV", "F"), ("I", "C"), ("V", "G")],
+        [("I", "C"), ("vi", "Am"), ("ii", "Dm"), ("V", "G")],
+        [("I", "C"), ("IV", "F"), ("V", "G"), ("I", "C")],
+        [("ii", "Dm"), ("V", "G"), ("I", "C"), ("IV", "F")],
+        [("I", "C"), ("iii", "Em"), ("vi", "Am")],
+        [("I", "C"), ("V", "G"), ("I", "C")],
+    ]
+
+    private static let intermediateTemplates: [[Step]] = [
+        [("ii7", "Dm7"), ("V7", "G7"), ("I", "C"), ("IV", "F")],
+        [("Imaj7", "Cmaj7"), ("vi", "Am"), ("ii7", "Dm7"), ("V7", "G7")],
+        [("vi7", "Am7"), ("IV", "F"), ("I", "C"), ("V7", "G7")],
+        [("I", "C"), ("vi7", "Am7"), ("IV", "F"), ("V", "G"), ("I", "C")],
+        [("I", "C"), ("ii7", "Dm7"), ("V7", "G7"), ("vi", "Am"), ("IV", "F"), ("V", "G")],
+        [("ii7", "Dm7"), ("V7", "G7"), ("I", "C"), ("vi", "Am"), ("ii7", "Dm7"), ("V7", "G7")],
+        [("I", "C"), ("iii7", "Em7"), ("vi7", "Am7"), ("ii7", "Dm7"), ("V7", "G7")],
+        [("vi", "Am"), ("IV", "F"), ("I", "C"), ("V7", "G7"), ("vi7", "Am7"), ("IV", "F")],
+    ]
+
+    private static let advancedTemplates: [[Step]] = [
+        [("ii7", "Dm7"), ("V9", "G9"), ("Imaj7", "Cmaj7"), ("vi7", "Am7"), ("IVmaj9", "Fmaj9"), ("V13", "G13")],
+        [("Imaj7", "Cmaj7"), ("iii7", "Em7"), ("vi7", "Am7"), ("ii7", "Dm7"), ("V7", "G7"), ("Imaj9", "Cmaj9")],
+        [("ii7", "Dm7"), ("V7", "G7"), ("Imaj7", "Cmaj7"), ("IVmaj9", "Fmaj9"), ("iii7", "Em7"), ("vi7", "Am7"), ("ii7", "Dm7"), ("V7", "G7")],
+        [("vi7", "Am7"), ("ii7", "Dm7"), ("V9", "G9"), ("Imaj7", "Cmaj7"), ("IVmaj9", "Fmaj9"), ("V13", "G13")],
+        [("Imaj7", "Cmaj7"), ("ii7", "Dm7"), ("V7", "G7"), ("Imaj9", "Cmaj9"), ("vi7", "Am7"), ("ii7", "Dm7"), ("V13", "G13"), ("Imaj7", "Cmaj7")],
+        [("ii7", "Dm7"), ("V7", "G7"), ("Imaj9", "Cmaj9"), ("vi7", "Am7"), ("IVmaj9", "Fmaj9"), ("V7", "G7")],
     ]
 
     // MARK: 对外 API
@@ -25,185 +90,239 @@ public enum ChordSwitchGenerator {
         using rng: inout some RandomNumberGenerator
     ) -> [ChordSwitchExercise] {
         [
-            buildExercise(difficulty: .初级, using: &rng),
-            buildExercise(difficulty: .中级, using: &rng),
-            buildExercise(difficulty: .高级, using: &rng),
+            buildExercise(difficulty: .初级, tonic: defaultTonic, using: &rng),
+            buildExercise(difficulty: .中级, tonic: defaultTonic, using: &rng),
+            buildExercise(difficulty: .高级, tonic: defaultTonic, using: &rng),
         ]
     }
 
     public static func buildExercise(
         difficulty: ChordSwitchDifficulty,
+        tonic: String = defaultTonic,
         using rng: inout some RandomNumberGenerator
     ) -> ChordSwitchExercise {
+        let t = selectableTonics.contains(tonic) ? tonic : defaultTonic
         switch difficulty {
         case .初级:
-            return buildBeginner(using: &rng)
+            return buildBeginner(tonic: t, using: &rng)
         case .中级:
-            return buildIntermediate(using: &rng)
+            return buildIntermediate(tonic: t, using: &rng)
         case .高级:
-            return buildAdvanced(using: &rng)
+            return buildAdvanced(tonic: t, using: &rng)
         }
     }
 
-    // MARK: - 初级：开放和弦、2 个一组、每和弦 2 拍、BPM 50–70
+    /// 保持同一组级数与难度，仅将和弦符号从当前 `keyZh` 主音移到新主音，并刷新文案。
+    public static func withTonic(_ exercise: ChordSwitchExercise, to newTonic: String) -> ChordSwitchExercise {
+        let to = selectableTonics.contains(newTonic) ? newTonic : defaultTonic
+        let from = parseTonicKey(from: exercise.keyZh)
+        guard from != to else { return exercise }
+        let newSegments = exercise.segments.map { seg in
+            ChordSwitchSegment(chords: seg.chords.map {
+                ChordTransposeLocal.transposeChordSymbol($0, from: from, to: to)
+            })
+        }
+        let keyZh = keyZhLabel(tonic: to)
+        let maj = majorKeyPhrase(tonic: to)
+        let extras = extraPromptLines(difficulty: exercise.difficulty, majorPhrase: maj)
+        let prompt = makePrompt(
+            difficulty: exercise.difficulty,
+            keyZh: keyZh,
+            romanNumerals: exercise.romanNumerals,
+            segments: newSegments,
+            bpmMin: exercise.bpmMin,
+            bpmMax: exercise.bpmMax,
+            beatsPerChord: exercise.beatsPerChord,
+            extraLines: extras
+        )
+        let goals = makeGoals(
+            difficulty: exercise.difficulty,
+            keyZh: keyZh,
+            majorPhrase: maj,
+            romans: exercise.romanNumerals
+        )
+        return ChordSwitchExercise(
+            id: exercise.id,
+            difficulty: exercise.difficulty,
+            segments: newSegments,
+            keyZh: keyZh,
+            romanNumerals: exercise.romanNumerals,
+            bpmMin: exercise.bpmMin,
+            bpmMax: exercise.bpmMax,
+            beatsPerChord: exercise.beatsPerChord,
+            promptZh: prompt,
+            goalsZh: goals
+        )
+    }
+
+    // MARK: - Builders
 
     private static func buildBeginner(
+        tonic: String,
         using rng: inout some RandomNumberGenerator
     ) -> ChordSwitchExercise {
-        let pairCount = 5
-        let segments = (0 ..< pairCount).map { _ in
-            ChordSwitchSegment(chords: randomPair(from: beginnerPool, using: &rng))
-        }
+        let template = beginnerTemplates.randomElement(using: &rng)!
+        let romans = template.map(\.roman)
+        let chordsC = template.map(\.chord)
         let bpm = Int.random(in: 50 ... 70, using: &rng)
-        let prompt = makePrompt(
+        return assemble(
+            idPrefix: "CS-L1",
             difficulty: .初级,
-            segments: segments,
+            tonic: tonic,
+            romans: romans,
+            chordsInC: chordsC,
             bpmMin: bpm,
             bpmMax: bpm,
-            beatsPerChord: 2,
-            extraLines: [ChordSwitchPromptTemplate.ruleNoBarre, "每组 2 个和弦，顺序弹奏。"]
-        )
-        return ChordSwitchExercise(
-            id: "CS-L1-\(UUID().uuidString.prefix(8))",
-            difficulty: .初级,
-            segments: segments,
-            bpmMin: bpm,
-            bpmMax: bpm,
-            beatsPerChord: 2,
-            promptZh: prompt,
-            goalsZh: [
-                "熟悉 C / G / Am / Em / D 之间的左手切换。",
-                "保持每和弦 2 拍，换和弦落在拍点上前一拍预备。",
-                "无横按，专注指尖触弦与消音。",
-            ]
+            beatsPerChord: 2
         )
     }
-
-    // MARK: - 中级：开放+小横按+七和弦、每组 3～4 个、每和弦 1 拍、BPM 70–90
 
     private static func buildIntermediate(
+        tonic: String,
         using rng: inout some RandomNumberGenerator
     ) -> ChordSwitchExercise {
-        let groupCount = Int.random(in: 4 ... 6, using: &rng)
-        let segments = (0 ..< groupCount).map { _ -> ChordSwitchSegment in
-            let size = Int.random(in: 3 ... 4, using: &rng)
-            return ChordSwitchSegment(
-                chords: randomSequence(length: size, pool: intermediatePool, using: &rng)
-            )
-        }
+        let candidates = intermediateTemplates.filter { (4 ... 6).contains($0.count) }
+        let template = (candidates.isEmpty ? intermediateTemplates : candidates).randomElement(using: &rng)!
+        let romans = template.map(\.roman)
+        let chordsC = template.map(\.chord)
         let bpmLo = Int.random(in: 70 ... 80, using: &rng)
         let bpmHi = Int.random(in: max(bpmLo, 81) ... 90, using: &rng)
-        let prompt = makePrompt(
+        return assemble(
+            idPrefix: "CS-L2",
             difficulty: .中级,
-            segments: segments,
+            tonic: tonic,
+            romans: romans,
+            chordsInC: chordsC,
             bpmMin: bpmLo,
             bpmMax: bpmHi,
-            beatsPerChord: 1,
-            extraLines: [
-                ChordSwitchPromptTemplate.ruleMiniBarre,
-                "每组 3～4 个和弦，每和弦 1 拍。",
-                "含简单七和弦：Am7、Cmaj7 等。",
-            ]
-        )
-        return ChordSwitchExercise(
-            id: "CS-L2-\(UUID().uuidString.prefix(8))",
-            difficulty: .中级,
-            segments: segments,
-            bpmMin: bpmLo,
-            bpmMax: bpmHi,
-            beatsPerChord: 1,
-            promptZh: prompt,
-            goalsZh: [
-                "在开放与小横按之间建立稳定节拍切换。",
-                "七和弦指型下压清晰，避免闷音。",
-                "保持 1 拍一和弦的颗粒感。",
-            ]
+            beatsPerChord: 1
         )
     }
-
-    // MARK: - 高级：横按/封闭/扩展、每组 4 个、每和弦 ½ 拍、BPM 90–120
 
     private static func buildAdvanced(
+        tonic: String,
         using rng: inout some RandomNumberGenerator
     ) -> ChordSwitchExercise {
-        let groupCount = Int.random(in: 5 ... 8, using: &rng)
-        let segments = (0 ..< groupCount).map { _ in
-            ChordSwitchSegment(
-                chords: randomSequence(length: 4, pool: advancedPool, using: &rng)
-            )
-        }
+        let candidates = advancedTemplates.filter { (4 ... 8).contains($0.count) }
+        let template = (candidates.isEmpty ? advancedTemplates : candidates).randomElement(using: &rng)!
+        let romans = template.map(\.roman)
+        let chordsC = template.map(\.chord)
         let bpmLo = Int.random(in: 90 ... 102, using: &rng)
         let bpmHi = Int.random(in: max(bpmLo, 103) ... 120, using: &rng)
+        return assemble(
+            idPrefix: "CS-L3",
+            difficulty: .高级,
+            tonic: tonic,
+            romans: romans,
+            chordsInC: chordsC,
+            bpmMin: bpmLo,
+            bpmMax: bpmHi,
+            beatsPerChord: 0.5
+        )
+    }
+
+    private static func assemble(
+        idPrefix: String,
+        difficulty: ChordSwitchDifficulty,
+        tonic: String,
+        romans: [String],
+        chordsInC: [String],
+        bpmMin: Int,
+        bpmMax: Int,
+        beatsPerChord: Double
+    ) -> ChordSwitchExercise {
+        let chords = chordsInC.map { ChordTransposeLocal.transposeChordSymbol($0, from: templateTonic, to: tonic) }
+        let segment = ChordSwitchSegment(chords: chords)
+        let keyZh = keyZhLabel(tonic: tonic)
+        let maj = majorKeyPhrase(tonic: tonic)
+        let extras = extraPromptLines(difficulty: difficulty, majorPhrase: maj)
         let prompt = makePrompt(
-            difficulty: .高级,
-            segments: segments,
-            bpmMin: bpmLo,
-            bpmMax: bpmHi,
-            beatsPerChord: 0.5,
-            extraLines: [
-                ChordSwitchPromptTemplate.ruleFullBarre,
-                "每组 4 个和弦，每和弦 ½ 拍（高速切换）。",
-                "和弦类型含 maj7、m7、add9 等。",
-            ]
+            difficulty: difficulty,
+            keyZh: keyZh,
+            romanNumerals: romans,
+            segments: [segment],
+            bpmMin: bpmMin,
+            bpmMax: bpmMax,
+            beatsPerChord: beatsPerChord,
+            extraLines: extras
         )
+        let goals = makeGoals(difficulty: difficulty, keyZh: keyZh, majorPhrase: maj, romans: romans)
         return ChordSwitchExercise(
-            id: "CS-L3-\(UUID().uuidString.prefix(8))",
-            difficulty: .高级,
-            segments: segments,
-            bpmMin: bpmLo,
-            bpmMax: bpmHi,
-            beatsPerChord: 0.5,
+            id: "\(idPrefix)-\(UUID().uuidString.prefix(8))",
+            difficulty: difficulty,
+            segments: [segment],
+            keyZh: keyZh,
+            romanNumerals: romans,
+            bpmMin: bpmMin,
+            bpmMax: bpmMax,
+            beatsPerChord: beatsPerChord,
             promptZh: prompt,
-            goalsZh: [
-                "强化大横按与封闭和弦的快速落指。",
-                "半拍一和弦下保持右手节奏骨架稳定。",
-                "扩展和弦（maj7 / m7 / add9）指型记忆与预备动作。",
-            ]
+            goalsZh: goals
         )
     }
 
-    // MARK: - 随机工具
-
-    /// 两个和弦一组，尽量不重复同和弦；若池过小则允许重复。
-    private static func randomPair(from pool: [String], using rng: inout some RandomNumberGenerator) -> [String] {
-        let a = pool.randomElement(using: &rng)!
-        var b = pool.randomElement(using: &rng)!
-        var guardCount = 0
-        while b == a, pool.count > 1, guardCount < 8 {
-            b = pool.randomElement(using: &rng)!
-            guardCount += 1
-        }
-        return [a, b]
+    private static func majorKeyPhrase(tonic: String) -> String {
+        "\(tonic) 大调"
     }
 
-    /// 生成长度为 `length` 的序列，尽量避免相邻相同和弦。
-    private static func randomSequence(
-        length: Int,
-        pool: [String],
-        using rng: inout some RandomNumberGenerator
-    ) -> [String] {
-        precondition(length >= 1, "length")
-        var out: [String] = []
-        out.reserveCapacity(length)
-        for _ in 0 ..< length {
-            var c = pool.randomElement(using: &rng)!
-            if let last = out.last, c == last, pool.count > 1 {
-                var tries = 0
-                while c == last, tries < 24 {
-                    c = pool.randomElement(using: &rng)!
-                    tries += 1
-                }
-                if c == last, let alt = pool.filter({ $0 != last }).randomElement(using: &rng) {
-                    c = alt
-                }
-            }
-            out.append(c)
+    private static func extraPromptLines(difficulty: ChordSwitchDifficulty, majorPhrase: String) -> [String] {
+        switch difficulty {
+        case .初级:
+            return [
+                ChordSwitchPromptTemplate.ruleNoBarre,
+                "本题为 \(majorPhrase) 内自然和弦进行；按级数理解主、下属、属与副和弦关系。",
+            ]
+        case .中级:
+            return [
+                ChordSwitchPromptTemplate.ruleMiniBarre,
+                "\(majorPhrase) 内 ii7–V7、属七解决等功能进行；每和弦 1 拍。",
+            ]
+        case .高级:
+            return [
+                ChordSwitchPromptTemplate.ruleFullBarre,
+                "\(majorPhrase) 内高色彩和弦（maj9、属九/十三等），仍遵循 ii–V–I 与环式进行逻辑。",
+                "每和弦 ½ 拍（高速切换）。",
+            ]
         }
-        return out
+    }
+
+    private static func makeGoals(
+        difficulty: ChordSwitchDifficulty,
+        keyZh: String,
+        majorPhrase: String,
+        romans: [String]
+    ) -> [String] {
+        let joined = romanProgressionJoined(romans)
+        switch difficulty {
+        case .初级:
+            return [
+                "在 \(keyZh)（\(majorPhrase)）下熟悉 \(joined) 的左手切换。",
+                "每和弦 2 拍，换和弦落在拍点上前一拍预备。",
+                "以级数记忆进行，便于将来移调。",
+            ]
+        case .中级:
+            return [
+                "掌握 \(keyZh)（\(majorPhrase)）下 \(joined) 的七和弦手型。",
+                "注意 ii7–V7–I 的导向与属七解决感。",
+                "保持 1 拍一和弦的颗粒感。",
+            ]
+        case .高级:
+            return [
+                "在 \(keyZh)（\(majorPhrase)）下完成 \(joined) 的快速落指。",
+                "半拍一和弦时保持右手节奏骨架稳定。",
+                "结合级数理解延伸和弦的声部功能。",
+            ]
+        }
+    }
+
+    private static func romanProgressionJoined(_ romans: [String]) -> String {
+        romans.joined(separator: " → ")
     }
 
     private static func makePrompt(
         difficulty: ChordSwitchDifficulty,
+        keyZh: String,
+        romanNumerals: [String],
         segments: [ChordSwitchSegment],
         bpmMin: Int,
         bpmMax: Int,
@@ -215,7 +334,9 @@ public enum ChordSwitchGenerator {
         if beatsPerChord == 2 { beatRule = "每和弦 2 拍" }
         else if beatsPerChord == 1 { beatRule = "每和弦 1 拍" }
         else { beatRule = "每和弦 ½ 拍" }
-        lines.append("【\(difficulty.rawValue)】和弦切换 · \(beatRule) · BPM \(bpmMin)–\(bpmMax)")
+        lines.append("【\(difficulty.rawValue)】\(keyZh) 和弦切换 · \(beatRule) · BPM \(bpmMin)–\(bpmMax)")
+        lines.append("级数进行：\(romanProgressionJoined(romanNumerals))")
+        lines.append("和弦符号（\(keyZh)）：\(segments.flatMap(\.chords).joined(separator: " → "))")
         for (i, seg) in segments.enumerated() {
             lines.append("第\(i + 1)组：\(seg.summaryZh)")
         }

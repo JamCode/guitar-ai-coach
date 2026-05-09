@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "玩乐吉他";
+"CFBundleName" = "玩乐吉他";
+"NSMicrophoneUsageDescription" = "玩乐吉他需要使用麦克风来进行调音和部分声音输入练习";
+"NSPhotoLibraryUsageDescription" = "需要访问相册以导入曲谱图片或视频。";

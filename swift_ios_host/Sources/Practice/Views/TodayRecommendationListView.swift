@@ -1,6 +1,7 @@
-import SwiftUI
-import Ear
 import Core
+import Ear
+import Practice
+import SwiftUI
 
 struct TodayRecommendationListView: View {
     let sessions: [PracticeSession]
@@ -79,13 +80,13 @@ struct TodayRecommendationListView: View {
         switch item.payload {
         case .intervalQuestion:
             IntervalEarView(
-                totalQuestions: 5,
+                maxQuestions: 5,
                 difficulty: mappedIntervalDifficulty(from: item.difficulty),
-                onSessionComplete: { correct, total in
+                onSessionComplete: { correct, answered in
                     Task {
                         await appendRecord(
                             module: .intervalEar,
-                            successRate: total == 0 ? 0 : Double(correct) / Double(total),
+                            successRate: answered == 0 ? 0 : Double(correct) / Double(answered),
                             durationSeconds: 300
                         )
                         await MainActor.run { moveToNext() }
@@ -97,7 +98,7 @@ struct TodayRecommendationListView: View {
             EarMcqSessionView(
                 title: "和弦听辨",
                 bank: question.mode,
-                totalQuestions: 10,
+                maxQuestions: 10,
                 chordDifficulty: mappedChordDifficulty(from: item.difficulty),
                 onSessionComplete: { correct, total in
                     Task {
@@ -111,19 +112,20 @@ struct TodayRecommendationListView: View {
                 },
                 autoDismissOnComplete: false
             )
-        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount):
+        case let .sightSingingConfig(pitchRange, includeAccidental, questionCount, exerciseKind):
             SightSingingSessionView(
                 repository: LocalSightSingingRepository(),
                 pitchRange: pitchRange,
                 includeAccidental: includeAccidental,
                 questionCount: questionCount,
                 pitchTracker: DefaultSightSingingPitchTracker(),
+                exerciseKind: exerciseKind,
                 onSessionComplete: { result in
                     Task {
                         await appendRecord(
                             module: .sightSinging,
                             successRate: result.accuracy,
-                            durationSeconds: max(300, result.total * 45)
+                            durationSeconds: max(300, result.answered * 45)
                         )
                         await MainActor.run { moveToNext() }
                     }
@@ -132,14 +134,14 @@ struct TodayRecommendationListView: View {
             )
         case let .chordSwitch(exercise):
             GeneratedPracticeDetailView(
-                title: item.module.title,
+                title: item.module.localizedTitle,
                 summary: item.summary,
                 module: item.module,
                 lines: [
-                    "建议和弦序列：\(exercise.chords.joined(separator: " → "))",
-                    "建议速度：\(exercise.bpm) BPM",
-                    "保持每拍稳定换和弦。"
-                ],
+                    exercise.bpmHintZh,
+                    "和弦序列：\(exercise.flattenedChords.joined(separator: " → "))",
+                    "组数：\(exercise.segments.count)",
+                ] + exercise.goalsZh.prefix(2).map { "目标：\($0)" },
                 onComplete: { duration in
                     Task {
                         await appendRecord(module: .chordSwitch, successRate: 1, durationSeconds: duration)
@@ -149,7 +151,7 @@ struct TodayRecommendationListView: View {
             )
         case let .scaleTraining(exercise):
             GeneratedPracticeDetailView(
-                title: item.module.title,
+                title: item.module.localizedTitle,
                 summary: item.summary,
                 module: item.module,
                 lines: [
@@ -167,7 +169,7 @@ struct TodayRecommendationListView: View {
             )
         case let .traditionalCrawl(exercise):
             GeneratedPracticeDetailView(
-                title: item.module.title,
+                title: item.module.localizedTitle,
                 summary: item.summary,
                 module: item.module,
                 lines: [
@@ -245,7 +247,7 @@ struct TodayRecommendationListView: View {
                 .foregroundStyle(SwiftAppTheme.brand)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.module.title)
+                Text(item.module.localizedTitle)
                     .font(.headline)
                     .foregroundStyle(SwiftAppTheme.text)
                 Text(item.summary)

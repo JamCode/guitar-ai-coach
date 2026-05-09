@@ -6,22 +6,34 @@
     <main class="app-main">
       <RouterView />
     </main>
-    <nav class="tab-bar" aria-label="主导航">
+    <nav class="tab-bar" aria-label="Main navigation · 主导航">
       <RouterLink class="tab" active-class="tab--active" to="/">
         <span class="tab-ico" aria-hidden="true">🎸</span>
-        <span>和弦进行</span>
+        <span class="tab-bi">
+          <span class="bi-pair" lang="en">Progressions</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">和弦进行</span>
+        </span>
       </RouterLink>
       <RouterLink class="tab" active-class="tab--active" to="/dictionary">
         <span class="tab-ico" aria-hidden="true">📖</span>
-        <span>和弦速查</span>
+        <span class="tab-bi">
+          <span class="bi-pair" lang="en">Dictionary</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">和弦速查</span>
+        </span>
       </RouterLink>
       <RouterLink class="tab" active-class="tab--active" to="/quiz">
         <span class="tab-ico" aria-hidden="true">🎵</span>
-        <span>训练题库</span>
+        <span class="tab-bi">
+          <span class="bi-pair" lang="en">Quiz</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">训练题库</span>
+        </span>
       </RouterLink>
       <RouterLink class="tab" active-class="tab--active" to="/ear">
         <span class="tab-ico" aria-hidden="true">👂</span>
-        <span>练耳训练</span>
+        <span class="tab-bi">
+          <span class="bi-pair" lang="en">Ear</span>
+          <span class="bi-pair bi-pair--zh" lang="zh-Hans">练耳训练</span>
+        </span>
       </RouterLink>
     </nav>
   </div>
@@ -86,6 +98,29 @@ import { RouterLink, RouterView } from 'vue-router'
 .tab-bar .tab-ico {
   font-size: 20px;
   line-height: 1;
+}
+
+.tab-bi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.15;
+}
+
+.tab-bi .bi-pair {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: inherit;
+  opacity: 0.95;
+}
+
+.tab-bi .bi-pair--zh {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 1px;
+  opacity: 0.88;
 }
 
 @media (prefers-color-scheme: dark) {

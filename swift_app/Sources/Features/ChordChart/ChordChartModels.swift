@@ -75,7 +75,11 @@ public enum ChordChartData {
                 ChordChartEntry(symbol: "Bm7b5", frets: [-1, 2, 3, 2, 3, -1], theory: "半减七（1-b3-b5-b7）；悲伤爵士色彩。", voicing: "5～2 弦紧凑按法。"),
                 ChordChartEntry(symbol: "Dm7b5", frets: [-1, 5, 6, 5, 6, -1], theory: "半减七（1-b3-b5-b7）；小调 iiø7 常见。", voicing: "5 品紧凑按法。"),
                 ChordChartEntry(symbol: "Cdim7", frets: [-1, 3, 4, 2, 4, -1], theory: "减七（1-b3-b5-bb7）；紧张且常用于转调。", voicing: "5～2 弦对称按法。"),
-                ChordChartEntry(symbol: "Edim7", frets: [0, 1, 2, 0, 2, 0], theory: "减七（省略根音常见形态）；过渡导向强。", voicing: "开放形态，便于入门。")
+                ChordChartEntry(symbol: "Edim7", frets: [0, 1, 2, 0, 2, 0], theory: "减七（省略根音常见形态）；过渡导向强。", voicing: "开放形态，便于入门。"),
+                ChordChartEntry(symbol: "Cm7", frets: [-1, 3, 5, 3, 4, 3], theory: "小七（1-b3-5-b7）；小调 ii 或布鲁斯色彩。", voicing: "5 弦根横按小七。"),
+                ChordChartEntry(symbol: "Ebmaj7", frets: [-1, 6, 5, 3, 3, 3], theory: "大七（1-3-5-7）；柔和明亮。", voicing: "A 型大七，6 弦根。"),
+                ChordChartEntry(symbol: "Bbm7", frets: [-1, 1, 3, 1, 2, 1], theory: "小七；小调 ii 或转调过渡常用。", voicing: "1 品 A 型小七。"),
+                ChordChartEntry(symbol: "C#m7", frets: [-1, 4, 6, 4, 5, 4], theory: "小七；爵士/流行延伸进行。", voicing: "4 品 A 型小七。")
             ]
         ),
         ChordChartSection(
@@ -99,7 +103,8 @@ public enum ChordChartData {
             entries: [
                 ChordChartEntry(symbol: "Cadd9", frets: [-1, 3, 2, 0, 3, 0], theory: "add9；最常用加音和弦之一。", voicing: "开放 Cadd9。"),
                 ChordChartEntry(symbol: "Gadd9", frets: [3, 0, 0, 2, 0, 3], theory: "add9；明亮宽阔。", voicing: "开放 Gadd9。"),
-                ChordChartEntry(symbol: "Dadd9", frets: [-1, -1, 0, 2, 3, 0], theory: "add9；干净清透。", voicing: "开放 Dadd9。"),
+                ChordChartEntry(symbol: "Dadd9", frets: [-1, 5, 4, 2, 3, 0], theory: "add9；干净清透。", voicing: "低把位 Dadd9。"),
+                ChordChartEntry(symbol: "Aadd9", frets: [-1, 0, 2, 4, 2, 0], theory: "add9；开阔明亮。", voicing: "开放 Aadd9。"),
                 ChordChartEntry(symbol: "Fadd9", frets: [1, 3, 3, 2, 1, 3], theory: "add9；抒情氛围感强。", voicing: "1 品横按 add9。"),
                 ChordChartEntry(symbol: "Cadd6", frets: [-1, 3, 2, 2, 1, 0], theory: "add6；温暖复古。", voicing: "开放 Cadd6。"),
                 ChordChartEntry(symbol: "C6", frets: [-1, 3, 2, 2, 1, 0], theory: "6 和弦（1-3-5-6）；流行/爵士常用。", voicing: "开放 C6。"),
@@ -115,12 +120,12 @@ public enum ChordChartData {
             intro: "基于七和弦继续叠加 9/11/13，常见于 Jazz、R&B、Soul 与高级流行。",
             entries: [
                 ChordChartEntry(symbol: "C9", frets: [-1, 3, 2, 3, 3, -1], theory: "9 和弦；属功能上加 9 度色彩。", voicing: "5～2 弦紧凑按法。"),
-                ChordChartEntry(symbol: "Cm9", frets: [3, 1, 3, 3, 3, 3], theory: "小九和弦；柔和且深邃。", voicing: "6 弦根横按。"),
-                ChordChartEntry(symbol: "G9", frets: [3, -1, 3, 4, 3, -1], theory: "9 和弦；蓝调与 Funk 常见。", voicing: "6～3 弦根部按法。"),
+                ChordChartEntry(symbol: "Cm9", frets: [-1, 3, 1, 3, 3, -1], theory: "小九和弦；柔和且深邃。", voicing: "5 弦根紧凑按法。"),
+                ChordChartEntry(symbol: "G9", frets: [3, 2, 3, 2, 3, 3], theory: "9 和弦；蓝调与 Funk 常见。", voicing: "6 弦根部按法。"),
                 ChordChartEntry(symbol: "D9", frets: [-1, 5, 4, 5, 5, -1], theory: "9 和弦；流行与爵士都常见。", voicing: "5 品紧凑按法。"),
-                ChordChartEntry(symbol: "A9", frets: [5, -1, 5, 6, 5, -1], theory: "9 和弦；律动型伴奏好用。", voicing: "6 弦根按法。"),
+                ChordChartEntry(symbol: "A9", frets: [5, 4, 5, 4, 5, 5], theory: "9 和弦；律动型伴奏好用。", voicing: "6 弦根按法。"),
                 ChordChartEntry(symbol: "Cmaj9", frets: [-1, 3, 2, 4, 3, 0], theory: "大九和弦；温暖高级。", voicing: "开放 + 延伸混合形态。"),
-                ChordChartEntry(symbol: "Fmaj9", frets: [1, -1, 2, 2, 1, 0], theory: "大九和弦；梦幻抒情。", voicing: "低把位紧凑形态。"),
+                ChordChartEntry(symbol: "Fmaj9", frets: [1, -1, 2, 2, 1, 3], theory: "大九和弦；梦幻抒情。", voicing: "低把位紧凑形态。"),
                 ChordChartEntry(symbol: "C11", frets: [-1, 3, 3, 3, 1, 1], theory: "11 和弦；开放而悬浮。", voicing: "5 弦根延伸按法。"),
                 ChordChartEntry(symbol: "D11", frets: [-1, 5, 5, 5, 5, -1], theory: "11 和弦；铺垫感强。", voicing: "5 品横按简化形态。"),
                 ChordChartEntry(symbol: "G13", frets: [3, -1, 3, 4, 5, -1], theory: "13 和弦；厚实且具律动感。", voicing: "6 弦根紧凑按法。"),
@@ -133,14 +138,30 @@ public enum ChordChartData {
             entries: [
                 ChordChartEntry(symbol: "E7b9", frets: [0, 2, 0, 1, 0, 1], theory: "7b9；经典紧张感。", voicing: "开放 E7b9。"),
                 ChordChartEntry(symbol: "E7#9", frets: [0, 2, 0, 1, 3, 3], theory: "7#9；布鲁斯/摇滚标志音色。", voicing: "Hendrix 常用按法。"),
-                ChordChartEntry(symbol: "C7#11", frets: [-1, 3, 2, 3, 2, 0], theory: "7#11；Lydian dominant 味道。", voicing: "开放 C7#11。"),
-                ChordChartEntry(symbol: "C7b5", frets: [-1, 3, 2, 3, 0, 1], theory: "7b5；不稳定、导向性强。", voicing: "开放 C7b5。"),
+                ChordChartEntry(symbol: "C7#11", frets: [-1, 3, 2, 3, -1, 2], theory: "7#11；Lydian dominant 味道。", voicing: "5 弦根紧凑按法。"),
+                ChordChartEntry(symbol: "C7b5", frets: [-1, 3, 4, 3, 5, -1], theory: "7b5；不稳定、导向性强。", voicing: "5 弦根紧凑按法。"),
                 ChordChartEntry(symbol: "A7b9", frets: [5, -1, 5, 6, 5, 6], theory: "7b9；弗拉门戈与爵士常见。", voicing: "6 弦根紧凑按法。"),
-                ChordChartEntry(symbol: "G7#9", frets: [3, -1, 3, 4, 4, -1], theory: "7#9；布鲁斯经典色彩。", voicing: "6 弦根按法。"),
-                ChordChartEntry(symbol: "D7#11", frets: [-1, 5, 4, 5, 4, -1], theory: "7#11；明亮而紧张。", voicing: "5 品紧凑按法。"),
+                ChordChartEntry(symbol: "G7#9", frets: [3, -1, 3, 4, 3, 6], theory: "7#9；布鲁斯经典色彩。", voicing: "6 弦根按法。"),
+                ChordChartEntry(symbol: "D7#11", frets: [-1, 5, 4, 5, 3, 4], theory: "7#11；明亮而紧张。", voicing: "5 品紧凑按法。"),
                 ChordChartEntry(symbol: "G7b5", frets: [3, -1, 3, 4, 2, -1], theory: "7b5；导向性强的调味和弦。", voicing: "6 弦根按法。")
             ]
         )
     ]
 }
 
+extension ChordChartData {
+    private static let entryBySymbol: [String: ChordChartEntry] = {
+        var dict: [String: ChordChartEntry] = [:]
+        for section in sections {
+            for entry in section.entries {
+                dict[entry.symbol] = entry
+            }
+        }
+        return dict
+    }()
+
+    /// 按和弦符号查找本地指法表条目（与「常用和弦」表一致）。
+    public static func chordChartEntry(symbol: String) -> ChordChartEntry? {
+        entryBySymbol[symbol]
+    }
+}

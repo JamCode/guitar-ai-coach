@@ -8,6 +8,7 @@ public struct ChordLookupView: View {
     @State private var selectedKey = "C"
     @State private var errorText: String?
     @State private var resultPayload: ChordExplainMultiPayload?
+    @StateObject private var voicingAudio = ChordLookupVoicingAudioHolder()
 
     public init() {}
 
@@ -95,11 +96,17 @@ public struct ChordLookupView: View {
         }
         .navigationTitle("和弦速查")
         .appPageBackground()
+        .onAppear {
+            voicingAudio.tonePlayer.prepare()
+        }
         .sheet(item: Binding(
             get: { resultPayload.map(ResultSheetModel.init(payload:)) },
             set: { _ in resultPayload = nil }
         )) { model in
-            ChordResultSheet(payload: model.payload)
+            ChordResultSheet(payload: model.payload, tonePlayer: voicingAudio.tonePlayer)
+                .onAppear {
+                    voicingAudio.tonePlayer.prepare()
+                }
         }
     }
 
@@ -116,6 +123,10 @@ public struct ChordLookupView: View {
     }
 }
 
+private final class ChordLookupVoicingAudioHolder: ObservableObject {
+    let tonePlayer = ChordVoicingTonePlayer()
+}
+
 private struct ResultSheetModel: Identifiable {
     let id = UUID()
     let payload: ChordExplainMultiPayload
@@ -123,6 +134,7 @@ private struct ResultSheetModel: Identifiable {
 
 private struct ChordResultSheet: View {
     let payload: ChordExplainMultiPayload
+    let tonePlayer: ChordVoicingTonePlayer
     @State private var pageIndex = 0
     private var totalPages: Int { max(payload.voicings.count, 1) }
     private var currentPageDisplay: Int { min(max(pageIndex + 1, 1), totalPages) }
@@ -134,6 +146,9 @@ private struct ChordResultSheet: View {
                 Text("构成音：\(payload.chordSummary.notesLetters.joined(separator: " · "))")
             }
             Text(payload.chordSummary.notesExplainZh).font(.subheadline).foregroundStyle(SwiftAppTheme.muted)
+            Text("点按指法图试听：先分解（低音→高音），再柱式和弦。")
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
 
             TabView(selection: $pageIndex) {
                 ForEach(Array(payload.voicings.enumerated()), id: \.offset) { index, item in
@@ -142,6 +157,14 @@ private struct ChordResultSheet: View {
                         ChordDiagramView(frets: item.explain.frets)
                             .frame(maxWidth: 280)
                             .frame(height: 200)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                tonePlayer.playChordFrets(item.explain.frets)
+                            }
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel("指法图 \(item.labelZh)，点按试听和弦")
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHint("先依次播放各弦再同时播放柱式和弦")
                         Text("6→1 弦：\(item.explain.frets.map { $0 < 0 ? "x" : String($0) }.joined(separator: " ")) · 起算品格：\(item.explain.baseFret)")
                             .font(.system(.body, design: .monospaced))
                             .foregroundStyle(SwiftAppTheme.muted)

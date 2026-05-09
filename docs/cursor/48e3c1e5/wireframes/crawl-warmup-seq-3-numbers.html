@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>方案3 · 格内编号</title>
+  <style>
+    :root { --bg:#1a1f26; --card:#242b35; --line:#3a4555; --txt:#e8eef4; --muted:#8b9aab; --hi:#3d7a9c; --pill:#2a3d52; --num:#e8eef4; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, "PingFang SC", sans-serif; background:var(--bg); color:var(--txt); padding:20px; line-height:1.45; }
+    h1 { font-size:1rem; font-weight:600; margin:0 0 6px; color:var(--muted); }
+    p.sub { margin:0 0 18px; font-size:0.85rem; color:var(--muted); }
+    .phone { max-width:320px; margin:0 auto; border:2px solid var(--line); border-radius:28px; padding:14px 12px 18px; background:linear-gradient(180deg,#222a34,#1a1f26); }
+    .nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-size:11px; }
+    .nav .t { font-weight:650; }
+    .nav .r { display:flex; gap:10px; color:var(--hi); }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 10px 12px; margin-bottom:10px; }
+    .card h2 { margin:0 0 6px; font-size:11px; color:var(--muted); font-weight:600; }
+    .pill { display:inline-block; font-size:9px; padding:2px 8px; border-radius:999px; background:var(--pill); color:#7eb8e8; margin-bottom:6px; }
+    .muted { font-size:10px; color:var(--muted); margin-top:6px; }
+    table.grid { border-collapse:collapse; width:100%; font-size:9px; margin-top:8px; }
+    table.grid th, table.grid td { border:1px solid var(--line); text-align:center; padding:4px 2px; min-width:28px; }
+    table.grid th { background:#2c3540; color:var(--muted); }
+    .hi { background:rgba(61,122,156,0.35); position:relative; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; border:2px solid var(--num); font-size:9px; font-weight:700; }
+    .row-h { color:var(--muted); font-weight:600; width:22px; }
+    .btn { margin-top:10px; text-align:center; padding:8px; border-radius:10px; border:1px dashed var(--line); font-size:10px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <h1>方案 3：格内编号（弹奏先后）</h1>
+  <p class="sub">在高亮格子里标 <strong>1、2、3…</strong> 表示先后；数字路线即顺序。</p>
+  <div class="phone">
+    <div class="nav"><span>‹</span><span class="t">爬格子热身</span><span class="r">保存 ⚙</span></div>
+    <div class="card">
+      <h2>本组练习</h2>
+      <span class="pill">初级</span>
+      <div style="font-size:10px;font-weight:600;">⑥–④弦 · 1–4 品（示意编号）</div>
+      <div class="muted">半音四品型（上行）</div>
+    </div>
+    <div class="card">
+      <h2>指板示意 · 数字 = 第几步</h2>
+      <table class="grid">
+        <tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+        <tr><td class="row-h">①</td><td></td><td></td><td></td><td></td></tr>
+        <tr><td class="row-h">②</td><td></td><td></td><td></td><td></td></tr>
+        <tr><td class="row-h">③</td><td></td><td></td><td></td><td></td></tr>
+        <tr><td class="row-h">④</td><td class="hi"><span class="badge">9</span></td><td class="hi"><span class="badge">10</span></td><td class="hi"><span class="badge">11</span></td><td class="hi"><span class="badge">12</span></td></tr>
+        <tr><td class="row-h">⑤</td><td class="hi"><span class="badge">5</span></td><td class="hi"><span class="badge">6</span></td><td class="hi"><span class="badge">7</span></td><td class="hi"><span class="badge">8</span></td></tr>
+        <tr><td class="row-h">⑥</td><td class="hi"><span class="badge">1</span></td><td class="hi"><span class="badge">2</span></td><td class="hi"><span class="badge">3</span></td><td class="hi"><span class="badge">4</span></td></tr>
+      </table>
+      <div class="muted">示例：先走完 ⑥ 弦 1→4 品（1–4），再 ⑤ 弦（5–8）… 实际编号由生成器按题型计算。</div>
+    </div>
+    <div class="btn">下一组</div>
+  </div>
+</body>
+</html>

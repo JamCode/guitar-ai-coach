@@ -1,0 +1,68 @@
+# 将 privacy-policy-pages/ 同步到独立仓 wanle-guitar-privacy，保持线上地址：
+# https://jamcode.github.io/wanle-guitar-privacy/
+#
+# 需在「本仓库」Settings → Secrets → Actions 中配置：
+#   WANLE_GUITAR_PRIVACY_DEPLOY_TOKEN
+# 为对 JamCode/wanle-guitar-privacy 有 contents: write 的 PAT（或 fine-grained 限该仓）。
+# 另在「目标仓」Settings → Pages：Source 选 Deploy from branch，分支 main、目录 /(root)（如尚未配置）。
+
+name: Sync privacy pages to wanle-guitar-privacy
+
+on:
+  push:
+    branches:
+      - cursor/swift-tools-tab-migration
+      - main
+      - master
+    paths:
+      - 'privacy-policy-pages/**'
+      - '.github/workflows/privacy-github-pages.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-wanle-privacy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # 可改为 jamcode/wanle-guitar-privacy，若你实际仓库名/组织不同请改下一条 checkout
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Checkout wanle-guitar-privacy
+        uses: actions/checkout@v4
+        with:
+          repository: JamCode/wanle-guitar-privacy
+          token: ${{ secrets.WANLE_GUITAR_PRIVACY_DEPLOY_TOKEN }}
+          path: _wanle
+
+      - name: Copy site files
+        run: |
+          set -eux
+          test -f privacy-policy-pages/index.html
+          test -f privacy-policy-pages/support.html
+          cp -f privacy-policy-pages/index.html privacy-policy-pages/support.html _wanle/
+          if [ -f privacy-policy-pages/README.md ]; then
+            cp -f privacy-policy-pages/README.md _wanle/
+          fi
+
+      - name: Commit and push
+        run: |
+          set -eux
+          cd _wanle
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f index.html support.html
+          if [ -f README.md ]; then git add -f README.md; fi
+          if git diff --staged --quiet; then
+            echo "No file changes; nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore: sync from JamCode/guitar-ai-coach (privacy-policy-pages)"
+          # 始终写进目标仓的 main（与 GitHub Pages / 常见默认分支一致）
+          git push origin "HEAD:main"

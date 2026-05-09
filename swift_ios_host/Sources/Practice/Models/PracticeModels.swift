@@ -1,3 +1,4 @@
+import Core
 import Foundation
 
 // Keep model fields aligned with Flutter `practice_models.dart`.
@@ -9,13 +10,20 @@ struct PracticeTask: Identifiable, Equatable {
     let description: String
 }
 
+extension PracticeTask {
+    fileprivate var catalogKeyPrefix: String { "task_\(id.replacingOccurrences(of: "-", with: "_"))" }
+
+    var localizedName: String { AppL10n.t("\(catalogKeyPrefix)_name") }
+    var localizedDescription: String { AppL10n.t("\(catalogKeyPrefix)_desc") }
+}
+
 /// Swift 侧统一维护一期内置任务，避免散落常量（对齐 Flutter `kDefaultPracticeTasks`）。
 let kDefaultPracticeTasks: [PracticeTask] = [
     PracticeTask(
         id: "chord-switch",
         name: "和弦切换",
         targetMinutes: 5,
-        description: "多种进行 · 12 调 · 3 档复杂度"
+        description: "一组和弦指法随难度自动出题；初 / 中 / 高三档，右上角可调调性与难度。"
     ),
     PracticeTask(
         id: "rhythm-strum",
@@ -25,7 +33,7 @@ let kDefaultPracticeTasks: [PracticeTask] = [
     ),
     PracticeTask(
         id: "scale-walk",
-        name: "音阶爬格子",
+        name: "爬格子热身",
         targetMinutes: 5,
         description: "目标：保持力度均匀，减少杂音。"
     ),
@@ -33,9 +41,39 @@ let kDefaultPracticeTasks: [PracticeTask] = [
 
 let kSheetPracticeTask = PracticeTask(
     id: "sheet-practice",
-    name: "谱面跟练",
+    name: "我的谱",
     targetMinutes: 10,
-    description: "在我的谱中跟弹与复盘。"
+    description: "打开曲谱阅读/跟练的时间计入今日练习。"
+)
+
+// MARK: - 视唱练耳（与练习 Tab 入口一致；写入本地练习记录）
+
+let kIntervalEarPracticeTask = PracticeTask(
+    id: "interval-ear",
+    name: "音程识别",
+    targetMinutes: 10,
+    description: "视唱练耳 · 音程四选一。"
+)
+
+let kEarChordMcqPracticeTask = PracticeTask(
+    id: "ear-chord-mcq",
+    name: "和弦听辨",
+    targetMinutes: 10,
+    description: "视唱练耳 · 和弦性质听辨。"
+)
+
+let kEarProgressionMcqPracticeTask = PracticeTask(
+    id: "ear-progression-mcq",
+    name: "和弦进行",
+    targetMinutes: 10,
+    description: "视唱练耳 · 和弦进行听辨。"
+)
+
+let kSightSingingPracticeTask = PracticeTask(
+    id: "sight-singing",
+    name: "视唱训练",
+    targetMinutes: 10,
+    description: "视唱练耳 · 跟唱/模唱。"
 )
 
 struct PracticeSummary: Equatable {
@@ -55,6 +93,9 @@ struct PracticeSession: Identifiable, Codable, Equatable {
     let difficulty: Int
     let note: String?
 
+    /// 我的谱练习对应的本地曲谱 id（可空，兼容旧数据和非曲谱练习）。
+    let sheetId: String?
+
     /// 和弦进行练习专属字段（可空，兼容旧数据）。
     let progressionId: String?
     let musicKey: String?
@@ -62,6 +103,52 @@ struct PracticeSession: Identifiable, Codable, Equatable {
 
     /// 节奏扫弦练习所选内置节奏型 id（可空，兼容旧数据）。
     let rhythmPatternId: String?
+
+    /// 爬格子热身题卡 id（可空，兼容旧数据）。
+    let scaleWarmupDrillId: String?
+
+    /// 练耳（音程 / 和弦听辨 / 和弦进行）在本次会话时间窗内的判题数；与 `earCorrectCount` 成对出现。
+    let earAnsweredCount: Int?
+    /// 练耳答对题数。
+    let earCorrectCount: Int?
+
+    init(
+        id: String,
+        taskId: String,
+        taskName: String,
+        startedAt: Date,
+        endedAt: Date,
+        durationSeconds: Int,
+        completed: Bool,
+        difficulty: Int,
+        note: String?,
+        sheetId: String? = nil,
+        progressionId: String?,
+        musicKey: String?,
+        complexity: String?,
+        rhythmPatternId: String?,
+        scaleWarmupDrillId: String?,
+        earAnsweredCount: Int?,
+        earCorrectCount: Int?
+    ) {
+        self.id = id
+        self.taskId = taskId
+        self.taskName = taskName
+        self.startedAt = startedAt
+        self.endedAt = endedAt
+        self.durationSeconds = durationSeconds
+        self.completed = completed
+        self.difficulty = difficulty
+        self.note = note
+        self.sheetId = sheetId
+        self.progressionId = progressionId
+        self.musicKey = musicKey
+        self.complexity = complexity
+        self.rhythmPatternId = rhythmPatternId
+        self.scaleWarmupDrillId = scaleWarmupDrillId
+        self.earAnsweredCount = earAnsweredCount
+        self.earCorrectCount = earCorrectCount
+    }
 }
 
 // MARK: - Summary computation (aligned with Flutter)
@@ -99,8 +186,29 @@ func computeStreakDays(_ sessions: [PracticeSession], now: Date) -> Int {
     return streak
 }
 
+/// 从 `now` 所在自然日往前共 7 天（含当天）：`endedAt` ∈ [startOfDay(now − 6d), `now`]，且仅 `completed == true`。
+func computeRollingSevenDayPracticeStats(_ sessions: [PracticeSession], now: Date) -> (sessionCount: Int, totalDurationSeconds: Int) {
+    let calendar = Calendar(identifier: .gregorian)
+    let startOfToday = calendar.startOfDay(for: now)
+    guard let windowStart = calendar.date(byAdding: .day, value: -6, to: startOfToday) else {
+        return (0, 0)
+    }
+    var sessionCount = 0
+    var totalDurationSeconds = 0
+    for session in sessions where session.completed {
+        let ended = session.endedAt
+        guard ended >= windowStart, ended <= now else { continue }
+        sessionCount += 1
+        totalDurationSeconds += max(0, session.durationSeconds)
+    }
+    return (sessionCount, totalDurationSeconds)
+}
+
+func latestCompletedPracticeEndedAt(_ sessions: [PracticeSession]) -> Date? {
+    sessions.filter(\.completed).map(\.endedAt).max()
+}
+
 private func isSameDay(_ a: Date, _ b: Date) -> Bool {
     let calendar = Calendar(identifier: .gregorian)
     return calendar.isDate(a, inSameDayAs: b)
 }
-

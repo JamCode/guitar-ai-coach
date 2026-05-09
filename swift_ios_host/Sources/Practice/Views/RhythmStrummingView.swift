@@ -1,5 +1,7 @@
 import SwiftUI
 import Core
+import Metronome
+import Practice
 
 /// 节奏扫弦练习：按内置常用扫弦型展示 4/4 八分网格图示；可选保存记录（对齐 Flutter）。
 struct RhythmStrummingView: View {
@@ -8,18 +10,37 @@ struct RhythmStrummingView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var pattern: StrummingPattern = kStrummingPatterns.first!
+    @State private var selectedDifficulty: StrummingDifficulty = .初级
+    @State private var pattern: StrummingPattern = StrummingPatternGenerator.defaultPattern(for: .初级)
     @State private var openedAt: Date = Date()
 
+    @State private var showSettings: Bool = false
     @State private var showHelp: Bool = false
     @State private var showFinishSheet: Bool = false
     @State private var noteText: String = ""
 
-    @State private var showLeaveConfirm: Bool = false
     @State private var savingError: String?
     @State private var savedToast: Bool = false
+    @StateObject private var metronomeVM = MetronomeViewModel()
+    @State private var metronomeBPM: Int = 72
+    @State private var selectedTimeSignature: MetronomeTimeSignature = .fourFour
 
     private let beatLabels: [String] = ["1", "&", "2", "&", "3", "&", "4", "&"]
+    private let defaultRecommendedBPM = 72
+    private let bpmMin = 40
+    private let bpmMax = 220
+
+    private var recommendedBPM: Int {
+        pattern.recommendedBPM ?? defaultRecommendedBPM
+    }
+
+    private var subdivisionLabel: String {
+        pattern.subdivision.labelZh
+    }
+
+    private var startPauseTitle: String {
+        metronomeVM.transport == .running ? "⏸ 暂停" : "▶ 开始"
+    }
 
     var body: some View {
         ScrollView {
@@ -28,21 +49,62 @@ struct RhythmStrummingView: View {
                     .foregroundStyle(SwiftAppTheme.text)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("当前节奏").appSectionTitle()
-                    Picker("扫弦节奏型", selection: $pattern) {
-                        ForEach(kStrummingPatterns, id: \.id) { p in
-                            Text("\(p.name) · \(p.subtitle)").tag(p)
-                        }
+                    HStack {
+                        Text("本组练习")
+                            .appSectionTitle()
+                        Spacer()
+                        Text(selectedDifficulty.rawValue)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.brand)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(SwiftAppTheme.brandSoft)
+                            .clipShape(Capsule())
                     }
-                    .pickerStyle(.menu)
+                    Text("当前节奏：\(pattern.name) · \(pattern.subtitle)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .lineLimit(2)
+                    Text("点击「下一组」按当前难度抽取常用扫弦型；难度在右上角齿轮设置。")
+                        .font(.footnote)
+                        .foregroundStyle(SwiftAppTheme.muted)
                 }
                 .appCard()
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("一小节（4/4，八分音符网格）")
+                    Text("一小节（\(pattern.timeSignature)，\(subdivisionLabel)六线谱）")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(SwiftAppTheme.text)
-                    StrummingGrid(cells: pattern.cells, beatLabels: beatLabels)
+                    StrummingTabStaffView(
+                        patternSteps: pattern.patternSteps,
+                        beatLabels: beatLabels
+                    )
+                }
+                .appCard()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("节拍器")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.text)
+                    HStack(spacing: 10) {
+                        Button("-") { updateBPM(delta: -5) }
+                            .appSecondaryButton()
+                        Text("\(metronomeBPM) BPM")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.text)
+                            .frame(minWidth: 84, alignment: .center)
+                        Button("+") { updateBPM(delta: 5) }
+                            .appSecondaryButton()
+                        Spacer(minLength: 8)
+                        Button(startPauseTitle) { toggleMetronome() }
+                            .appSecondaryButton()
+                    }
+                    Picker("拍号", selection: $selectedTimeSignature) {
+                        Text("4/4").tag(MetronomeTimeSignature.fourFour)
+                        Text("3/4").tag(MetronomeTimeSignature.threeFour)
+                        Text("6/8").tag(MetronomeTimeSignature.sixEight)
+                    }
+                    .pickerStyle(.segmented)
                 }
                 .appCard()
 
@@ -55,43 +117,64 @@ struct RhythmStrummingView: View {
                 }
                 .appCard()
 
-                Button {
-                    showFinishSheet = true
-                } label: {
-                    Label("完成练习", systemImage: "checkmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .appPrimaryButton()
-                .padding(.top, 6)
+                Button("下一组") { nextPattern() }
+                    .appSecondaryButton()
+                    .frame(maxWidth: .infinity)
+
             }
             .padding(SwiftAppTheme.pagePadding)
         }
         .navigationTitle(task.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    showLeaveConfirm = true
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    showHelp = true
+                    stopMetronome()
+                    showSettings = true
                 } label: {
-                    Image(systemName: "questionmark.circle")
+                    Image(systemName: "gearshape")
                 }
-                .accessibilityLabel("图示说明")
+                .accessibilityLabel("练习设置")
             }
         }
-        .alert("离开练习？", isPresented: $showLeaveConfirm) {
-            Button("继续练习", role: .cancel) {}
-            Button("返回", role: .destructive) { dismiss() }
-        } message: {
-            Text("确定要返回吗？未保存的记录将丢失。")
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                Form {
+                    Section("难度") {
+                        Picker("难度", selection: $selectedDifficulty) {
+                            ForEach(StrummingDifficulty.allCases, id: \.self) { lv in
+                                Text(lv.rawValue).tag(lv)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        Text("选择后会立即按该难度抽取新的扫弦型。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section("图示说明") {
+                        Text(
+                            """
+                            每一格对应一拍里的两个八分位置之一，顺序为「1 & 2 & 3 & 4 &」。
+
+                            六线谱弦序固定为：① 在上、⑥ 在下（最粗弦在最下）。
+
+                            在该弦序下：↑ 表示下扫，↓ 表示上扫，· 表示空拍，× 表示拍弦/切音。
+
+                            本页可用下方轻量节拍器控制条调速与拍号；不跟随箭头逐格高亮。
+                            """
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle("练习设置")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("完成") { showSettings = false }
+                    }
+                }
+            }
         }
         .alert("图示说明", isPresented: $showHelp) {
             Button("知道了", role: .cancel) {}
@@ -100,9 +183,11 @@ struct RhythmStrummingView: View {
                 """
                 每一格对应一拍里的两个八分位置之一，顺序为「1 & 2 & 3 & 4 &」。
 
-                「下」「上」表示扫弦方向；「休」表示该位置不扫弦，可做空拍或制音准备。
+                六线谱弦序固定为：① 在上、⑥ 在下（最粗弦在最下）。
 
-                本页为 4/4 常用型，可与节拍器或歌曲一起练习；本期不含内置节拍器与音频。
+                在该弦序下：↑ 表示下扫，↓ 表示上扫，· 表示空拍，× 表示拍弦/切音。
+
+                本页支持轻量节拍器控制；可调 BPM 与拍号后开始/暂停。
                 """
             )
         }
@@ -127,24 +212,93 @@ struct RhythmStrummingView: View {
             )
         }
         .appPageBackground()
-        .onAppear { openedAt = Date() }
+        .onAppear {
+            openedAt = Date()
+            // 首次进入按默认难度抽一次，避免每次都固定显示池子首项。
+            nextPattern()
+        }
+        .onChange(of: selectedDifficulty) { _, _ in
+            nextPattern()
+        }
+        .onChange(of: selectedTimeSignature) { _, newSig in
+            metronomeVM.setTimeSignature(newSig)
+        }
+        .onDisappear {
+            stopMetronome()
+        }
+    }
+
+    private func nextPattern() {
+        stopMetronome()
+        var rng = SystemRandomNumberGenerator()
+        pattern = StrummingPatternGenerator.nextPattern(
+            difficulty: selectedDifficulty,
+            excluding: pattern.id,
+            using: &rng
+        )
+        syncMetronomeDefaultsFromPattern()
+    }
+
+    private func toggleMetronome() {
+        switch metronomeVM.transport {
+        case .running:
+            metronomeVM.pause()
+        case .paused, .stopped:
+            metronomeVM.setTimeSignature(selectedTimeSignature)
+            metronomeVM.setBPM(metronomeBPM)
+            metronomeVM.start()
+        }
+    }
+
+    private func updateBPM(delta: Int) {
+        let next = max(bpmMin, min(bpmMax, metronomeBPM + delta))
+        guard next != metronomeBPM else { return }
+        metronomeBPM = next
+        metronomeVM.setBPM(metronomeBPM)
+    }
+
+    private func syncMetronomeDefaultsFromPattern() {
+        metronomeBPM = max(bpmMin, min(bpmMax, recommendedBPM))
+        selectedTimeSignature = parseTimeSignature(pattern.timeSignature) ?? .fourFour
+        metronomeVM.setTimeSignature(selectedTimeSignature)
+        metronomeVM.setBPM(metronomeBPM)
+    }
+
+    private func parseTimeSignature(_ value: String) -> MetronomeTimeSignature? {
+        switch value.replacingOccurrences(of: " ", with: "") {
+        case "4/4": .fourFour
+        case "3/4": .threeFour
+        case "6/8": .sixEight
+        default: nil
+        }
+    }
+
+    private func stopMetronome() {
+        metronomeVM.stop()
     }
 
     @MainActor
     private func save(result: PracticeFinishResult) async {
         do {
+            let endedAt = Date()
+            let durationSeconds = max(0, Int(endedAt.timeIntervalSince(openedAt)))
+            guard durationSeconds >= PracticeRecordingPolicy.minForegroundSecondsToPersist else { return }
             try await store.saveSession(
                 task: task,
                 startedAt: openedAt,
-                endedAt: Date(),
-                durationSeconds: 0,
+                endedAt: endedAt,
+                durationSeconds: durationSeconds,
                 completed: result.completed,
                 difficulty: result.difficulty,
                 note: result.note,
+                sheetId: nil,
                 progressionId: nil,
                 musicKey: nil,
                 complexity: nil,
-                rhythmPatternId: pattern.id
+                rhythmPatternId: pattern.id,
+                scaleWarmupDrillId: nil,
+                earAnsweredCount: nil,
+                earCorrectCount: nil
             )
             savedToast = true
         } catch {
@@ -153,55 +307,105 @@ struct RhythmStrummingView: View {
     }
 }
 
-private struct StrummingGrid: View {
-    let cells: [StrumCellKind]
-    let beatLabels: [String]
+enum StrummingTabStaffGlyph: Equatable {
+    case downStroke
+    case upStroke
+    case rest
+    case mute
 
-    var body: some View {
-        VStack(spacing: 6) {
-            HStack {
-                ForEach(0..<8, id: \.self) { i in
-                    Spacer(minLength: 0)
-                    Text(beatLabels[i])
-                        .font(.caption)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                    Spacer(minLength: 0)
-                }
-            }
-            HStack(spacing: 6) {
-                ForEach(0..<8, id: \.self) { i in
-                    StrumCellChip(kind: cells[safe: i] ?? .rest)
-                        .frame(maxWidth: .infinity)
-                }
-            }
+    static func from(kind: StrumCellKind) -> Self {
+        switch kind {
+        case .down: .downStroke
+        case .up: .upStroke
+        case .rest: .rest
+        case .mute: .mute
+        }
+    }
+
+    static func from(action kind: StrumActionKind) -> Self {
+        switch kind {
+        case .down: .downStroke
+        case .up: .upStroke
+        case .rest: .rest
+        case .mute: .mute
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .downStroke: "↑" // 下扫（①上⑥下坐标系）
+        case .upStroke: "↓" // 上扫
+        case .rest: "·" // 空拍
+        case .mute: "×" // 拍弦/切音
         }
     }
 }
 
-private struct StrumCellChip: View {
-    let kind: StrumCellKind
+private struct StrummingTabStaffView: View {
+    let patternSteps: [StrumCellKind]
+    let beatLabels: [String]
+    private let stringLabels = ["①", "②", "③", "④", "⑤", "⑥"]
+    private var totalUnits: Int { max(1, patternSteps.count) }
 
     var body: some View {
-        let (label, bg, fg): (String, Color, Color) = {
-            switch kind {
-            case .down: ("下", SwiftAppTheme.brandSoft, SwiftAppTheme.brand)
-            case .up: ("上", SwiftAppTheme.surfaceSoft, SwiftAppTheme.text)
-            case .rest: ("休", SwiftAppTheme.surfaceSoft, SwiftAppTheme.muted)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(" ")
+                    .frame(width: 18)
+                ForEach(0..<totalUnits, id: \.self) { i in
+                    Text(beatLabels[safe: i] ?? "")
+                        .font(.caption)
+                        .foregroundStyle(SwiftAppTheme.muted)
+                        .frame(maxWidth: .infinity)
+                }
             }
-        }()
 
-        return ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(bg)
+            HStack(alignment: .top, spacing: 8) {
+                VStack(spacing: 8) {
+                    ForEach(stringLabels, id: \.self) { label in
+                        Text(label)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(SwiftAppTheme.muted)
+                            .frame(width: 18, height: 10)
+                    }
+                }
+                .padding(.top, 6)
+
+                ZStack {
+                    VStack(spacing: 10) {
+                        ForEach(0..<6, id: \.self) { _ in
+                            Rectangle()
+                                .fill(SwiftAppTheme.line)
+                                .frame(height: 1)
+                        }
+                    }
+
+                    HStack(spacing: 6) {
+                        ForEach(0..<totalUnits, id: \.self) { i in
+                            let glyph = StrummingTabStaffGlyph.from(kind: patternSteps[safe: i] ?? .rest)
+                            Text(glyph.symbol)
+                                .font(.system(size: 24, weight: .semibold))
+                                .foregroundStyle(SwiftAppTheme.text)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 76)
+                .padding(10)
+                .background(SwiftAppTheme.surfaceSoft.opacity(0.35))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(SwiftAppTheme.line, lineWidth: 1)
                 )
-            Text(label)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(fg)
+            }
+
+            Text("图例：↑ 下扫，↓ 上扫，· 空拍，× 拍弦；弦序为 ① 在上、⑥ 在下（最粗弦）。")
+                .font(.caption)
+                .foregroundStyle(SwiftAppTheme.muted)
         }
-        .aspectRatio(1, contentMode: .fit)
     }
 }
 
@@ -211,4 +415,3 @@ private extension Array {
         return self[idx]
     }
 }
-

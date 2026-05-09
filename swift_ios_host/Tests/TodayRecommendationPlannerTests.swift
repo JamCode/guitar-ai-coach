@@ -16,8 +16,14 @@ final class TodayRecommendationPlannerTests: XCTestCase {
         ]
         var planner = TodayRecommendationPlanner(referenceDate: fixedNow)
         let items = await planner.buildRecommendations(historyRecords: history)
-        let chordSwitch = items.first(where: { $0.module == .chordSwitch })
-        XCTAssertEqual(chordSwitch?.difficulty, .beginner)
+        let calendar = Calendar(identifier: .gregorian)
+        let cutoff = calendar.date(byAdding: .day, value: -7, to: fixedNow)!
+        for item in items {
+            let recent = history.filter { $0.module == item.module && $0.occurredAt >= cutoff }
+            if recent.count < 3 {
+                XCTAssertEqual(item.difficulty, .beginner, "module=\(item.module)")
+            }
+        }
     }
 
     func testBuildRecommendations_promotesDifficultyWithStableCompletions() async {
