@@ -1,0 +1,20 @@
+{
+  "repo": "csukuangfj/sherpa-onnx-spleeter-2stems",
+  "revision": "7001ba316a615cacddb3f9ef3ec416661a277e26",
+  "files": [
+    {
+      "name": "vocals.onnx",
+      "path": "ios_stem_model/source_onnx/vocals.onnx",
+      "size": 39318336,
+      "sha256": "bdc16ab6bf6117ddd4842c19e80e40e2be188fc555295064d424616b0224ac97",
+      "expected_size": 39318336
+    },
+    {
+      "name": "accompaniment.onnx",
+      "path": "ios_stem_model/source_onnx/accompaniment.onnx",
+      "size": 39318343,
+      "sha256": "671ace17acd3720674a2bc14de32ac6292453dec20d9eb0ba4255d4ad8e3d8c0",
+      "expected_size": 39318343
+    }
+  ]
+}

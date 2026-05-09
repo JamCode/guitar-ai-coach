@@ -4,6 +4,7 @@ import Core
 struct TranscriptionProcessingView: View {
     let fileName: String
     let progressState: TranscriptionProgressState
+    let onCollapse: () -> Void
     let onCancel: () -> Void
     let onRetry: () -> Void
 
@@ -25,9 +26,16 @@ struct TranscriptionProcessingView: View {
                 ProgressView(value: progressState.clampedProgress)
                     .progressViewStyle(.linear)
                 HStack {
-                    Text(progressState.message)
-                        .font(.subheadline)
-                        .foregroundStyle(progressState.isFailed ? .orange : SwiftAppTheme.muted)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(progressState.message)
+                            .font(.subheadline)
+                            .foregroundStyle(progressState.isFailed ? .orange : SwiftAppTheme.muted)
+                        if let etaText = estimatedRemainingText {
+                            Text(etaText)
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
+                    }
                     Spacer()
                     Text("\(progressState.percentage)%")
                         .font(.subheadline.monospacedDigit().weight(.semibold))
@@ -37,13 +45,28 @@ struct TranscriptionProcessingView: View {
             if progressState.isFailed {
                 Button("重试", action: onRetry)
                     .appPrimaryButton()
+                Button("关闭", action: onCollapse)
+                    .appSecondaryButton()
+            } else {
+                Button("收起，继续处理", action: onCollapse)
+                    .appPrimaryButton()
+                Button("取消任务", action: onCancel)
+                    .appSecondaryButton()
             }
-            Button(LocalizedStringResource("transcribe_button_cancel", bundle: .main), action: onCancel)
-                .appSecondaryButton()
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle(LocalizedStringResource("transcribe_processing_title", bundle: .main))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("收起", action: onCollapse)
+                    .disabled(progressState.isFailed)
+            }
+        }
         .appPageBackground()
+    }
+
+    private var estimatedRemainingText: String? {
+        progressState.estimatedRemainingText
     }
 }

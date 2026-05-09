@@ -15,6 +15,20 @@ targets:
       - Sources
     resources:
       - Sources/Resources/Localization
+    preBuildScripts:
+      - name: Copy Stem Separation Model
+        script: |
+          MODEL_SRC="${SRCROOT}/../ios_stem_model/stemseparation.mlpackage"
+          MODEL_DST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/stemseparation.mlpackage"
+          if [ ! -d "$MODEL_SRC" ]; then
+            echo "error: Missing stem separation model at $MODEL_SRC"
+            exit 1
+          fi
+          rm -rf "$MODEL_DST"
+          mkdir -p "$(dirname "$MODEL_DST")"
+          cp -R "$MODEL_SRC" "$MODEL_DST"
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/stemseparation.mlpackage
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wanghan.guitarhelper
