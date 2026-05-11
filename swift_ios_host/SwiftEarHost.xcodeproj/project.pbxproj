@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		017940862C54824492F19ED9 /* ChordRecognitionAudioPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50A3251F65FBED717004EBC /* ChordRecognitionAudioPreprocessor.swift */; };
 		06AC55E1EFAFC9069CDDBC8A /* ScaleWarmupGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE294983B676BDA73AE56EF4 /* ScaleWarmupGeneratorTests.swift */; };
 		0F7A0DC5D3B37FFD69A73DD2 /* Metronome in Frameworks */ = {isa = PBXBuildFile; productRef = D9B2FF9F88D505ED8B3A3972 /* Metronome */; };
 		107B5FBB63284B8DE27E30A1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1E1113A563A237477AFD4E68 /* PrivacyInfo.xcprivacy */; };
@@ -50,7 +51,6 @@
 		7E0F797FFDF622C6C1C2A124 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 71F6AF8A00EDD13F6C69488B /* Localizable.xcstrings */; };
 		859A9E07A72362A83CC2D81D /* TodayRecommendationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAA48FC7903A0CA365BBE2E /* TodayRecommendationModels.swift */; };
 		85F401EA077A7B0339A02A78 /* ChordChart in Frameworks */ = {isa = PBXBuildFile; productRef = BC4B202C5F0E941A20A787C7 /* ChordChart */; };
-		8AB27EDFD336C0FCD36E3EE1 /* AppSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E5F797DFBB2E32288B8B79E /* AppSecrets.swift */; };
 		8CEF00E266D691C23271A7A6 /* StemSeparationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F81A68DAB222DD13E4E1C1 /* StemSeparationStore.swift */; };
 		93DF3DF5C881122C26AC25A3 /* SheetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E249F8FED69E85EB6CEE605 /* SheetModels.swift */; };
 		96B9658E652769BF90F3ED77 /* StemSeparationDSP.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53BFAD0F363BC5541F1A52C /* StemSeparationDSP.swift */; };
@@ -72,6 +72,7 @@
 		CEC75DEC38B2F89E7997D54C /* PurchaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECB4FF5C3C364AB9D738187 /* PurchaseView.swift */; };
 		D201453C3449669F76C49202 /* PracticeFinishDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66CBCFA6E25B28EE50132D42 /* PracticeFinishDialog.swift */; };
 		D29C08EF68159ECDFBEAED4A /* ChordPracticeDiagramStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 794CD07A0EA8977083421938 /* ChordPracticeDiagramStrip.swift */; };
+		D31F10F209472A8900DE1395 /* LocalChordRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1701E80746B6BA6F5CC97B0F /* LocalChordRecognitionService.swift */; };
 		D60F3158801DC009F2124332 /* SheetPageTurnAnimationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9EB881196116BCEFB581431 /* SheetPageTurnAnimationTests.swift */; };
 		DA427E5233D548B5F3594EB4 /* StemSeparationTaskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A9B6EF81D4A1EBD4643CA3 /* StemSeparationTaskStore.swift */; };
 		DD61CF628A04537E6C473939 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EBEA87C47D232B232E814C /* TranscriptionEngine.swift */; };
@@ -79,6 +80,7 @@
 		E4EAB09290F9A8C43C587AE2 /* RecommendationHistoryMerging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEE6B960D44ECFD5930467C /* RecommendationHistoryMerging.swift */; };
 		E69983D149243B7A6D946061 /* Core in Frameworks */ = {isa = PBXBuildFile; productRef = C9A7AC2AC56682CA15BF0347 /* Core */; };
 		E7F96863B18B84598A051C56 /* TranscriptionHistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE73BE481650BACC522D16 /* TranscriptionHistoryStoreTests.swift */; };
+		E86BEA4BBEE45261C3FD839C /* LocalChordRecognitionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C4707BD567F51A4BC06382 /* LocalChordRecognitionIntegrationTests.swift */; };
 		EADF9BF054D46963D836E9AC /* PracticeAcceptanceChecklist.md in Resources */ = {isa = PBXBuildFile; fileRef = F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */; };
 		EBAFC3CE2E023D1964A2BB47 /* StemSeparationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914EE4C00C7B7DC73D45037C /* StemSeparationModels.swift */; };
 		EE8F0E2991EB41875CAF9588 /* Ear in Frameworks */ = {isa = PBXBuildFile; productRef = EEDC03120E5A07496D4BF215 /* Ear */; };
@@ -114,6 +116,7 @@
 		117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftEarHostApp.swift; sourceTree = "<group>"; };
 		119222F862F03CC58F905D72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1197509EA1DAFB3E6F4E6004 /* TranscriptionImportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionImportServiceTests.swift; sourceTree = "<group>"; };
+		1701E80746B6BA6F5CC97B0F /* LocalChordRecognitionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalChordRecognitionService.swift; sourceTree = "<group>"; };
 		177FBAE326961BC78A364662 /* SwiftEarHostUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftEarHostUITests.swift; sourceTree = "<group>"; };
 		1BC3FAF5DB303FC85D919D9E /* TranscriptionPlayerComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionPlayerComponents.swift; sourceTree = "<group>"; };
 		1E1113A563A237477AFD4E68 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -122,7 +125,6 @@
 		2396A158BEE17BFE3AF2BADA /* TranscriptionHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHomeView.swift; sourceTree = "<group>"; };
 		3A2E8064C40ABA4BEDBB7812 /* ChordFingeringResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordFingeringResolver.swift; sourceTree = "<group>"; };
 		3A8A952097B1432FE113B90E /* StrummingPatternGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrummingPatternGeneratorTests.swift; sourceTree = "<group>"; };
-		3E5F797DFBB2E32288B8B79E /* AppSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSecrets.swift; sourceTree = "<group>"; };
 		40962FBB227FF51EC6BCDD77 /* SwiftEarHostTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SwiftEarHostTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		44471F8A97B071DF5D17B507 /* TranscriptionHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionHistoryStore.swift; sourceTree = "<group>"; };
 		4638888BE526DFDF0EF8B47E /* ChordPracticeSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeSessionView.swift; sourceTree = "<group>"; };
@@ -138,6 +140,7 @@
 		71EBEA87C47D232B232E814C /* TranscriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionEngine.swift; sourceTree = "<group>"; };
 		71F6AF8A00EDD13F6C69488B /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		7311799DB975BB28A9DA4E69 /* TranscriptionWaveformService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionWaveformService.swift; sourceTree = "<group>"; };
+		75C4707BD567F51A4BC06382 /* LocalChordRecognitionIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalChordRecognitionIntegrationTests.swift; sourceTree = "<group>"; };
 		760384F757B9ADBF5C5E2DB7 /* SheetLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetLibraryView.swift; sourceTree = "<group>"; };
 		794CD07A0EA8977083421938 /* ChordPracticeDiagramStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPracticeDiagramStrip.swift; sourceTree = "<group>"; };
 		7A0944BA0BAA6C603F2C127D /* RecommendationHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationHistoryStore.swift; sourceTree = "<group>"; };
@@ -183,6 +186,7 @@
 		ED9AF001DF1DA7EA010872F0 /* StemSeparationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StemSeparationEngineTests.swift; sourceTree = "<group>"; };
 		EE294983B676BDA73AE56EF4 /* ScaleWarmupGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleWarmupGeneratorTests.swift; sourceTree = "<group>"; };
 		F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PracticeAcceptanceChecklist.md; sourceTree = "<group>"; };
+		F50A3251F65FBED717004EBC /* ChordRecognitionAudioPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordRecognitionAudioPreprocessor.swift; sourceTree = "<group>"; };
 		FB009ADEB470D6167573E47E /* SheetsStoreAndParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetsStoreAndParserTests.swift; sourceTree = "<group>"; };
 		FC1C3B963A21FE77D46985B8 /* StemSeparationResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StemSeparationResultView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -249,6 +253,7 @@
 			isa = PBXGroup;
 			children = (
 				9007E4D7355B6726C41F3DE4 /* FirstLaunchTourStorageTests.swift */,
+				75C4707BD567F51A4BC06382 /* LocalChordRecognitionIntegrationTests.swift */,
 				F125A6245921F38460790A5B /* PracticeAcceptanceChecklist.md */,
 				E0B45CB73F7ABF9E47AA6D65 /* PracticeLocalStoreTests.swift */,
 				EE294983B676BDA73AE56EF4 /* ScaleWarmupGeneratorTests.swift */,
@@ -281,6 +286,8 @@
 			isa = PBXGroup;
 			children = (
 				3A2E8064C40ABA4BEDBB7812 /* ChordFingeringResolver.swift */,
+				F50A3251F65FBED717004EBC /* ChordRecognitionAudioPreprocessor.swift */,
+				1701E80746B6BA6F5CC97B0F /* LocalChordRecognitionService.swift */,
 				71EBEA87C47D232B232E814C /* TranscriptionEngine.swift */,
 				7057D28BD44309D9AB1073C9 /* TranscriptionImportService.swift */,
 				5949CDF8018DDF958DB27304 /* TranscriptionMediaDecoder.swift */,
@@ -370,14 +377,6 @@
 				DEAA48FC7903A0CA365BBE2E /* TodayRecommendationModels.swift */,
 			);
 			path = Models;
-			sourceTree = "<group>";
-		};
-		5DF3C22C4C09EFB2EDD3B862 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				3E5F797DFBB2E32288B8B79E /* AppSecrets.swift */,
-			);
-			path = App;
 			sourceTree = "<group>";
 		};
 		622D8A5A5233E6C08CE08C48 /* Views */ = {
@@ -471,7 +470,6 @@
 				BA0202027F814F26CD6ADCCB /* FirstLaunchTourView.swift */,
 				1E1113A563A237477AFD4E68 /* PrivacyInfo.xcprivacy */,
 				117E673A953B4C4ADBBF95A0 /* SwiftEarHostApp.swift */,
-				5DF3C22C4C09EFB2EDD3B862 /* App */,
 				4203DCF495DEA7E31C4E9B7D /* Practice */,
 				C6D0A996EBCA7FC0DF53A362 /* Resources */,
 				B541EFF39D54B268F0C153E8 /* Sheets */,
@@ -550,6 +548,7 @@
 			buildConfigurationList = 2090FAAF0A9E07A5FD2A6AF8 /* Build configuration list for PBXNativeTarget "SwiftEarHost" */;
 			buildPhases = (
 				CC88EF7DBE31EB24890F47F0 /* Copy Stem Separation Model */,
+				70CE4583EDCF3DBFF8224632 /* Copy Chord Recognition Model */,
 				CE041BBA4C300C385E723F37 /* Sources */,
 				9D44C236D8CABD1758554958 /* Resources */,
 				24597B75D5975260031B689D /* Frameworks */,
@@ -636,6 +635,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		70CE4583EDCF3DBFF8224632 /* Copy Chord Recognition Model */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Chord Recognition Model";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/chordrecognition.mlpackage",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "MODEL_SRC=\"${IOS_CHORD_MODEL_PATH:-${SRCROOT}/../ios_chord_model/chordrecognition.mlpackage}\"\nMODEL_DST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/chordrecognition.mlpackage\"\nif [ ! -d \"$MODEL_SRC\" ]; then\n  if [ \"${ALLOW_MISSING_CHORD_MODEL:-0}\" = \"1\" ]; then\n    echo \"warning: Missing chord recognition model at $MODEL_SRC; creating simulator-only placeholder. Local chord recognition will be unavailable.\"\n    rm -rf \"$MODEL_DST\"\n    mkdir -p \"$MODEL_DST\"\n    touch \"$MODEL_DST/.placeholder\"\n    exit 0\n  fi\n  echo \"error: Missing chord recognition model at $MODEL_SRC\"\n  echo \"error: Set IOS_CHORD_MODEL_PATH=/absolute/path/to/chordrecognition.mlpackage or create ${SRCROOT}/../ios_chord_model/chordrecognition.mlpackage\"\n  exit 1\nfi\nrm -rf \"$MODEL_DST\"\nmkdir -p \"$(dirname \"$MODEL_DST\")\"\ncp -R \"$MODEL_SRC\" \"$MODEL_DST\"\n";
+		};
 		CC88EF7DBE31EB24890F47F0 /* Copy Stem Separation Model */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -663,6 +681,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				254B53BAF9C1F3C289B9C0AB /* FirstLaunchTourStorageTests.swift in Sources */,
+				E86BEA4BBEE45261C3FD839C /* LocalChordRecognitionIntegrationTests.swift in Sources */,
 				493A486B3D6711B60958BDAD /* PracticeLocalStoreTests.swift in Sources */,
 				06AC55E1EFAFC9069CDDBC8A /* ScaleWarmupGeneratorTests.swift in Sources */,
 				D60F3158801DC009F2124332 /* SheetPageTurnAnimationTests.swift in Sources */,
@@ -693,16 +712,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8AB27EDFD336C0FCD36E3EE1 /* AppSecrets.swift in Sources */,
 				20447C35DE97E863892D45D1 /* ChordFingeringResolver.swift in Sources */,
 				D29C08EF68159ECDFBEAED4A /* ChordPracticeDiagramStrip.swift in Sources */,
 				7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */,
 				F8DF882624B2A38F4303EF98 /* ChordQuickReferenceSheet.swift in Sources */,
+				017940862C54824492F19ED9 /* ChordRecognitionAudioPreprocessor.swift in Sources */,
 				22D2B4BAA73F864514FFAC98 /* CoreMLStemSeparationRunner.swift in Sources */,
 				33DC35B624D4C42099AB03CA /* FirstLaunchTourView.swift in Sources */,
 				419BD4626AB180A34C81D97D /* FlowLayout.swift in Sources */,
 				4A91EDEC8222B2801CAAEC67 /* ForegroundPracticeSessionTracker.swift in Sources */,
 				39933038B6E715C7AAA2107A /* FullChordChartView.swift in Sources */,
+				D31F10F209472A8900DE1395 /* LocalChordRecognitionService.swift in Sources */,
 				D201453C3449669F76C49202 /* PracticeFinishDialog.swift in Sources */,
 				38E65678808AB3C07924C8F9 /* PracticeLandingView.swift in Sources */,
 				A1E418DAEBB1B8A41FB2E81B /* PracticeLocalStore.swift in Sources */,
@@ -795,7 +815,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CHORD_ONNX_APP_TOKEN = wang;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1005,7 +1024,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CHORD_ONNX_APP_TOKEN = wang;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;

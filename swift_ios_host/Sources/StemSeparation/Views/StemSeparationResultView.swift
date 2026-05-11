@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import UIKit
 import Core
 
 struct StemSeparationResultView: View {
@@ -45,6 +46,10 @@ struct StemSeparationResultView: View {
         }
         .onDisappear {
             player.stop()
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+        .onChange(of: player.isPlaying) { _, isPlaying in
+            UIApplication.shared.isIdleTimerDisabled = isPlaying
         }
     }
 
@@ -158,6 +163,7 @@ private final class StemTrackPlayer: ObservableObject {
     @Published private(set) var currentTime: TimeInterval = 0
     @Published private(set) var duration: TimeInterval = 0
     @Published private(set) var playbackRate: Float = 1.0
+    @Published private(set) var isPlaying = false
     private var player: AVAudioPlayer?
     private var progressTimer: Timer?
 
@@ -173,6 +179,7 @@ private final class StemTrackPlayer: ObservableObject {
         player.enableRate = true
         player.rate = playbackRate
         player.play()
+        isPlaying = true
         startProgressTimer()
     }
 
@@ -219,6 +226,7 @@ private final class StemTrackPlayer: ObservableObject {
 
     private func pause() {
         player?.pause()
+        isPlaying = false
         progressTimer?.invalidate()
         progressTimer = nil
         if let player {
@@ -233,6 +241,7 @@ private final class StemTrackPlayer: ObservableObject {
         activeStem = nil
         currentTime = 0
         duration = 0
+        isPlaying = false
         progressTimer?.invalidate()
         progressTimer = nil
     }
@@ -245,6 +254,7 @@ private final class StemTrackPlayer: ObservableObject {
                 self.currentTime = player.currentTime
                 self.duration = player.duration
                 if !player.isPlaying, player.currentTime >= max(0, player.duration - 0.05) {
+                    self.isPlaying = false
                     self.progressTimer?.invalidate()
                     self.progressTimer = nil
                 }

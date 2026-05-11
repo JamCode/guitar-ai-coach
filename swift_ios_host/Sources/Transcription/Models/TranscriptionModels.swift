@@ -116,7 +116,6 @@ enum TranscriptionChordBoundaryDebugMode: String, CaseIterable, Identifiable, Eq
 
 enum TranscriptionProgressStage: String, Equatable, Sendable {
     case preparing
-    case uploading
     case analyzing
     case generatingChart
     case separatingStems
@@ -161,17 +160,6 @@ struct TranscriptionProgressState: Equatable, Sendable {
         )
     }
 
-    static func uploading(uploadFraction: Double) -> TranscriptionProgressState {
-        let fraction = min(1.0, max(0.0, uploadFraction))
-        let uploadPercent = Int((fraction * 100).rounded())
-        return TranscriptionProgressState(
-            stage: .uploading,
-            progress: 0.10 + fraction * 0.35,
-            message: "正在上传歌曲 \(uploadPercent)%...",
-            estimatedRemainingSeconds: nil
-        )
-    }
-
     static func analyzing(_ progress: Double = 0.45) -> TranscriptionProgressState {
         TranscriptionProgressState(
             stage: .analyzing,
@@ -197,6 +185,17 @@ struct TranscriptionProgressState: Equatable, Sendable {
             stage: .separatingStems,
             progress: 0.10 + clamped * 0.78,
             message: "正在分离人声/伴奏 \(percent)%...",
+            estimatedRemainingSeconds: nil
+        )
+    }
+
+    static func extractingAccompanimentForChord(_ fraction: Double) -> TranscriptionProgressState {
+        let clamped = min(1.0, max(0.0, fraction))
+        let percent = Int((clamped * 100).rounded())
+        return TranscriptionProgressState(
+            stage: .separatingStems,
+            progress: 0.10 + clamped * 0.32,
+            message: "检测到人声，正在提取伴奏 \(percent)%...",
             estimatedRemainingSeconds: nil
         )
     }

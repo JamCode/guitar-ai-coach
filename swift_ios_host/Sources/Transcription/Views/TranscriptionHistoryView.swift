@@ -14,7 +14,9 @@ struct TranscriptionHistoryView: View {
             Section {
                 ForEach(entries, id: \.id) { entry in
                     NavigationLink {
-                        TranscriptionResultView(entry: entry)
+                        TabBarHiddenContainer {
+                            TranscriptionResultView(entry: entry)
+                        }
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             TranscriptionHistoryBadge(entry: entry)

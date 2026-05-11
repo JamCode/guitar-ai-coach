@@ -1,7 +1,5 @@
-import OSLog
 import SwiftUI
 import PhotosUI
-import StoreKit
 import UniformTypeIdentifiers
 import UIKit
 import Core
@@ -17,12 +15,6 @@ struct TranscriptionHomeView: View {
 
     var body: some View {
         List {
-            Section {
-                transcriptionHeroCard
-                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 8, trailing: 16))
-                    .listRowBackground(Color.clear)
-            }
-
             Section {
                 startTranscriptionCard
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -111,15 +103,17 @@ struct TranscriptionHomeView: View {
             if !vm.recentHistory.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(LocalizedStringResource("transcribe_toolbar_history", bundle: .main)) {
-                        TranscriptionHistoryView(
-                            entries: vm.recentHistory,
-                            onDelete: { entry in
-                                Task { await vm.delete(entry) }
-                            },
-                            onRename: { entry, newName in
-                                Task { await vm.rename(entry, to: newName) }
-                            }
-                        )
+                        TabBarHiddenContainer {
+                            TranscriptionHistoryView(
+                                entries: vm.recentHistory,
+                                onDelete: { entry in
+                                    Task { await vm.delete(entry) }
+                                },
+                                onRename: { entry, newName in
+                                    Task { await vm.rename(entry, to: newName) }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -171,10 +165,14 @@ struct TranscriptionHomeView: View {
             }
         }
         .navigationDestination(item: $vm.selectedEntry) { entry in
-            TranscriptionResultView(entry: entry)
+            TabBarHiddenContainer {
+                TranscriptionResultView(entry: entry)
+            }
         }
         .navigationDestination(item: $vm.selectedStemResult) { result in
-            StemSeparationResultView(result: result)
+            TabBarHiddenContainer {
+                StemSeparationResultView(result: result)
+            }
         }
         .alert(LocalizedStringResource("common_notice_title", bundle: .main), isPresented: $vm.showingAlert) {
             Button(LocalizedStringResource("button_ok", bundle: .main), role: .cancel) {}
@@ -207,54 +205,6 @@ struct TranscriptionHomeView: View {
             Text("修改后会在历史列表和结果页显示新名称。")
         }
         .accessibilityIdentifier("screen.transcription.home")
-    }
-
-    private var transcriptionHeroCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("AI 扒歌生成参考和弦谱")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(SwiftAppTheme.text)
-                        .accessibilityIdentifier("transcription.heroCard")
-                    Text("导入音频/视频，生成带时间轴的和弦，并保存、编辑成自己的练习谱。")
-                        .font(.subheadline)
-                        .foregroundStyle(SwiftAppTheme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 12)
-                Image(systemName: "waveform.path.ecg")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(SwiftAppTheme.brand)
-                    .accessibilityHidden(true)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                capabilityRow("识别当前和弦与后续变化")
-                capabilityRow("生成可弹精简参考和弦谱")
-                capabilityRow("支持修改、删除、合并和弦，并保留 AI 原始结果")
-            }
-
-            if !purchaseManager.canAccessTranscription {
-                Button {
-                    showingPurchase = true
-                } label: {
-                    Text(unlockButtonTitle)
-                        .frame(maxWidth: .infinity)
-                }
-                .appPrimaryButton()
-                .accessibilityIdentifier("transcription.unlockButton")
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(SwiftAppTheme.surface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(SwiftAppTheme.line, lineWidth: 1)
-        )
     }
 
     private var startTranscriptionCard: some View {
@@ -327,29 +277,6 @@ struct TranscriptionHomeView: View {
         )
         .accessibilityIdentifier("transcription.startCard")
     }
-
-    private func capabilityRow(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(SwiftAppTheme.brand)
-                .padding(.top, 1)
-            Text(text)
-                .font(.footnote)
-                .foregroundStyle(SwiftAppTheme.text)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var unlockButtonTitle: String {
-        if purchaseManager.isFetchingProduct {
-            return "正在加载内购..."
-        }
-        if let product = purchaseManager.product {
-            return "解锁 AI 扒歌 \(product.displayPrice)"
-        }
-        return "解锁 AI 扒歌"
-    }
 }
 
 private struct TranscriptionProcessingModeRow: View {
@@ -405,7 +332,9 @@ private struct TranscriptionHomeRecentRow: View {
     var body: some View {
         let keyLine = String(format: AppL10n.t("transcribe_original_key"), entry.originalKey)
         return NavigationLink {
-            TranscriptionResultView(entry: entry)
+            TabBarHiddenContainer {
+                TranscriptionResultView(entry: entry)
+            }
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 TranscriptionHistoryBadge(entry: entry)
@@ -439,7 +368,9 @@ private struct StemSeparationHomeRecentRow: View {
 
     var body: some View {
         NavigationLink {
-            StemSeparationResultView(result: result)
+            TabBarHiddenContainer {
+                StemSeparationResultView(result: result)
+            }
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 Text("人声/伴奏分轨")
@@ -594,8 +525,6 @@ final class TranscriptionHomeViewModel: ObservableObject {
     @Published var showingRenamePrompt = false
     @Published var renameDraft = ""
 
-    @AppStorage("transcription_remote_preflight_done") private var didRunNetworkPreflight = false
-
     private let historyStore = TranscriptionHistoryStore()
     private let stemStoreRootURL: URL?
     private let stemTaskStoreRootURL: URL?
@@ -607,7 +536,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
     private var lastProgressPublishAt: Date?
     private var lastProgressPublishPercentage: Int?
     private var lastProgressPublishStage: TranscriptionProgressStage?
-    private var stemSeparationETAStart: (date: Date, progress: Double)?
+    private var processingETAStart: (date: Date, progress: Double)?
     private var lastEstimatedRemainingSeconds: Int?
     private var isIdleTimerProtected = false
 
@@ -631,7 +560,6 @@ final class TranscriptionHomeViewModel: ObservableObject {
     }
 
     func reload() async {
-        await ensureNetworkPreflightIfNeeded()
         recentHistory = await historyStore.loadAll()
         if let stemStoreRootURL {
             recentStemResults = await StemSeparationStore(rootURL: stemStoreRootURL).loadAll()
@@ -764,7 +692,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         activeTask = nil
         showingProcessingDetails = false
         resetProgressPublishThrottle()
-        resetStemSeparationETA()
+        resetProcessingETA()
         setIdleTimerProtection(false)
         removePersistentStemTaskIfNeeded(id: persistentStemTaskID)
         startNextQueuedImportIfNeeded()
@@ -777,7 +705,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         currentTask?.cancel()
         currentTask = nil
         resetProgressPublishThrottle()
-        resetStemSeparationETA()
+        resetProcessingETA()
         setIdleTimerProtection(false)
         startImportNow(state.request)
     }
@@ -835,8 +763,8 @@ final class TranscriptionHomeViewModel: ObservableObject {
     private func startImportNow(_ request: QueuedImportRequest, showDetails: Bool = true) {
         stopAnalyzingTimer()
         resetProgressPublishThrottle()
-        resetStemSeparationETA()
-        setIdleTimerProtection(request.mode == .stemSeparationOnly)
+        resetProcessingETA()
+        setIdleTimerProtection(true)
         let initialSource = request.source.initialProcessingSource
         activeTask = TranscriptionProcessingState(
             fileName: request.customName,
@@ -987,10 +915,10 @@ final class TranscriptionHomeViewModel: ObservableObject {
                     self.currentTask = nil
                     if !self.queuedImports.isEmpty {
                         self.activeTask = nil
-                        self.resetStemSeparationETA()
+                        self.resetProcessingETA()
                         self.setIdleTimerProtection(false)
                         self.startNextQueuedImportIfNeeded()
-                    } else if mode == .stemSeparationOnly {
+                    } else {
                         self.setIdleTimerProtection(false)
                     }
                 }
@@ -1010,7 +938,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
                     self.showingProcessingDetails = false
                     self.currentTask = nil
                     self.resetProgressPublishThrottle()
-                    self.resetStemSeparationETA()
+                    self.resetProcessingETA()
                     self.setIdleTimerProtection(false)
                     self.startNextQueuedImportIfNeeded()
                 }
@@ -1134,29 +1062,26 @@ final class TranscriptionHomeViewModel: ObservableObject {
         for progressState: TranscriptionProgressState,
         mode: TranscriptionProcessingMode
     ) -> Int? {
-        guard mode == .stemSeparationOnly, progressState.isActive else {
+        guard progressState.isActive else {
             return nil
         }
         switch progressState.stage {
+        case .preparing, .analyzing, .generatingChart:
+            return estimatedRemainingSeconds(
+                for: progressState,
+                targetProgress: mode == .chordOnlyFast ? 0.96 : 0.92,
+                resetThreshold: 0.03,
+                minimumElapsed: 1.5,
+                minimumProgressDelta: 0.01
+            )
         case .separatingStems:
-            let now = Date()
-            if stemSeparationETAStart == nil || progressState.clampedProgress <= 0.11 {
-                stemSeparationETAStart = (now, progressState.clampedProgress)
-                lastEstimatedRemainingSeconds = nil
-                return nil
-            }
-            guard let start = stemSeparationETAStart else { return nil }
-            let elapsed = now.timeIntervalSince(start.date)
-            let progressDelta = progressState.clampedProgress - start.progress
-            guard elapsed >= 2.0, progressDelta >= 0.02 else {
-                return lastEstimatedRemainingSeconds
-            }
-            let progressPerSecond = progressDelta / elapsed
-            guard progressPerSecond > 0 else { return lastEstimatedRemainingSeconds }
-            let remainingProgress = max(0.0, 0.92 - progressState.clampedProgress)
-            let estimated = max(1, Int((remainingProgress / progressPerSecond).rounded()))
-            lastEstimatedRemainingSeconds = estimated
-            return estimated
+            return estimatedRemainingSeconds(
+                for: progressState,
+                targetProgress: mode == .chordOnlyFast ? 0.96 : 0.92,
+                resetThreshold: 0.11,
+                minimumElapsed: 2.0,
+                minimumProgressDelta: 0.02
+            )
         case .savingStems:
             let estimated = min(lastEstimatedRemainingSeconds ?? 20, 20)
             lastEstimatedRemainingSeconds = estimated
@@ -1166,8 +1091,35 @@ final class TranscriptionHomeViewModel: ObservableObject {
         }
     }
 
-    private func resetStemSeparationETA() {
-        stemSeparationETAStart = nil
+    private func estimatedRemainingSeconds(
+        for progressState: TranscriptionProgressState,
+        targetProgress: Double,
+        resetThreshold: Double,
+        minimumElapsed: TimeInterval,
+        minimumProgressDelta: Double
+    ) -> Int? {
+        let now = Date()
+        if processingETAStart == nil || progressState.clampedProgress <= resetThreshold {
+            processingETAStart = (now, progressState.clampedProgress)
+            lastEstimatedRemainingSeconds = nil
+            return nil
+        }
+        guard let start = processingETAStart else { return nil }
+        let elapsed = now.timeIntervalSince(start.date)
+        let progressDelta = progressState.clampedProgress - start.progress
+        guard elapsed >= minimumElapsed, progressDelta >= minimumProgressDelta else {
+            return lastEstimatedRemainingSeconds
+        }
+        let progressPerSecond = progressDelta / elapsed
+        guard progressPerSecond > 0 else { return lastEstimatedRemainingSeconds }
+        let remainingProgress = max(0.0, targetProgress - progressState.clampedProgress)
+        let estimated = max(1, Int((remainingProgress / progressPerSecond).rounded()))
+        lastEstimatedRemainingSeconds = estimated
+        return estimated
+    }
+
+    private func resetProcessingETA() {
+        processingETAStart = nil
         lastEstimatedRemainingSeconds = nil
     }
 
@@ -1192,8 +1144,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
                     else { return }
                     let nextProgress = min(0.88, current.progressState.clampedProgress + 0.01)
                     guard nextProgress > current.progressState.clampedProgress else { return }
-                    self.activeTask = current.with(progressState: .analyzing(nextProgress))
-                    self.logProgress("analyzing timer", state: .analyzing(nextProgress))
+                    self.applyProgress(.analyzing(nextProgress))
                 }
             }
         }
@@ -1234,101 +1185,33 @@ final class TranscriptionHomeViewModel: ObservableObject {
         try TranscriptionImportService.validate(fileName: url.lastPathComponent, durationMs: originalDurationMs)
         try Task.checkCancellation()
 
-        let originalMediaBytes = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue
-
         await onProgress(.preparing(0.02))
-        let tempCompressedM4A = FileManager.default.temporaryDirectory
-            .appendingPathComponent("chord-upload-\(UUID().uuidString).m4a")
-
-        let tempWav = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("wav")
         let tempM4a = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("m4a")
         defer {
-            try? FileManager.default.removeItem(at: tempCompressedM4A)
-            try? FileManager.default.removeItem(at: tempWav)
             try? FileManager.default.removeItem(at: tempM4a)
         }
 
-        var uploadFileURL = tempCompressedM4A
-        var multipartFilename = "compressed.m4a"
-        do {
-            try await TranscriptionMediaDecoder.exportCompressedM4AForRemoteUpload(
-                from: url,
-                to: tempCompressedM4A,
-                aacBitrate: 96_000
-            )
-        } catch {
-            Logger(subsystem: Bundle.main.bundleIdentifier ?? "SwiftEarHost", category: "RemoteChord").warning(
-                "compressed m4a export failed, using WAV fallback (large upload): \(String(describing: error))"
-            )
-            #if DEBUG
-            print("[RemoteChord] compressed m4a export failed, fallback wav: \(error)")
-            #endif
-            let decoded = try await TranscriptionMediaDecoder.decode(url: url)
-            try TranscriptionMediaDecoder.writeWAV(
-                samples: decoded.pcmSamples,
-                sampleRate: decoded.sampleRate,
-                to: tempWav
-            )
-            uploadFileURL = tempWav
-            multipartFilename = "fallback.wav"
-        }
+        let decoded = try await TranscriptionMediaDecoder.decode(url: url)
         try Task.checkCancellation()
 
         await onProgress(.preparing(0.08))
         try await TranscriptionMediaDecoder.exportM4A(from: url, to: tempM4a)
         try Task.checkCancellation()
 
-        await onProgress(.uploading(uploadFraction: 0.0))
-        let outcome = try await RemoteChordRecognitionService.transcribeAudio(
-            fileURL: uploadFileURL,
-            multipartFilename: multipartFilename,
-            originalMediaBytes: originalMediaBytes,
-            onUploadProgress: { fraction in
-                Task { await onProgress(.uploading(uploadFraction: fraction)) }
-            },
-            onAnalyzingStarted: {
-                Task { await onProgress(.analyzing()) }
-            }
-        )
-        let remote = outcome.result
-        #if DEBUG
-        let st = remote.timing
-        print(
-            String(
-                format: "[RemoteChord][summary] originalBytes=%@ m4aOrWavUploadBytes=%d uploadSec=%@ clientTotalSec=%.3f serverInferSec=%.3f serverTotalSec=%.3f",
-                originalMediaBytes.map { String($0) } ?? "nil",
-                outcome.uploadFileBytes,
-                outcome.uploadSeconds.map { String(format: "%.3f", $0) } ?? "nil",
-                outcome.clientTotalSeconds,
-                st?.inferenceSec ?? -1,
-                st?.totalSec ?? -1
-            )
-        )
-        #endif
-        let rawSegments = remote.segments.map { $0.toTranscriptionSegment() }
-        let displaySegments = remote.displaySegments.map { $0.toTranscriptionSegment() }
-        let simplifiedSegments = (remote.simplifiedDisplaySegments ?? []).map { $0.toTranscriptionSegment() }
-        let chartSegments = (remote.chordChartSegments ?? []).map { $0.toTranscriptionSegment() }
-        let resolvedChartSegments: [TranscriptionSegment] = {
-            if !chartSegments.isEmpty { return chartSegments }
-            if !simplifiedSegments.isEmpty { return simplifiedSegments }
-            return displaySegments
-        }()
-
-        guard !displaySegments.isEmpty else {
-            throw TranscriptionImportError.noStableChordDetected
-        }
+        await onProgress(.analyzing())
+        let local = try await LocalChordRecognitionService(modelURL: nil).transcribe(media: decoded)
+        let rawSegments = local.segments
+        let displaySegments = local.displaySegments
+        let resolvedChartSegments = local.chordChartSegments
         try Task.checkCancellation()
 
         await onProgress(.generatingChart())
-        let durationMs = Int(((remote.duration ?? 0) * 1000).rounded())
-        let resolvedKey = (remote.key?.isEmpty == false) ? remote.key! : "C"
+        let durationMs = local.durationMs
+        let resolvedKey = local.originalKey
         #if DEBUG
-        print("[RemoteChord] key=\(resolvedKey) displaySegments=\(displaySegments.count) chordChartSegments=\(resolvedChartSegments.count)")
+        print("[LocalChord] key=\(resolvedKey) displaySegments=\(displaySegments.count) chordChartSegments=\(resolvedChartSegments.count)")
         #endif
 
         let stem = (url.lastPathComponent as NSString).deletingPathExtension
@@ -1344,9 +1227,9 @@ final class TranscriptionHomeViewModel: ObservableObject {
             segments: rawSegments,
             displaySegments: displaySegments,
             chordChartSegments: resolvedChartSegments,
-            timingVariants: remote.timingVariants,
-            timingVariantStats: remote.timingVariantStats,
-            backend: "remote",
+            timingVariants: local.timingVariants,
+            timingVariantStats: local.timingVariantStats,
+            backend: "local-coreml",
             waveform: []
         )
         if sourceType == .photoLibrary {
@@ -1425,12 +1308,6 @@ final class TranscriptionHomeViewModel: ObservableObject {
     private func defaultCustomName(from url: URL) -> String {
         let base = url.deletingPathExtension().lastPathComponent.trimmingCharacters(in: .whitespacesAndNewlines)
         return base.isEmpty ? url.lastPathComponent : base
-    }
-
-    private func ensureNetworkPreflightIfNeeded() async {
-        guard !didRunNetworkPreflight else { return }
-        didRunNetworkPreflight = true
-        await RemoteChordRecognitionService.preflightNetworkAccess()
     }
 
     private func resumePendingStemTaskIfNeeded() {

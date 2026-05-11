@@ -14,6 +14,8 @@
 #   ./run-simulator.sh
 #   ./run-simulator.sh --ipad          # 自动选择一台可用的 iPad 模拟器
 #   SIMULATOR_UDID=<udid> ./run-simulator.sh
+#   IOS_CHORD_MODEL_PATH=/abs/path/chordrecognition.mlpackage ./run-simulator.sh
+#   ALLOW_MISSING_CHORD_MODEL=0 ./run-simulator.sh  # 缺模型时严格失败
 #   ./run-simulator.sh --pull
 #   ./run-simulator.sh --open-xcode   # 仅构建安装后打开 Xcode，用 Cmd+R 跑 StoreKit 配置
 #
@@ -30,6 +32,8 @@ PRODUCT_ID="com.wanghan.guitarhelper.transcription_unlock"
 SPM_CLONES_DIR="${SPM_CLONES_DIR:-${HOME}/Library/Caches/SwiftEarHost-spm-repos}"
 DEFAULT_SIMULATOR_UDID="${SIMULATOR_UDID:-F877F638-03AC-4C4B-ADDF-5631C27FEB05}"
 DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostSimBuild-${USER}}"
+export IOS_CHORD_MODEL_PATH="${IOS_CHORD_MODEL_PATH:-${REPO_ROOT}/ios_chord_model/chordrecognition.mlpackage}"
+export ALLOW_MISSING_CHORD_MODEL="${ALLOW_MISSING_CHORD_MODEL:-1}"
 
 # 优先使用 host 目录下 .storekit；其次仓库根目录。
 STOREKIT_CONFIG="${STOREKIT_CONFIG:-}"
@@ -157,6 +161,19 @@ then
   exit 1
 fi
 
+if [[ ! -d "${IOS_CHORD_MODEL_PATH}" ]]; then
+  if [[ "${ALLOW_MISSING_CHORD_MODEL}" == "1" ]]; then
+    echo "⚠️ 本地和弦识别模型不存在：${IOS_CHORD_MODEL_PATH}" >&2
+    echo "   本次模拟器开发构建会继续启动 App，但扒歌本地识别不可用。" >&2
+    echo "   要启用扒歌，请放置模型或指定 IOS_CHORD_MODEL_PATH。" >&2
+  else
+    echo "❌ 本地和弦识别模型不存在：${IOS_CHORD_MODEL_PATH}" >&2
+    echo "请将转换后的 chordrecognition.mlpackage 放到仓库根目录的 ios_chord_model/ 下，或指定：" >&2
+    echo "IOS_CHORD_MODEL_PATH=/absolute/path/to/chordrecognition.mlpackage ./run-simulator.sh" >&2
+    exit 1
+  fi
+fi
+
 echo "==> 启动参数检查"
 echo "    Project: ${PROJECT}"
 echo "    Scheme: ${SCHEME}"
@@ -166,6 +183,8 @@ echo "    Simulator: ${SIMULATOR_LABEL}"
 echo "    Bundle ID: ${BUNDLE_ID}"
 echo "    StoreKitConfig: ${STOREKIT_CONFIG}"
 echo "    StoreKitConfig exists: YES"
+echo "    Chord model: ${IOS_CHORD_MODEL_PATH}"
+echo "    Allow missing chord model: ${ALLOW_MISSING_CHORD_MODEL}"
 STOREKIT_FLAG_SUPPORTED=0
 if xcodebuild -help 2>&1 | /usr/bin/python3 -c 'import sys; print("1" if "-storeKitConfiguration" in sys.stdin.read() else "0")' | grep -q '^1$'; then
   STOREKIT_FLAG_SUPPORTED=1

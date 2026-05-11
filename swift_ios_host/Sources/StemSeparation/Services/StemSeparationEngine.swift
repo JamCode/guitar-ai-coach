@@ -29,6 +29,45 @@ struct StemSeparationEngine {
         outputDirectory: URL,
         progress: ((StemSeparationProgress) -> Void)? = nil
     ) async throws -> StemSeparationResult {
+        let separated = try await separateStems(media: media, progress: progress)
+        progress?(
+            StemSeparationProgress(
+                stage: .writing,
+                completedSegments: separated.segmentCount,
+                totalSegments: separated.segmentCount
+            )
+        )
+
+        let id = UUID().uuidString
+        let urls = try writer.write(
+            stems: separated.stems,
+            sampleRate: separated.sampleRate,
+            outputDirectory: outputDirectory.appendingPathComponent(id, isDirectory: true),
+            baseName: sanitizedBaseName(media.fileName)
+        )
+        progress?(
+            StemSeparationProgress(
+                stage: .completed,
+                completedSegments: separated.segmentCount,
+                totalSegments: separated.segmentCount
+            )
+        )
+
+        return StemSeparationResult(
+            id: id,
+            fileName: media.fileName,
+            customName: media.fileName,
+            durationMs: media.durationMs,
+            sampleRate: separated.sampleRate,
+            createdAtMs: Int(Date().timeIntervalSince1970 * 1000),
+            stems: Dictionary(uniqueKeysWithValues: urls.map { ($0.key, $0.value.path) })
+        )
+    }
+
+    func separateStems(
+        media: DecodedTranscriptionMedia,
+        progress: ((StemSeparationProgress) -> Void)? = nil
+    ) async throws -> StemSeparationOutput {
         guard !media.pcmSamples.isEmpty else { throw StemSeparationError.emptyInput }
         let samples = StemSeparationDSP.linearResample(
             samples: media.pcmSamples,
@@ -70,29 +109,10 @@ struct StemSeparationEngine {
             outputSampleCount: samples.count,
             expectedStems: configuration.stems
         )
-        progress?(
-            StemSeparationProgress(stage: .writing, completedSegments: ranges.count, totalSegments: ranges.count)
-        )
-
-        let id = UUID().uuidString
-        let urls = try writer.write(
+        return StemSeparationOutput(
             stems: stitched,
             sampleRate: configuration.targetSampleRate,
-            outputDirectory: outputDirectory.appendingPathComponent(id, isDirectory: true),
-            baseName: sanitizedBaseName(media.fileName)
-        )
-        progress?(
-            StemSeparationProgress(stage: .completed, completedSegments: ranges.count, totalSegments: ranges.count)
-        )
-
-        return StemSeparationResult(
-            id: id,
-            fileName: media.fileName,
-            customName: media.fileName,
-            durationMs: media.durationMs,
-            sampleRate: configuration.targetSampleRate,
-            createdAtMs: Int(Date().timeIntervalSince1970 * 1000),
-            stems: Dictionary(uniqueKeysWithValues: urls.map { ($0.key, $0.value.path) })
+            segmentCount: ranges.count
         )
     }
 
@@ -102,4 +122,10 @@ struct StemSeparationEngine {
         let cleaned = String(stem.unicodeScalars.map { allowed.contains($0) ? Character($0) : "-" })
         return cleaned.isEmpty ? "stem" : cleaned
     }
+}
+
+struct StemSeparationOutput: Equatable {
+    let stems: [StemKind: [Float]]
+    let sampleRate: Double
+    let segmentCount: Int
 }

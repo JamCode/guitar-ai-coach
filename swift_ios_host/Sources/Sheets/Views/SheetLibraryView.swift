@@ -464,6 +464,7 @@ private struct SheetDetailView: View {
     @State private var continuousAutoScrollEnabled = false
     @State private var continuousAutoScrollSpeed: Double = SheetAutoScrollConfig.defaultSpeed
     @State private var showingPageOrderEditor = false
+    @State private var showingReaderSettings = false
     @State private var detailNotice: String?
     @StateObject private var metronomeVM = MetronomeViewModel()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -491,6 +492,17 @@ private struct SheetDetailView: View {
                     }
                     .accessibilityIdentifier("sheets.toggleReadingMode")
                 }
+                if readingMode == .continuous {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showingReaderSettings = true
+                        } label: {
+                            Image(systemName: "slider.horizontal.3")
+                        }
+                        .accessibilityLabel("阅读设置")
+                        .accessibilityIdentifier("sheets.readerSettings")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(LocalizedStringResource("sheets_reorder_toolbar", bundle: .main)) {
                         showingPageOrderEditor = true
@@ -498,6 +510,15 @@ private struct SheetDetailView: View {
                     .accessibilityIdentifier("sheets.reorderPages")
                 }
             }
+        }
+        .sheet(isPresented: $showingReaderSettings) {
+            SheetContinuousPracticeSettings(
+                autoScrollEnabled: $continuousAutoScrollEnabled,
+                autoScrollSpeed: $continuousAutoScrollSpeed,
+                metronomeVM: metronomeVM
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingPageOrderEditor) {
             SheetPageOrderEditor(
@@ -630,25 +651,12 @@ private struct SheetDetailView: View {
     }
 
     private var continuousReader: some View {
-        ZStack(alignment: .bottom) {
-            ContinuousZoomableSheetReader(
-                images: pageImages,
-                immersiveReading: $immersiveReading,
-                autoScrollEnabled: $continuousAutoScrollEnabled,
-                autoScrollSpeed: continuousAutoScrollSpeed
-            )
-
-            if !immersiveReading {
-                SheetContinuousPracticeControls(
-                    autoScrollEnabled: $continuousAutoScrollEnabled,
-                    autoScrollSpeed: $continuousAutoScrollSpeed,
-                    metronomeVM: metronomeVM
-                )
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        ContinuousZoomableSheetReader(
+            images: pageImages,
+            immersiveReading: $immersiveReading,
+            autoScrollEnabled: $continuousAutoScrollEnabled,
+            autoScrollSpeed: continuousAutoScrollSpeed
+        )
         .background(Color.black.opacity(immersiveReading ? 1 : 0))
     }
 
@@ -722,6 +730,7 @@ private struct SheetDetailView: View {
         immersiveReading = false
         if readingMode != .continuous {
             continuousAutoScrollEnabled = false
+            showingReaderSettings = false
             metronomeVM.stop()
         }
         currentPageScale = Self.minReadableScale
@@ -1002,79 +1011,77 @@ private struct ContinuousZoomableSheetReader: UIViewRepresentable {
     }
 }
 
-private struct SheetContinuousPracticeControls: View {
+private struct SheetContinuousPracticeSettings: View {
+    @Environment(\.dismiss) private var dismiss
     @Binding var autoScrollEnabled: Bool
     @Binding var autoScrollSpeed: Double
     @ObservedObject var metronomeVM: MetronomeViewModel
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                Button {
-                    autoScrollEnabled.toggle()
-                } label: {
-                    Image(systemName: autoScrollEnabled ? "pause.fill" : "play.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(width: 34, height: 34)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.white)
-                .background(SwiftAppTheme.brand, in: Circle())
-                .accessibilityLabel(autoScrollEnabled ? "暂停自动下滑" : "开始自动下滑")
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("自动下滑 \(Int(autoScrollSpeed.rounded()))")
-                        .font(.caption.weight(.semibold))
-                    Slider(
-                        value: $autoScrollSpeed,
-                        in: SheetAutoScrollConfig.minSpeed...SheetAutoScrollConfig.maxSpeed,
-                        step: 1
-                    )
+        NavigationStack {
+            Form {
+                Section("自动下滑") {
+                    Toggle(isOn: $autoScrollEnabled) {
+                        Label(autoScrollEnabled ? "正在自动下滑" : "开启自动下滑", systemImage: autoScrollEnabled ? "pause.fill" : "play.fill")
+                    }
                     .tint(SwiftAppTheme.brand)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("速度")
+                            Spacer()
+                            Text("\(Int(autoScrollSpeed.rounded()))")
+                                .foregroundStyle(SwiftAppTheme.muted)
+                        }
+                        Slider(
+                            value: $autoScrollSpeed,
+                            in: SheetAutoScrollConfig.minSpeed...SheetAutoScrollConfig.maxSpeed,
+                            step: 1
+                        )
+                        .tint(SwiftAppTheme.brand)
+                    }
+                }
+
+                Section("节拍器") {
+                    Button {
+                        metronomeVM.toggleStartPause()
+                    } label: {
+                        Label(metronomeVM.transport == .running ? "暂停节拍器" : "开始节拍器", systemImage: "metronome")
+                    }
+                    .tint(SwiftAppTheme.brand)
+
+                    Stepper("\(metronomeVM.config.bpm) BPM", value: Binding(
+                        get: { metronomeVM.config.bpm },
+                        set: { metronomeVM.setBPM($0) }
+                    ), in: MetronomeConfig.bpmRange, step: 1)
+
+                    Picker("拍号", selection: Binding(
+                        get: { metronomeVM.config.timeSignature },
+                        set: { metronomeVM.setTimeSignature($0) }
+                    )) {
+                        Text("4/4").tag(MetronomeTimeSignature.fourFour)
+                        Text("3/4").tag(MetronomeTimeSignature.threeFour)
+                        Text("6/8").tag(MetronomeTimeSignature.sixEight)
+                    }
                 }
             }
-
-            HStack(spacing: 10) {
-                Button {
-                    metronomeVM.toggleStartPause()
-                } label: {
-                    Label(metronomeVM.transport == .running ? "节拍暂停" : "节拍开始", systemImage: "metronome")
-                        .font(.caption.weight(.semibold))
+            .navigationTitle("阅读设置")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完成") {
+                        dismiss()
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(SwiftAppTheme.brand)
-
-                Stepper("\(metronomeVM.config.bpm) BPM", value: Binding(
-                    get: { metronomeVM.config.bpm },
-                    set: { metronomeVM.setBPM($0) }
-                ), in: MetronomeConfig.bpmRange, step: 1)
-                .font(.caption)
-
-                Picker("拍号", selection: Binding(
-                    get: { metronomeVM.config.timeSignature },
-                    set: { metronomeVM.setTimeSignature($0) }
-                )) {
-                    Text("4/4").tag(MetronomeTimeSignature.fourFour)
-                    Text("3/4").tag(MetronomeTimeSignature.threeFour)
-                    Text("6/8").tag(MetronomeTimeSignature.sixEight)
-                }
-                .pickerStyle(.menu)
-                .font(.caption)
             }
-        }
-        .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(SwiftAppTheme.line.opacity(0.6), lineWidth: 1)
-        }
-        .alert("提示", isPresented: Binding(
-            get: { metronomeVM.errorMessage != nil },
-            set: { if !$0 { metronomeVM.errorMessage = nil } }
-        )) {
-            Button("知道了", role: .cancel) { metronomeVM.errorMessage = nil }
-        } message: {
-            Text(metronomeVM.errorMessage ?? "")
+            .alert("提示", isPresented: Binding(
+                get: { metronomeVM.errorMessage != nil },
+                set: { if !$0 { metronomeVM.errorMessage = nil } }
+            )) {
+                Button("知道了", role: .cancel) { metronomeVM.errorMessage = nil }
+            } message: {
+                Text(metronomeVM.errorMessage ?? "")
+            }
         }
     }
 }

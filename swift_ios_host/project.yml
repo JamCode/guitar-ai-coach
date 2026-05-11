@@ -29,13 +29,33 @@ targets:
           cp -R "$MODEL_SRC" "$MODEL_DST"
         outputFiles:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/stemseparation.mlpackage
+      - name: Copy Chord Recognition Model
+        script: |
+          MODEL_SRC="${IOS_CHORD_MODEL_PATH:-${SRCROOT}/../ios_chord_model/chordrecognition.mlpackage}"
+          MODEL_DST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/chordrecognition.mlpackage"
+          if [ ! -d "$MODEL_SRC" ]; then
+            if [ "${ALLOW_MISSING_CHORD_MODEL:-0}" = "1" ]; then
+              echo "warning: Missing chord recognition model at $MODEL_SRC; creating simulator-only placeholder. Local chord recognition will be unavailable."
+              rm -rf "$MODEL_DST"
+              mkdir -p "$MODEL_DST"
+              touch "$MODEL_DST/.placeholder"
+              exit 0
+            fi
+            echo "error: Missing chord recognition model at $MODEL_SRC"
+            echo "error: Set IOS_CHORD_MODEL_PATH=/absolute/path/to/chordrecognition.mlpackage or create ${SRCROOT}/../ios_chord_model/chordrecognition.mlpackage"
+            exit 1
+          fi
+          rm -rf "$MODEL_DST"
+          mkdir -p "$(dirname "$MODEL_DST")"
+          cp -R "$MODEL_SRC" "$MODEL_DST"
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/chordrecognition.mlpackage
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wanghan.guitarhelper
         PRODUCT_NAME: SwiftEarHost
         MARKETING_VERSION: 1.0.0
         CURRENT_PROJECT_VERSION: 1
-        CHORD_ONNX_APP_TOKEN: wang
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Wanle Guitar
         INFOPLIST_KEY_CFBundleName: Wanle Guitar

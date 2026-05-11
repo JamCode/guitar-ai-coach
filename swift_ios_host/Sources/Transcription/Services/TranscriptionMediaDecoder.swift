@@ -2,7 +2,7 @@ import AVFoundation
 import CoreMedia
 import Foundation
 
-struct DecodedTranscriptionMedia {
+struct DecodedTranscriptionMedia: Equatable {
     let fileName: String
     let durationMs: Int
     let pcmSamples: [Float]
@@ -183,16 +183,6 @@ enum TranscriptionMediaDecoder {
         guard session.status == .completed else {
             throw TranscriptionImportError.audioExportFailed
         }
-    }
-
-    /// 远程识别上传用：方案 A，直接走系统 AppleM4A 导出链路，优先稳定性。
-    static func exportCompressedM4AForRemoteUpload(
-        from sourceURL: URL,
-        to destinationURL: URL,
-        aacBitrate: Int = 96_000
-    ) async throws {
-        _ = aacBitrate // kept for API compatibility; AppleM4A preset manages encoder settings.
-        try await exportM4A(from: sourceURL, to: destinationURL)
     }
 
     /// 线性重采样到 22050 Hz 单声道（与 ONNX 管线一致，体积可控）。

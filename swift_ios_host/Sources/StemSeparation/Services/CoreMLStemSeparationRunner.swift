@@ -78,32 +78,84 @@ struct CoreMLStemSeparationRunner: StemSeparationModelRunning {
         guard array.count >= expectedPerStemCount * 2 else {
             throw StemSeparationError.modelOutputInvalid
         }
+        let values = try readFloats(array)
+        guard values.count >= expectedPerStemCount * 2 else {
+            throw StemSeparationError.modelOutputInvalid
+        }
         var vocals = [Float](repeating: 0, count: expectedPerStemCount)
         var accompaniment = [Float](repeating: 0, count: expectedPerStemCount)
+        vocals.withUnsafeMutableBufferPointer { buffer in
+            buffer.baseAddress?.update(from: values, count: expectedPerStemCount)
+        }
+        values.withUnsafeBufferPointer { source in
+            accompaniment.withUnsafeMutableBufferPointer { buffer in
+                buffer.baseAddress?.update(
+                    from: source.baseAddress!.advanced(by: expectedPerStemCount),
+                    count: expectedPerStemCount
+                )
+            }
+        }
+        return (vocals, accompaniment)
+    }
 
+    private func readFloats(_ array: MLMultiArray) throws -> [Float] {
+        var values = [Float](repeating: 0, count: array.count)
+        let offsets = logicalOffsets(for: array)
+        let storageCount = max(array.count, (offsets.max() ?? 0) + 1)
         switch array.dataType {
         case .float16:
-            let pointer = array.dataPointer.bindMemory(to: UInt16.self, capacity: array.count)
-            for i in 0..<expectedPerStemCount {
-                vocals[i] = Float(Float16(bitPattern: pointer[i]))
-                accompaniment[i] = Float(Float16(bitPattern: pointer[expectedPerStemCount + i]))
+            let pointer = array.dataPointer.bindMemory(to: UInt16.self, capacity: storageCount)
+            for i in 0..<array.count {
+                values[i] = Float(Float16(bitPattern: pointer[offsets[i]]))
             }
         case .float32:
-            let pointer = array.dataPointer.bindMemory(to: Float.self, capacity: array.count)
-            vocals.withUnsafeMutableBufferPointer { $0.baseAddress?.update(from: pointer, count: expectedPerStemCount) }
-            accompaniment.withUnsafeMutableBufferPointer {
-                $0.baseAddress?.update(from: pointer.advanced(by: expectedPerStemCount), count: expectedPerStemCount)
+            let pointer = array.dataPointer.bindMemory(to: Float.self, capacity: storageCount)
+            if offsets.enumerated().allSatisfy({ $0.offset == $0.element }) {
+                values.withUnsafeMutableBufferPointer { buffer in
+                    buffer.baseAddress?.update(from: pointer, count: array.count)
+                }
+            } else {
+                for i in 0..<array.count {
+                    values[i] = pointer[offsets[i]]
+                }
             }
         case .double:
-            let pointer = array.dataPointer.bindMemory(to: Double.self, capacity: array.count)
-            for i in 0..<expectedPerStemCount {
-                vocals[i] = Float(pointer[i])
-                accompaniment[i] = Float(pointer[expectedPerStemCount + i])
+            let pointer = array.dataPointer.bindMemory(to: Double.self, capacity: storageCount)
+            for i in 0..<array.count {
+                values[i] = Float(pointer[offsets[i]])
             }
         default:
             throw StemSeparationError.modelOutputInvalid
         }
-        return (vocals, accompaniment)
+        return values
+    }
+
+    private func logicalOffsets(for array: MLMultiArray) -> [Int] {
+        let shape = array.shape.map { max(0, $0.intValue) }
+        let strides = array.strides.map { $0.intValue }
+        guard !shape.isEmpty, shape.reduce(1, *) == array.count, strides.count == shape.count else {
+            return Array(0..<array.count)
+        }
+
+        var offsets: [Int] = []
+        offsets.reserveCapacity(array.count)
+        var indices = [Int](repeating: 0, count: shape.count)
+        for _ in 0..<array.count {
+            var offset = 0
+            for dimension in 0..<shape.count {
+                offset += indices[dimension] * strides[dimension]
+            }
+            offsets.append(offset)
+
+            for dimension in stride(from: shape.count - 1, through: 0, by: -1) {
+                indices[dimension] += 1
+                if indices[dimension] < shape[dimension] {
+                    break
+                }
+                indices[dimension] = 0
+            }
+        }
+        return offsets
     }
 
     private static func defaultModelURL() -> URL? {
