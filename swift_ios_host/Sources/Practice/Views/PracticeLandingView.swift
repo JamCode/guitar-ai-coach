@@ -9,7 +9,7 @@ private enum PracticeLandingVisibility {
     static let showAllTrainingItemsLink = false
 }
 
-/// 练习模块首页：突出「今日训练」题单，并保留专项快速入口。
+/// 练习模块首页：当前产品聚焦自适应练耳，吉他专项入口暂时隐藏但保留旧实现。
 struct PracticeLandingView: View {
     @StateObject private var vm = PracticeLandingViewModel()
 
@@ -50,96 +50,7 @@ struct PracticeLandingView: View {
     }
 
     private var content: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                if PracticeLandingVisibility.showTodayRecommendedTraining {
-                    todayTrainingCard
-                }
-
-                PracticeRecentSummaryCard(sessions: vm.sessions)
-
-                Text(AppL10n.t("practice_section_ear"))
-                    .appSectionTitle()
-
-                PracticeLinkCard(
-                    title: AppL10n.t("task_interval_ear_name"),
-                    subtitle: AppL10n.t("practice_link_interval_sub"),
-                    icon: "play.circle",
-                    accessibilityIdentifier: "practice.intervalEar"
-                ) {
-                    ForegroundPracticeSessionTracker(task: kIntervalEarPracticeTask, note: nil) {
-                        IntervalEarView()
-                    }
-                }
-                PracticeLinkCard(
-                    title: AppL10n.t("task_ear_chord_mcq_name"),
-                    subtitle: AppL10n.t("practice_link_ear_chord_sub"),
-                    icon: "pianokeys",
-                    accessibilityIdentifier: "practice.chordEar"
-                ) {
-                    ForegroundPracticeSessionTracker(task: kEarChordMcqPracticeTask, note: nil) {
-                        EarMcqSessionView(title: AppL10n.t("task_ear_chord_mcq_name"), bank: "A")
-                    }
-                }
-                PracticeLinkCard(
-                    title: AppL10n.t("task_ear_progression_mcq_name"),
-                    subtitle: AppL10n.t("practice_link_ear_prog_sub"),
-                    icon: "music.note.list",
-                    accessibilityIdentifier: "practice.progressionEar"
-                ) {
-                    ForegroundPracticeSessionTracker(task: kEarProgressionMcqPracticeTask, note: nil) {
-                        EarMcqSessionView(title: AppL10n.t("task_ear_progression_mcq_name"), bank: "B")
-                    }
-                }
-                if EarPracticeHubVisibility.showSightSingingTraining {
-                    PracticeLinkCard(
-                        title: AppL10n.t("task_sight_singing_name"),
-                        subtitle: AppL10n.t("task_ear_mcq_sight_subtitle"),
-                        icon: "mic",
-                        accessibilityIdentifier: "practice.sightSinging"
-                    ) {
-                        ForegroundPracticeSessionTracker(task: kSightSingingPracticeTask, note: nil) {
-                            SightSingingSessionView()
-                        }
-                    }
-                }
-
-                Text(AppL10n.t("practice_section_guitar"))
-                    .appSectionTitle()
-
-                ForEach(kDefaultPracticeTasks) { task in
-                    PracticeLinkCard(
-                        title: task.localizedName,
-                        subtitle: task.localizedDescription,
-                        icon: practiceHomeIcon(for: task.id),
-                        accessibilityIdentifier: "practice.\(task.id)"
-                    ) {
-                        PracticeTaskRouterScreen(task: task)
-                    }
-                }
-
-                if PracticeLandingVisibility.showAllTrainingItemsLink {
-                    NavigationLink {
-                        TabBarHiddenContainer {
-                            PracticeTrainingCatalogView()
-                        }
-                    } label: {
-                        HStack {
-                            Text(AppL10n.t("practice_all_training"))
-                                .font(.subheadline)
-                                .foregroundStyle(SwiftAppTheme.muted)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(SwiftAppTheme.muted)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(SwiftAppTheme.pagePadding)
-        }
-        .practiceScrollPageBackground()
+        AdaptiveEarTrainingView(sessions: vm.sessions)
         .refreshable { await vm.refresh(blockingUI: false) }
     }
 
@@ -303,7 +214,9 @@ private struct PracticeRecentSummaryCard: View {
 /// Keep old symbol name to avoid touching existing call sites.
 struct PracticeHomeView: View {
     var body: some View {
-        PracticeLandingView()
+        ForegroundPracticeSessionTracker(task: kAdaptiveEarTrainingPracticeTask, note: nil) {
+            PracticeLandingView()
+        }
     }
 }
 

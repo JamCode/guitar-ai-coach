@@ -888,13 +888,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Practice data loads after you open this tab for the first time."
+            "value": "Ear training data loads after you open this tab for the first time."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "首次进入该 Tab 后才会加载练习数据。"
+            "value": "首次进入该 Tab 后才会加载练耳数据。"
           }
         }
       }
@@ -1330,13 +1330,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Practice"
+            "value": "Ear Training"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "练习"
+            "value": "练耳"
           }
         }
       }
@@ -2792,13 +2792,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Song Practice"
+            "value": "Ear"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "扒歌练习"
+            "value": "练耳"
           }
         }
       }
@@ -3242,6 +3242,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "和弦速查"
+          }
+        }
+      }
+    },
+    "tools_chord_progressions_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Song-backed progressions by style"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按风格查真实歌曲里的常用套路"
+          }
+        }
+      }
+    },
+    "tools_chord_progressions_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chord progressions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常用和弦进行"
           }
         }
       }

@@ -446,7 +446,17 @@ private struct SheetDetailView: View {
     let store: SheetLibraryStore
     @Environment(\.scenePhase) private var scenePhase
 
+    /// 动态跟踪最新的 entry（支持从列表页重命名后更新导航标题）
+    @State private var liveEntry: SheetEntry
     @State private var files: [URL] = []
+
+    init(entry: SheetEntry, store: SheetLibraryStore) {
+        self.entry = entry
+        self.store = store
+        _liveEntry = State(initialValue: entry)
+    }
+
+
     /// 预解码，避免切换沉浸/布局时反复 `UIImage(contentsOfFile:)` 造成掉帧。
     @State private var pageImages: [UIImage?] = []
     @State private var loading = true
@@ -482,7 +492,7 @@ private struct SheetDetailView: View {
                 sheetReader
             }
         }
-        .navigationTitle(entry.displayName)
+        .navigationTitle(liveEntry.displayName)
         .toolbar(immersiveReading ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
             if pageImages.count > 1 && !immersiveReading {
@@ -536,7 +546,17 @@ private struct SheetDetailView: View {
         .task {
             await load()
         }
+        /// 监听 entry.id 变化（列表页重命名后 selectedEntry 更新），刷新 liveEntry 和导航标题
+        .onChange(of: entry.id) { _, newId in
+            Task {
+                let all = await store.loadAll()
+                if let updated = all.first(where: { $0.id == newId }) {
+                    liveEntry = updated
+                }
+            }
+        }
         .onChange(of: scenePhase) { _, newPhase in
+
             switch newPhase {
             case .active:
                 resumeForegroundClockIfEligible()

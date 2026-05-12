@@ -107,14 +107,14 @@ private struct HostRootWithFirstLaunchTour: View {
 }
 
 private struct RootTabView: View {
-    /// Tab 顺序：AI扒歌(0) → 扒歌练习(1) → 我的谱(2) → 工具(3)。默认落在「AI扒歌」。
+    /// Tab 顺序：AI扒歌(0) → 练耳(1) → 我的谱(2) → 工具(3)。默认落在「AI扒歌」。
     @State private var selectedTab: Int = 0
-    /// 练习页延迟挂载；第一次切到「扒歌练习」时再加载，避免首页 AI 扒歌被练习页初始化拖慢。
+    /// 练耳页延迟挂载；第一次切到「练耳」时再加载，避免首页 AI 扒歌被练耳页初始化拖慢。
     @State private var practiceTabMounted: Bool = false
     @StateObject private var sheetLibraryVM = SheetLibraryViewModel()
     @State private var didScheduleAudioWarmup = false
     
-    /// 自定义 Tab 选择绑定：切到「扒歌练习」时在同一事务内先完成挂载，
+    /// 自定义 Tab 选择绑定：切到「练耳」时在同一事务内先完成挂载，
     /// 避免先显示占位页再切到真实页面造成导航标题闪动。
     private var tabSelection: Binding<Int> {
         Binding(
@@ -156,7 +156,7 @@ private struct RootTabView: View {
                 }
             }
             .tabItem {
-                Label(LocalizedStringResource("tab_practice", bundle: .main), systemImage: "figure.strengthtraining.traditional")
+                Label(LocalizedStringResource("tab_practice", bundle: .main), systemImage: "ear")
                     .accessibilityIdentifier("tab.practice")
             }
             .tag(1)
@@ -237,6 +237,12 @@ private struct ToolsTabView: View {
                         icon: "pianokeys",
                         accessibilityIdentifier: "tools.chordLookup"
                     ) { ChordLookupMergedHostView() }
+                    gridTile(
+                        title: AppL10n.t("tools_chord_progressions_title"),
+                        subtitle: AppL10n.t("tools_chord_progressions_subtitle"),
+                        icon: "music.note.list",
+                        accessibilityIdentifier: "tools.chordProgressions"
+                    ) { CommonChordProgressionsView() }
                 }
 
                 Text(LocalizedStringResource("section_app_support", bundle: .main))

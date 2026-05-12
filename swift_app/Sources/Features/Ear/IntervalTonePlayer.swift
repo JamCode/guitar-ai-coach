@@ -25,11 +25,12 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
 
     /// 与 `FretboardTonePlayer` 一致：钢弦吉他 SF2 单音。
     private static let sampledVelocity: UInt8 = 100
-    private static let sampledGateSec = 1.1
-    /// 第一音 gate 结束后再留的空档，再触发第二音（原先正弦两音间仅约 90 ms）。
-    private static let silenceAfterFirstGateSec = 0.28
+    /// 单音延音时长。原为 1.1，用户反馈偏慢、延音太长，调整为 0.7 让听感更紧凑。
+    private static let sampledGateSec = 0.7
+    /// 第一音 gate 结束后再留的空档，再触发第二音。原为 0.28，缩短为 0.15 减少两音间等待。
+    private static let silenceAfterFirstGateSec = 0.15
     /// 第二音 note-off 后等待的释音尾，再结束 `playAscendingPair`（用于 UI 解锁「播放」）。
-    private static let releaseTailAfterSecondGateSec = 0.22
+    private static let releaseTailAfterSecondGateSec = 0.12
     private static let previewGateSec = 0.52
     private static let previewTailSec = 0.18
 

@@ -69,6 +69,13 @@ let kEarProgressionMcqPracticeTask = PracticeTask(
     description: "视唱练耳 · 和弦进行听辨。"
 )
 
+let kAdaptiveEarTrainingPracticeTask = PracticeTask(
+    id: "adaptive-ear-training",
+    name: "自适应练耳",
+    targetMinutes: 10,
+    description: "系统根据正确率自动推送下一道练耳题。"
+)
+
 let kSightSingingPracticeTask = PracticeTask(
     id: "sight-singing",
     name: "视唱训练",
