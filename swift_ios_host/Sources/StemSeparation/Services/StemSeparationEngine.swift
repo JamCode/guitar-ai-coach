@@ -53,6 +53,12 @@ struct StemSeparationEngine {
             )
         )
 
+        // Store paths relative to the stem_separation root directory so they survive app container path changes after restart.
+        let rootPath = outputDirectory.path.hasSuffix("/") ? outputDirectory.path : outputDirectory.path + "/"
+        let relativeStems = Dictionary(uniqueKeysWithValues: urls.map { (stem, url) in
+            let relativePath = url.path.replacingOccurrences(of: rootPath, with: "")
+            return (stem, relativePath)
+        })
         return StemSeparationResult(
             id: id,
             fileName: media.fileName,
@@ -60,7 +66,7 @@ struct StemSeparationEngine {
             durationMs: media.durationMs,
             sampleRate: separated.sampleRate,
             createdAtMs: Int(Date().timeIntervalSince1970 * 1000),
-            stems: Dictionary(uniqueKeysWithValues: urls.map { ($0.key, $0.value.path) })
+            stems: relativeStems
         )
     }
 
