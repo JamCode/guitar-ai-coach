@@ -1,6 +1,7 @@
 import SwiftUI
 import Core
 import Ear
+import Chords
 
 struct AdaptiveEarTrainingView: View {
     let sessions: [PracticeSession]
@@ -9,6 +10,7 @@ struct AdaptiveEarTrainingView: View {
     @AppStorage("adaptive_ear_auto_play_next") private var autoPlayNext = false
     @AppStorage("adaptive_ear_show_explanation") private var showExplanation = true
     @State private var showingCombinedStats = false
+    @State private var showHintStrip = false
 
     var body: some View {
         ScrollView {
@@ -43,19 +45,9 @@ struct AdaptiveEarTrainingView: View {
         .refreshable { await vm.bootstrap() }
         .task { await vm.bootstrap() }
         .task(id: vm.questionToken) {
+            showHintStrip = false
             guard autoPlayNext else { return }
             await vm.playCurrent()
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingCombinedStats = true
-                } label: {
-                    Image(systemName: "chart.bar.fill")
-                        .foregroundStyle(SwiftAppTheme.text)
-                }
-                .accessibilityLabel("训练统计")
-            }
         }
         .sheet(isPresented: $showingCombinedStats) {
             NavigationStack {
@@ -106,6 +98,7 @@ struct AdaptiveEarTrainingView: View {
                 ratingChip(title: "音程", value: vm.state.intervalRating)
                 ratingChip(title: "和弦", value: vm.state.chordRating)
                 ratingChip(title: "进行", value: vm.state.progressionRating)
+                ratingChip(title: "单音", value: vm.state.singleNoteRating)
             }
         }
         .appCard()
@@ -153,6 +146,110 @@ struct AdaptiveEarTrainingView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             playButton
+
+            if case .interval = question {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showHintStrip.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showHintStrip ? "lightbulb.fill" : "lightbulb")
+                            .font(.caption)
+                        Text(showHintStrip ? "收起提示" : "提示")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundStyle(SwiftAppTheme.brand)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(SwiftAppTheme.brandSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                if showHintStrip {
+                    hintChromaticStrip(for: question)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+
+            if case .chord = question {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showHintStrip.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showHintStrip ? "lightbulb.fill" : "lightbulb")
+                            .font(.caption)
+                        Text(showHintStrip ? "收起提示" : "试听各选项")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundStyle(SwiftAppTheme.brand)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(SwiftAppTheme.brandSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                if showHintStrip {
+                    chordHintOptionsView(for: question)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+
+            if case .progression = question {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showHintStrip.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showHintStrip ? "lightbulb.fill" : "lightbulb")
+                            .font(.caption)
+                        Text(showHintStrip ? "收起提示" : "逐和弦试听")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundStyle(SwiftAppTheme.brand)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(SwiftAppTheme.brandSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                if showHintStrip {
+                    progressionHintOptionsView(for: question)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+
+            if case .singleNote = question {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showHintStrip.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showHintStrip ? "lightbulb.fill" : "lightbulb")
+                            .font(.caption)
+                        Text(showHintStrip ? "收起提示" : "逐音试听")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundStyle(SwiftAppTheme.brand)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(SwiftAppTheme.brandSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                if showHintStrip {
+                    singleNoteHintView
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(question.choices) { choice in
@@ -232,19 +329,23 @@ struct AdaptiveEarTrainingView: View {
             Text("正确答案：\(question.correctAnswerText)")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.text)
-            if showExplanation {
+            if !feedback.wasCorrect, showExplanation {
                 Text(question.explanation)
                     .font(.footnote)
                     .foregroundStyle(SwiftAppTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            intervalChromaticStrip(for: question)
+            if !feedback.wasCorrect {
+                intervalChromaticStrip(for: question)
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background((feedback.wasCorrect ? Color.green : Color.red).opacity(0.10))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
+
+    // MARK: - Interval Strip
 
     @ViewBuilder
     private func intervalChromaticStrip(for question: AdaptiveEarQuestion) -> some View {
@@ -264,6 +365,30 @@ struct AdaptiveEarTrainingView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     intervalChromaticPillRow(midis: row1, question: interval)
                     intervalChromaticPillRow(midis: row2, question: interval)
+                }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    @ViewBuilder
+    private func hintChromaticStrip(for question: AdaptiveEarQuestion) -> some View {
+        if case let .interval(interval, _, _) = question {
+            let strip = IntervalChromaticStrip.midisCoveringOctaveIncluding(
+                lowMidi: interval.lowMidi,
+                highMidi: interval.highMidi
+            )
+            let firstRowCount = (strip.count + 1) / 2
+            let row1 = Array(strip.prefix(firstRowCount))
+            let row2 = Array(strip.suffix(strip.count - firstRowCount))
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("点击各音试听，找出本题的两个音")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(SwiftAppTheme.brand)
+                VStack(alignment: .leading, spacing: 6) {
+                    hintChromaticPillRow(midis: row1, question: interval)
+                    hintChromaticPillRow(midis: row2, question: interval)
                 }
             }
             .padding(.top, 4)
@@ -300,11 +425,178 @@ struct AdaptiveEarTrainingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private static func scientificPitchLabel(midi: Int) -> String {
-        "\(PitchMath.midiToNoteName(midi))\(midi / 12 - 1)"
+    private func hintChromaticPillRow(midis: [Int], question: IntervalQuestion) -> some View {
+        HStack(spacing: 6) {
+            ForEach(midis, id: \.self) { midi in
+                Button {
+                    Task { await vm.playPreviewNote(midi: midi) }
+                } label: {
+                    Text(Self.scientificPitchLabel(midi: midi))
+                        .font(.caption.weight(.semibold).monospaced())
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                }
+                .buttonStyle(.borderless)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 8)
+                .background(SwiftAppTheme.surfaceSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(SwiftAppTheme.line, lineWidth: 1)
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // MARK: - Chord Hint
+
+    @ViewBuilder
+    private func chordHintOptionsView(for question: AdaptiveEarQuestion) -> some View {
+        if case .chord = question {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("点击各选项试听和弦声音")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(SwiftAppTheme.brand)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    ForEach(question.choices) { choice in
+                        Button {
+                            Task { await vm.playChordForLabel(choice.label) }
+                        } label: {
+                            Text(choice.label)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(SwiftAppTheme.text)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(SwiftAppTheme.surfaceSoft)
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(SwiftAppTheme.line, lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.top, 4)
+        }
     }
+
+    // MARK: - Progression Hint
+
+    @ViewBuilder
+    private func progressionHintOptionsView(for question: AdaptiveEarQuestion) -> some View {
+        if case let .progression(item, _, _) = question {
+            let key = item.musicKey ?? "C"
+            let roman = item.progressionRoman ?? ""
+            let chords = EarPlaybackMidi.letterChordSymbols(key: key, progressionRoman: roman)
+            if !chords.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("点击各和弦试听，拆解本题进行")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SwiftAppTheme.brand)
+                    HStack(spacing: 8) {
+                        ForEach(chords, id: \.self) { chord in
+                            Button {
+                                Task { await vm.playChordForLabel(chord) }
+                            } label: {
+                                Text(chord)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(SwiftAppTheme.surfaceSoft)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .stroke(SwiftAppTheme.line, lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+    }
+
+    // MARK: - Single Note Hint
+
+    private var singleNoteHintView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("标准音 A4（可点击重复播放）")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.brand)
+            Button {
+                Task { await vm.playReferenceA4() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "speaker.wave.2")
+                        .font(.caption)
+                    Text("播放 A4（440Hz）")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundStyle(SwiftAppTheme.brand)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(SwiftAppTheme.brandSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Text("点击下方各音试听，自行判断本题的音")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.brand)
+                .padding(.top, 4)
+
+            let allNotes = [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71] // C4–B4
+            let row1 = Array(allNotes.prefix(6))
+            let row2 = Array(allNotes.suffix(6))
+            VStack(alignment: .leading, spacing: 6) {
+                singleNotePillRow(midis: row1)
+                singleNotePillRow(midis: row2)
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private func singleNotePillRow(midis: [Int]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(midis, id: \.self) { midi in
+                Button {
+                    Task { await vm.playPreviewNote(midi: midi) }
+                } label: {
+                    Text(Self.scientificPitchLabel(midi: midi))
+                        .font(.caption.weight(.semibold).monospaced())
+                        .foregroundStyle(SwiftAppTheme.text)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                }
+                .buttonStyle(.borderless)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 8)
+                .background(SwiftAppTheme.surfaceSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(SwiftAppTheme.line, lineWidth: 1)
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private static func scientificPitchLabel(midi: Int) -> String {
+        let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        let pc = midi % 12
+        let octave = (midi / 12) - 1
+        return "\(names[pc])\(octave)"
+    }
+}
 
 private struct AdaptiveAnswerVisualState {
     let background: Color
@@ -369,6 +661,7 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
     private var rng = SystemRandomNumberGenerator()
     private var questionStartedAt = Date()
     private var previousIntervalLowMidi: Int?
+    private var previousSingleNoteMidi: Int?
     private var playTask: Task<Void, Never>?
     private var prefetchTask: Task<AdaptiveEarQuestion, Never>?
 
@@ -437,6 +730,8 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
                     } else {
                         try await chordPlayer.playChordSequence(EarPlaybackMidi.forProgression(q))
                     }
+                case let .singleNote(q, _, _):
+                    try await intervalPlayer.playAscendingPair(lowMidi: 69, highMidi: q.midi)
                 }
                 playError = nil
             } catch is CancellationError {
@@ -462,7 +757,6 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
         playTask?.cancel()
         playTask = nil
         intervalPlayer.cancelIntervalPlayback()
-        isPlaying = true
         let work = Task { @MainActor in
             do {
                 try await intervalPlayer.playSinglePreview(midi: midi)
@@ -472,10 +766,120 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
             } catch {
                 playError = "播放失败：\(error.localizedDescription)"
             }
-            isPlaying = false
         }
         playTask = work
         await work.value
+    }
+
+    /// 播放标准音 A4（440Hz），供单音题提示用。
+    func playReferenceA4() async {
+        playTask?.cancel()
+        playTask = nil
+        intervalPlayer.cancelIntervalPlayback()
+        let work = Task { @MainActor in
+            do {
+                try await intervalPlayer.playSinglePreview(midi: 69)
+                playError = nil
+            } catch is CancellationError {
+                cancelPlayback()
+            } catch {
+                playError = "播放失败：\(error.localizedDescription)"
+            }
+        }
+        playTask = work
+        await work.value
+    }
+
+    /// 试听和弦——优先使用实际吉他把位（与「播放题目」同音质），回退到 MIDI 合成。
+    func playChordForLabel(_ label: String) async {
+        playTask?.cancel()
+        playTask = nil
+        intervalPlayer.cancelIntervalPlayback()
+        chordPlayer.cancelChordPlayback()
+        let work = Task { @MainActor in
+            do {
+                if let payload = OfflineChordBuilder.buildPayload(displaySymbol: label),
+                   let frets = payload.voicings.first?.explain.frets,
+                   frets.count == 6 {
+                    try await chordPlayer.playChordFromFretsSixToOne(frets)
+                } else {
+                    let midis = Self.midiNotesForChordLabel(label)
+                    guard !midis.isEmpty else {
+                        playError = "无法解析和弦：\(label)"
+                        return
+                    }
+                    try await chordPlayer.playChordMidis(midis)
+                }
+                playError = nil
+            } catch is CancellationError {
+                cancelPlayback()
+            } catch {
+                playError = "播放失败：\(error.localizedDescription)"
+            }
+        }
+        playTask = work
+        await work.value
+    }
+
+    nonisolated private static func midiNotesForChordLabel(_ label: String) -> [Int] {
+        let raw = label.trimmingCharacters(in: .whitespaces)
+        guard !raw.isEmpty else { return [] }
+        let (root, quality) = Self.parseChordLabel(raw)
+        let baseMidi = Self.noteNameToMidi(root)
+        guard baseMidi >= 0 else { return [] }
+        let intervals: [Int]
+        switch quality {
+        case "m", "min", "minor":
+            intervals = [0, 3, 7]
+        case "7", "dom7", "dominant7":
+            intervals = [0, 4, 7, 10]
+        case "m7", "min7", "minor7":
+            intervals = [0, 3, 7, 10]
+        case "maj7", "Δ":
+            intervals = [0, 4, 7, 11]
+        case "dim", "°":
+            intervals = [0, 3, 6]
+        case "dim7", "°7":
+            intervals = [0, 3, 6, 9]
+        case "sus4":
+            intervals = [0, 5, 7]
+        default:
+            intervals = [0, 4, 7]
+        }
+        return intervals.map { baseMidi + $0 }
+    }
+
+    nonisolated private static func parseChordLabel(_ label: String) -> (root: String, quality: String) {
+        let s = label.trimmingCharacters(in: .whitespaces)
+        guard !s.isEmpty else { return ("C", "") }
+        let doubleRoot = String(s.prefix(2))
+        let sharpFlatRoots = ["C#", "Db", "D#", "Eb", "F#", "Gb", "G#", "Ab", "A#", "Bb"]
+        if sharpFlatRoots.contains(doubleRoot) {
+            let rest = String(s.dropFirst(2))
+            return (doubleRoot, rest)
+        }
+        let singleRoot = String(s.prefix(1))
+        let roots = ["C", "D", "E", "F", "G", "A", "B"]
+        if roots.contains(singleRoot) {
+            let rest = String(s.dropFirst())
+            return (singleRoot, rest)
+        }
+        return ("C", "")
+    }
+
+    nonisolated private static func noteNameToMidi(_ name: String) -> Int {
+        let normalized = name.uppercased().trimmingCharacters(in: .whitespaces)
+        let map: [String: Int] = [
+            "C": 0, "C#": 1, "DB": 1,
+            "D": 2, "D#": 3, "EB": 3,
+            "E": 4,
+            "F": 5, "F#": 6, "GB": 6,
+            "G": 7, "G#": 8, "AB": 8,
+            "A": 9, "A#": 10, "BB": 10,
+            "B": 11
+        ]
+        guard let pc = map[normalized] else { return -1 }
+        return 60 + pc
     }
 
     func submit(_ choice: AdaptiveEarChoice) {
@@ -512,7 +916,7 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
             question = await Self.makeQuestion(request: makeNextQuestionRequest())
         }
         currentQuestion = question
-        rememberIntervalLowMidi(from: question)
+        rememberPreviousMidi(from: question)
         selectedChoiceID = nil
         hasRevealed = false
         feedback = nil
@@ -541,7 +945,8 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
             kind: kind,
             difficulty: difficulty,
             score: score,
-            previousIntervalLowMidi: previousIntervalLowMidi
+            previousIntervalLowMidi: previousIntervalLowMidi,
+            previousSingleNoteMidi: previousSingleNoteMidi
         )
     }
 
@@ -571,12 +976,80 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
                 using: &rng
             )
             return .progression(q, difficulty: request.difficulty, difficultyScore: request.score)
+        case .singleNote:
+            let q = Self.makeSingleNoteQuestion(
+                difficulty: request.difficulty,
+                avoidMidi: request.previousSingleNoteMidi,
+                using: &rng
+            )
+            return .singleNote(q, difficulty: request.difficulty, difficultyScore: request.score)
         }
     }
 
-    private func rememberIntervalLowMidi(from question: AdaptiveEarQuestion) {
-        if case let .interval(q, _, _) = question {
+    /// 生成单音测试题。
+    nonisolated private static func makeSingleNoteQuestion(
+        difficulty: AdaptiveEarDifficulty,
+        avoidMidi: Int?,
+        using rng: inout some RandomNumberGenerator
+    ) -> SingleNoteQuestion {
+        let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+        // 根据难度确定可用音
+        let pool: [(midi: Int, label: String)]
+        switch difficulty {
+        case .beginner:
+            // 自然音 C4–C5，只显示音名
+            let naturals = [60, 62, 64, 65, 67, 69, 71, 72] // C D E F G A B C
+            pool = naturals.map { ($0, noteNames[$0 % 12]) }
+        case .intermediate:
+            // 12 半音 C4–B4，只显示音名
+            pool = (60...71).map { ($0, noteNames[$0 % 12]) }
+        case .advanced:
+            // 12 半音 E3–E6，显示完整音名（含八度）
+            pool = (52...76).map { ($0, Self.noteLabelWithOctave(midi: $0)) }
+        }
+
+        // 选目标音（避开上一题的音）
+        var candidates = pool
+        if let avoid = avoidMidi {
+            candidates = candidates.filter { $0.midi != avoid }
+        }
+        if candidates.isEmpty {
+            candidates = pool
+        }
+        let target = candidates.randomElement(using: &rng) ?? pool[0]
+
+        // 生成 4 个选项（含正确答案）
+        var choicePool = pool.filter { $0.midi != target.midi }
+        if choicePool.count > 3 {
+            choicePool.shuffle(using: &rng)
+        }
+        let wrongs = Array(choicePool.prefix(3))
+        var choices = wrongs.map { SingleNoteQuestion.SingleNoteChoice(id: "\($0.midi)", label: $0.label) }
+        choices.append(SingleNoteQuestion.SingleNoteChoice(id: "\(target.midi)", label: target.label))
+        choices.shuffle(using: &rng)
+
+        return SingleNoteQuestion(midi: target.midi, noteLabel: target.label, choices: choices)
+    }
+
+    nonisolated private static func noteLabelWithOctave(midi: Int) -> String {
+        let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        let pc = midi % 12
+        let octave = (midi / 12) - 1
+        return "\(names[pc])\(octave)"
+    }
+
+    private func rememberPreviousMidi(from question: AdaptiveEarQuestion) {
+        switch question {
+        case let .interval(q, _, _):
             previousIntervalLowMidi = q.lowMidi
+            previousSingleNoteMidi = nil
+        case let .singleNote(q, _, _):
+            previousSingleNoteMidi = q.midi
+            previousIntervalLowMidi = nil
+        default:
+            previousIntervalLowMidi = nil
+            previousSingleNoteMidi = nil
         }
     }
 
@@ -640,6 +1113,21 @@ private struct AdaptiveEarQuestionRequest: Sendable {
     let difficulty: AdaptiveEarDifficulty
     let score: Int
     let previousIntervalLowMidi: Int?
+    let previousSingleNoteMidi: Int?
+
+    init(
+        kind: AdaptiveEarQuestionKind,
+        difficulty: AdaptiveEarDifficulty,
+        score: Int,
+        previousIntervalLowMidi: Int? = nil,
+        previousSingleNoteMidi: Int? = nil
+    ) {
+        self.kind = kind
+        self.difficulty = difficulty
+        self.score = score
+        self.previousIntervalLowMidi = previousIntervalLowMidi
+        self.previousSingleNoteMidi = previousSingleNoteMidi
+    }
 }
 
 private struct CombinedStatsView: View {
@@ -654,6 +1142,7 @@ private struct CombinedStatsView: View {
                 statsRow("音程", "\(Int(state.intervalRating.rounded()))")
                 statsRow("和弦", "\(Int(state.chordRating.rounded()))")
                 statsRow("和弦进行", "\(Int(state.progressionRating.rounded()))")
+                statsRow("单音", "\(Int(state.singleNoteRating.rounded()))")
             }
             Section("近期表现") {
                 statsRow("总题数", "\(records.count)")

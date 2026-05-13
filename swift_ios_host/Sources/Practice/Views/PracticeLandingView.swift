@@ -12,6 +12,7 @@ private enum PracticeLandingVisibility {
 /// 练习模块首页：当前产品聚焦自适应练耳，吉他专项入口暂时隐藏但保留旧实现。
 struct PracticeLandingView: View {
     @StateObject private var vm = PracticeLandingViewModel()
+    @State private var showingEarStats = false
 
     var body: some View {
         Group {
@@ -35,15 +36,38 @@ struct PracticeLandingView: View {
         .appNavigationBarChrome()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    TabBarHiddenContainer {
-                        PracticeCalendarScreen(sessions: vm.sessions)
+                Menu {
+                    NavigationLink {
+                        TabBarHiddenContainer {
+                            FocusedEarHubView()
+                        }
+                    } label: {
+                        Label("专项训练", systemImage: "target")
+                    }
+
+                    Button {
+                        showingEarStats = true
+                    } label: {
+                        Label("训练统计", systemImage: "chart.bar.fill")
+                    }
+
+                    NavigationLink {
+                        TabBarHiddenContainer {
+                            PracticeCalendarScreen(sessions: vm.sessions)
+                        }
+                    } label: {
+                        Label("练习日历", systemImage: "calendar")
                     }
                 } label: {
-                    Image(systemName: "calendar")
+                    Image(systemName: "ellipsis.circle")
                         .foregroundStyle(SwiftAppTheme.text)
                 }
-                .accessibilityLabel(AppL10n.t("practice_a11y_training_calendar"))
+                .accessibilityLabel("更多")
+            }
+        }
+        .sheet(isPresented: $showingEarStats) {
+            NavigationStack {
+                EarStatsOverviewView()
             }
         }
         .task { await vm.refresh() }
@@ -583,6 +607,61 @@ private enum PracticeSessionDisplay {
         let m = String(format: "%02d", s / 60)
         let r = String(format: "%02d", s % 60)
         return "\(m):\(r)"
+    }
+}
+
+/// 练耳统计概览（从本地存储加载，与自适应练耳共享数据）
+private struct EarStatsOverviewView: View {
+    @State private var state: AdaptiveEarAbilityState = .initial
+    @State private var records: [AdaptiveEarAttemptRecord] = []
+    @State private var loaded = false
+    private let store: AdaptiveEarTrainingStoring = UserDefaultsAdaptiveEarTrainingStore()
+
+    var body: some View {
+        List {
+            if !loaded {
+                Section { ProgressView().frame(maxWidth: .infinity) }
+            } else {
+                Section("听力能力") {
+                    statsRow("总听力值", "\(state.roundedOverallRating) · \(state.levelTitle)")
+                    statsRow("音程", "\(Int(state.intervalRating.rounded()))")
+                    statsRow("和弦", "\(Int(state.chordRating.rounded()))")
+                    statsRow("和弦进行", "\(Int(state.progressionRating.rounded()))")
+                    statsRow("单音", "\(Int(state.singleNoteRating.rounded()))")
+                }
+                Section("近期表现") {
+                    statsRow("总题数", "\(records.count)")
+                    statsRow("近 20 题正确率", recentAccuracyText)
+                    statsRow("连续答对", "\(state.consecutiveCorrect)")
+                    statsRow("连续答错", "\(state.consecutiveWrong)")
+                    statsRow("今日题数", "\(todayCount)")
+                }
+            }
+        }
+        .navigationTitle("训练统计")
+        .task {
+            state = await store.loadState()
+            records = await store.loadAttempts()
+            loaded = true
+        }
+    }
+
+    private var recentAccuracyText: String {
+        guard let accuracy = AdaptiveEarTrainingEngine.recentAccuracy(records: records) else { return "--" }
+        return "\(Int((accuracy * 100).rounded()))%"
+    }
+
+    private var todayCount: Int {
+        let calendar = Calendar(identifier: .gregorian)
+        return records.filter { calendar.isDateInToday($0.answeredAt) }.count
+    }
+
+    private func statsRow(_ title: String, _ value: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value).foregroundStyle(.secondary)
+        }
     }
 }
 
