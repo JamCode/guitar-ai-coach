@@ -5,12 +5,14 @@ enum AdaptiveEarQuestionKind: String, CaseIterable, Codable, Equatable {
     case interval
     case chord
     case progression
+    case singleNote
 
     var title: String {
         switch self {
         case .interval: return "音程识别"
         case .chord: return "和弦听辨"
         case .progression: return "和弦进行听辨"
+        case .singleNote: return "单音测试"
         }
     }
 
@@ -19,6 +21,7 @@ enum AdaptiveEarQuestionKind: String, CaseIterable, Codable, Equatable {
         case .interval: return "音程"
         case .chord: return "和弦"
         case .progression: return "进行"
+        case .singleNote: return "单音"
         }
     }
 }
@@ -61,10 +64,25 @@ enum AdaptiveEarDifficulty: String, Codable, Equatable {
     }
 }
 
+struct SingleNoteQuestion: Codable, Equatable {
+    /// 目标音 MIDI 编号
+    let midi: Int
+    /// 显示用的音名，如 "C"（初级/中级）或 "C4"（高级）
+    let noteLabel: String
+    /// 四个选项
+    let choices: [SingleNoteChoice]
+
+    struct SingleNoteChoice: Codable, Equatable, Identifiable {
+        let id: String
+        let label: String
+    }
+}
+
 enum AdaptiveEarQuestion: Identifiable {
     case interval(IntervalQuestion, difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
     case chord(EarBankItem, difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
     case progression(EarBankItem, difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
+    case singleNote(SingleNoteQuestion, difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
 
     var id: String {
         stableQuestionId
@@ -76,6 +94,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return "interval-\(q.lowMidi)-\(q.highMidi)-\(q.answer.semitones)"
         case let .chord(q, _, _), let .progression(q, _, _):
             return q.id
+        case let .singleNote(q, _, _):
+            return "singlenote-\(q.midi)"
         }
     }
 
@@ -84,19 +104,20 @@ enum AdaptiveEarQuestion: Identifiable {
         case .interval: return .interval
         case .chord: return .chord
         case .progression: return .progression
+        case .singleNote: return .singleNote
         }
     }
 
     var difficulty: AdaptiveEarDifficulty {
         switch self {
-        case let .interval(_, d, _), let .chord(_, d, _), let .progression(_, d, _):
+        case let .interval(_, d, _), let .chord(_, d, _), let .progression(_, d, _), let .singleNote(_, d, _):
             return d
         }
     }
 
     var difficultyScore: Int {
         switch self {
-        case let .interval(_, _, s), let .chord(_, _, s), let .progression(_, _, s):
+        case let .interval(_, _, s), let .chord(_, _, s), let .progression(_, _, s), let .singleNote(_, _, s):
             return s
         }
     }
@@ -107,6 +128,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return "听一遍，选出两个音之间的音程"
         case let .chord(q, _, _), let .progression(q, _, _):
             return q.promptZh
+        case .singleNote:
+            return "听标准音 A4（440Hz），判断接下来听到的是哪个音"
         }
     }
 
@@ -116,6 +139,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return q.choices.map { AdaptiveEarChoice(id: "\($0.semitones)", label: $0.nameZh) }
         case let .chord(q, _, _), let .progression(q, _, _):
             return q.options.map { AdaptiveEarChoice(id: $0.key, label: $0.label) }
+        case let .singleNote(q, _, _):
+            return q.choices.map { AdaptiveEarChoice(id: $0.id, label: $0.label) }
         }
     }
 
@@ -125,6 +150,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return "\(q.answer.semitones)"
         case let .chord(q, _, _), let .progression(q, _, _):
             return q.correctOptionKey
+        case let .singleNote(q, _, _):
+            return q.choices.first(where: { $0.label == q.noteLabel })?.id ?? ""
         }
     }
 
@@ -134,6 +161,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return q.answer.nameZh
         case let .chord(q, _, _), let .progression(q, _, _):
             return q.options.first(where: { $0.key == q.correctOptionKey })?.label ?? ""
+        case let .singleNote(q, _, _):
+            return q.noteLabel
         }
     }
 
@@ -149,6 +178,9 @@ enum AdaptiveEarQuestion: Identifiable {
                 return q.hintZh ?? "注意听低音走向和每个和弦的功能变化。"
             }
             return "实际和弦：\(marks)。\(q.hintZh ?? "注意听低音走向和每个和弦的功能变化。")"
+        case let .singleNote(q, _, _):
+            let name = Self.scientificPitchLabel(midi: q.midi)
+            return "本题音是 \(name)（MIDI \(q.midi)）"
         }
     }
 
@@ -169,6 +201,13 @@ enum AdaptiveEarQuestion: Identifiable {
             return "小七和弦保留小三和弦的暗色，同时多了更松弛的七度。"
         }
     }
+
+    private static func scientificPitchLabel(midi: Int) -> String {
+        let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        let pc = midi % 12
+        let octave = (midi / 12) - 1
+        return "\(names[pc])\(octave)"
+    }
 }
 
 struct AdaptiveEarChoice: Identifiable, Equatable {
@@ -181,6 +220,7 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
     var intervalRating: Double
     var chordRating: Double
     var progressionRating: Double
+    var singleNoteRating: Double
     var totalAnswered: Int
     var consecutiveCorrect: Int
     var consecutiveWrong: Int
@@ -191,6 +231,7 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
         intervalRating: 400,
         chordRating: 400,
         progressionRating: 400,
+        singleNoteRating: 400,
         totalAnswered: 0,
         consecutiveCorrect: 0,
         consecutiveWrong: 0,
@@ -199,20 +240,21 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
 
     var roundedOverallRating: Int { Int(overallEarRating.rounded()) }
 
-    var levelTitle: String {
-        switch overallEarRating {
-        case ..<350: return "入门"
-        case ..<500: return "初级"
-        case ..<650: return "进阶"
-        default: return "熟练"
-        }
+    /// 将评分换算为等级（每 50 分一级，100~900 → Lv1~Lv16）
+    static func level(for rating: Double) -> Int {
+        let l = (Int(rating.rounded()) - 100) / 50 + 1
+        return max(1, min(16, l))
     }
+
+    var level: Int { Self.level(for: overallEarRating) }
+    var levelTitle: String { "Lv\(level)" }
 
     func rating(for kind: AdaptiveEarQuestionKind) -> Double {
         switch kind {
         case .interval: return intervalRating
         case .chord: return chordRating
         case .progression: return progressionRating
+        case .singleNote: return singleNoteRating
         }
     }
 
@@ -221,6 +263,7 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
         case .interval: intervalRating = value
         case .chord: chordRating = value
         case .progression: progressionRating = value
+        case .singleNote: singleNoteRating = value
         }
     }
 }
@@ -348,6 +391,9 @@ enum AdaptiveEarTrainingEngine {
         case (.progression, .beginner): return 380
         case (.progression, .intermediate): return 540
         case (.progression, .advanced): return 700
+        case (.singleNote, .beginner): return 300
+        case (.singleNote, .intermediate): return 470
+        case (.singleNote, .advanced): return 630
         }
     }
 
