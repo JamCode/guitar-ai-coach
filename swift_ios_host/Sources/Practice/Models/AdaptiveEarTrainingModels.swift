@@ -240,10 +240,10 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
 
     var roundedOverallRating: Int { Int(overallEarRating.rounded()) }
 
-    /// 将评分换算为等级（每 50 分一级，100~900 → Lv1~Lv16）
+    /// 将评分换算为等级（400→Lv1，每 50 分升一级，最高 Lv10）
     static func level(for rating: Double) -> Int {
-        let l = (Int(rating.rounded()) - 100) / 50 + 1
-        return max(1, min(16, l))
+        let l = (Int(rating.rounded()) - 400) / 50 + 1
+        return max(1, min(10, l))
     }
 
     var level: Int { Self.level(for: overallEarRating) }
