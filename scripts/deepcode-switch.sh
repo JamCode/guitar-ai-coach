@@ -5,18 +5,40 @@
 set -e
 
 # ── help ──
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+show_help() {
   echo "DeepCode 模型 & 难度切换脚本"
   echo ""
-  echo "用法:  $(basename "$0") [--help|-h]"
+  echo "用法:"
+  echo "  $(basename "$0")              # 显示本帮助"
+  echo "  $(basename "$0") --set        # 进入交互式配置"
+  echo "  $(basename "$0") --help|-h    # 显示本帮助"
   echo ""
   echo "交互式修改 ~/.deepcode/settings.json 中的:"
-  echo "  • env.MODEL           — deepseek-v4-pro / deepseek-v4-flash / 自定义"
-  echo "  • thinkingEnabled      — true / false"
-  echo "  • reasoningEffort      — low / medium / high"
+  echo "  • env.MODEL             模型名（deepseek-v4-pro / deepseek-v4-flash / 自定义）"
+  echo "  • thinkingEnabled       是否启用思考链（true / false）"
+  echo "  • reasoningEffort       推理强度（low / medium / high）"
+  echo ""
+  echo "示例:"
+  echo "  $(basename "$0") --set"
+  echo "    进入交互菜单，依次选模型 → 思考链 → 推理强度"
+  echo ""
+  echo "  # 以下为等效的手动编辑（不通过脚本）："
+  echo "  cat ~/.deepcode/settings.json"
+  echo "  # 修改后重新打开 Deep Code 面板生效。"
   echo ""
   echo "改完后重新打开 Deep Code 面板生效。"
+}
+
+if [ "$#" -eq 0 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  show_help
   exit 0
+fi
+
+if [ "$1" != "--set" ]; then
+  echo "未知参数: $1"
+  echo ""
+  show_help
+  exit 1
 fi
 
 SETTINGS="$HOME/.deepcode/settings.json"
