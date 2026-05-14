@@ -297,3 +297,32 @@ ssh "$ECS_USER@$ECS_HOST" "sudo nginx -t && sudo systemctl reload nginx"
 - 前端无 ESLint 配置，至少跑 `npx tsc --noEmit` 或 `npm run build`。
 - Swift 改动优先跑 `xcodebuild ... build`；不能跑时说明原因。
 - 工作区可能有用户未提交改动，提交/回滚前先看 `git status`，不要覆盖无关改动。
+
+## Superpowers Skills
+
+本项目的 `skills/` 目录包含了 [Superpowers](https://github.com/obra/superpowers) AI 编程技能框架，提升 AI Agent 的软件工程能力。
+
+### 技能列表（`skills/skills/`）
+
+| 技能 | 说明 |
+|---|---|
+| `using-superpowers` | 入口技能——告知 Agent 如何查找和调用其他技能 |
+| `brainstorming` | 写代码前先脑暴、设计方案 |
+| `writing-plans` | 将设计方案拆解为可执行的任务计划 |
+| `test-driven-development` | TDD 红绿重构流程 |
+| `executing-plans` | 按计划执行开发任务 |
+| `subagent-driven-development` | 子 Agent 并行开发 + 双重 Code Review |
+| `requesting-code-review` | 请求代码审查 |
+| `receiving-code-review` | 接受代码审查反馈 |
+| `systematic-debugging` | 系统化调试——禁止乱猜，按步骤排查 |
+| `verification-before-completion` | 完成前必须验证 |
+| `using-git-worktrees` | Git Worktree 隔离开发环境 |
+| `dispatching-parallel-agents` | 并行调度子 Agent |
+| `finishing-a-development-branch` | 完成开发分支/PR |
+| `writing-skills` | 编写新的 skill 文件 |
+
+### 使用方式
+
+- AI Agent 在执行任务前应优先查看 `skills/skills/using-superpowers/SKILL.md` 了解技能调用方式。
+- 根据当前任务类型（设计、编码、调试、审查等）查阅对应技能的 `SKILL.md`。
+- 用户指令始终优先于技能规则。

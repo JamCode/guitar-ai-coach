@@ -110,7 +110,7 @@ struct FocusedEarTrainingSessionView: View {
             }
             if case .singleNote = question {
                 hintButton("逐音试听", active: $showHintStrip) {
-                    singleNoteHintView
+                    singleNoteHintView(for: question)
                 }
             }
 
@@ -336,8 +336,10 @@ struct FocusedEarTrainingSessionView: View {
         }
     }
 
-    private var singleNoteHintView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func singleNoteHintView(for question: AdaptiveEarQuestion) -> some View {
+        let range = singleNoteHintMidiRange(for: question)
+        let allNotes = Array(range)
+        return VStack(alignment: .leading, spacing: 8) {
             Text("标准音 A4（可点击重复播放）")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.brand)
@@ -361,8 +363,22 @@ struct FocusedEarTrainingSessionView: View {
                 .foregroundStyle(SwiftAppTheme.brand)
                 .padding(.top, 4)
 
-            let allNotes = [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
             chromaticPillGrid(strip: allNotes, highlightSet: [])
+        }
+    }
+
+    /// 根据单音题目难度，返回与 `makeSingleNoteQuestion` 音池匹配的半音 MIDI 范围
+    private func singleNoteHintMidiRange(for question: AdaptiveEarQuestion) -> ClosedRange<Int> {
+        guard case let .singleNote(_, difficulty, _) = question else {
+            return 60...71
+        }
+        switch difficulty {
+        case .beginner:
+            return 60...72   // C4–C5，匹配 beginner 池 [60,62,64,65,67,69,71,72]
+        case .intermediate:
+            return 60...71   // C4–B4，匹配 intermediate 池 (60...71)
+        case .advanced:
+            return 52...76   // E3–E5，匹配 advanced 池 (52...76)
         }
     }
 

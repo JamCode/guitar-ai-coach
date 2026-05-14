@@ -279,7 +279,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
                 self.playError = nil
                 self.hasCompletedInitialAudition = true
             } catch is CancellationError {
-                self.player.cancelChordPlayback()
+                // 被替换（用户点了重播）或离开页面时静默退出，不调 cancelChordPlayback，
+                // 让旧音频自然衰减与新音叠加，消除快速重播的卡顿感。
             } catch {
                 self.playError = "播放失败：\(error.localizedDescription)"
             }

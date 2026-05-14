@@ -5,12 +5,18 @@ public protocol IntervalTonePlaying: AnyObject {
     func playAscendingPair(lowMidi: Int, highMidi: Int) async throws
     /// 单音试听（与指板同源 SF2；略短 gate 便于快速多点）。
     func playSinglePreview(midi: Int) async throws
+    /// 快速点按式预览：极短 gate、不阻断前音、不 sleep，适合逐音试听连续点击。
+    func playQuickPreview(midi: Int) async throws
     /// 打断当前由本播放器触发的上行两音 / 单音试听（离开页面或快速重播时调用）。
     func cancelIntervalPlayback()
 }
 
 public extension IntervalTonePlaying {
     func cancelIntervalPlayback() {}
+}
+
+public extension IntervalTonePlaying {
+    func playQuickPreview(midi: Int) async throws {}
 }
 
 public final class IntervalTonePlayer: IntervalTonePlaying {
@@ -25,14 +31,16 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
 
     /// 与 `FretboardTonePlayer` 一致：钢弦吉他 SF2 单音。
     private static let sampledVelocity: UInt8 = 100
-    /// 单音延音时长。原为 1.1，用户反馈偏慢、延音太长，调整为 0.7 让听感更紧凑。
-    private static let sampledGateSec = 0.7
-    /// 第一音 gate 结束后再留的空档，再触发第二音。原为 0.28，缩短为 0.15 减少两音间等待。
-    private static let silenceAfterFirstGateSec = 0.15
-    /// 第二音 note-off 后等待的释音尾，再结束 `playAscendingPair`（用于 UI 解锁「播放」）。
-    private static let releaseTailAfterSecondGateSec = 0.12
-    private static let previewGateSec = 0.52
-    private static let previewTailSec = 0.18
+    /// 单音延音时长。原为 1.1→0.7，再调短至 0.45 让单音测试更紧凑快速。
+    private static let sampledGateSec = 0.45
+    /// 第一音 gate 结束后再留的空档，再触发第二音。用户反馈 0.06 太短，调至 0.20 让两音间隔清晰。
+    private static let silenceAfterFirstGateSec = 0.20
+    /// 第二音 note-off 后等待的释音尾，再结束 `playAscendingPair`。用户反馈 0.06 结束突兀，调至 0.15。
+    private static let releaseTailAfterSecondGateSec = 0.15
+    private static let previewGateSec = 0.35
+    private static let previewTailSec = 0.12
+    /// 快速预览用 gate：比 `previewGateSec` 更短，适合连续点击逐音试听，听感紧凑不粘连。
+    private static let quickPreviewGateSec = 0.22
 
     public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
@@ -122,6 +130,28 @@ public final class IntervalTonePlayer: IntervalTonePlaying {
             gateDurationSec: Self.previewGateSec
         )
         try await cooperativeSleep(seconds: Self.previewGateSec + Self.previewTailSec, baseline: baseline)
+    }
+
+    public func playQuickPreview(midi: Int) async throws {
+        // 不重新配置 AVAudioSession（快速点按时避免几十 ms 的 setActive 卡顿）
+        // 不停止前一个音，让它的 gate 自然到期释放（避免中断感）
+        // 不 sleep，直接返回（避免 Task 阻塞主 actor）
+        stateLock.lock()
+        activeAscendingLow = nil
+        activeAscendingHigh = nil
+        activePreviewMidi = midi
+        stateLock.unlock()
+        defer {
+            stateLock.lock()
+            activePreviewMidi = nil
+            stateLock.unlock()
+        }
+        try audio.start()
+        try audio.playSampledGuitarNote(
+            midi: midi,
+            velocity: Self.sampledVelocity,
+            gateDurationSec: Self.quickPreviewGateSec
+        )
     }
 
     private func cooperativeSleep(seconds: Double, baseline: Int) async throws {

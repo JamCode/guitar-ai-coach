@@ -9,6 +9,12 @@ public final class ChordVoicingTonePlayer {
     /// 用于取消上一次尚未触发的延迟任务，避免快速连点叠音。
     private var playbackSerial = 0
 
+    /// 与练耳一致的取消代计数器，用于 `playChordFretsAwaitable` 中的
+    /// `cooperativeSleep` 早期检测静音请求，避免旧任务 `CancellationError`
+    /// catch 块误调 `stopAllSampledGuitarNotes` 杀新音。
+    private var cancelGeneration = 0
+    private let stateLock = NSLock()
+
     public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
     }
@@ -48,6 +54,8 @@ public final class ChordVoicingTonePlayer {
     }
 
     /// 与 `playChordFrets` 同一琶音→柱式节奏，但顺序 `await` 至柱式释音尾结束，供练耳等需要与 UI 同步的场景。
+    /// 使用 `cooperativeSleep` 代替裸 `Task.sleep`，让旧任务在被 `cancelPlayback` 取消时
+    /// 能早期抛出 `CancellationError`，避免 catch 块误杀新音。
     public func playChordFretsAwaitable(_ frets: [Int]) async throws {
         let midis = GuitarStandardTuning.midisFromChordFretsSixToOne(frets)
         guard !midis.isEmpty else { return }
@@ -61,17 +69,17 @@ public final class ChordVoicingTonePlayer {
 
         if n == 1 {
             try audio.playSampledGuitarNote(midi: midis[0], velocity: velArp, gateDurationSec: 1.15)
-            try await Task.sleep(nanoseconds: UInt64((1.15 + 0.22) * 1_000_000_000))
+            try await cooperativeSleep(seconds: 1.15 + 0.22)
             return
         }
 
         for (i, midi) in midis.enumerated() {
             if i > 0 {
-                try await Task.sleep(nanoseconds: UInt64(arpStep * 1_000_000_000))
+                try await cooperativeSleep(seconds: arpStep)
             }
             try audio.playSampledGuitarNote(midi: midi, velocity: velArp, gateDurationSec: arpGate)
         }
-        try await Task.sleep(nanoseconds: UInt64((arpGate + pauseAfterArpeggio) * 1_000_000_000))
+        try await cooperativeSleep(seconds: arpGate + pauseAfterArpeggio)
         try audio.playSampledGuitarChord(
             midis: midis,
             velocity: velBlock,
@@ -80,7 +88,40 @@ public final class ChordVoicingTonePlayer {
         )
         let staggerSpan = Double(max(0, n - 1)) * Self.blockStaggerSec
         let blockTail = staggerSpan + Self.blockWaitHeadroomSec + Self.blockAudibleTailSec
-        try await Task.sleep(nanoseconds: UInt64(blockTail * 1_000_000_000))
+        try await cooperativeSleep(seconds: blockTail)
+    }
+
+    /// 打断当前 `playChordFretsAwaitable` 的执行。
+    /// `EarChordPlayer.cancelChordPlayback()` 已调 `stopAllSampledGuitarNotes`，
+    /// 此处只需递增代计数器让 `cooperativeSleep` 早期抛出。
+    public func cancelAwaitablePlayback() {
+        stateLock.lock()
+        cancelGeneration += 1
+        stateLock.unlock()
+    }
+
+    private func cooperativeSleep(seconds: Double) async throws {
+        guard seconds > 0 else { return }
+        let chunkSec = 0.05
+        var remaining = seconds
+        let baseline: Int = {
+            stateLock.lock()
+            let v = cancelGeneration
+            stateLock.unlock()
+            return v
+        }()
+        while remaining > 0 {
+            try Task.checkCancellation()
+            stateLock.lock()
+            let currentGeneration = cancelGeneration
+            stateLock.unlock()
+            if currentGeneration != baseline {
+                throw CancellationError()
+            }
+            let slice = min(chunkSec, remaining)
+            try await Task.sleep(nanoseconds: UInt64(slice * 1_000_000_000))
+            remaining -= slice
+        }
     }
 
     private static let arpStepSec = 0.28

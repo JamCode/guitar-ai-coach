@@ -4,6 +4,7 @@ enum SheetLibraryError: Error, LocalizedError {
     case emptySources
     case invalidDocumentsRoot
     case encodingFailed
+    case entryNotFound(String)
 
     var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum SheetLibraryError: Error, LocalizedError {
             return "无法访问本地文档目录"
         case .encodingFailed:
             return "编码失败"
+        case .entryNotFound(let id):
+            return "未找到条目：\(id)"
         }
     }
 }
@@ -108,7 +111,9 @@ actor SheetLibraryStore {
         guard !trimmed.isEmpty else { return }
 
         var all = await loadAll()
-        guard let idx = all.firstIndex(where: { $0.id == id }) else { return }
+        guard let idx = all.firstIndex(where: { $0.id == id }) else {
+            throw SheetLibraryError.entryNotFound(id)
+        }
         all[idx].displayName = trimmed
         try writeAll(entries: all)
     }

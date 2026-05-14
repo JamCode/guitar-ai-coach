@@ -12,4 +12,12 @@ swift_app/.build/
 swift_app/.swiftpm/xcode/xcuserdata/
 swift_ios_host/install-device.local.env
 swift_ios_host/upload-testflight.local.env
+# Generated build-time sources
+swift_ios_host/Sources/Generated/
 .superpowers/
+
+# Superpowers skills (external repo)
+skills/
+
+# Superpowers / Deepcoder local cache
+.deepcode/

@@ -13,12 +13,11 @@ from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
 from chord_auth import APP_TOKEN_ENV, app_token_status, configured_app_token
-from inference import ChordOnnxInferenceService, InferenceInputShapeError, ffmpeg_available
+from inference import ChordOnnxInferenceService, ffmpeg_available
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "outputs"
-MODEL_PATH = BASE_DIR / "models" / "consonance_ace.onnx"
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 ALLOWED_EXTS = {".wav", ".mp3", ".m4a"}
 
@@ -27,7 +26,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 logger = logging.getLogger("chord_onnx")
 app = FastAPI(title="Chord ONNX Server", version="0.1.0")
-service = ChordOnnxInferenceService(model_path=MODEL_PATH)
+service = ChordOnnxInferenceService()
 ENABLE_RESPONSE_DEBUG = os.getenv("CHORD_ONNX_RESPONSE_DEBUG", "").strip().lower() in {
     "1",
     "true",
@@ -134,14 +133,9 @@ def _chord_debug_log_response_payload(
 
 
 @app.on_event("startup")
-def _startup_log_model() -> None:
-    info = service.model_info
-    print("[ONNX] ffmpeg on PATH:", ffmpeg_available())
-    print("[ONNX] model path:", str(MODEL_PATH))
-    print("[ONNX] input name:", info["input_name"])
-    print("[ONNX] input shape:", info["input_shape"])
-    print("[ONNX] output names:", info["output_names"])
-    print("[ONNX] output shapes:", info["output_shapes"])
+def _startup_log() -> None:
+    print("[SERVICE] Chord recognition v2 (chroma + beat + HMM)")
+    print("[SERVICE] ffmpeg on PATH:", ffmpeg_available())
 
 
 @app.get("/health")
@@ -263,22 +257,6 @@ async def transcribe(request: Request, file: UploadFile = File(...)) -> JSONResp
                 payload=payload,
             )
         return JSONResponse(content=payload)
-    except InferenceInputShapeError as exc:
-        logger.warning(
-            "[transcribe] request_id=%s input_shape_mismatch: %s",
-            req_id,
-            exc,
-            exc_info=True,
-        )
-        return JSONResponse(
-            status_code=400,
-            content={
-                "success": False,
-                "error": "input_shape_mismatch",
-                "detail": str(exc),
-                "request_id": req_id,
-            },
-        )
     except HTTPException:
         raise
     except Exception as exc:  # noqa: BLE001

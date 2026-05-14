@@ -1201,7 +1201,16 @@ final class TranscriptionHomeViewModel: ObservableObject {
         try Task.checkCancellation()
 
         await onProgress(.analyzing())
-        let local = try await LocalChordRecognitionService(modelURL: nil).transcribe(media: decoded)
+        let appToken = Secrets.chordOnnxAppToken
+        let local = try await RemoteChordRecognitionService.transcribeAudio(
+            fileURL: tempM4a,
+            appToken: appToken,
+            progressHandler: { fraction in
+                Task { @MainActor in
+                    await onProgress(.analyzing(0.45 + fraction * 0.43))
+                }
+            }
+        )
         let rawSegments = local.segments
         let displaySegments = local.displaySegments
         let resolvedChartSegments = local.chordChartSegments
@@ -1211,7 +1220,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
         let durationMs = local.durationMs
         let resolvedKey = local.originalKey
         #if DEBUG
-        print("[LocalChord] key=\(resolvedKey) displaySegments=\(displaySegments.count) chordChartSegments=\(resolvedChartSegments.count)")
+        print("[RemoteChord] key=\(resolvedKey) displaySegments=\(displaySegments.count) chordChartSegments=\(resolvedChartSegments.count)")
         #endif
 
         let stem = (url.lastPathComponent as NSString).deletingPathExtension
@@ -1229,7 +1238,7 @@ final class TranscriptionHomeViewModel: ObservableObject {
             chordChartSegments: resolvedChartSegments,
             timingVariants: local.timingVariants,
             timingVariantStats: local.timingVariantStats,
-            backend: "local-coreml",
+            backend: "remote",
             waveform: []
         )
         if sourceType == .photoLibrary {

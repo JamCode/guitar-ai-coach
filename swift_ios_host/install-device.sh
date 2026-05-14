@@ -279,6 +279,19 @@ DERIVED="${DERIVED_DATA_PATH:-/tmp/SwiftEarHostDeviceBuild-${USER}}"
 echo "==> xcodebuild（${CONFIGURATION} / generic iOS）→ ${DERIVED}"
 rm -rf "${DERIVED}"
 
+# 写入 Secrets.swift（确保真机运行时能读到 CHORD_ONNX_APP_TOKEN）
+GEN_DIR="${HOST_DIR}/Sources/Generated"
+mkdir -p "${GEN_DIR}"
+SECRETS_FILE="${GEN_DIR}/Secrets.swift"
+TOKEN_VALUE="${CHORD_ONNX_APP_TOKEN:-}"
+cat > "${SECRETS_FILE}" <<-SWIFT_EOF
+// Auto-generated. Do not edit.
+enum Secrets {
+    static let chordOnnxAppToken: String = "${TOKEN_VALUE}"
+}
+SWIFT_EOF
+echo "==> 已写入 Secrets.swift (token length: ${#TOKEN_VALUE})"
+
 XCODE_ARGS=(
   -project "${PROJECT}"
   -scheme "${SCHEME}"

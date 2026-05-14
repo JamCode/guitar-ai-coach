@@ -30,12 +30,23 @@ public final class EarChordPlayer: EarChordPlaying {
     /// 和弦进行中逐和弦柱式：释音等待较短，下一和弦更紧凑（仍略长于 gate 以免叠音刺耳）。
     private static let progressionChordReleaseWaitSec = 0.68
 
+    /// 与 `IntervalTonePlayer` 一致的取消代计数器：每次 `cancelChordPlayback` 递增，
+    /// `cooperativeSleep` 在 chunk 间隔检查，发现代差立刻早期抛出
+    /// `CancellationError`，避免旧任务 catch 块在旧音已停后还去调
+    /// `stopAllSampledGuitarNotes` 误杀新播放的音。
+    private var cancelGeneration = 0
+    private let stateLock = NSLock()
+
     public init(audio: AudioEngineServing = AudioEngineService.shared) {
         self.audio = audio
         self.voicing = ChordVoicingTonePlayer(audio: audio)
     }
 
     public func cancelChordPlayback() {
+        stateLock.lock()
+        cancelGeneration += 1
+        stateLock.unlock()
+        voicing.cancelAwaitablePlayback()
         audio.stopAllSampledGuitarNotes()
         audio.stopPluckedGuitarVoices()
     }
@@ -67,6 +78,8 @@ public final class EarChordPlayer: EarChordPlaying {
     }
 
     /// 播放一帧柱式 SF2；`releaseTailSec` 为扫弦跨度之后的等待（进行内用短尾，单和弦用长尾）。
+    /// 使用 `cooperativeSleep` 替代裸 `Task.sleep`，确保快速重播时旧任务早期抛出
+    /// `CancellationError`，避免竞态中 `stopAllSampledGuitarNotes` 误杀新音。
     private func playChordBlockSF2(midis: [Int], releaseTailSec: Double) async throws {
         try audio.start()
         let notes = Self.sortedUniqueMidis(midis)
@@ -79,7 +92,7 @@ public final class EarChordPlayer: EarChordPlaying {
         )
         let staggerSpan = Double(max(0, notes.count - 1)) * Self.chordStaggerSec
         let waitSec = staggerSpan + releaseTailSec
-        try await Task.sleep(nanoseconds: UInt64(waitSec * 1_000_000_000))
+        try await cooperativeSleep(seconds: waitSec)
     }
 
     public func playChordSequence(_ sequence: [[Int]]) async throws {
@@ -98,9 +111,34 @@ public final class EarChordPlayer: EarChordPlaying {
             velocity: Self.sampledVelocity,
             gateDurationSec: Self.previewGateSec
         )
-        try await Task.sleep(
-            nanoseconds: UInt64((Self.previewGateSec + Self.previewTailSec) * 1_000_000_000)
-        )
+        try await cooperativeSleep(seconds: Self.previewGateSec + Self.previewTailSec)
+    }
+
+    /// 与 `IntervalTonePlayer.cooperativeSleep` 等价的取消感知等待。
+    /// 每 50ms 检查一次 `cancelGeneration`；若在被替代后调用，立即早期抛出
+    /// `CancellationError`，避免旧任务 catch 块的 `stopAllSampledGuitarNotes` 误杀新音。
+    private func cooperativeSleep(seconds: Double) async throws {
+        guard seconds > 0 else { return }
+        let chunkSec = 0.05
+        var remaining = seconds
+        let baseline: Int = {
+            stateLock.lock()
+            let v = cancelGeneration
+            stateLock.unlock()
+            return v
+        }()
+        while remaining > 0 {
+            try Task.checkCancellation()
+            stateLock.lock()
+            let currentGeneration = cancelGeneration
+            stateLock.unlock()
+            if currentGeneration != baseline {
+                throw CancellationError()
+            }
+            let slice = min(chunkSec, remaining)
+            try await Task.sleep(nanoseconds: UInt64(slice * 1_000_000_000))
+            remaining -= slice
+        }
     }
 
     /// 低→高排序、去重，便于扫弦与与 `AudioEngineService` 的 stagger 一致。

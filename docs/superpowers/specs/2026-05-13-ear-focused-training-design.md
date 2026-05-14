@@ -10,7 +10,7 @@
 - **听力值系统**：`AdaptiveEarAbilityState`（包含 overallRating + 各题型子评分），存储在 `UserDefaultsAdaptiveEarTrainingStore`（本地 UserDefaults）
 - **答题记录**：`AdaptiveEarAttemptRecord`，同样存于 UserDefaults
 - **评分引擎**：`AdaptiveEarTrainingEngine`，ELO 风格算法，根据答题对错更新各维度的评分
-- **问题生**器：`IntervalQuestionGenerator`（音程）、`EarChordMcqGenerator`（和弦）、`EarProgressionProceduralGenerator`（进行）、`makeSingleNoteQuestion`（单音）
+- **问题生成器**：`IntervalQuestionGenerator`（音程）、`EarChordMcqGenerator`（和弦）、`EarProgressionProceduralGenerator`（进行）、`makeSingleNoteQuestion`（单音）
 
 ## 设计
 

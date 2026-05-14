@@ -85,7 +85,9 @@ struct SheetLibraryView: View {
                 vm.renamingEntry = nil
             }
             Button(LocalizedStringResource("sheets_rename_confirm", bundle: .main)) {
-                Task { await vm.confirmRename(to: renameDraft) }
+                guard let captured = vm.renamingEntry else { return }
+                let draft = renameDraft
+                Task { await vm.confirmRename(entry: captured, to: draft) }
             }
             .disabled(renameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } message: {
@@ -140,6 +142,7 @@ struct SheetLibraryView: View {
                     .buttonStyle(.plain)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button {
+                            renameDraft = entry.displayName
                             vm.startRename(entry)
                         } label: {
                             Text(LocalizedStringResource("sheets_action_rename", bundle: .main))
@@ -154,6 +157,7 @@ struct SheetLibraryView: View {
                     }
                     .contextMenu {
                         Button {
+                            renameDraft = entry.displayName
                             vm.startRename(entry)
                         } label: {
                             Label(
@@ -289,8 +293,7 @@ final class SheetLibraryViewModel: ObservableObject {
         renamingEntry = entry
     }
 
-    func confirmRename(to displayName: String) async {
-        guard let entry = renamingEntry else { return }
+    func confirmRename(entry: SheetEntry, to displayName: String) async {
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             renamingEntry = nil
@@ -301,6 +304,7 @@ final class SheetLibraryViewModel: ObservableObject {
             try await store.rename(id: entry.id, displayName: trimmed)
             renamingEntry = nil
             await reload()
+            objectWillChange.send()
             if selectedEntry?.id == entry.id {
                 selectedEntry = entries.first(where: { $0.id == entry.id })
             }

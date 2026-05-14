@@ -246,7 +246,7 @@ struct AdaptiveEarTrainingView: View {
                 .buttonStyle(.plain)
 
                 if showHintStrip {
-                    singleNoteHintView
+                    singleNoteHintView(for: question)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
@@ -526,8 +526,12 @@ struct AdaptiveEarTrainingView: View {
 
     // MARK: - Single Note Hint
 
-    private var singleNoteHintView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func singleNoteHintView(for question: AdaptiveEarQuestion) -> some View {
+        let range = singleNoteHintMidiRange(for: question)
+        let allNotes = Array(range)
+        let row1 = Array(allNotes.prefix((allNotes.count + 1) / 2))
+        let row2 = Array(allNotes.suffix(allNotes.count - row1.count))
+        return VStack(alignment: .leading, spacing: 8) {
             Text("标准音 A4（可点击重复播放）")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.brand)
@@ -553,15 +557,27 @@ struct AdaptiveEarTrainingView: View {
                 .foregroundStyle(SwiftAppTheme.brand)
                 .padding(.top, 4)
 
-            let allNotes = [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71] // C4–B4
-            let row1 = Array(allNotes.prefix(6))
-            let row2 = Array(allNotes.suffix(6))
             VStack(alignment: .leading, spacing: 6) {
                 singleNotePillRow(midis: row1)
                 singleNotePillRow(midis: row2)
             }
         }
         .padding(.top, 4)
+    }
+
+    /// 根据单音题目难度，返回与 `makeSingleNoteQuestion` 音池匹配的半音 MIDI 范围
+    private func singleNoteHintMidiRange(for question: AdaptiveEarQuestion) -> ClosedRange<Int> {
+        guard case let .singleNote(_, difficulty, _) = question else {
+            return 60...71
+        }
+        switch difficulty {
+        case .beginner:
+            return 60...72   // C4–C5，匹配 beginner 池 [60,62,64,65,67,69,71,72]
+        case .intermediate:
+            return 60...71   // C4–B4，匹配 intermediate 池 (60...71)
+        case .advanced:
+            return 52...76   // E3–E5，匹配 advanced 池 (52...76)
+        }
     }
 
     private func singleNotePillRow(midis: [Int]) -> some View {
@@ -711,6 +727,8 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
     func playCurrent() async {
         playTask?.cancel()
         playTask = nil
+        // 不调 cancelPlayback，让旧音频自然衰减与新音叠加，
+        // 消除快速重播的卡顿感。离开页面时 onDisappear 会走 cancelPlayback 全停。
         guard let question = currentQuestion else { return }
         isPlaying = true
         let work = Task { @MainActor in
@@ -735,7 +753,8 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
                 }
                 playError = nil
             } catch is CancellationError {
-                cancelPlayback()
+                // 被替换（用户点了重播）时静默退出，
+                // 不调 cancelPlayback，让旧音自然衰减与新音叠加。
             } catch {
                 playError = "播放失败：\(error.localizedDescription)"
             }
@@ -756,10 +775,10 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
     func playPreviewNote(midi: Int) async {
         playTask?.cancel()
         playTask = nil
-        intervalPlayer.cancelIntervalPlayback()
+        // 不调 cancelIntervalPlayback()：让前一个音自然衰减而非 abrupt stop，消除连续点击的停顿感
         let work = Task { @MainActor in
             do {
-                try await intervalPlayer.playSinglePreview(midi: midi)
+                try await intervalPlayer.playQuickPreview(midi: midi)
                 playError = nil
             } catch is CancellationError {
                 cancelPlayback()
@@ -992,20 +1011,15 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
         avoidMidi: Int?,
         using rng: inout some RandomNumberGenerator
     ) -> SingleNoteQuestion {
-        let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-
-        // 根据难度确定可用音
+        // 根据难度确定可用音，全部显示含八度的音名（如 C4、F#4）
         let pool: [(midi: Int, label: String)]
         switch difficulty {
         case .beginner:
-            // 自然音 C4–C5，只显示音名
-            let naturals = [60, 62, 64, 65, 67, 69, 71, 72] // C D E F G A B C
-            pool = naturals.map { ($0, noteNames[$0 % 12]) }
+            let naturals = [60, 62, 64, 65, 67, 69, 71, 72]
+            pool = naturals.map { ($0, Self.noteLabelWithOctave(midi: $0)) }
         case .intermediate:
-            // 12 半音 C4–B4，只显示音名
-            pool = (60...71).map { ($0, noteNames[$0 % 12]) }
+            pool = (60...71).map { ($0, Self.noteLabelWithOctave(midi: $0)) }
         case .advanced:
-            // 12 半音 E3–E6，显示完整音名（含八度）
             pool = (52...76).map { ($0, Self.noteLabelWithOctave(midi: $0)) }
         }
 

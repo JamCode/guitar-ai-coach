@@ -89,7 +89,8 @@ public final class IntervalEarSessionViewModel: ObservableObject {
                 self.playError = nil
                 self.hasCompletedInitialAudition = true
             } catch is CancellationError {
-                self.player.cancelIntervalPlayback()
+                // 被替换（用户点了重播）或离开页面时静默退出，
+                // 不调 cancelIntervalPlayback，让旧音自然衰减与新音重叠。
             } catch {
                 self.playError = "播放失败：\(error.localizedDescription)"
             }

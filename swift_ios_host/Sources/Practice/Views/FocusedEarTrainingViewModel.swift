@@ -69,6 +69,8 @@ final class FocusedEarTrainingViewModel: ObservableObject {
     func playCurrent() async {
         playTask?.cancel()
         playTask = nil
+        // 不调 cancelPlayback，让旧音频自然衰减与新音叠加，
+        // 消除快速重播的卡顿感。离开页面时 onDisappear 会走 cancelPlayback 全停。
         guard let question = currentQuestion else { return }
         isPlaying = true
         let work = Task { @MainActor in
@@ -93,7 +95,8 @@ final class FocusedEarTrainingViewModel: ObservableObject {
                 }
                 playError = nil
             } catch is CancellationError {
-                cancelPlayback()
+                // 被替换（用户点了重播）时静默退出，
+                // 不调 cancelPlayback，让旧音自然衰减与新音叠加。
             } catch {
                 playError = "播放失败：\(error.localizedDescription)"
             }
@@ -114,10 +117,10 @@ final class FocusedEarTrainingViewModel: ObservableObject {
     func playPreviewNote(midi: Int) async {
         playTask?.cancel()
         playTask = nil
-        intervalPlayer.cancelIntervalPlayback()
+        // 不调 cancelIntervalPlayback()：让前一个音自然衰减而非 abrupt stop，消除连续点击的停顿感
         let work = Task { @MainActor in
             do {
-                try await intervalPlayer.playSinglePreview(midi: midi)
+                try await intervalPlayer.playQuickPreview(midi: midi)
                 playError = nil
             } catch is CancellationError {
                 cancelPlayback()
@@ -314,14 +317,13 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         avoidMidi: Int?,
         using rng: inout some RandomNumberGenerator
     ) -> SingleNoteQuestion {
-        let noteNames = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
         let pool: [(midi: Int, label: String)]
         switch difficulty {
         case .beginner:
             let naturals = [60,62,64,65,67,69,71,72]
-            pool = naturals.map { ($0, noteNames[$0 % 12]) }
+            pool = naturals.map { ($0, Self.noteLabelWithOctave(midi: $0)) }
         case .intermediate:
-            pool = (60...71).map { ($0, noteNames[$0 % 12]) }
+            pool = (60...71).map { ($0, Self.noteLabelWithOctave(midi: $0)) }
         case .advanced:
             pool = (52...76).map { ($0, Self.noteLabelWithOctave(midi: $0)) }
         }
