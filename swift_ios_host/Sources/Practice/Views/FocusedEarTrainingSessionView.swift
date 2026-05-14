@@ -285,7 +285,7 @@ struct FocusedEarTrainingSessionView: View {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     ForEach(question.choices) { choice in
                         Button {
-                            Task { await vm.playChordForLabel(choice.label) }
+                            Task { await vm.playChordForLabel(choice.label, root: question.root) }
                         } label: {
                             Text(choice.label)
                                 .font(.subheadline.weight(.semibold))
