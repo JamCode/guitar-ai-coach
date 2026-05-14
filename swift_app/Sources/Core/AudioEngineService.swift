@@ -367,7 +367,15 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
     private func startLocked(activateSession: Bool) throws {
-        guard !started else { return }
+        if started {
+            // 引擎已运行时仍可能因来电/后台切换导致系统把会话降为 inactive，
+            // 此时若直接返回，后续练耳播放会“成功调用但无声”。
+            // 每次显式 start 都补一次会话激活，确保从中断恢复后首个题目也有声。
+            if activateSession {
+                try configureSession()
+            }
+            return
+        }
         if activateSession {
             try configureSession()
         }
@@ -575,4 +583,3 @@ public final class AudioEngineService: AudioEngineServing {
     }
 
 }
-
