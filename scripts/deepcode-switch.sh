@@ -4,6 +4,21 @@
 
 set -e
 
+# ── help ──
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  echo "DeepCode 模型 & 难度切换脚本"
+  echo ""
+  echo "用法:  $(basename "$0") [--help|-h]"
+  echo ""
+  echo "交互式修改 ~/.deepcode/settings.json 中的:"
+  echo "  • env.MODEL           — deepseek-v4-pro / deepseek-v4-flash / 自定义"
+  echo "  • thinkingEnabled      — true / false"
+  echo "  • reasoningEffort      — low / medium / high"
+  echo ""
+  echo "改完后重新打开 Deep Code 面板生效。"
+  exit 0
+fi
+
 SETTINGS="$HOME/.deepcode/settings.json"
 
 if [ ! -f "$SETTINGS" ]; then
