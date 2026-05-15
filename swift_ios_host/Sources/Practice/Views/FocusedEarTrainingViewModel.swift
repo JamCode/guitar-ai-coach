@@ -150,7 +150,7 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         await work.value
     }
 
-    func playChordForLabel(_ label: String) async {
+    func playChordForLabel(_ label: String, root: String? = nil) async {
         playTask?.cancel()
         playTask = nil
         intervalPlayer.cancelIntervalPlayback()
@@ -162,7 +162,7 @@ final class FocusedEarTrainingViewModel: ObservableObject {
                    frets.count == 6 {
                     try await chordPlayer.playChordFromFretsSixToOne(frets)
                 } else {
-                    let midis = Self.midiNotesForChordLabel(label)
+                    let midis = Self.midiNotesForChordLabel(label, defaultRoot: root)
                     guard !midis.isEmpty else {
                         playError = "无法解析和弦：\(label)"
                         return
@@ -180,14 +180,16 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         await work.value
     }
 
-    private static func midiNotesForChordLabel(_ label: String) -> [Int] {
+    private static func midiNotesForChordLabel(_ label: String, defaultRoot: String? = nil) -> [Int] {
         let raw = label.trimmingCharacters(in: .whitespaces)
         guard !raw.isEmpty else { return [] }
-        let (root, quality) = Self.parseChordLabel(raw)
-        let baseMidi = Self.noteNameToMidi(root)
+        let (parsedRoot, quality) = Self.parseChordLabel(raw)
+        let finalRoot = parsedRoot.isEmpty ? (defaultRoot ?? "C") : parsedRoot
+        let baseMidi = Self.noteNameToMidi(finalRoot)
         guard baseMidi >= 0 else { return [] }
         let intervals: [Int]
-        switch quality {
+        let normalizedQuality = Self.normalizeChordQuality(quality)
+        switch normalizedQuality {
         case "m", "min", "minor": intervals = [0, 3, 7]
         case "7", "dom7", "dominant7": intervals = [0, 4, 7, 10]
         case "m7", "min7", "minor7": intervals = [0, 3, 7, 10]
@@ -202,7 +204,7 @@ final class FocusedEarTrainingViewModel: ObservableObject {
 
     private static func parseChordLabel(_ label: String) -> (root: String, quality: String) {
         let s = label.trimmingCharacters(in: .whitespaces)
-        guard !s.isEmpty else { return ("C", "") }
+        guard !s.isEmpty else { return ("", "") }
         let doubleRoot = String(s.prefix(2))
         let sharpFlatRoots = ["C#", "Db", "D#", "Eb", "F#", "Gb", "G#", "Ab", "A#", "Bb"]
         if sharpFlatRoots.contains(doubleRoot) {
@@ -215,7 +217,21 @@ final class FocusedEarTrainingViewModel: ObservableObject {
             let rest = String(s.dropFirst())
             return (singleRoot, rest)
         }
-        return ("C", "")
+        return ("", s)
+    }
+
+
+
+    private static func normalizeChordQuality(_ raw: String) -> String {
+        let q = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch q {
+        case "大三", "major", "maj": return ""
+        case "小三", "minor", "min", "m": return "m"
+        case "属七", "7", "dom7", "dominant7": return "7"
+        case "大七", "maj7", "major7", "delta", "△7": return "maj7"
+        case "小七", "m7", "min7", "minor7": return "m7"
+        default: return q
+        }
     }
 
     private static func noteNameToMidi(_ name: String) -> Int {
