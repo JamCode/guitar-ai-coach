@@ -30,6 +30,8 @@ private func resolvedFeedbackRecipient() -> String {
 
 @main
 struct SwiftEarHostApp: App {
+    @UIApplicationDelegateAdaptor(AppNotificationDelegate.self) private var appNotificationDelegate
+
     init() {
         #if os(iOS)
         try? AppAudioSession.configureSharedForPlaybackAndRecording()
@@ -113,6 +115,7 @@ private struct RootTabView: View {
     @State private var practiceTabMounted: Bool = false
     @StateObject private var sheetLibraryVM = SheetLibraryViewModel()
     @State private var didScheduleAudioWarmup = false
+    @State private var didConfigurePracticeReminder = false
     
     /// 自定义 Tab 选择绑定：切到「练耳」时在同一事务内先完成挂载，
     /// 避免先显示占位页再切到真实页面造成导航标题闪动。
@@ -189,6 +192,11 @@ private struct RootTabView: View {
             guard !didScheduleAudioWarmup else { return }
             didScheduleAudioWarmup = true
             AudioStartupWarmup.shared.scheduleIfNeeded()
+        }
+        .task {
+            guard !didConfigurePracticeReminder else { return }
+            didConfigurePracticeReminder = true
+            PracticeReminderNotificationScheduler.configureDailyReminder()
         }
     }
 }

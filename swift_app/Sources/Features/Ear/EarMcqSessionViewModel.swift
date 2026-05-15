@@ -34,8 +34,10 @@ public final class EarMcqSessionViewModel: ObservableObject {
     private let historyStore: any EarMcqHistoryStoring
     private var chordRng = SystemRandomNumberGenerator()
     private var playTask: Task<Void, Never>?
+    private var optionPreviewTask: Task<Void, Never>?
     /// 与 `playCurrent` / `cancelPlayback` 配合，避免旧任务的 `defer` 误清 `isPlaybackInProgress`。
     private var playGeneration = 0
+    private var optionPreviewGeneration = 0
     /// 非 Bank B 时仍用于 `ear_seed` 抽题；Bank B 程序化后不再使用。
     private var bankBSourcePool: [EarBankItem] = []
     private var bankBDealingQueue: [EarBankItem] = []
@@ -65,8 +67,11 @@ public final class EarMcqSessionViewModel: ObservableObject {
     /// 离开页面或切换难度时打断试听。
     public func cancelPlayback() {
         playGeneration += 1
+        optionPreviewGeneration += 1
         playTask?.cancel()
         playTask = nil
+        optionPreviewTask?.cancel()
+        optionPreviewTask = nil
         isPlaybackInProgress = false
         player.cancelChordPlayback()
     }
@@ -253,6 +258,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
     public func playCurrent() {
         playTask?.cancel()
         playTask = nil
+        optionPreviewTask?.cancel()
+        optionPreviewTask = nil
         isPlaybackInProgress = false
         playGeneration += 1
         let gen = playGeneration
@@ -286,6 +293,48 @@ public final class EarMcqSessionViewModel: ObservableObject {
             }
         }
         playTask = work
+    }
+
+    public func playOptionPreview(_ index: Int) {
+        guard let q = question,
+              bank == "A",
+              q.options.indices.contains(index),
+              let root = q.root,
+              let quality = EarChordQuality(optionLabel: q.options[index].label)
+        else { return }
+        optionPreviewTask?.cancel()
+        optionPreviewTask = nil
+        optionPreviewGeneration += 1
+        let gen = optionPreviewGeneration
+        let work = Task { @MainActor in
+            do {
+                if let frets = EarChordMcqGenerator.playbackFretsSixToOne(root: root, answer: quality), frets.count == 6 {
+                    try await self.player.playChordFromFretsSixToOne(frets)
+                } else {
+                    let probe = EarBankItem(
+                        id: "option-preview-\(UUID().uuidString)",
+                        mode: "A",
+                        questionType: "single_chord_quality",
+                        promptZh: "",
+                        options: [],
+                        correctOptionKey: "",
+                        root: root,
+                        targetQuality: quality.targetQualityToken
+                    )
+                    try await self.player.playChordMidis(EarPlaybackMidi.forSingleChord(probe))
+                }
+                if gen == self.optionPreviewGeneration {
+                    self.playError = nil
+                }
+            } catch is CancellationError {
+                // 用户快速切换试听时，不强制静音旧声音，让当前尾音自然收掉。
+            } catch {
+                if gen == self.optionPreviewGeneration {
+                    self.playError = "播放失败：\(error.localizedDescription)"
+                }
+            }
+        }
+        optionPreviewTask = work
     }
 
     public func playPreviewNote(midi: Int) async {

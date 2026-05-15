@@ -921,6 +921,40 @@
         }
       }
     },
+    "ear_training_reminder_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spend 5 minutes on intervals or chord recognition."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "花 5 分钟做一组音程或和弦听辨。"
+          }
+        }
+      }
+    },
+    "ear_training_reminder_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time for ear training"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该练一练耳朵了"
+          }
+        }
+      }
+    },
     "placeholder_practice_detail" : {
       "extractionState" : "manual",
       "localizations" : {

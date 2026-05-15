@@ -59,6 +59,17 @@ public enum EarChordQuality: String, Sendable, Hashable, CaseIterable {
         default: return nil
         }
     }
+
+    public init?(optionLabel: String) {
+        switch optionLabel.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "大三": self = .major
+        case "小三": self = .minor
+        case "属七": self = .dominant7
+        case "大七": self = .major7
+        case "小七": self = .minor7
+        default: return nil
+        }
+    }
 }
 
 // MARK: - 预设
@@ -168,7 +179,7 @@ public enum EarChordMcqGenerator {
     }
 
     /// 与「工具 · 常用和弦 / 和弦速查」同源：`OfflineChordBuilder` 常用把位①（6→1 弦）。
-    private static func playbackFretsSixToOne(root: String, answer: EarChordQuality) -> [Int]? {
+    static func playbackFretsSixToOne(root: String, answer: EarChordQuality) -> [Int]? {
         let qualityId: String
         switch answer {
         case .major: qualityId = ""
