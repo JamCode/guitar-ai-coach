@@ -97,9 +97,7 @@ struct FocusedEarTrainingSessionView: View {
                 }
             }
             if case .chord = question {
-                hintButton("试听各选项", active: $showHintStrip) {
-                    chordHintOptionsView(for: question)
-                }
+                chordHintOptionsView(for: question)
             }
             if case .progression = question {
                 hintButton("逐和弦试听", active: $showHintStrip) {
@@ -280,7 +278,15 @@ struct FocusedEarTrainingSessionView: View {
                 guard let root = question.root, !root.isEmpty,
                       let quality = EarChordQuality(optionLabel: choice.label)
                 else { return choice.label }
-                let sym = ChordSymbolBuilder.build(root: root, qualityId: quality.targetQualityToken, bassId: "")
+                let qualityId: String
+                switch quality {
+                case .major: qualityId = ""
+                case .minor: qualityId = "m"
+                case .dominant7: qualityId = "7"
+                case .major7: qualityId = "maj7"
+                case .minor7: qualityId = "m7"
+                }
+                let sym = ChordSymbolBuilder.build(root: root, qualityId: qualityId, bassId: "")
                 return sym.isEmpty ? choice.label : sym
             }
             ChordPreviewRow(symbols: symbols, isDisabled: false) { idx in
