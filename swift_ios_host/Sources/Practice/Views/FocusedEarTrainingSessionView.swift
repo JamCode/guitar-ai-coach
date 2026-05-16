@@ -276,27 +276,16 @@ struct FocusedEarTrainingSessionView: View {
     @ViewBuilder
     private func chordHintOptionsView(for question: AdaptiveEarQuestion) -> some View {
         if case .chord = question {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("点击各选项试听和弦声音")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(SwiftAppTheme.brand)
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    ForEach(question.choices) { choice in
-                        Button {
-                            Task { await vm.playChordForLabel(choice.label, root: question.root) }
-                        } label: {
-                            Text(choice.label)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(SwiftAppTheme.text)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(SwiftAppTheme.surfaceSoft)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(SwiftAppTheme.line, lineWidth: 1))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
+            let symbols: [String] = question.choices.map { choice in
+                guard let root = question.root, !root.isEmpty,
+                      let quality = EarChordQuality(optionLabel: choice.label)
+                else { return choice.label }
+                let sym = ChordSymbolBuilder.build(root: root, qualityId: quality.targetQualityToken, bassId: "")
+                return sym.isEmpty ? choice.label : sym
+            }
+            ChordPreviewRow(symbols: symbols, isDisabled: false) { idx in
+                let choice = question.choices[idx]
+                Task { await vm.playChordForLabel(choice.label, root: question.root) }
             }
         }
     }
