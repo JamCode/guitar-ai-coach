@@ -146,10 +146,6 @@ private struct SplashView: View {
                     .font(.system(size: 72, weight: .semibold))
                     .foregroundStyle(.white)
                     .symbolEffect(.breathe, value: phase)
-
-                Text("Wanle Guitar")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
             }
         }
         .onAppear {
