@@ -124,13 +124,13 @@ public final class ChordVoicingTonePlayer {
         }
     }
 
-    private static let arpStepSec = 0.28
-    private static let arpGateSec = 0.24
-    private static let pauseAfterArpeggioSec = 0.22
-    private static let blockGateSec = 1.42
+    private static let arpStepSec = 0.18
+    private static let arpGateSec = 0.16
+    private static let pauseAfterArpeggioSec = 0.12
+    private static let blockGateSec = 1.0
     private static let blockStaggerSec = 0.014
-    private static let blockWaitHeadroomSec = 2.75
-    private static let blockAudibleTailSec = 0.32
+    private static let blockWaitHeadroomSec = 1.2
+    private static let blockAudibleTailSec = 0.2
 
     private func scheduleArpeggioThenBlock(midis: [Int], token: Int) {
         let n = midis.count

@@ -20,12 +20,12 @@ public final class EarChordPlayer: EarChordPlaying {
     private static let previewGateSec = 0.52
     private static let previewTailSec = 0.18
     /// 与 `ChordVoicingTonePlayer` 柱式段相近：钢弦 SF2 和弦 gate + 扫弦 stagger。
-    private static let chordGateSec = 1.22
+    private static let chordGateSec = 1.0
     private static let chordStaggerSec = 0.014
     /// `playSampledGuitarChord` 在调度 note-off 后仍留一点释音尾，避免「播放」过早解锁叠音。
-    private static let chordAudibleTailSec = 0.32
+    private static let chordAudibleTailSec = 0.2
     /// Humanizer 单音 gate 上限约 2.6s，留足余量避免截断。
-    private static let chordWaitHeadroomSec = 2.75
+    private static let chordWaitHeadroomSec = 1.2
     /// 和弦进行中逐和弦柱式：释音等待较短，下一和弦更紧凑（仍略长于 gate 以免叠音刺耳）。
     private static let progressionChordReleaseWaitSec = 0.68
 
