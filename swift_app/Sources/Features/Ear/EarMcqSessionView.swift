@@ -261,6 +261,8 @@ public struct EarMcqSessionView: View {
                                     .frame(minWidth: 48)
                             }
                             .buttonStyle(.borderless)
+                            .disabled(viewModel.isPreviewingOption)
+                            .opacity(viewModel.isPreviewingOption ? 0.45 : 1)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 10)
                             .background(SwiftAppTheme.surfaceSoft)

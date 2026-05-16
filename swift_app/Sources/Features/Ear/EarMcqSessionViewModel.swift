@@ -15,6 +15,8 @@ public final class EarMcqSessionViewModel: ObservableObject {
     @Published public private(set) var playError: String?
     /// 整段和弦（或进行）播放结束前为 `true`，用于禁用「播放」。
     @Published public private(set) var isPlaybackInProgress = false
+    /// 选项试听播放中，用于禁用其他选项按钮。
+    @Published public private(set) var isPreviewingOption = false
     /// 当前题是否已至少成功完整试听一次；未满足前不可选答案。
     @Published public private(set) var hasCompletedInitialAudition = false
 
@@ -73,6 +75,7 @@ public final class EarMcqSessionViewModel: ObservableObject {
         optionPreviewTask?.cancel()
         optionPreviewTask = nil
         isPlaybackInProgress = false
+        isPreviewingOption = false
         player.cancelChordPlayback()
     }
 
@@ -300,13 +303,20 @@ public final class EarMcqSessionViewModel: ObservableObject {
               bank == "A",
               q.options.indices.contains(index),
               let root = q.root,
-              let quality = EarChordQuality(optionLabel: q.options[index].label)
+              let quality = EarChordQuality(optionLabel: q.options[index].label),
+              !isPreviewingOption
         else { return }
+        isPreviewingOption = true
         optionPreviewTask?.cancel()
         optionPreviewTask = nil
         optionPreviewGeneration += 1
         let gen = optionPreviewGeneration
         let work = Task { @MainActor in
+            defer {
+                if gen == self.optionPreviewGeneration {
+                    self.isPreviewingOption = false
+                }
+            }
             do {
                 if let frets = EarChordMcqGenerator.playbackFretsSixToOne(root: root, answer: quality), frets.count == 6 {
                     try await self.player.playChordFromFretsSixToOne(frets)
