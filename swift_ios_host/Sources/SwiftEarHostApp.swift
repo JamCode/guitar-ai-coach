@@ -134,16 +134,12 @@ private struct SplashView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.08, green: 0.10, blue: 0.20), Color(red: 0.22, green: 0.14, blue: 0.34)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            SwiftAppTheme.bg
+                .ignoresSafeArea()
 
             Image(systemName: "guitars.fill")
                 .font(.system(size: 72, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(SwiftAppTheme.brand)
                 .scaleEffect(breathing ? 1.08 : 0.95)
                 .opacity(breathing ? 1 : 0.7)
                 .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: breathing)
