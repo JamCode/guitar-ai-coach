@@ -38,6 +38,9 @@ public struct ChordChartView: View {
                                     let resolved = ChordFingeringProvider.resolve(symbol: entry.symbol)
                                     let displayFrets = resolved?.frets ?? entry.frets
                                     Button {
+                                        // 用户可能在长时间后台后首次回到页面直接点和弦；
+                                        // 先做一次轻量预热，降低首点无声概率。
+                                        chartAudio.tonePlayer.prepare()
                                         chartAudio.tonePlayer.playChordFrets(displayFrets)
                                     } label: {
                                         HStack(alignment: .top, spacing: 10) {
