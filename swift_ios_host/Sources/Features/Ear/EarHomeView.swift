@@ -19,17 +19,17 @@ public struct EarHomeView: View {
                         title: "音程识别",
                         subtitle: "两音上行、四选一 · 不限题量 · 累计正确率",
                         systemImage: "play.circle"
-                    ) { IntervalEarView() }
+                    ) { FocusedEarTrainingSessionView(kind: .interval) }
                     navCard(
                         title: "和弦听辨",
                         subtitle: "大三 / 小三 / 属七 / 七和弦 · 页内可选难度 · 不限题量 · 吉他采样",
                         systemImage: "pianokeys"
-                    ) { EarMcqSessionView(title: "和弦听辨", bank: "A", chordDifficulty: .初级) }
+                    ) { FocusedEarTrainingSessionView(kind: .chord) }
                     navCard(
                         title: "和弦进行",
                         subtitle: "常见流行进行 · 四选一 · 页内可选难度 · 不限题量 · 揭示后指法图",
                         systemImage: "music.note.list"
-                    ) { EarMcqSessionView(title: "和弦进行", bank: "B") }
+                    ) { FocusedEarTrainingSessionView(kind: .progression) }
                     if EarHomeVisibility.showSightSingingTraining {
                         navCard(
                             title: "视唱训练",
