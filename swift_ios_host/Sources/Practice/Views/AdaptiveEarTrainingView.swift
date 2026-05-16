@@ -453,7 +453,7 @@ struct AdaptiveEarTrainingView: View {
                                     .minimumScaleFactor(0.78)
                                     .frame(minWidth: 48)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.borderless)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 10)
                             .background(SwiftAppTheme.surfaceSoft)
