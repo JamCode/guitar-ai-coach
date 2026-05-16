@@ -174,29 +174,7 @@ struct AdaptiveEarTrainingView: View {
             }
 
             if case .chord = question {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showHintStrip.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: showHintStrip ? "lightbulb.fill" : "lightbulb")
-                            .font(.caption)
-                        Text(showHintStrip ? "收起提示" : "试听各选项")
-                            .font(.subheadline.weight(.medium))
-                    }
-                    .foregroundStyle(SwiftAppTheme.brand)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(SwiftAppTheme.brandSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(.plain)
-
-                if showHintStrip {
-                    chordHintOptionsView(for: question)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+                chordHintOptionsView(for: question)
             }
 
             if case .progression = question {
@@ -455,34 +433,59 @@ struct AdaptiveEarTrainingView: View {
 
     @ViewBuilder
     private func chordHintOptionsView(for question: AdaptiveEarQuestion) -> some View {
-        if case .chord = question {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("点击各选项试听和弦声音")
-                    .font(.caption.weight(.semibold))
+        if case let .chord(q, _, _) = question {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("试听各选项")
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(SwiftAppTheme.brand)
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    ForEach(question.choices) { choice in
-                        Button {
-                            Task { await vm.playChordForLabel(choice.label) }
-                        } label: {
-                            Text(choice.label)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(SwiftAppTheme.text)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(SwiftAppTheme.surfaceSoft)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(SwiftAppTheme.line, lineWidth: 1)
-                                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(question.choices) { choice in
+                            let symbol = Self.chordSymbol(from: choice, root: q.root)
+                            Button {
+                                Task { await vm.playChordForLabel(choice.label) }
+                            } label: {
+                                Text(symbol)
+                                    .font(.subheadline.weight(.semibold).monospaced())
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.78)
+                                    .frame(minWidth: 48)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .background(SwiftAppTheme.surfaceSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(SwiftAppTheme.line, lineWidth: 1)
+                            )
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.vertical, 1)
                 }
             }
             .padding(.top, 4)
         }
+    }
+
+    /// 从选项标签 + 题目根音构建和弦符号（如 C、Cm、C7）
+    private static func chordSymbol(from choice: AdaptiveEarChoice, root: String?) -> String {
+        guard let root, !root.isEmpty,
+              let quality = EarChordQuality(optionLabel: choice.label)
+        else { return choice.label }
+        let qualityId: String
+        switch quality {
+        case .major: qualityId = ""
+        case .minor: qualityId = "m"
+        case .dominant7: qualityId = "7"
+        case .major7: qualityId = "maj7"
+        case .minor7: qualityId = "m7"
+        }
+        let sym = ChordSymbolBuilder.build(root: root, qualityId: qualityId, bassId: "")
+        return sym.isEmpty ? choice.label : sym
     }
 
     // MARK: - Progression Hint
