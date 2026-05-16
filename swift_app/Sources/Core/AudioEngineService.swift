@@ -153,6 +153,8 @@ public final class AudioEngineService: AudioEngineServing {
     /// 三档微音高偏移（单位：cent），轮换顺序固定，覆盖 0 / -1.8 / +1.8 cent。
     /// `internal` 可见度供单元测试验证数组内容，不对外暴露为 public API。
     static let rrTuningOffsets: [Float] = [0, -1.8, 1.8]
+    private var activeGateOffs: [Int: DispatchWorkItem] = [:]
+    private let gateOffLock = NSLock()
 
     public init(quality: AudioQualityBaseline = AudioQualityBaseline()) {
         self.quality = quality
@@ -245,6 +247,7 @@ public final class AudioEngineService: AudioEngineServing {
 
     public func stopSampledGuitarNotes(midis: [Int]) {
         guard isStarted else { return }
+        cancelGateOffs(midis: Set(midis))
         samplerQueue.sync { [weak self] in
             guard let self else { return }
             for raw in midis {
@@ -256,6 +259,7 @@ public final class AudioEngineService: AudioEngineServing {
 
     public func stopAllSampledGuitarNotes() {
         guard started else { return }
+        cancelAllPendingGateOffs()
         samplerQueue.sync { [weak self] in
             guard let self else { return }
             for raw in 0 ... 127 {
@@ -443,9 +447,7 @@ public final class AudioEngineService: AudioEngineServing {
             self.sampler.stopNote(clampedMidi, onChannel: 0)
             self.sampler.startNote(clampedMidi, withVelocity: shapedVelocity, onChannel: 0)
         }
-        samplerQueue.asyncAfter(deadline: .now() + gate) { [weak self] in
-            self?.sampler.stopNote(clampedMidi, onChannel: 0)
-        }
+        scheduleGateOff(midi: Int(clampedMidi), delay: gate)
         let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
         quality.markCallback(renderCostMs: elapsedMs)
     }
@@ -486,9 +488,7 @@ public final class AudioEngineService: AudioEngineServing {
                 self.sampler.stopNote(note, onChannel: 0)
                 self.sampler.startNote(note, withVelocity: shapedVelocity, onChannel: 0)
             }
-            samplerQueue.asyncAfter(deadline: .now() + delay + shapedGate) { [weak self] in
-                self?.sampler.stopNote(note, onChannel: 0)
-            }
+            scheduleGateOff(midi: Int(note), delay: delay + shapedGate)
         }
         rrCounter += notes.count
         let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
@@ -604,6 +604,41 @@ public final class AudioEngineService: AudioEngineServing {
         #if os(iOS)
         try AppAudioSession.configureSharedForPlaybackAndRecording()
         #endif
+    }
+
+    /// 使用可取消 DispatchWorkItem 调度 gate-off，避免旧任务延迟 stopNote 误杀新音。
+    private func scheduleGateOff(midi: Int, delay: Double) {
+        gateOffLock.lock()
+        // 若同一 MIDI 音已有未触发的 gate-off，先取消旧的
+        activeGateOffs[midi]?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.sampler.stopNote(UInt8(midi), onChannel: 0)
+            self.gateOffLock.lock()
+            self.activeGateOffs.removeValue(forKey: midi)
+            self.gateOffLock.unlock()
+        }
+        activeGateOffs[midi] = work
+        gateOffLock.unlock()
+        samplerQueue.asyncAfter(deadline: .now() + delay, execute: work)
+    }
+
+    private func cancelAllPendingGateOffs() {
+        gateOffLock.lock()
+        for (_, item) in activeGateOffs {
+            item.cancel()
+        }
+        activeGateOffs.removeAll()
+        gateOffLock.unlock()
+    }
+
+    private func cancelGateOffs(midis: Set<Int>) {
+        gateOffLock.lock()
+        for midi in midis {
+            activeGateOffs[midi]?.cancel()
+            activeGateOffs.removeValue(forKey: midi)
+        }
+        gateOffLock.unlock()
     }
 
 }
