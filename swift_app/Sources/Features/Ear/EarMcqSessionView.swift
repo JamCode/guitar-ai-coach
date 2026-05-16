@@ -6,7 +6,6 @@ public struct EarMcqSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: EarMcqSessionViewModel
     @State private var showSummary = false
-    @State private var isOptionAuditionExpanded = false
     private let onSessionComplete: ((Int, Int) -> Void)?
     private let autoDismissOnComplete: Bool
 
@@ -97,7 +96,7 @@ public struct EarMcqSessionView: View {
                             .appPrimaryButton()
                             .disabled(viewModel.isPlaybackInProgress)
                         if viewModel.bank == "A", Self.hasOptionChordSymbols(for: q) {
-                            optionAuditionDisclosure(for: q)
+                            optionAuditionRow(for: q)
                         }
                     }
                     .appCard()
@@ -241,54 +240,40 @@ public struct EarMcqSessionView: View {
     }
 
     @ViewBuilder
-    private func optionAuditionDisclosure(for q: EarBankItem) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    isOptionAuditionExpanded.toggle()
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Text("试听各选项")
-                        .font(.subheadline.weight(.semibold))
-                    Image(systemName: isOptionAuditionExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.semibold))
-                }
+    private func optionAuditionRow(for q: EarBankItem) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("试听各选项")
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.brand)
-            }
-            .buttonStyle(.borderless)
 
-            if isOptionAuditionExpanded {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(q.options.enumerated()), id: \.offset) { idx, opt in
-                            if let symbol = Self.optionChordSymbol(for: q, option: opt) {
-                                Button {
-                                    viewModel.playOptionPreview(idx)
-                                } label: {
-                                    Text(symbol)
-                                        .font(.subheadline.weight(.semibold).monospaced())
-                                        .foregroundStyle(SwiftAppTheme.text)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.78)
-                                        .frame(minWidth: 48)
-                                }
-                                .buttonStyle(.borderless)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 10)
-                                .background(SwiftAppTheme.surfaceSoft)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(SwiftAppTheme.line, lineWidth: 1)
-                                )
-                                .accessibilityLabel("试听 \(symbol)")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(q.options.enumerated()), id: \.offset) { idx, opt in
+                        if let symbol = Self.optionChordSymbol(for: q, option: opt) {
+                            Button {
+                                viewModel.playOptionPreview(idx)
+                            } label: {
+                                Text(symbol)
+                                    .font(.subheadline.weight(.semibold).monospaced())
+                                    .foregroundStyle(SwiftAppTheme.text)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.78)
+                                    .frame(minWidth: 48)
                             }
+                            .buttonStyle(.borderless)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .background(SwiftAppTheme.surfaceSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(SwiftAppTheme.line, lineWidth: 1)
+                            )
+                            .accessibilityLabel("试听 \(symbol)")
                         }
                     }
-                    .padding(.vertical, 1)
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .padding(.vertical, 1)
             }
         }
         .padding(.top, 2)
