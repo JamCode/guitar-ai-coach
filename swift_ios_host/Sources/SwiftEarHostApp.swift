@@ -130,7 +130,7 @@ private struct HostRootWithFirstLaunchTour: View {
 
 
 private struct SplashView: View {
-    @State private var phase: CGFloat = 0
+    @State private var breathing = false
 
     var body: some View {
         ZStack {
@@ -141,15 +141,15 @@ private struct SplashView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                Image(systemName: "guitars.fill")
-                    .font(.system(size: 72, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .symbolEffect(.breathe, value: phase)
-            }
+            Image(systemName: "guitars.fill")
+                .font(.system(size: 72, weight: .semibold))
+                .foregroundStyle(.white)
+                .scaleEffect(breathing ? 1.08 : 0.95)
+                .opacity(breathing ? 1 : 0.7)
+                .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: breathing)
         }
         .onAppear {
-            phase = 1
+            breathing = true
         }
     }
 }
