@@ -437,13 +437,11 @@ public final class AudioEngineService: AudioEngineServing {
         let clampedMidi = UInt8(max(0, min(127, midi)))
         let shapedVelocity = GuitarPlaybackHumanizer.velocity(base: velocity, midi: midi)
         let gate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi)
-        let tuningOffset = AudioEngineService.rrTuningOffsets[rrCounter % AudioEngineService.rrTuningOffsets.count]
-        rrCounter += 1
         let start = DispatchTime.now().uptimeNanoseconds
         samplerQueue.sync { [weak self] in
             guard let self else { return }
-            // Round-robin 微音高：每次单音触发轮换 0 / -1.8 / +1.8 cent，模拟不同拨弦力度与角度带来的音色微差。
-            self.sampler.globalTuning = tuningOffset
+            // 注意：不使用 globalTuning，因为这是 AVAudioUnitSampler 全局属性，
+            // 设一次会改变所有已发声音的音高。快速切换试听时旧音衰减尾音会被新音移调。
             self.sampler.stopNote(clampedMidi, onChannel: 0)
             self.sampler.startNote(clampedMidi, withVelocity: shapedVelocity, onChannel: 0)
         }
