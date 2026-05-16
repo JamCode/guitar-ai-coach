@@ -24,6 +24,9 @@ public final class ChordVoicingTonePlayer {
             guard let self else { return }
             guard !self.didPrepareAudio else { return }
             do {
+                #if os(iOS)
+                try AppAudioSession.configureSharedForPlaybackAndRecording()
+                #endif
                 try self.audio.start()
                 self.didPrepareAudio = true
             } catch {
@@ -42,6 +45,9 @@ public final class ChordVoicingTonePlayer {
             let token = self.playbackSerial
             if !self.didPrepareAudio {
                 do {
+                    #if os(iOS)
+                    try AppAudioSession.configureSharedForPlaybackAndRecording()
+                    #endif
                     try self.audio.start()
                     self.didPrepareAudio = true
                 } catch {
