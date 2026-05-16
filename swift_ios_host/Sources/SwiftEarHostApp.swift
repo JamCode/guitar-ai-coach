@@ -80,12 +80,29 @@ struct SwiftEarHostApp: App {
 private let kFirstLaunchTourEnabled = false
 
 /// 根容器：首次启动展示导览，完成后不再出现（受 `kFirstLaunchTourEnabled` 控制）。
+private let kStartupHomeEnabled = true
+
 private struct HostRootView: View {
+    @State private var showStartupHome = kStartupHomeEnabled
+
     var body: some View {
-        if kFirstLaunchTourEnabled {
-            HostRootWithFirstLaunchTour()
-        } else {
-            RootTabView()
+        Group {
+            if kFirstLaunchTourEnabled {
+                HostRootWithFirstLaunchTour()
+            } else {
+                RootTabView()
+            }
+        }
+        .overlay {
+            if showStartupHome {
+                StartupHomeView {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showStartupHome = false
+                    }
+                }
+                .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                .zIndex(10)
+            }
         }
     }
 }
@@ -105,6 +122,96 @@ private struct HostRootWithFirstLaunchTour: View {
             ) {
                 FirstLaunchTourView()
             }
+    }
+}
+
+
+private struct StartupHomeView: View {
+    let onContinue: () -> Void
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(red: 0.08, green: 0.10, blue: 0.20), Color(red: 0.22, green: 0.14, blue: 0.34), Color(red: 0.07, green: 0.32, blue: 0.36)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 22) {
+                HStack {
+                    Spacer()
+                    Button("跳过") { onContinue() }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Wanle Guitar")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.75))
+
+                    Text("今天开始，\n弹一首完整的歌")
+                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineSpacing(6)
+
+                    Text("AI 扒歌、练耳、我的谱、工具箱都在这里。\n3 分钟进入状态，持续看到进步。")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.86))
+                }
+
+                VStack(spacing: 12) {
+                    startupFeatureCard(icon: "waveform.path.ecg", title: "AI 扒歌", subtitle: "上传音频自动识别和弦")
+                    startupFeatureCard(icon: "ear", title: "练耳计划", subtitle: "每天小目标，稳步提升听辨力")
+                    startupFeatureCard(icon: "music.note.list", title: "我的谱", subtitle: "随时编辑、收藏、复盘你的曲谱")
+                }
+
+                Spacer(minLength: 8)
+
+                Button(action: onContinue) {
+                    Text("进入应用")
+                        .font(.headline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(.white)
+                        .foregroundStyle(Color.black.opacity(0.85))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 16)
+        }
+    }
+
+    private func startupFeatureCard(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(.white.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.78))
+            }
+
+            Spacer()
+        }
+        .padding(12)
+        .background(.white.opacity(0.13))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(.white.opacity(0.18), lineWidth: 1)
+        )
     }
 }
 
