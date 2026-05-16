@@ -166,6 +166,15 @@ enum AdaptiveEarQuestion: Identifiable {
         }
     }
 
+    var root: String? {
+        switch self {
+        case let .chord(q, _, _), let .progression(q, _, _):
+            return q.root
+        case .interval, .singleNote:
+            return nil
+        }
+    }
+
     var explanation: String {
         switch self {
         case let .interval(q, _, _):

@@ -182,6 +182,27 @@ public final class AudioEngineService: AudioEngineServing {
         engine.connect(guitarHaas, to: guitarReverb, format: nil)
         engine.connect(guitarReverb, to: engine.mainMixerNode, format: nil)
         configureGuitarToneChain()
+        observeAudioInterruptions()
+    }
+
+    /// 注册音频中断通知：被来电等中断恢复后自动重新激活会话。
+    private func observeAudioInterruptions() {
+        #if os(iOS)
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let userInfo = notification.userInfo,
+                  let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeValue)
+            else { return }
+            if type == .ended {
+                self.reactivateSessionIfNeeded()
+            }
+        }
+        #endif
     }
 
     public func start() throws {
