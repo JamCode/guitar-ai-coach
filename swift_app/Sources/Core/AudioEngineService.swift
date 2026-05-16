@@ -454,11 +454,11 @@ public final class AudioEngineService: AudioEngineServing {
             let note = UInt8(midi)
             let shapedVelocity = GuitarPlaybackHumanizer.velocity(base: velocity, midi: midi, noteIndex: i, totalNotes: notes.count)
             let shapedGate = GuitarPlaybackHumanizer.gate(base: gateDurationSec, midi: midi, noteIndex: i, totalNotes: notes.count)
-            // 每根弦独立取 round-robin 微音高，和弦内各音有微小音高差异，模拟真实演奏中的弦间色差。
-            let tuningOffset = AudioEngineService.rrTuningOffsets[(rrCounter + i) % AudioEngineService.rrTuningOffsets.count]
+            // 注意：不使用 round-robin 微音高 (globalTuning)，因为它是
+            // AVAudioUnitSampler 全局属性，设一次会改变所有已发声音的音高。
+            // 和弦各音错开播放时，globalTuning 变化会导致已起振的音高抖动。
             samplerQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
                 guard let self else { return }
-                self.sampler.globalTuning = tuningOffset
                 self.sampler.stopNote(note, onChannel: 0)
                 self.sampler.startNote(note, withVelocity: shapedVelocity, onChannel: 0)
             }
