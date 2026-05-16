@@ -95,7 +95,10 @@ public struct EarMcqSessionView: View {
                             .appPrimaryButton()
                             .disabled(viewModel.isPlaybackInProgress)
                         if viewModel.bank == "A", Self.hasOptionChordSymbols(for: q) {
-                            optionAuditionRow(for: q)
+                            let symbols = q.options.compactMap { Self.optionChordSymbol(for: q, option: $0) }
+                            ChordPreviewRow(symbols: symbols, isDisabled: viewModel.isPreviewingOption) { idx in
+                                viewModel.playOptionPreview(idx)
+                            }
                         }
                     }
                     .appCard()
@@ -236,48 +239,6 @@ public struct EarMcqSessionView: View {
             get: { viewModel.progressionDifficulty },
             set: { viewModel.setProgressionDifficultyIfChanged($0) }
         )
-    }
-
-    @ViewBuilder
-    private func optionAuditionRow(for q: EarBankItem) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("试听各选项")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(SwiftAppTheme.brand)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Array(q.options.enumerated()), id: \.offset) { idx, opt in
-                        if let symbol = Self.optionChordSymbol(for: q, option: opt) {
-                            Button {
-                                viewModel.playOptionPreview(idx)
-                            } label: {
-                                Text(symbol)
-                                    .font(.subheadline.weight(.semibold).monospaced())
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.78)
-                                    .frame(minWidth: 48)
-                            }
-                            .buttonStyle(.borderless)
-                            .disabled(viewModel.isPreviewingOption)
-                            .opacity(viewModel.isPreviewingOption ? 0.45 : 1)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 10)
-                            .background(SwiftAppTheme.surfaceSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(SwiftAppTheme.line, lineWidth: 1)
-                            )
-                            .accessibilityLabel("试听 \(symbol)")
-                        }
-                    }
-                }
-                .padding(.vertical, 1)
-            }
-        }
-        .padding(.top, 2)
     }
 
     @ViewBuilder

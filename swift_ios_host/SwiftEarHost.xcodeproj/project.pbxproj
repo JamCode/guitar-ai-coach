@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00F57FCD396CCA70BC567A87 /* ChordPreviewRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1702F692242D18A28D55287 /* ChordPreviewRow.swift */; };
 		017940862C54824492F19ED9 /* ChordRecognitionAudioPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50A3251F65FBED717004EBC /* ChordRecognitionAudioPreprocessor.swift */; };
 		01FC69E73FEB15444D91AD2C /* EarProgressionHarmonyEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEE32312997C7C2419D9E4DD /* EarProgressionHarmonyEngine.swift */; };
 		06AC55E1EFAFC9069CDDBC8A /* ScaleWarmupGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE294983B676BDA73AE56EF4 /* ScaleWarmupGeneratorTests.swift */; };
@@ -370,6 +371,7 @@
 		CAB32DA654CEABEB4AC3775B /* PracticeLandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLandingView.swift; sourceTree = "<group>"; };
 		CABBAA1325A1F2A1B6C6F534 /* PracticeReminderNotificationSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeReminderNotificationSchedulerTests.swift; sourceTree = "<group>"; };
 		D163D2D4AC366005CC23C1EF /* PracticeLocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLocalStore.swift; sourceTree = "<group>"; };
+		D1702F692242D18A28D55287 /* ChordPreviewRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordPreviewRow.swift; sourceTree = "<group>"; };
 		D1E333D468DB5A55987D6AEB /* SheetStaffSystemDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetStaffSystemDetector.swift; sourceTree = "<group>"; };
 		D347FC9F2A417E1A2645D776 /* AdaptiveEarTrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveEarTrainingView.swift; sourceTree = "<group>"; };
 		D3DE0AB693055500BADF91BF /* ChordVoicingTonePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordVoicingTonePlayer.swift; sourceTree = "<group>"; };
@@ -468,6 +470,7 @@
 		2566C29D105E6C8140EFC9D5 /* Ear */ = {
 			isa = PBXGroup;
 			children = (
+				D1702F692242D18A28D55287 /* ChordPreviewRow.swift */,
 				D416549C7C620E31BBD4575E /* EarBankItem+PlaybackStrip.swift */,
 				4707E60765ECED74AD9AF3F2 /* EarChordMcqGenerator.swift */,
 				85C11C4C42EA36EAB32876D1 /* EarChordPlayer.swift */,
@@ -1198,6 +1201,7 @@
 				D6EEB91F90E351B0299D97EE /* ChordLookupView.swift in Sources */,
 				D29C08EF68159ECDFBEAED4A /* ChordPracticeDiagramStrip.swift in Sources */,
 				7B16A867D57EEC19BA1120B4 /* ChordPracticeSessionView.swift in Sources */,
+				00F57FCD396CCA70BC567A87 /* ChordPreviewRow.swift in Sources */,
 				F8DF882624B2A38F4303EF98 /* ChordQuickReferenceSheet.swift in Sources */,
 				017940862C54824492F19ED9 /* ChordRecognitionAudioPreprocessor.swift in Sources */,
 				489F23AF8696A2288CE212B4 /* ChordSwitchDiagramLayout.swift in Sources */,

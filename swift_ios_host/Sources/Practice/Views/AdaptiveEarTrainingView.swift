@@ -432,40 +432,11 @@ struct AdaptiveEarTrainingView: View {
     @ViewBuilder
     private func chordHintOptionsView(for question: AdaptiveEarQuestion) -> some View {
         if case let .chord(q, _, _) = question {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("试听各选项")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(SwiftAppTheme.brand)
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(question.choices) { choice in
-                            let symbol = Self.chordSymbol(from: choice, root: q.root)
-                            Button {
-                                Task { await vm.playChordForLabel(choice.label) }
-                            } label: {
-                                Text(symbol)
-                                    .font(.subheadline.weight(.semibold).monospaced())
-                                    .foregroundStyle(SwiftAppTheme.text)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.78)
-                                    .frame(minWidth: 48)
-                            }
-                            .buttonStyle(.borderless)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 10)
-                            .background(SwiftAppTheme.surfaceSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(SwiftAppTheme.line, lineWidth: 1)
-                            )
-                        }
-                    }
-                    .padding(.vertical, 1)
-                }
+            let symbols = question.choices.map { Self.chordSymbol(from: $0, root: q.root) }
+            ChordPreviewRow(symbols: symbols, isDisabled: false) { idx in
+                let choice = question.choices[idx]
+                Task { await vm.playChordForLabel(choice.label) }
             }
-            .padding(.top, 4)
         }
     }
 
