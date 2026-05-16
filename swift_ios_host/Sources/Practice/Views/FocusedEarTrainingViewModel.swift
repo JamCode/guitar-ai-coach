@@ -15,6 +15,7 @@ final class FocusedEarTrainingViewModel: ObservableObject {
     @Published private(set) var hasRevealed = false
     @Published private(set) var feedback: AdaptiveEarFeedback?
     @Published private(set) var isPlaying = false
+    @Published private(set) var isPreviewingOption = false
     @Published private(set) var playError: String?
 
     let fixedKind: AdaptiveEarQuestionKind
@@ -111,6 +112,7 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         intervalPlayer.cancelIntervalPlayback()
         chordPlayer.cancelChordPlayback()
         isPlaying = false
+        isPreviewingOption = false
     }
 
     func playPreviewNote(midi: Int) async {
@@ -154,7 +156,9 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         playTask = nil
         intervalPlayer.cancelIntervalPlayback()
         chordPlayer.cancelChordPlayback()
+        isPreviewingOption = true
         let work = Task { @MainActor in
+            defer { self.isPreviewingOption = false }
             do {
                 if let payload = OfflineChordBuilder.buildPayload(displaySymbol: label),
                    let frets = payload.voicings.first?.explain.frets,
@@ -182,6 +186,21 @@ final class FocusedEarTrainingViewModel: ObservableObject {
     private static func midiNotesForChordLabel(_ label: String, defaultRoot: String? = nil) -> [Int] {
         let raw = label.trimmingCharacters(in: .whitespaces)
         guard !raw.isEmpty else { return [] }
+        // 先尝试把 label 当作中文性质名解析（如"大三"、"小三"）
+        if let quality = EarChordQuality(optionLabel: label), let root = defaultRoot {
+            let baseMidi = Self.noteNameToMidi(root)
+            guard baseMidi >= 0 else { return [] }
+            let intervals: [Int]
+            switch quality {
+            case .minor: intervals = [0, 3, 7]
+            case .dominant7: intervals = [0, 4, 7, 10]
+            case .major7: intervals = [0, 4, 7, 11]
+            case .minor7: intervals = [0, 3, 7, 10]
+            default: intervals = [0, 4, 7]
+            }
+            return intervals.map { baseMidi + $0 }
+        }
+        // 否则当作和弦符号解析（如 "C"、"Cm"、"C7"）
         let (parsedRoot, quality) = Self.parseChordLabel(raw)
         let finalRoot = parsedRoot.isEmpty ? (defaultRoot ?? "C") : parsedRoot
         let baseMidi = Self.noteNameToMidi(finalRoot)

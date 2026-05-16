@@ -289,7 +289,7 @@ struct FocusedEarTrainingSessionView: View {
                 let sym = ChordSymbolBuilder.build(root: root, qualityId: qualityId, bassId: "")
                 return sym.isEmpty ? choice.label : sym
             }
-            ChordPreviewRow(symbols: symbols, isDisabled: false) { idx in
+            ChordPreviewRow(symbols: symbols, isDisabled: vm.isPreviewingOption) { idx in
                 let choice = question.choices[idx]
                 Task { await vm.playChordForLabel(choice.label, root: question.root) }
             }

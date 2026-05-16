@@ -433,9 +433,9 @@ struct AdaptiveEarTrainingView: View {
     private func chordHintOptionsView(for question: AdaptiveEarQuestion) -> some View {
         if case let .chord(q, _, _) = question {
             let symbols = question.choices.map { Self.chordSymbol(from: $0, root: q.root) }
-            ChordPreviewRow(symbols: symbols, isDisabled: false) { idx in
+            ChordPreviewRow(symbols: symbols, isDisabled: vm.isPreviewingOption) { idx in
                 let choice = question.choices[idx]
-                Task { await vm.playChordForLabel(choice.label) }
+                Task { await vm.playChordForLabel(choice.label, root: q.root) }
             }
         }
     }
@@ -640,6 +640,7 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
     @Published private(set) var selectedChoiceID: String?
     @Published private(set) var hasRevealed = false
     @Published private(set) var feedback: AdaptiveEarFeedback?
+    @Published private(set) var isPreviewingOption = false
     @Published private(set) var isPlaying = false
     @Published private(set) var playError: String?
 
@@ -742,6 +743,7 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
         intervalPlayer.cancelIntervalPlayback()
         chordPlayer.cancelChordPlayback()
         isPlaying = false
+        isPreviewingOption = false
     }
 
     func playPreviewNote(midi: Int) async {
@@ -782,12 +784,14 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
     }
 
     /// 试听和弦——优先使用实际吉他把位（与「播放题目」同音质），回退到 MIDI 合成。
-    func playChordForLabel(_ label: String) async {
+    func playChordForLabel(_ label: String, root: String? = nil) async {
         playTask?.cancel()
         playTask = nil
         intervalPlayer.cancelIntervalPlayback()
         chordPlayer.cancelChordPlayback()
+        isPreviewingOption = true
         let work = Task { @MainActor in
+            defer { self.isPreviewingOption = false }
             do {
                 if let payload = OfflineChordBuilder.buildPayload(displaySymbol: label),
                    let frets = payload.voicings.first?.explain.frets,
@@ -812,11 +816,26 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
         await work.value
     }
 
-    nonisolated private static func midiNotesForChordLabel(_ label: String) -> [Int] {
+    nonisolated private static func midiNotesForChordLabel(_ label: String, defaultRoot: String? = nil) -> [Int] {
         let raw = label.trimmingCharacters(in: .whitespaces)
         guard !raw.isEmpty else { return [] }
+        // 先尝试把 label 当作中文性质名解析（如"大三"、"小三"）
+        if let quality = EarChordQuality(optionLabel: label), let root = defaultRoot {
+            let baseMidi = Self.noteNameToMidi(root)
+            guard baseMidi >= 0 else { return [] }
+            let intervals: [Int]
+            switch quality {
+            case .minor: intervals = [0, 3, 7]
+            case .dominant7: intervals = [0, 4, 7, 10]
+            case .major7: intervals = [0, 4, 7, 11]
+            case .minor7: intervals = [0, 3, 7, 10]
+            default: intervals = [0, 4, 7]
+            }
+            return intervals.map { baseMidi + $0 }
+        }
+        // 否则当作和弦符号解析（如 "C"、"Cm"、"C7"）
         let (root, quality) = Self.parseChordLabel(raw)
-        let baseMidi = Self.noteNameToMidi(root)
+        let baseMidi = Self.noteNameToMidi(root.isEmpty ? (defaultRoot ?? "C") : root)
         guard baseMidi >= 0 else { return [] }
         let intervals: [Int]
         switch quality {
