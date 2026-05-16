@@ -368,12 +368,6 @@ public final class AudioEngineService: AudioEngineServing {
 
     private func startLocked(activateSession: Bool) throws {
         if started {
-            // 引擎已运行时仍可能因来电/后台切换导致系统把会话降为 inactive，
-            // 此时若直接返回，后续练耳播放会“成功调用但无声”。
-            // 每次显式 start 都补一次会话激活，确保从中断恢复后首个题目也有声。
-            if activateSession {
-                try configureSession()
-            }
             return
         }
         if activateSession {
@@ -386,6 +380,15 @@ public final class AudioEngineService: AudioEngineServing {
             quality.markStart()
         }
         loadSampledGuitarIfNeeded()
+    }
+
+    /// 从中断恢复后显式重新激活会话（`start()` / `ensureStarted()` 不再自动补激活，
+    /// 由音频中断通知回调调用本方法）。
+    public func reactivateSessionIfNeeded() {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard started else { return }
+        try? configureSession()
     }
 
     private func ensureStarted() throws {
