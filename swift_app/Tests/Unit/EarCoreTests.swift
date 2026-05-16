@@ -133,6 +133,26 @@ final class EarCoreTests: XCTestCase {
         }
     }
 
+    func testChordMcqDifferentQualitiesProduceDifferentFrets() {
+        let allQualities: [EarChordQuality] = [.major, .minor, .dominant7, .major7, .minor7]
+        let roots = ["C", "G", "D", "A", "E", "F"]
+        for root in roots {
+            var fretsSet = Set<String>()
+            for quality in allQualities {
+                guard let frets = EarChordMcqGenerator.playbackFretsSixToOne(root: root, answer: quality) else {
+                    XCTFail("no voicing for \(root) \(quality)")
+                    return
+                }
+                let key = frets.map(String.init).joined(separator: ",")
+                XCTAssertFalse(
+                    fretsSet.contains(key),
+                    "\(root) \(quality) same frets as another: \(frets) (already seen: \(fretsSet))"
+                )
+                fretsSet.insert(key)
+            }
+        }
+    }
+
     func testProgressionLetterMarkInCMajor() {
         let item = EarBankItem(
             id: "t",
