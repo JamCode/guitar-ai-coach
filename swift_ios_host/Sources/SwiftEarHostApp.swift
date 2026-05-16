@@ -79,11 +79,9 @@ struct SwiftEarHostApp: App {
 /// 设为 `true` 时恢复首次启动全屏导览；暂时关闭时直接进入主界面。
 private let kFirstLaunchTourEnabled = false
 
-/// 根容器：首次启动展示导览，完成后不再出现（受 `kFirstLaunchTourEnabled` 控制）。
-private let kStartupHomeEnabled = true
-
 private struct HostRootView: View {
-    @State private var showStartupHome = kStartupHomeEnabled
+    /// 启动闪屏是否仍显示：音频预热完成 + 最短展示时长后才设为 false。
+    @State private var showSplash = true
 
     var body: some View {
         Group {
@@ -94,14 +92,19 @@ private struct HostRootView: View {
             }
         }
         .overlay {
-            if showStartupHome {
-                StartupHomeView {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showStartupHome = false
-                    }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                .zIndex(10)
+            if showSplash {
+                SplashView()
+                    .transition(.opacity)
+                    .zIndex(10)
+            }
+        }
+        .task {
+            // 预热音频引擎并加载 SF2
+            AudioStartupWarmup.shared.scheduleIfNeeded()
+            // 最短展示 800ms，保证闪屏至少能看清
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            withAnimation(.easeOut(duration: 0.35)) {
+                showSplash = false
             }
         }
     }
@@ -126,92 +129,32 @@ private struct HostRootWithFirstLaunchTour: View {
 }
 
 
-private struct StartupHomeView: View {
-    let onContinue: () -> Void
+private struct SplashView: View {
+    @State private var phase: CGFloat = 0
 
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.08, green: 0.10, blue: 0.20), Color(red: 0.22, green: 0.14, blue: 0.34), Color(red: 0.07, green: 0.32, blue: 0.36)],
+                colors: [Color(red: 0.08, green: 0.10, blue: 0.20), Color(red: 0.22, green: 0.14, blue: 0.34)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 22) {
-                HStack {
-                    Spacer()
-                    Button("跳过") { onContinue() }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.8))
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Wanle Guitar")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.75))
-
-                    Text("今天开始，\n弹一首完整的歌")
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .lineSpacing(6)
-
-                    Text("AI 扒歌、练耳、我的谱、工具箱都在这里。\n3 分钟进入状态，持续看到进步。")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.86))
-                }
-
-                VStack(spacing: 12) {
-                    startupFeatureCard(icon: "waveform.path.ecg", title: "AI 扒歌", subtitle: "上传音频自动识别和弦")
-                    startupFeatureCard(icon: "ear", title: "练耳计划", subtitle: "每天小目标，稳步提升听辨力")
-                    startupFeatureCard(icon: "music.note.list", title: "我的谱", subtitle: "随时编辑、收藏、复盘你的曲谱")
-                }
-
-                Spacer(minLength: 8)
-
-                Button(action: onContinue) {
-                    Text("进入应用")
-                        .font(.headline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(.white)
-                        .foregroundStyle(Color.black.opacity(0.85))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 16)
-        }
-    }
-
-    private func startupFeatureCard(icon: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
-                .background(.white.opacity(0.2))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
+            VStack(spacing: 16) {
+                Image(systemName: "guitars.fill")
+                    .font(.system(size: 72, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.78))
-            }
+                    .symbolEffect(.breathe, value: phase)
 
-            Spacer()
+                Text("Wanle Guitar")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
         }
-        .padding(12)
-        .background(.white.opacity(0.13))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.white.opacity(0.18), lineWidth: 1)
-        )
+        .onAppear {
+            phase = 1
+        }
     }
 }
 
