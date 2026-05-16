@@ -1,5 +1,5 @@
 import XCTest
-import Practice
+
 @testable import SwiftEarHost
 
 final class PracticeLocalStoreTests: XCTestCase {

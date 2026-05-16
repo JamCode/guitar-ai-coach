@@ -4,9 +4,6 @@ options:
   developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"
-packages:
-  GuitarAICoach:
-    path: ../swift_app
 targets:
   SwiftEarHost:
     type: application
@@ -15,6 +12,10 @@ targets:
       - Sources
     resources:
       - Sources/Resources/Localization
+      - Sources/Core/Resources/SteelStringGuitar.sf2
+      - Sources/Core/Resources/SteelStringGuitar.LICENSE.txt
+      - Sources/Core/Resources/SteelStringGuitar.README.txt
+      - Sources/Ear/Resources/ear_seed_v1.json
     preBuildScripts:
       - name: Copy Stem Separation Model
         script: |
@@ -75,25 +76,6 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         SWIFT_VERSION: 5.10
-    dependencies:
-      - package: GuitarAICoach
-        product: Core
-      - package: GuitarAICoach
-        product: Tuner
-      - package: GuitarAICoach
-        product: Fretboard
-      - package: GuitarAICoach
-        product: Chords
-      - package: GuitarAICoach
-        product: ChordChart
-      - package: GuitarAICoach
-        product: Profile
-      - package: GuitarAICoach
-        product: Ear
-      - package: GuitarAICoach
-        product: Practice
-      - package: GuitarAICoach
-        product: Metronome
 
   SwiftEarHostTests:
     type: bundle.unit-test

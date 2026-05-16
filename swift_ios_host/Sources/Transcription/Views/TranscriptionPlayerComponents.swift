@@ -1,6 +1,4 @@
 import SwiftUI
-import Chords
-import Core
 
 private enum TranscriptionPlayerFormatting {
     static func formatMs(_ ms: Int) -> String {

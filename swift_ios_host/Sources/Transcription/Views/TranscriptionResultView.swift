@@ -1,7 +1,6 @@
 import SwiftUI
 import UIKit
 import AVFoundation
-import Core
 
 enum PlaybackSyncResolver {
     static func currentIndex(for currentTimeMs: Int, segments: [TranscriptionSegment]) -> Int? {

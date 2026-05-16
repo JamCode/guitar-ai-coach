@@ -1,5 +1,4 @@
 import Foundation
-import Practice
 
 /// 练习记录本地仓库：所有数据仅保存到本机 UserDefaults（对齐 Flutter `PracticeLocalStore`）。
 final class PracticeLocalStore: PracticeSessionStore {

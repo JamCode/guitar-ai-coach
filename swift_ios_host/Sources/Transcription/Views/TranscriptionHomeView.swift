@@ -2,7 +2,6 @@ import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
 import UIKit
-import Core
 
 struct TranscriptionHomeView: View {
     @StateObject private var vm = TranscriptionHomeViewModel()

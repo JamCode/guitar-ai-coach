@@ -1,6 +1,5 @@
 import SwiftUI
-import Chords
-import Core
+
 import Combine
 
 struct FullChordChartView: View {

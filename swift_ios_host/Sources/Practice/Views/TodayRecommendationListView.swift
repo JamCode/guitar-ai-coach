@@ -1,6 +1,5 @@
-import Core
-import Ear
-import Practice
+
+
 import SwiftUI
 
 struct TodayRecommendationListView: View {

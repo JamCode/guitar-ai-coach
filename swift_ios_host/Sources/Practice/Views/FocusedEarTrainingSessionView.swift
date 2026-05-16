@@ -1,7 +1,5 @@
 import SwiftUI
-import Core
-import Ear
-import Chords
+
 
 struct FocusedEarTrainingSessionView: View {
     let kind: AdaptiveEarQuestionKind

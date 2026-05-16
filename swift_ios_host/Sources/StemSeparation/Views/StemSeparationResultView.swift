@@ -1,7 +1,6 @@
 import AVFoundation
 import SwiftUI
 import UIKit
-import Core
 
 struct StemSeparationResultView: View {
     let result: StemSeparationResult

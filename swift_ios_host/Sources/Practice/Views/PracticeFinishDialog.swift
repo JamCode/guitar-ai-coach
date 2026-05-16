@@ -1,5 +1,4 @@
 import SwiftUI
-import Core
 
 struct PracticeFinishResult: Equatable {
     let completed: Bool

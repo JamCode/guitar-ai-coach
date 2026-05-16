@@ -1,7 +1,6 @@
-import Core
-import Ear
+
+
 import Foundation
-import Practice
 
 enum RecommendationDifficultyLevel: String, CaseIterable, Identifiable {
     case beginner = "初级"

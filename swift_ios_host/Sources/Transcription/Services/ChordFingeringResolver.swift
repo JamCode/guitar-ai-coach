@@ -1,5 +1,4 @@
 import Foundation
-import Chords
 
 struct ResolvedChordFingering: Equatable {
     let symbol: String

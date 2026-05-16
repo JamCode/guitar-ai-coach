@@ -1,6 +1,5 @@
 import SwiftUI
-import Core
-import Chords
+
 
 /// 用和弦符号弹出底部指法层（离线构成音 + 指法图）。
 ///

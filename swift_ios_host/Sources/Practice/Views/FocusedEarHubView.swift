@@ -1,6 +1,5 @@
 import SwiftUI
-import Core
-import Ear
+
 
 struct FocusedEarHubView: View {
     @State private var state: AdaptiveEarAbilityState = .initial

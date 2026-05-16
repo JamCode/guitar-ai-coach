@@ -1,5 +1,4 @@
 import SwiftUI
-import Core
 
 /// 扒歌买断解锁购买页（`sheet` 呈现）。文案与按钮格式面向 App Store 审核与截图。
 struct PurchaseView: View {

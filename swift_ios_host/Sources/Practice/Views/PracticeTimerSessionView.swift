@@ -1,6 +1,5 @@
 import SwiftUI
-import Core
-import Practice
+
 
 struct PracticeTimerSessionView: View {
     let task: PracticeTask

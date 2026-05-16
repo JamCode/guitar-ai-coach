@@ -1,12 +1,6 @@
 import SwiftUI
 import UIKit
-import Tuner
-import Fretboard
-import Chords
-import ChordChart
-import Profile
-import Metronome
-import Core
+
 
 /// 「帮助与反馈」默认收件人；发版前请改为可收信地址。
 /// 若 Xcode Target → Info 增加自定义键 **`AIGuitarFeedbackEmail`**（String），将优先使用该值。

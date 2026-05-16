@@ -1,7 +1,5 @@
 import SwiftUI
-import Core
-import Metronome
-import Practice
+
 
 /// 节奏扫弦练习：按内置常用扫弦型展示 4/4 八分网格图示；可选保存记录（对齐 Flutter）。
 struct RhythmStrummingView: View {

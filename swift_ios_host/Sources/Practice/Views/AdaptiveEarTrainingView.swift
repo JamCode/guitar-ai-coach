@@ -1,7 +1,5 @@
 import SwiftUI
-import Core
-import Ear
-import Chords
+
 
 struct AdaptiveEarTrainingView: View {
     let sessions: [PracticeSession]

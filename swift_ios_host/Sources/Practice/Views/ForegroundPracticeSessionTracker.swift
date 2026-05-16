@@ -1,7 +1,5 @@
 import SwiftUI
-import Core
-import Ear
-import Practice
+
 
 /// 包裹子页面：在用户停留期间按 **前台** 时间累加，离开时写入 `PracticeLocalStore`（与「我的谱」详情一致语义）。
 struct ForegroundPracticeSessionTracker<Content: View>: View {

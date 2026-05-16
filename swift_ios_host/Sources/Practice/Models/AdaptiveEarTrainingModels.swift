@@ -1,5 +1,4 @@
 import Foundation
-import Ear
 
 enum AdaptiveEarQuestionKind: String, CaseIterable, Codable, Equatable {
     case interval

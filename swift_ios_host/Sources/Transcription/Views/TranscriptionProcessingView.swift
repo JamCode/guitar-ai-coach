@@ -1,5 +1,4 @@
 import SwiftUI
-import Core
 
 struct TranscriptionProcessingView: View {
     let fileName: String

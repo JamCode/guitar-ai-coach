@@ -1,7 +1,6 @@
 import SwiftUI
-import Ear
+
 import Foundation
-import Chords
 
 @MainActor
 final class FocusedEarTrainingViewModel: ObservableObject {

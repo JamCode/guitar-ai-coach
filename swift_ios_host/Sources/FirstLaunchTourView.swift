@@ -1,5 +1,4 @@
 import SwiftUI
-import Core
 
 /// `UserDefaults` 键：完成后不再展示首次导览。
 enum FirstLaunchTourStorage {

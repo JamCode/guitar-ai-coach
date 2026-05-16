@@ -1,7 +1,6 @@
 import Foundation
 import UIKit
 import UserNotifications
-import Core
 
 enum PracticeReminderNotificationScheduler {
     static let dailyReminderIdentifier = "daily-ear-training-reminder"

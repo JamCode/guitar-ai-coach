@@ -1,7 +1,5 @@
 import SwiftUI
-import Core
-import Ear
-import Practice
+
 
 /// 练习首页模块：产品要求暂时隐藏，恢复时改为 `true`。
 private enum PracticeLandingVisibility {

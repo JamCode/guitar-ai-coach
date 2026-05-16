@@ -1,7 +1,5 @@
-import ChordChart
-import Core
-import Metronome
-import Practice
+
+
 import SwiftUI
 
 /// 练琴「和弦切换」：题目来自 `ChordSwitchGenerator`。

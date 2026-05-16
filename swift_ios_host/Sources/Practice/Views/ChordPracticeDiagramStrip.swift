@@ -1,7 +1,5 @@
-import ChordChart
-import Chords
-import Core
-import Practice
+
+
 import SwiftUI
 
 /// 和弦切换练习：指法图 + 符号；每行最多 4 个；尺寸随容器宽度按比例缩放。

@@ -1,5 +1,4 @@
 import SwiftUI
-import Core
 
 struct CommonChordProgressionsView: View {
     @State private var selectedGenre: ProgressionGenre = .all
