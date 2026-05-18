@@ -158,7 +158,7 @@ enum AdaptiveEarQuestion: Identifiable {
         case let .singleNote(q, _, _):
             return q.choices.map { AdaptiveEarChoice(id: $0.id, label: $0.label) }
         case let .rhythm(_, choices, _, _):
-            return choices.map { AdaptiveEarChoice(id: $0.grid.map(String.init).joined(), label: $0.musicNotationDisplay) }
+            return choices.map { AdaptiveEarChoice(id: $0.grid.map(String.init).joined(), label: $0.displayText) }
         }
     }
 
@@ -184,7 +184,7 @@ enum AdaptiveEarQuestion: Identifiable {
         case let .singleNote(q, _, _):
             return q.noteLabel
         case let .rhythm(correct, _, _, _):
-            return correct.musicNotationDisplay
+            return correct.displayText
         }
     }
 

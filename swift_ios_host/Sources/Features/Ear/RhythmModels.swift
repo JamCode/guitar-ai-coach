@@ -19,6 +19,7 @@ public struct RhythmPattern: Codable, Equatable, Hashable {
     }
 
     /// 文字展示：每 2 个一组 → X / X· / ·X / .
+    ///  X = 一拍    X· = 八分+休止   ·X = 休止+八分   . = 休止一拍
     public var displayText: String {
         let groups = stride(from: 0, to: 8, by: 2).map { i -> String in
             let pair = (grid[i], grid[i+1])
@@ -31,32 +32,6 @@ public struct RhythmPattern: Codable, Equatable, Hashable {
             }
         }
         return groups.joined(separator: " ")
-    }
-
-    /// Bravura Text 字体下的标准音乐符号展示（SMuFL 标准）
-    /// - 使用 U+E230 noteQuarterUp（四分音符）  U+E232 note8thUp（八分音符）
-    /// - U+E0AA rest8th（八分休止）  U+E0A9 restQuarter（四分休止）
-    public var musicNotationDisplay: String {
-        let groups = stride(from: 0, to: 8, by: 2).map { i -> String in
-            let pair = (grid[i], grid[i+1])
-            switch pair {
-            case (1, 1):
-                // 四分音符
-                return "\u{E230}"
-            case (1, 0):
-                // 八分 + 八分休止
-                return "\u{E232}\u{2009}\u{E0AA}"
-            case (0, 1):
-                // 八分休止 + 八分
-                return "\u{E0AA}\u{2009}\u{E232}"
-            case (0, 0):
-                // 四分休止
-                return "\u{E0A9}"
-            default:
-                return "?"
-            }
-        }
-        return groups.joined(separator: "\u{2009}\u{2009}") // thin spaces between beats
     }
 
     /// 播放用的击打序列（每个八分位是否发声）
