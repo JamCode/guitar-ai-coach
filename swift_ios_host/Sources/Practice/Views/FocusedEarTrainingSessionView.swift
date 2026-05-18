@@ -163,7 +163,7 @@ struct FocusedEarTrainingSessionView: View {
                 .foregroundStyle(SwiftAppTheme.muted)
             HStack(spacing: 14) {
                 legendItem("X", "四分（一拍）")
-                legendItem("X\u{0332}", "八分（半拍）")
+                legendItem("X\u{0332}0\u{0332}", "八分+八分休")
                 legendItem("0", "四分休止")
                 legendItem("0\u{0332}X\u{0332}", "休止+八分")
             }

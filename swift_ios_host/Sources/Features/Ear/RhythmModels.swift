@@ -26,7 +26,7 @@ public struct RhythmPattern: Codable, Equatable, Hashable {
             let pair = (grid[i], grid[i+1])
             switch pair {
             case (1, 1): return "X"
-            case (1, 0): return "X" + underline
+            case (1, 0): return "X" + underline + "0" + underline
             case (0, 1): return "0" + underline + "X" + underline
             case (0, 0): return "0"
             default: return "?"

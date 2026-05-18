@@ -15,16 +15,16 @@ final class RhythmModelsTests: XCTestCase {
 
     func testDisplayText_dottedQuarter() {
         let p = RhythmPattern(grid: [1,0,0,0,1,0,1,0])!
-        // [1,0]=X̲, [0,0]=0, [1,0]=X̲, [1,0]=X̲
+        // [1,0]=X̲0̲, [0,0]=0, [1,0]=X̲0̲, [1,0]=X̲0̲
         let ul = "\u{0332}"
-        XCTAssertEqual(p.displayText, "X\(ul) 0 X\(ul) X\(ul)")
+        XCTAssertEqual(p.displayText, "X\(ul)0\(ul) 0 X\(ul)0\(ul) X\(ul)0\(ul)")
     }
 
     func testDisplayText_restOnFirstBeat() {
         let p = RhythmPattern(grid: [0,0,1,1,1,0,1,0])!
-        // [0,0]=0, [1,1]=X, [1,0]=X̲, [1,0]=X̲
+        // [0,0]=0, [1,1]=X, [1,0]=X̲0̲, [1,0]=X̲0̲
         let ul = "\u{0332}"
-        XCTAssertEqual(p.displayText, "0 X X\(ul) X\(ul)")
+        XCTAssertEqual(p.displayText, "0 X X\(ul)0\(ul) X\(ul)0\(ul)")
     }
 
     func testGridValidation_exactly8() {
