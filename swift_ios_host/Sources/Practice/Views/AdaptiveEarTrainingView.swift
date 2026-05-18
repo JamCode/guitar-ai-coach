@@ -228,6 +228,11 @@ struct AdaptiveEarTrainingView: View {
                 }
             }
 
+            // 节奏题图例：解释选项中的符号含义
+            if case .rhythm = question {
+                rhythmLegend
+            }
+
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(question.choices) { choice in
                     answerButton(choice: choice, question: question)
@@ -269,6 +274,35 @@ struct AdaptiveEarTrainingView: View {
         }
         .buttonStyle(.plain)
         .disabled(vm.isPlaying)
+    }
+
+    private var rhythmLegend: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("符号说明")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(SwiftAppTheme.muted)
+            HStack(spacing: 14) {
+                legendItem("X", "一拍")
+                legendItem("XX", "两个八分")
+                legendItem("X·", "附点")
+                legendItem("·X", "弱起八分")
+                legendItem(".", "休止")
+            }
+        }
+        .padding(.top, 2)
+        .padding(.bottom, 4)
+    }
+
+    private func legendItem(_ symbol: String, _ label: String) -> some View {
+        HStack(spacing: 3) {
+            Text(symbol)
+                .font(.caption.weight(.bold).monospaced())
+                .foregroundStyle(SwiftAppTheme.brand)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(SwiftAppTheme.muted)
+                .lineLimit(1)
+        }
     }
 
     private func answerButton(choice: AdaptiveEarChoice, question: AdaptiveEarQuestion) -> some View {
