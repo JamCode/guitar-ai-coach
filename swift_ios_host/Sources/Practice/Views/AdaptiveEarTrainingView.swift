@@ -1177,6 +1177,7 @@ private struct CombinedStatsView: View {
                 statsRow("和弦", "\(Int(state.chordRating.rounded()))")
                 statsRow("和弦进行", "\(Int(state.progressionRating.rounded()))")
                 statsRow("单音", "\(Int(state.singleNoteRating.rounded()))")
+                statsRow("节奏", "\(Int(state.rhythmRating.rounded()))")
             }
             Section("近期表现") {
                 statsRow("总题数", "\(records.count)")

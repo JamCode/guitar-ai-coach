@@ -48,7 +48,7 @@ public final class RhythmAudioPlayer {
         // 为每个击发的八分位调度一个 click buffer
         for (i, hit) in pattern.hits.enumerated() where hit {
             let isAccent = (i == 0 || i == 4)  // 第 1、3 拍为强拍
-            let buffer = Self.makeClickBuffer(format: format, accent: isAccent)
+            guard let buffer = Self.makeClickBuffer(format: format, accent: isAccent) else { continue }
             let sampleTime = AVAudioFramePosition(Double(i) * eighthInterval * sampleRate)
             let time = AVAudioTime(sampleTime: sampleTime, atRate: sampleRate)
             player.scheduleBuffer(buffer, at: time, options: [])
