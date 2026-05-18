@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreText
 
 
 /// 「帮助与反馈」默认收件人；发版前请改为可收信地址。
@@ -27,6 +28,11 @@ struct SwiftEarHostApp: App {
     @UIApplicationDelegateAdaptor(AppNotificationDelegate.self) private var appNotificationDelegate
 
     init() {
+        // Register Bravura Text font for music notation display
+        if let fontURL = Bundle.main.url(forResource: "BravuraText", withExtension: "otf") as CFURL? {
+            CTFontManagerRegisterFontsForURL(fontURL, .process, nil)
+        }
+
         #if os(iOS)
         try? AppAudioSession.configureSharedForPlaybackAndRecording()
         #endif
