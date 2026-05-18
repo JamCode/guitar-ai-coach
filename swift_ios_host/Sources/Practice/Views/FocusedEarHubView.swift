@@ -41,6 +41,12 @@ struct FocusedEarHubView: View {
                     color: Color(red: 0.98, green: 0.74, blue: 0.02),
                     description: "标准音 A4 参考，四选一"
                 )
+                typeCard(
+                    kind: .rhythm,
+                    icon: "metronome",
+                    color: Color(red: 0.85, green: 0.35, blue: 0.75),
+                    description: "4/4 拍一小节，听节奏选谱例"
+                )
             }
             .padding(SwiftAppTheme.pagePadding)
         }
