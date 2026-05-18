@@ -278,14 +278,14 @@ struct AdaptiveEarTrainingView: View {
 
     private var rhythmLegend: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("符号说明")
+            Text("简谱记法说明")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.muted)
             HStack(spacing: 14) {
-                legendItem("X", "一拍")
-                legendItem("X·", "八分+休")
-                legendItem("·X", "休+八分")
-                legendItem(".", "休止")
+                legendItem("X", "四分（一拍）")
+                legendItem("X\u{0332}", "八分（半拍）")
+                legendItem("0", "四分休止")
+                legendItem("0\u{0332}X\u{0332}", "休止+八分")
             }
         }
         .padding(.top, 2)

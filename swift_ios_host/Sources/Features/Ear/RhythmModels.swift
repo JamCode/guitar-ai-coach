@@ -18,16 +18,17 @@ public struct RhythmPattern: Codable, Equatable, Hashable {
         self.grid = grid
     }
 
-    /// 文字展示：每 2 个一组 → X / X· / ·X / .
-    ///  X = 一拍    X· = 八分+休止   ·X = 休止+八分   . = 休止一拍
+    /// 简谱风格展示：每 2 个一组
+    ///  X = 四分音符（一拍）   X̲ = 八分音符   0 = 四分休止   0̲ = 八分休止
     public var displayText: String {
+        let underline = "\u{0332}"  // 组合下划线，如 X̲
         let groups = stride(from: 0, to: 8, by: 2).map { i -> String in
             let pair = (grid[i], grid[i+1])
             switch pair {
             case (1, 1): return "X"
-            case (1, 0): return "X·"
-            case (0, 1): return "·X"
-            case (0, 0): return "."
+            case (1, 0): return "X" + underline
+            case (0, 1): return "0" + underline + "X" + underline
+            case (0, 0): return "0"
             default: return "?"
             }
         }
