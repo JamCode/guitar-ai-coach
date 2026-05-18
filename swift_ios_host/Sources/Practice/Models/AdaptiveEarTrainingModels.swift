@@ -5,6 +5,7 @@ enum AdaptiveEarQuestionKind: String, CaseIterable, Codable, Equatable {
     case chord
     case progression
     case singleNote
+    case rhythm
 
     var title: String {
         switch self {
@@ -12,6 +13,7 @@ enum AdaptiveEarQuestionKind: String, CaseIterable, Codable, Equatable {
         case .chord: return "和弦听辨"
         case .progression: return "和弦进行听辨"
         case .singleNote: return "单音测试"
+        case .rhythm: return "节奏听写"
         }
     }
 
@@ -21,6 +23,7 @@ enum AdaptiveEarQuestionKind: String, CaseIterable, Codable, Equatable {
         case .chord: return "和弦"
         case .progression: return "进行"
         case .singleNote: return "单音"
+        case .rhythm: return "节奏"
         }
     }
 }
@@ -61,6 +64,14 @@ enum AdaptiveEarDifficulty: String, Codable, Equatable {
         case .advanced: return .高级
         }
     }
+
+    var rhythmDifficulty: RhythmDifficulty {
+        switch self {
+        case .beginner: return .beginner
+        case .intermediate: return .intermediate
+        case .advanced: return .advanced
+        }
+    }
 }
 
 struct SingleNoteQuestion: Codable, Equatable {
@@ -82,6 +93,7 @@ enum AdaptiveEarQuestion: Identifiable {
     case chord(EarBankItem, difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
     case progression(EarBankItem, difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
     case singleNote(SingleNoteQuestion, difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
+    case rhythm(RhythmPattern, choices: [RhythmPattern], difficulty: AdaptiveEarDifficulty, difficultyScore: Int)
 
     var id: String {
         stableQuestionId
@@ -95,6 +107,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return q.id
         case let .singleNote(q, _, _):
             return "singlenote-\(q.midi)"
+        case let .rhythm(q, _, _, _):
+            return "rhythm-\(q.grid.map(String.init).joined())"
         }
     }
 
@@ -104,19 +118,20 @@ enum AdaptiveEarQuestion: Identifiable {
         case .chord: return .chord
         case .progression: return .progression
         case .singleNote: return .singleNote
+        case .rhythm: return .rhythm
         }
     }
 
     var difficulty: AdaptiveEarDifficulty {
         switch self {
-        case let .interval(_, d, _), let .chord(_, d, _), let .progression(_, d, _), let .singleNote(_, d, _):
+        case let .interval(_, d, _), let .chord(_, d, _), let .progression(_, d, _), let .singleNote(_, d, _), let .rhythm(_, _, d, _):
             return d
         }
     }
 
     var difficultyScore: Int {
         switch self {
-        case let .interval(_, _, s), let .chord(_, _, s), let .progression(_, _, s), let .singleNote(_, _, s):
+        case let .interval(_, _, s), let .chord(_, _, s), let .progression(_, _, s), let .singleNote(_, _, s), let .rhythm(_, _, _, s):
             return s
         }
     }
@@ -129,6 +144,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return q.promptZh
         case .singleNote:
             return "听标准音 A4（440Hz），判断接下来听到的是哪个音"
+        case .rhythm:
+            return "听节奏，选出正确的节奏型"
         }
     }
 
@@ -140,6 +157,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return q.options.map { AdaptiveEarChoice(id: $0.key, label: $0.label) }
         case let .singleNote(q, _, _):
             return q.choices.map { AdaptiveEarChoice(id: $0.id, label: $0.label) }
+        case let .rhythm(_, choices, _, _):
+            return choices.map { AdaptiveEarChoice(id: $0.grid.map(String.init).joined(), label: $0.displayText) }
         }
     }
 
@@ -151,6 +170,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return q.correctOptionKey
         case let .singleNote(q, _, _):
             return q.choices.first(where: { $0.label == q.noteLabel })?.id ?? ""
+        case let .rhythm(correct, _, _, _):
+            return correct.grid.map(String.init).joined()
         }
     }
 
@@ -162,6 +183,8 @@ enum AdaptiveEarQuestion: Identifiable {
             return q.options.first(where: { $0.key == q.correctOptionKey })?.label ?? ""
         case let .singleNote(q, _, _):
             return q.noteLabel
+        case let .rhythm(correct, _, _, _):
+            return correct.displayText
         }
     }
 
@@ -169,7 +192,7 @@ enum AdaptiveEarQuestion: Identifiable {
         switch self {
         case let .chord(q, _, _), let .progression(q, _, _):
             return q.root
-        case .interval, .singleNote:
+        case .interval, .singleNote, .rhythm:
             return nil
         }
     }
@@ -189,6 +212,8 @@ enum AdaptiveEarQuestion: Identifiable {
         case let .singleNote(q, _, _):
             let name = Self.scientificPitchLabel(midi: q.midi)
             return "本题音是 \(name)（MIDI \(q.midi)）"
+        case .rhythm:
+            return "这段节奏是 \(correctAnswerText)，注意强弱拍的位置。"
         }
     }
 
@@ -229,6 +254,7 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
     var chordRating: Double
     var progressionRating: Double
     var singleNoteRating: Double
+    var rhythmRating: Double
     var totalAnswered: Int
     var consecutiveCorrect: Int
     var consecutiveWrong: Int
@@ -240,6 +266,7 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
         chordRating: 400,
         progressionRating: 400,
         singleNoteRating: 400,
+        rhythmRating: 400,
         totalAnswered: 0,
         consecutiveCorrect: 0,
         consecutiveWrong: 0,
@@ -263,6 +290,7 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
         case .chord: return chordRating
         case .progression: return progressionRating
         case .singleNote: return singleNoteRating
+        case .rhythm: return rhythmRating
         }
     }
 
@@ -272,6 +300,7 @@ struct AdaptiveEarAbilityState: Codable, Equatable {
         case .chord: chordRating = value
         case .progression: progressionRating = value
         case .singleNote: singleNoteRating = value
+        case .rhythm: rhythmRating = value
         }
     }
 }
@@ -402,6 +431,9 @@ enum AdaptiveEarTrainingEngine {
         case (.singleNote, .beginner): return 300
         case (.singleNote, .intermediate): return 470
         case (.singleNote, .advanced): return 630
+        case (.rhythm, .beginner): return 320
+        case (.rhythm, .intermediate): return 490
+        case (.rhythm, .advanced): return 650
         }
     }
 

@@ -97,6 +97,7 @@ struct AdaptiveEarTrainingView: View {
                 ratingChip(title: "和弦", value: vm.state.chordRating)
                 ratingChip(title: "进行", value: vm.state.progressionRating)
                 ratingChip(title: "单音", value: vm.state.singleNoteRating)
+                ratingChip(title: "节奏", value: vm.state.rhythmRating)
             }
         }
         .appCard()
@@ -647,6 +648,7 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
     private let store: AdaptiveEarTrainingStoring
     private let intervalPlayer: IntervalTonePlaying
     private let chordPlayer: EarChordPlaying
+    private let rhythmPlayer = RhythmAudioPlayer()
     private var rng = SystemRandomNumberGenerator()
     private var questionStartedAt = Date()
     private var previousIntervalLowMidi: Int?
@@ -723,6 +725,8 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
                     }
                 case let .singleNote(q, _, _):
                     try await intervalPlayer.playAscendingPair(lowMidi: 69, highMidi: q.midi)
+                case let .rhythm(q, _, _, _):
+                    rhythmPlayer.play(pattern: q)
                 }
                 playError = nil
             } catch is CancellationError {
@@ -742,6 +746,7 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
         playTask = nil
         intervalPlayer.cancelIntervalPlayback()
         chordPlayer.cancelChordPlayback()
+        rhythmPlayer.stop()
         isPlaying = false
         isPreviewingOption = false
     }
@@ -1010,6 +1015,13 @@ final class AdaptiveEarTrainingViewModel: ObservableObject {
                 using: &rng
             )
             return .singleNote(q, difficulty: request.difficulty, difficultyScore: request.score)
+        case .rhythm:
+            let result = RhythmQuestionGenerator.makeQuestion(
+                difficulty: request.difficulty.rhythmDifficulty,
+                using: &rng
+            )
+            return .rhythm(result.correct, choices: result.choices,
+                           difficulty: request.difficulty, difficultyScore: request.score)
         }
     }
 

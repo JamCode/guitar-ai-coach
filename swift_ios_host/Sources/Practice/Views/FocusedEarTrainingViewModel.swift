@@ -23,6 +23,7 @@ final class FocusedEarTrainingViewModel: ObservableObject {
     private let store: AdaptiveEarTrainingStoring
     private let intervalPlayer: IntervalTonePlaying
     private let chordPlayer: EarChordPlaying
+    private let rhythmPlayer = RhythmAudioPlayer()
     private var rng = SystemRandomNumberGenerator()
     private var questionStartedAt = Date()
     private var previousIntervalLowMidi: Int?
@@ -92,6 +93,8 @@ final class FocusedEarTrainingViewModel: ObservableObject {
                     }
                 case let .singleNote(q, _, _):
                     try await intervalPlayer.playAscendingPair(lowMidi: 69, highMidi: q.midi)
+                case let .rhythm(q, _, _, _):
+                    rhythmPlayer.play(pattern: q)
                 }
                 playError = nil
             } catch is CancellationError {
@@ -111,6 +114,7 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         playTask = nil
         intervalPlayer.cancelIntervalPlayback()
         chordPlayer.cancelChordPlayback()
+        rhythmPlayer.stop()
         isPlaying = false
         isPreviewingOption = false
     }
@@ -348,6 +352,13 @@ final class FocusedEarTrainingViewModel: ObservableObject {
                 using: &rng
             )
             return .singleNote(q, difficulty: request.difficulty, difficultyScore: request.score)
+        case .rhythm:
+            let result = RhythmQuestionGenerator.makeQuestion(
+                difficulty: request.difficulty.rhythmDifficulty,
+                using: &rng
+            )
+            return .rhythm(result.correct, choices: result.choices,
+                           difficulty: request.difficulty, difficultyScore: request.score)
         }
     }
 
