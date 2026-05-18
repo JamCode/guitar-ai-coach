@@ -278,15 +278,14 @@ struct AdaptiveEarTrainingView: View {
 
     private var rhythmLegend: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("符号说明")
+            Text("符号说明（Bravura Text 音乐字体）")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(SwiftAppTheme.muted)
             HStack(spacing: 14) {
-                legendItem("X", "一拍")
-                legendItem("XX", "两个八分")
-                legendItem("X·", "附点")
-                legendItem("·X", "弱起八分")
-                legendItem(".", "休止")
+                legendItem("\u{E230}", "四分")
+                legendItem("\u{E232}\u{2009}\u{E0AA}", "八分+休止")
+                legendItem("\u{E0AA}\u{2009}\u{E232}", "休止+八分")
+                legendItem("\u{E0A9}", "休止一拍")
             }
         }
         .padding(.top, 2)
@@ -296,7 +295,7 @@ struct AdaptiveEarTrainingView: View {
     private func legendItem(_ symbol: String, _ label: String) -> some View {
         HStack(spacing: 3) {
             Text(symbol)
-                .font(.caption.weight(.bold).monospaced())
+                .font(.custom("BravuraText", size: 18))
                 .foregroundStyle(SwiftAppTheme.brand)
             Text(label)
                 .font(.caption2)
@@ -311,7 +310,7 @@ struct AdaptiveEarTrainingView: View {
             vm.submit(choice)
         } label: {
             Text(choice.label)
-                .font(.headline.weight(.semibold))
+                .font(question.kind == .rhythm ? .custom("BravuraText", size: 22) : .headline.weight(.semibold))
                 .foregroundStyle(state.textColor)
                 .lineLimit(2)
                 .minimumScaleFactor(0.78)

@@ -85,6 +85,7 @@
 		60CF4A6C2B33A2A77E9D51FB /* ChordChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAACD48F010F38C5D4D66DC9 /* ChordChartView.swift */; };
 		62370912F016AECD854D99FF /* MetronomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72360E7709599B1378C396FC /* MetronomeViewModel.swift */; };
 		682303963F7DBBEA6CBE3F4A /* RecommendationHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0944BA0BAA6C603F2C127D /* RecommendationHistoryStore.swift */; };
+		6AB30133BF578C27C9B5EE32 /* BravuraText.otf in Resources */ = {isa = PBXBuildFile; fileRef = 8447CC1EB59D984F3D70D958 /* BravuraText.otf */; };
 		6B1CE0D318D4540734D8B755 /* ScaleWarmupDrill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECE95D73D9DFEC3EBB60E6B /* ScaleWarmupDrill.swift */; };
 		6C1870E16CD488FD0AE52A61 /* SwiftEarHostUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177FBAE326961BC78A364662 /* SwiftEarHostUITests.swift */; };
 		6C2563E0DAB61DC1B7781A83 /* EarChordPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C11C4C42EA36EAB32876D1 /* EarChordPlayer.swift */; };
@@ -302,6 +303,7 @@
 		7D0FEB00851A3165E8E7A4FF /* CoreMLStemSeparationRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLStemSeparationRunner.swift; sourceTree = "<group>"; };
 		806C00DBFC5F03D5BC94A218 /* StrummingPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrummingPattern.swift; sourceTree = "<group>"; };
 		811707E84A6CEE983154205F /* AudioEngineServiceLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineServiceLifecycleTests.swift; sourceTree = "<group>"; };
+		8447CC1EB59D984F3D70D958 /* BravuraText.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BravuraText.otf; sourceTree = "<group>"; };
 		848742D37F4F1716B2E94E8C /* ChordSwitchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordSwitchTests.swift; sourceTree = "<group>"; };
 		85C11C4C42EA36EAB32876D1 /* EarChordPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarChordPlayer.swift; sourceTree = "<group>"; };
 		86A0CDA865FD982B97AAF472 /* StemSeparationSpectrogramProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StemSeparationSpectrogramProcessor.swift; sourceTree = "<group>"; };
@@ -840,6 +842,7 @@
 		D4FC3CE88731F453915A3C3E /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				8447CC1EB59D984F3D70D958 /* BravuraText.otf */,
 				9D9A9D7F9A6104E2384FDACE /* SteelStringGuitar.LICENSE.txt */,
 				F0FF0034EAFCD2028A31DE0F /* SteelStringGuitar.README.txt */,
 				8981BE1053C364E0EB7CB574 /* SteelStringGuitar.sf2 */,
@@ -1041,6 +1044,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FF25AEF3B37D59AF2314A8E7 /* Assets.xcassets in Resources */,
+				6AB30133BF578C27C9B5EE32 /* BravuraText.otf in Resources */,
 				BFADA1BAB85AC16B4748B6E5 /* InfoPlist.strings in Resources */,
 				7E0F797FFDF622C6C1C2A124 /* Localizable.xcstrings in Resources */,
 				107B5FBB63284B8DE27E30A1 /* PrivacyInfo.xcprivacy in Resources */,
@@ -1356,6 +1360,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Wanle Guitar needs the microphone for tuning and some sound input exercises.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow photo library access to import sheet music images or videos.";
+				INFOPLIST_KEY_UIAppFonts = (
+					BravuraText.otf,
+				);
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = (
@@ -1565,6 +1572,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Wanle Guitar needs the microphone for tuning and some sound input exercises.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow photo library access to import sheet music images or videos.";
+				INFOPLIST_KEY_UIAppFonts = (
+					BravuraText.otf,
+				);
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = (

@@ -15,6 +15,7 @@ targets:
       - Sources/Core/Resources/SteelStringGuitar.sf2
       - Sources/Core/Resources/SteelStringGuitar.LICENSE.txt
       - Sources/Core/Resources/SteelStringGuitar.README.txt
+      - Sources/Core/Resources/BravuraText.otf
       - Sources/Ear/Resources/ear_seed_v1.json
     preBuildScripts:
       - name: Copy Stem Separation Model
@@ -65,6 +66,8 @@ targets:
         INFOPLIST_KEY_NSMicrophoneUsageDescription: Wanle Guitar needs the microphone for tuning and some sound input exercises.
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Allow photo library access to import sheet music images or videos.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: false
+        INFOPLIST_KEY_UIAppFonts:
+          - BravuraText.otf
         INFOPLIST_KEY_UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
