@@ -2,7 +2,7 @@ import XCTest
 @testable import SwiftEarHost
 
 final class SheetOCRParserTests: XCTestCase {
-    func testParseSystem_extractsChordLyricAndMelodyTokens() {
+    func testParseSystem_extractsChordAndLyricTokensIgnoringJianpu() {
         let parser = SheetOCRParser()
         let system = SheetOCRStaffSystem(
             bounds: SheetOCRRect(x: 0, y: 0.20, width: 1, height: 0.30),
@@ -11,7 +11,7 @@ final class SheetOCRParserTests: XCTestCase {
             lyricZone: SheetOCRRect(x: 0, y: 0.38, width: 1, height: 0.08)
         )
         let observations = [
-            SheetOCRTextObservation(text: "C  G/B  Am  Em  Dm7  Gsus4", confidence: 0.92, rect: SheetOCRRect(x: 0.10, y: 0.23, width: 0.70, height: 0.03), source: .chordZone),
+            SheetOCRTextObservation(text: "C  G/B  Am  Em  Dm7  Gsus4", confidence: 0.92, rect: SheetOCRRect(x: 0.10, y: 0.23, width: 0.70, height: 0.03), source: .chordLabelZone),
             SheetOCRTextObservation(text: "0 5 1 7 1 2 3 1", confidence: 0.80, rect: SheetOCRRect(x: 0.12, y: 0.37, width: 0.55, height: 0.03), source: .jianpuZone),
             SheetOCRTextObservation(text: "缓缓飘落的枫叶像思念", confidence: 0.88, rect: SheetOCRRect(x: 0.12, y: 0.42, width: 0.55, height: 0.03), source: .lyricZone)
         ]
@@ -19,12 +19,12 @@ final class SheetOCRParserTests: XCTestCase {
         let parsed = parser.parseSystem(pageIndex: 0, systemIndex: 0, system: system, observations: observations)
 
         XCTAssertEqual(parsed.chords.map(\.text), ["C", "G/B", "Am", "Em", "Dm7", "Gsus4"])
-        XCTAssertEqual(parsed.melody.map(\.text), ["0 5 1 7 1 2 3 1"])
+        XCTAssertTrue(parsed.melody.isEmpty)
         XCTAssertEqual(parsed.lyrics.map(\.text), ["缓缓飘落的枫叶像思念"])
         XCTAssertTrue(parsed.chords.allSatisfy { $0.rect.width > 0 && $0.rect.height > 0 })
     }
 
-    func testParsePageMeta_extractsOriginalKeyAndTitle() {
+    func testParsePageMeta_extractsTitleAndIgnoresOriginalKey() {
         let parser = SheetOCRParser()
         let observations = [
             SheetOCRTextObservation(text: "枫", confidence: 0.95, rect: SheetOCRRect(x: 0.48, y: 0.04, width: 0.04, height: 0.03)),
@@ -35,11 +35,10 @@ final class SheetOCRParserTests: XCTestCase {
         let meta = parser.parsePageMeta(observations)
 
         XCTAssertEqual(meta.title?.text, "枫")
-        XCTAssertEqual(meta.key?.text, "1=C")
-        XCTAssertEqual(meta.key?.originalText, "1= C  4/4")
+        XCTAssertNil(meta.key)
     }
 
-    func testParsePageMeta_prefersCandidateKeyWithoutSpuriousAccidental() {
+    func testParsePageMeta_doesNotRecognizeKeyCandidates() {
         let parser = SheetOCRParser()
         let observations = [
             SheetOCRTextObservation(
@@ -55,10 +54,10 @@ final class SheetOCRParserTests: XCTestCase {
 
         let meta = parser.parsePageMeta(observations)
 
-        XCTAssertEqual(meta.key?.text, "1=C")
+        XCTAssertNil(meta.key)
     }
 
-    func testParsePageMeta_correctsCommonCSharpKeyFalsePositive() {
+    func testParsePageMeta_doesNotCorrectCommonCSharpKeyFalsePositive() {
         let parser = SheetOCRParser()
         let observations = [
             SheetOCRTextObservation(
@@ -70,7 +69,7 @@ final class SheetOCRParserTests: XCTestCase {
 
         let meta = parser.parsePageMeta(observations)
 
-        XCTAssertEqual(meta.key?.text, "1=C")
+        XCTAssertNil(meta.key)
     }
 
     func testParseSystem_ignoresFullPageChordLikeFragmentsWhenZoneOCRExists() {
@@ -82,7 +81,7 @@ final class SheetOCRParserTests: XCTestCase {
             lyricZone: SheetOCRRect(x: 0, y: 0.38, width: 1, height: 0.08)
         )
         let observations = [
-            SheetOCRTextObservation(text: "G/B", confidence: 0.92, rect: SheetOCRRect(x: 0.10, y: 0.23, width: 0.06, height: 0.03), source: .chordZone),
+            SheetOCRTextObservation(text: "G/B", confidence: 0.92, rect: SheetOCRRect(x: 0.10, y: 0.23, width: 0.06, height: 0.03), source: .chordLabelZone),
             SheetOCRTextObservation(text: "B", confidence: 0.55, rect: SheetOCRRect(x: 0.40, y: 0.35, width: 0.02, height: 0.02), source: .fullPage),
             SheetOCRTextObservation(text: "爱你穿 越时 间", confidence: 0.90, rect: SheetOCRRect(x: 0.12, y: 0.42, width: 0.35, height: 0.03), source: .lyricZone)
         ]
@@ -91,6 +90,24 @@ final class SheetOCRParserTests: XCTestCase {
 
         XCTAssertEqual(parsed.chords.map(\.text), ["G/B"])
         XCTAssertEqual(parsed.lyrics.map(\.text), ["爱你穿越时间"])
+    }
+
+    func testParseSystem_filtersLowConfidenceSingleLetterChordLabels() {
+        let parser = SheetOCRParser()
+        let system = SheetOCRStaffSystem(
+            bounds: SheetOCRRect(x: 0, y: 0.20, width: 1, height: 0.30),
+            staffBounds: SheetOCRRect(x: 0, y: 0.30, width: 1, height: 0.06),
+            chordZone: SheetOCRRect(x: 0, y: 0.22, width: 1, height: 0.07),
+            lyricZone: SheetOCRRect(x: 0, y: 0.38, width: 1, height: 0.08)
+        )
+        let observations = [
+            SheetOCRTextObservation(text: "B", confidence: 0.61, rect: SheetOCRRect(x: 0.40, y: 0.23, width: 0.02, height: 0.02), source: .chordLabelZone),
+            SheetOCRTextObservation(text: "Fmaj7", confidence: 0.72, rect: SheetOCRRect(x: 0.50, y: 0.23, width: 0.06, height: 0.02), source: .chordLabelZone)
+        ]
+
+        let parsed = parser.parseSystem(pageIndex: 0, systemIndex: 0, system: system, observations: observations)
+
+        XCTAssertEqual(parsed.chords.map(\.text), ["Fmaj7"])
     }
 
     func testParseSystem_usesChordCandidateWhenTopTextIsOcrConfusion() {
@@ -110,7 +127,7 @@ final class SheetOCRParserTests: XCTestCase {
                     SheetOCRTextCandidate(text: "6/B", confidence: 0.61),
                     SheetOCRTextCandidate(text: "G/B", confidence: 0.58)
                 ],
-                source: .chordZone
+                source: .chordLabelZone
             )
         ]
 
@@ -135,7 +152,7 @@ final class SheetOCRParserTests: XCTestCase {
 
         let parsed = parser.parseSystem(pageIndex: 0, systemIndex: 0, system: system, observations: observations)
 
-        XCTAssertEqual(parsed.chords.map(\.text), ["Am", "Em"])
+        XCTAssertEqual(parsed.chords.map(\.text), ["Am"])
     }
 
     func testParseSystem_mergesAdjacentLyricFragmentsOnSameBaseline() {
@@ -147,9 +164,9 @@ final class SheetOCRParserTests: XCTestCase {
             lyricZone: SheetOCRRect(x: 0, y: 0.38, width: 1, height: 0.08)
         )
         let observations = [
-            SheetOCRTextObservation(text: "总在回", confidence: 0.88, rect: SheetOCRRect(x: 0.10, y: 0.42, width: 0.12, height: 0.03), source: .lyricZone),
+            SheetOCRTextObservation(text: "2 1 1 | 总在回", confidence: 0.88, rect: SheetOCRRect(x: 0.10, y: 0.42, width: 0.12, height: 0.03), source: .lyricZone),
             SheetOCRTextObservation(text: "忆里 才看", confidence: 0.86, rect: SheetOCRRect(x: 0.22, y: 0.421, width: 0.18, height: 0.03), source: .lyricZone),
-            SheetOCRTextObservation(text: "得清", confidence: 0.89, rect: SheetOCRRect(x: 0.41, y: 0.419, width: 0.08, height: 0.03), source: .lyricZone)
+            SheetOCRTextObservation(text: "得清 0 0", confidence: 0.89, rect: SheetOCRRect(x: 0.41, y: 0.419, width: 0.08, height: 0.03), source: .lyricZone)
         ]
 
         let parsed = parser.parseSystem(pageIndex: 0, systemIndex: 0, system: system, observations: observations)

@@ -5,13 +5,8 @@ struct SheetOCRParser {
         pattern: #"(?<![A-Za-z0-9#b♯♭/])([A-G](?:#|b|♯|♭)?(?:maj7?|M7|m(?:aj7|7|9|11|13)?|7|9|11|13|6|4|2|5|sus2|sus4|add(?:9|11)|dim|aug|°|ø|Ø|\+|m)?(?:(?:/|on)(?=[A-G])(?:[A-G](?:#|b|♯|♭)?))?)"#
     )
     private let keyRegex = try! NSRegularExpression(pattern: #"1\s*=\s*([A-G](?:#|b|♯|♭)?)"#)
-    private let jianpuRegex = try! NSRegularExpression(pattern: #"^[\d\s·.\-_|()（）]+$"#)
-
     func parsePageMeta(_ observations: [SheetOCRTextObservation]) -> (title: SheetOCRToken?, key: SheetOCRToken?) {
         let sorted = observations.sortedForReading()
-        let key = sorted.compactMap { observation in
-            keyToken(in: observation)
-        }.first
 
         let title = sorted.first { observation in
             observation.rect.midY < 0.22
@@ -22,7 +17,7 @@ struct SheetOCRParser {
             SheetOCRToken(kind: .title, text: $0.text, confidence: $0.confidence, rect: $0.rect)
         }
 
-        return (title, key)
+        return (title, nil)
     }
 
     func parseSystem(
@@ -32,11 +27,11 @@ struct SheetOCRParser {
         observations: [SheetOCRTextObservation]
     ) -> SheetOCRSystemDraft {
         let relevant = observations
-            .filter { system.bounds.expanded(dx: 0, dy: 0.03).contains(midpointOf: $0.rect) }
+            .filter { system.bounds.expanded(dx: 0, dy: 0.01).contains(midpointOf: $0.rect) }
             .sortedForReading()
         var chords: [SheetOCRToken] = []
-        var lyrics: [SheetOCRToken] = []
-        var melody: [SheetOCRToken] = []
+        var lyricOCRTokens: [SheetOCRToken] = []
+        var fallbackLyricTokens: [SheetOCRToken] = []
 
         for observation in relevant {
             let trimmed = observation.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -44,26 +39,29 @@ struct SheetOCRParser {
             if isMetadata(trimmed) {
                 continue
             }
-            let inChordBand = observation.isChordOCR || system.chordZone.expanded(dx: 0, dy: 0.02).contains(midpointOf: observation.rect)
-            let inLyricBand = observation.source == .lyricZone || system.lyricZone.expanded(dx: 0, dy: 0.02).contains(midpointOf: observation.rect)
-            let inJianpuBand = observation.source == .jianpuZone || system.jianpuZone.expanded(dx: 0, dy: 0.015).contains(midpointOf: observation.rect)
+            let inChordBand = observation.isChordOCR
+                || (observation.source == .fullPage && system.chordZone.expanded(dx: 0, dy: 0.005).contains(midpointOf: observation.rect))
+            let inLyricBand = observation.isLyricOCR
+                || (observation.source == .fullPage && system.lyricZone.expanded(dx: 0, dy: 0.01).contains(midpointOf: observation.rect))
 
             if inChordBand {
                 chords.append(contentsOf: chordTokens(in: observation))
                 continue
             }
-            if inJianpuBand && isLikelyJianpu(trimmed) {
-                melody.append(SheetOCRToken(kind: .melody, text: trimmed, confidence: observation.confidence, rect: observation.rect))
-                continue
-            }
             if inLyricBand {
                 if let lyric = lyricText(from: trimmed), !isMetadata(lyric) {
-                    lyrics.append(SheetOCRToken(kind: .lyric, text: lyric, confidence: observation.confidence, rect: observation.rect, originalText: trimmed))
+                    let token = SheetOCRToken(kind: .lyric, text: lyric, confidence: observation.confidence, rect: observation.rect, originalText: trimmed)
+                    if observation.isLyricOCR {
+                        lyricOCRTokens.append(token)
+                    } else {
+                        fallbackLyricTokens.append(token)
+                    }
                 }
                 continue
             }
         }
 
+        let lyrics = lyricOCRTokens.isEmpty ? fallbackLyricTokens : lyricOCRTokens
         return SheetOCRSystemDraft(
             pageIndex: pageIndex,
             systemIndex: systemIndex,
@@ -73,7 +71,7 @@ struct SheetOCRParser {
             lyricZone: system.lyricZone,
             chords: deduplicateChords(chords.sortedByPosition()),
             lyrics: mergeLyricFragments(lyrics.sortedByPosition()),
-            melody: melody.sortedByPosition(),
+            melody: [],
             rawObservations: relevant
         )
     }
@@ -108,7 +106,7 @@ struct SheetOCRParser {
             let range = match.range(at: 1)
             guard range.location != NSNotFound, let swiftRange = Range(range, in: text) else { return nil }
             let token = String(text[swiftRange]).normalizedChordText
-            guard !token.isEmpty else { return nil }
+            guard isAllowedChordToken(token, confidence: min(observation.confidence, candidate.confidence), source: observation.source) else { return nil }
             return SheetOCRToken(
                 kind: .chord,
                 text: token,
@@ -117,53 +115,6 @@ struct SheetOCRParser {
                 originalText: token
             )
         }
-    }
-
-    private func keyToken(in observation: SheetOCRTextObservation) -> SheetOCRToken? {
-        let candidates = observation.candidates.isEmpty
-            ? [SheetOCRTextCandidate(text: observation.text, confidence: observation.confidence)]
-            : observation.candidates
-        let keyCandidates = candidates.compactMap { candidate -> (text: String, confidence: Float)? in
-            guard let matched = firstMatchText(keyRegex, in: candidate.text) else { return nil }
-            return (matched.normalizedKeyText, candidate.confidence)
-        }
-        guard let selected = bestKeyCandidate(from: keyCandidates) else { return nil }
-        let text = correctedKeyText(selected.text, confidence: selected.confidence, originalText: observation.text)
-        return SheetOCRToken(
-            kind: .key,
-            text: text,
-            confidence: selected.confidence,
-            rect: observation.rect,
-            originalText: observation.text
-        )
-    }
-
-    private func bestKeyCandidate(from candidates: [(text: String, confidence: Float)]) -> (text: String, confidence: Float)? {
-        guard var best = candidates.max(by: { $0.confidence < $1.confidence }) else { return nil }
-        let bestRoot = best.text.keyRootWithoutAccidental
-        if best.text.hasKeyAccidental,
-           let simpler = candidates
-            .filter({ !$0.text.hasKeyAccidental && $0.text.keyRootWithoutAccidental == bestRoot && $0.confidence >= best.confidence - 0.08 })
-            .max(by: { $0.confidence < $1.confidence }) {
-            best = simpler
-        }
-        return best
-    }
-
-    private func correctedKeyText(_ text: String, confidence: Float, originalText: String) -> String {
-        guard text.hasKeyAccidental else {
-            return text
-        }
-        if text == "1=C#" {
-            return "1=C"
-        }
-        guard originalText.range(of: #"\d\s*/\s*\d"#, options: .regularExpression) != nil else {
-            return text
-        }
-        guard confidence < 0.85 else {
-            return text
-        }
-        return text.removingKeyAccidental
     }
 
     private func bestChordCandidate(in observation: SheetOCRTextObservation) -> SheetOCRTextCandidate? {
@@ -177,7 +128,7 @@ struct SheetOCRParser {
                 let chordChars = matches.reduce(0) { $0 + $1.range(at: 1).length }
                 let visibleChars = candidate.text.filter { !$0.isWhitespace }.count
                 let coverage = Float(chordChars) / Float(max(1, visibleChars))
-                guard observation.isChordOCR || coverage >= 0.45 else { return nil }
+                guard coverage >= 0.45 else { return nil }
                 let normalized = candidate.text.normalizedChordText
                 let slashBonus: Float = normalized.contains("/") ? 0.025 : 0
                 let rootBonus: Float = normalized.first?.isLetter == true ? 0.02 : 0
@@ -199,21 +150,14 @@ struct SheetOCRParser {
         )
     }
 
-    private func isChordDominant(_ text: String) -> Bool {
-        let matches = chordRegex.matches(in: text, range: text.fullNSRange)
-        guard !matches.isEmpty, cjkRatio(text) < 0.15 else { return false }
-        let chordChars = matches.reduce(0) { $0 + $1.range(at: 1).length }
-        let visibleChars = text.filter { !$0.isWhitespace }.count
-        return visibleChars > 0 && Double(chordChars) / Double(visibleChars) >= 0.55
-    }
-
-    private func isLikelyJianpu(_ text: String) -> Bool {
-        guard cjkRatio(text) < 0.2 else { return false }
-        if jianpuRegex.firstMatch(in: text, range: text.fullNSRange) != nil {
-            return text.contains { $0.isNumber }
+    private func isAllowedChordToken(_ token: String, confidence: Float, source: SheetOCRObservationSource) -> Bool {
+        guard !token.isEmpty else { return false }
+        let singleRoots = Set(["A", "B", "C", "D", "E", "F", "G"])
+        if singleRoots.contains(token) {
+            let threshold: Float = source == .chordLabelZone ? 0.70 : 0.88
+            return confidence >= threshold
         }
-        let digitish = text.filter { $0.isNumber || "·.-_|()（） ".contains($0) }.count
-        return text.count >= 3 && Double(digitish) / Double(max(1, text.count)) >= 0.70
+        return true
     }
 
     private func normalizedLyricText(_ text: String) -> String {
@@ -233,11 +177,11 @@ struct SheetOCRParser {
         let lyricScalars = normalized.unicodeScalars.filter { scalar in
             (0x4E00...0x9FFF).contains(Int(scalar.value))
                 || CharacterSet.whitespaces.contains(scalar)
-                || CharacterSet.letters.contains(scalar)
         }
         let lyric = String(String.UnicodeScalarView(lyricScalars))
             .replacingOccurrences(of: #"[\s　]+"#, with: "", options: .regularExpression)
-        return lyric.count >= 2 ? lyric : nil
+        guard lyric.count >= 2 else { return nil }
+        return cjkRatio(lyric) >= 0.75 ? lyric : nil
     }
 
     private func mergeLyricFragments(_ tokens: [SheetOCRToken]) -> [SheetOCRToken] {
@@ -273,7 +217,7 @@ struct SheetOCRParser {
         var output: [SheetOCRToken] = []
         for token in tokens {
             if let duplicateIndex = output.firstIndex(where: { existing in
-                existing.text == token.text
+                (existing.text == token.text || existing.rect.overlaps(token.rect, xTolerance: 0.018, yTolerance: 0.012))
                     && abs(existing.rect.midX - token.rect.midX) <= 0.035
                     && abs(existing.rect.midY - token.rect.midY) <= 0.035
             }) {
@@ -301,14 +245,6 @@ struct SheetOCRParser {
         return Double(cjk) / Double(text.count)
     }
 
-    private func firstMatchText(_ regex: NSRegularExpression, in text: String) -> String? {
-        guard let match = regex.firstMatch(in: text, range: text.fullNSRange),
-              let range = Range(match.range, in: text) else {
-            return nil
-        }
-        return String(text[range])
-    }
-
     private func groupLinesByY(_ observations: [SheetOCRTextObservation]) -> [[SheetOCRTextObservation]] {
         var groups: [[SheetOCRTextObservation]] = []
         for observation in observations {
@@ -330,33 +266,17 @@ extension String {
     }
 
     fileprivate var normalizedChordText: String {
-        trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized = trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "♯", with: "#")
             .replacingOccurrences(of: "♭", with: "b")
             .replacingOccurrences(of: "／", with: "/")
             .replacingOccurrences(of: "on", with: "/", options: .caseInsensitive)
+        if normalized.count == 2, normalized.last == "5", let first = normalized.first, "ABCDEFG".contains(first) {
+            return String(first)
+        }
+        return normalized
     }
 
-    fileprivate var normalizedKeyText: String {
-        replacingOccurrences(of: " ", with: "")
-            .replacingOccurrences(of: "♯", with: "#")
-            .replacingOccurrences(of: "♭", with: "b")
-    }
-
-    fileprivate var hasKeyAccidental: Bool {
-        contains("#") || contains("b") || contains("♯") || contains("♭")
-    }
-
-    fileprivate var keyRootWithoutAccidental: String {
-        replacingOccurrences(of: "#", with: "")
-            .replacingOccurrences(of: "b", with: "")
-            .replacingOccurrences(of: "♯", with: "")
-            .replacingOccurrences(of: "♭", with: "")
-    }
-
-    fileprivate var removingKeyAccidental: String {
-        keyRootWithoutAccidental
-    }
 }
 
 extension Array where Element == SheetOCRToken {
@@ -376,6 +296,10 @@ extension SheetOCRTextObservation {
     }
 
     fileprivate var isChordOCR: Bool {
-        source == .chordZone || source == .chordLabelZone
+        source == .chordLabelZone
+    }
+
+    fileprivate var isLyricOCR: Bool {
+        source == .lyricZone || source == .lyricTextZone
     }
 }

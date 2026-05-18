@@ -62,6 +62,15 @@ struct SheetTextRecognitionConfiguration: Equatable {
         usesLanguageCorrection: true,
         source: .lyricZone
     )
+
+    static let lyricTextZone = SheetTextRecognitionConfiguration(
+        recognitionLanguages: ["zh-Hans", "en-US"],
+        customWords: [],
+        minimumTextHeight: 0.006,
+        recognitionLevel: .accurate,
+        usesLanguageCorrection: true,
+        source: .lyricTextZone
+    )
 }
 
 struct VisionSheetTextRecognizer: SheetTextRecognizing {
@@ -71,6 +80,7 @@ struct VisionSheetTextRecognizer: SheetTextRecognizing {
         configuration: SheetTextRecognitionConfiguration = .fullPage
     ) async throws -> [SheetOCRTextObservation] {
         try await withCheckedThrowingContinuation { continuation in
+            let prepared = prepareImage(image, region: region, configuration: configuration)
             let request = VNRecognizeTextRequest { request, error in
                 if let error {
                     continuation.resume(throwing: error)
@@ -85,10 +95,11 @@ struct VisionSheetTextRecognizer: SheetTextRecognizing {
                         let mappedCandidates = candidates.map {
                             SheetOCRTextCandidate(text: $0.string, confidence: $0.confidence)
                         }
+                        let rect = SheetOCRRect.topLeftNormalized(fromVisionNormalized: observation.boundingBox)
                         return SheetOCRTextObservation(
                             text: text,
                             confidence: first.confidence,
-                            rect: SheetOCRRect.topLeftNormalized(fromVisionNormalized: observation.boundingBox),
+                            rect: prepared.region.map { rect.mapped(fromRelativeRectIn: $0) } ?? rect,
                             candidates: mappedCandidates,
                             source: configuration.source
                         )
@@ -101,15 +112,53 @@ struct VisionSheetTextRecognizer: SheetTextRecognizing {
             request.recognitionLanguages = configuration.recognitionLanguages
             request.customWords = configuration.customWords
             request.minimumTextHeight = configuration.minimumTextHeight
-            if let region {
-                request.regionOfInterest = region.visionNormalizedRect
-            }
             do {
-                try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+                try VNImageRequestHandler(cgImage: prepared.image, options: [:]).perform([request])
             } catch {
                 continuation.resume(throwing: error)
             }
         }
+    }
+
+    private func prepareImage(
+        _ image: CGImage,
+        region: SheetOCRRect?,
+        configuration: SheetTextRecognitionConfiguration
+    ) -> (image: CGImage, region: SheetOCRRect?) {
+        guard let region else { return (image, nil) }
+        let pixelRect = CGRect(
+            x: region.x * Double(image.width),
+            y: region.y * Double(image.height),
+            width: region.width * Double(image.width),
+            height: region.height * Double(image.height)
+        ).integral.intersection(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        guard pixelRect.width >= 2, pixelRect.height >= 2, let cropped = image.cropping(to: pixelRect) else {
+            return (image, nil)
+        }
+        let scale: CGFloat = configuration.source == .chordLabelZone ? 3 : 2
+        guard let scaled = scaledImage(cropped, scale: scale) else {
+            return (cropped, region)
+        }
+        return (scaled, region)
+    }
+
+    private func scaledImage(_ image: CGImage, scale: CGFloat) -> CGImage? {
+        let width = max(1, Int(CGFloat(image.width) * scale))
+        let height = max(1, Int(CGFloat(image.height) * scale))
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: image.bitsPerComponent,
+            bytesPerRow: 0,
+            space: image.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
     }
 }
 
@@ -147,6 +196,15 @@ extension SheetOCRRect {
 
     var visionNormalizedRect: CGRect {
         CGRect(x: x, y: 1 - y - height, width: width, height: height)
+    }
+
+    func mapped(fromRelativeRectIn parent: SheetOCRRect) -> SheetOCRRect {
+        SheetOCRRect(
+            x: parent.x + x * parent.width,
+            y: parent.y + y * parent.height,
+            width: width * parent.width,
+            height: height * parent.height
+        )
     }
 }
 

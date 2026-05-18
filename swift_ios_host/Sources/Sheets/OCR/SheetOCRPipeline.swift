@@ -23,7 +23,6 @@ struct SheetOCRPipeline {
         var pages: [SheetOCRPageDraft] = []
         var diagnostics: [String] = []
         var title: SheetOCRToken?
-        var key: SheetOCRToken?
 
         for (pageIndex, image) in images.enumerated() {
             let page = try await recognizePage(image: image, pageIndex: pageIndex)
@@ -32,13 +31,12 @@ struct SheetOCRPipeline {
 
             let meta = parser.parsePageMeta(page.rawObservations)
             if title == nil { title = meta.title }
-            if key == nil { key = meta.key }
         }
 
         return SheetOCRDraft(
             id: UUID().uuidString,
             title: title,
-            originalKey: key,
+            originalKey: nil,
             pages: pages,
             createdAtMs: Int(Date().timeIntervalSince1970 * 1000),
             diagnostics: diagnostics
@@ -66,23 +64,17 @@ struct SheetOCRPipeline {
             for (systemIndex, system) in detected.enumerated() {
                 async let chordObservations = recognizer.recognize(
                     image: processed.image,
-                    region: system.chordZone,
-                    configuration: .chordZone
-                )
-                async let jianpuObservations = recognizer.recognize(
-                    image: processed.image,
-                    region: system.jianpuZone,
-                    configuration: .jianpuZone
+                    region: system.chordLabelZone,
+                    configuration: .chordLabelZone
                 )
                 async let lyricObservations = recognizer.recognize(
                     image: processed.image,
-                    region: system.lyricZone,
-                    configuration: .lyricZone
+                    region: system.lyricTextZone,
+                    configuration: .lyricTextZone
                 )
-                let chordZoneObservations = try await chordObservations
-                let jianpuZoneObservations = try await jianpuObservations
-                let lyricZoneObservations = try await lyricObservations
-                let observations = chordZoneObservations + jianpuZoneObservations + lyricZoneObservations + fullObservations
+                let chordLabelObservations = try await chordObservations
+                let lyricTextObservations = try await lyricObservations
+                let observations = chordLabelObservations + lyricTextObservations + fullObservations
                 parsed.append(
                     parser.parseSystem(
                         pageIndex: pageIndex,

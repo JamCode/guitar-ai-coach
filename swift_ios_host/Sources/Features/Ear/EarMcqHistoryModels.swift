@@ -1,6 +1,6 @@
 import Foundation
 
-/// 和弦听辨 / 和弦进行等 `EarMcqSessionView` 单次作答落盘。
+/// 和弦听辨 / 和弦进行等练耳题单次作答落盘。
 public struct EarMcqAttemptRecord: Codable, Sendable, Equatable, Identifiable {
     public var id: UUID
     public var occurredAt: Date

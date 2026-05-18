@@ -101,7 +101,9 @@ struct SheetStaffSystemDetector {
             let chordBottom = max(chordTop + 0.01, staffTop - staffHeight * 0.08)
             let lyricTop = min(1, staffBottom + staffHeight * 0.18)
             let lyricBottom = min(nextTop, staffBottom + staffHeight * 2.35)
-            let lyricSplit = lyricTop + max(0.01, lyricBottom - lyricTop) * 0.48
+            let lyricHeight = max(0.01, lyricBottom - lyricTop)
+            let lyricSplit = lyricTop + lyricHeight * 0.48
+            let lyricTextTop = lyricTop + lyricHeight * 0.20
             let boundsTop = min(chordTop, staffTop)
             let boundsBottom = max(lyricBottom, staffBottom)
 
@@ -113,9 +115,9 @@ struct SheetStaffSystemDetector {
                 staffBounds: staff,
                 chordZone: chordZone,
                 lyricZone: lyricZone,
-                chordLabelZone: SheetOCRRect(x: 0, y: chordTop, width: 1, height: max(0.01, chordZone.height * 0.58)),
+                chordLabelZone: SheetOCRRect(x: 0, y: max(chordTop, chordBottom - chordZone.height * 0.58), width: 1, height: max(0.01, chordZone.height * 0.58)),
                 jianpuZone: SheetOCRRect(x: 0, y: lyricTop, width: 1, height: max(0.01, lyricSplit - lyricTop)),
-                lyricTextZone: SheetOCRRect(x: 0, y: lyricSplit, width: 1, height: max(0.01, lyricBottom - lyricSplit))
+                lyricTextZone: SheetOCRRect(x: 0, y: lyricTextTop, width: 1, height: max(0.01, lyricBottom - lyricTextTop))
             )
         }
     }

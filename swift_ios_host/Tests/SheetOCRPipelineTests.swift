@@ -17,15 +17,21 @@ final class SheetOCRPipelineTests: XCTestCase {
         let parsed = SheetOCRDraftAdapter().makeParsedData(from: draft, sheetId: "sheet-1")
 
         XCTAssertEqual(draft.title?.text, "枫")
-        XCTAssertEqual(draft.originalKey?.text, "1=C")
+        XCTAssertNil(draft.originalKey)
         XCTAssertEqual(draft.pages.count, 1)
         XCTAssertEqual(draft.pages[0].systems.count, 1)
         XCTAssertEqual(draft.pages[0].systems[0].chords.map(\.text), ["C", "G/B", "Am", "Em"])
         XCTAssertEqual(draft.pages[0].systems[0].lyrics.map(\.text), ["缓缓飘落的枫叶像思念"])
+        XCTAssertTrue(draft.pages[0].systems[0].melody.isEmpty)
+        XCTAssertTrue(recognizer.sources.contains(.fullPage))
+        XCTAssertTrue(recognizer.sources.contains(.chordLabelZone))
+        XCTAssertTrue(recognizer.sources.contains(.lyricTextZone))
+        XCTAssertFalse(recognizer.sources.contains(.chordZone))
+        XCTAssertFalse(recognizer.sources.contains(.jianpuZone))
 
         XCTAssertEqual(parsed.sheetId, "sheet-1")
         XCTAssertEqual(parsed.parseStatus, .draft)
-        XCTAssertEqual(parsed.originalKey, "1=C")
+        XCTAssertEqual(parsed.originalKey, "C")
         XCTAssertEqual(parsed.segments, [
             SheetSegment(chords: ["C", "G/B", "Am", "Em"], melody: "", lyrics: "缓缓飘落的枫叶像思念")
         ])
@@ -50,28 +56,55 @@ final class SheetOCRPipelineTests: XCTestCase {
 }
 
 private struct MockSheetTextRecognizer: SheetTextRecognizing {
+    final class Calls: @unchecked Sendable {
+        private let lock = NSLock()
+        private var storedSources: [SheetOCRObservationSource] = []
+
+        func append(_ source: SheetOCRObservationSource) {
+            lock.lock()
+            storedSources.append(source)
+            lock.unlock()
+        }
+
+        var sources: [SheetOCRObservationSource] {
+            lock.lock()
+            let copy = storedSources
+            lock.unlock()
+            return copy
+        }
+    }
+
+    let calls = Calls()
+
+    var sources: [SheetOCRObservationSource] {
+        calls.sources
+    }
+
     func recognize(
         image: CGImage,
         region: SheetOCRRect?,
         configuration: SheetTextRecognitionConfiguration
     ) async throws -> [SheetOCRTextObservation] {
+        calls.append(configuration.source)
         switch configuration.source {
         case .fullPage:
             return [
                 SheetOCRTextObservation(text: "枫", confidence: 0.95, rect: SheetOCRRect(x: 0.48, y: 0.05, width: 0.04, height: 0.03), source: .fullPage),
                 SheetOCRTextObservation(text: "1= C  4/4", confidence: 0.92, rect: SheetOCRRect(x: 0.10, y: 0.13, width: 0.16, height: 0.03), source: .fullPage)
             ]
-        case .chordZone, .chordLabelZone:
+        case .chordLabelZone:
             return [
                 SheetOCRTextObservation(text: "C  G/B  Am  Em", confidence: 0.91, rect: SheetOCRRect(x: 0.12, y: 0.21, width: 0.56, height: 0.03), source: configuration.source)
             ]
+        case .chordZone:
+            XCTFail("Pipeline should not call chordZone OCR")
+            return []
         case .jianpuZone:
+            XCTFail("Pipeline should not call jianpuZone OCR")
+            return []
+        case .lyricZone, .lyricTextZone:
             return [
-                SheetOCRTextObservation(text: "0 5 1 7 1 2 3 1", confidence: 0.82, rect: SheetOCRRect(x: 0.12, y: 0.36, width: 0.55, height: 0.03), source: .jianpuZone)
-            ]
-        case .lyricZone:
-            return [
-                SheetOCRTextObservation(text: "缓缓飘落的枫叶像思念", confidence: 0.90, rect: SheetOCRRect(x: 0.12, y: 0.40, width: 0.55, height: 0.03), source: .lyricZone)
+                SheetOCRTextObservation(text: "缓缓飘落的枫叶像思念", confidence: 0.90, rect: SheetOCRRect(x: 0.12, y: 0.40, width: 0.55, height: 0.03), source: configuration.source)
             ]
         }
     }

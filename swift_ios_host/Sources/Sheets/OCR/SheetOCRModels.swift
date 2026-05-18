@@ -57,6 +57,13 @@ struct SheetOCRRect: Equatable, Hashable, Codable {
         let bottom = max(maxY, other.maxY)
         return SheetOCRRect(x: left, y: top, width: right - left, height: bottom - top)
     }
+
+    func overlaps(_ other: SheetOCRRect, xTolerance: Double = 0, yTolerance: Double = 0) -> Bool {
+        minX - xTolerance <= other.maxX
+            && maxX + xTolerance >= other.minX
+            && minY - yTolerance <= other.maxY
+            && maxY + yTolerance >= other.minY
+    }
 }
 
 struct SheetOCRTextCandidate: Equatable, Codable {
@@ -92,6 +99,7 @@ enum SheetOCRObservationSource: String, Equatable, Codable {
     case chordLabelZone
     case jianpuZone
     case lyricZone
+    case lyricTextZone
 }
 
 enum SheetOCRTokenKind: String, Equatable, Codable {
@@ -245,12 +253,13 @@ struct SheetOCRStaffSystem: Equatable {
         let labelHeight = max(0.01, chordZone.height * 0.58)
         self.chordLabelZone = chordLabelZone ?? SheetOCRRect(
             x: chordZone.x,
-            y: chordZone.y,
+            y: max(chordZone.y, chordZone.maxY - labelHeight),
             width: chordZone.width,
             height: labelHeight
         )
 
         let lyricSplitY = lyricZone.y + lyricZone.height * 0.48
+        let lyricTextY = lyricZone.y + lyricZone.height * 0.20
         self.jianpuZone = jianpuZone ?? SheetOCRRect(
             x: lyricZone.x,
             y: lyricZone.y,
@@ -259,9 +268,9 @@ struct SheetOCRStaffSystem: Equatable {
         )
         self.lyricTextZone = lyricTextZone ?? SheetOCRRect(
             x: lyricZone.x,
-            y: lyricSplitY,
+            y: lyricTextY,
             width: lyricZone.width,
-            height: max(0.01, lyricZone.maxY - lyricSplitY)
+            height: max(0.01, lyricZone.maxY - lyricTextY)
         )
     }
 }

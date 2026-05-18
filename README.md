@@ -4,7 +4,7 @@
 
 ## 移动端说明
 
-- 原 `flutter_app/` 目录已从仓库移除；原生 iOS 相关代码在 `swift_app/`（Swift Package）与 `swift_ios_host/`（Xcode 宿主工程）。
+- 原 `flutter_app/` 与 `swift_app/` 目录已从仓库移除；原生 iOS 相关代码统一在 `swift_ios_host/`（Xcode 宿主工程）。
 - 新功能与修复请优先使用 Web 前端、Python 后端与上述 Swift 工程。
 
 ## 与 AI 协作开发约定

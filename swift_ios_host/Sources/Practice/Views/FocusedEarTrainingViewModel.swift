@@ -157,10 +157,11 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         intervalPlayer.cancelIntervalPlayback()
         chordPlayer.cancelChordPlayback()
         isPreviewingOption = true
+        let playbackLabel = Self.playbackChordLabel(label, root: root)
         let work = Task { @MainActor in
             defer { self.isPreviewingOption = false }
             do {
-                if let payload = OfflineChordBuilder.buildPayload(displaySymbol: label),
+                if let payload = OfflineChordBuilder.buildPayload(displaySymbol: playbackLabel),
                    let frets = payload.voicings.first?.explain.frets,
                    frets.count == 6 {
                     try await chordPlayer.playChordFromFretsSixToOne(frets)
@@ -181,6 +182,22 @@ final class FocusedEarTrainingViewModel: ObservableObject {
         }
         playTask = work
         await work.value
+    }
+
+    private static func playbackChordLabel(_ label: String, root: String?) -> String {
+        let raw = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let quality = EarChordQuality(optionLabel: raw) else { return raw }
+        let playbackRoot = (root?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ? root! : "C"
+        let qualityId: String
+        switch quality {
+        case .major: qualityId = ""
+        case .minor: qualityId = "m"
+        case .dominant7: qualityId = "7"
+        case .major7: qualityId = "maj7"
+        case .minor7: qualityId = "m7"
+        }
+        let symbol = ChordSymbolBuilder.build(root: playbackRoot, qualityId: qualityId, bassId: "")
+        return symbol.isEmpty ? raw : symbol
     }
 
     private static func midiNotesForChordLabel(_ label: String, defaultRoot: String? = nil) -> [Int] {
